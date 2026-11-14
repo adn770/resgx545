@@ -222,6 +222,11 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
             texels[k] = t;
         }
         let (wa, wb) = (levels[0].1, levels[1].1);
+        if tex.format == 9 {
+            // E1052 (u16 32 x 16, f 32, held out): one 16-bit lerp, (a (64 - f) + b f + 32) >> 6;
+            // the per-byte blend of the colour formats missed 512 of 2048 pixels
+            return convert((texels[0] * wa + texels[1] * wb + 32) >> 6, t3, tex.format);
+        }
         for c in 0..4 {
             let (a, b) = (texels[0] >> (8 * c) & 0xff, texels[1] >> (8 * c) & 0xff);
             out |= (a * wa + b * wb + 32) >> 6 << (8 * c);
@@ -586,7 +591,11 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         };
         // E958: type 3 of format 5 at its two held-out sizes
         let f5 = ty == 3 && fmt == 5 && TYPE3_F5_SIZES_E958.contains(&(w, h));
-        (fmt == 12 && sized || f5) && t0 == T0_REP && t3 == T3_TW
+        // E1055: types 1, 3 and 4 at 16 x 16 (E567's images, replicated by E1039's references)
+        // and 32 x 32 (held out: type 4 its block, 32 t + s), in mode 0 and with u mode 4
+        let e1055 = matches!(ty, 1 | 3 | 4) && matches!((w, h), (16, 16) | (32, 32)) && fmt == 12;
+        let t0_ok = t0 == T0_REP || e1055 && t0 == T0_REP | 4 << 6;
+        (fmt == 12 && sized || f5 || e1055) && t0_ok && t3 == T3_TW
     };
     if !ok {
         return open(format!(
@@ -689,7 +698,11 @@ impl Texture {
         }
         // E1049 (tw-refu16): a u16 32 x 32 read E561's tiles in texels, every pixel
         let u16_ran = tex.format == 9 && (w, h) == (32, 32);
-        if tex.row.is_none() && (w > 16 || h > 16) && !(tile_law_ran(w, h) && (tex.bytes()? == 4 || u16_ran))
+        let u16_chain = tex.format == 9 && CHAIN16_SIZES.contains(&(w, h));
+        if tex.row.is_none()
+            && (w > 16 || h > 16)
+            && !(tile_law_ran(w, h) && (tex.bytes()? == 4 || u16_ran))
+            && !u16_chain
         {
             return open(format!(
                 "a twiddled {w}x{h} texture of format {} (the 16 x 16 tiles ran only on 32-bit texels in the sizes of E561 and E562)",
@@ -787,12 +800,14 @@ impl Texture {
         if mag && !min && l <= 0.5 {
             return open("magnification linear, minification point, a LOD in (0, 0.5]");
         }
-        // p1132 tx-shapes (Q104): both sides halve down to 1, so the chain ends at the longer side's log2
+        // p1132 tx-shapes (E562) and E1052: both sides halve down to 1, so the chain ends at the longer side's log2
         let last = self.w.trailing_zeros().max(self.h.trailing_zeros()).min(mx);
-        if one_d {
-            return open("mipmaps of a 1D texture");
+        if one_d && self.h != 1 {
+            // E1052: smp1d on 64 x 1 reads chain A (both sides halve to 1) like smp2d
+            return open("mipmaps of a 1D texture taller than one texel (not run)");
         }
-        if self.w != self.h && !CHAIN_SIZES.contains(&(self.w, self.h)) {
+        let u16_chain = self.format == 9 && CHAIN16_SIZES.contains(&(self.w, self.h));
+        if self.w != self.h && !CHAIN_SIZES.contains(&(self.w, self.h)) && !u16_chain {
             return open(format!("mipmaps of a non-square {}x{} texture (not run)", self.w, self.h));
         }
         // a fractional LOD from gradients: E721 fitted its fraction (truncated to 1/64) with residuals
@@ -813,15 +828,18 @@ impl Texture {
         } else if f.floor() == 0.0 {
             // E1038 (sRGB, LOD 1.2): the fraction in 64ths floored
             vec![(lo, 64)]
-        } else if !self.colour() {
+        } else if !self.colour() && self.format != 9 {
             return open(format!("a blend of levels of format {}", self.format));
         } else {
             // E1038: an sRGB blend floors the fraction (LOD 1.2 read f = 12, not 13)
             let f = f.floor() as u32;
             vec![(lo, 64 - f), (lo + 1, f)]
         };
-        if levels.iter().any(|&(l, _)| l > 0) && self.bytes()? != 4 {
-            return open("mip levels of a format other than 32 bits");
+        if levels.iter().any(|&(l, _)| l > 0)
+            && self.bytes()? != 4
+            && !(self.format == 9 && CHAIN16_SIZES.contains(&(self.w, self.h)))
+        {
+            return open("mip levels of a format other than 32 bits (u16 ran at 32 x 16 and 16 x 64, E1052)");
         }
         Ok((levels, min))
     }
@@ -1006,6 +1024,18 @@ impl Texture {
     /// held out every region at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and 256 x 32, the
     /// corner base E1026's post hoc 4 log2 M against five rivals).
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
+        if self.raster && self.address[0] == 4 && self.offset == [0, 0] && self.shift == 0 {
+            // E1039 (fitted), E1055 (the form held out on ten rows, the 16 x 16 map's wrap on a
+            // held-out u range, 32 x 32 post hoc): types 1, 3 and 4 with u mode 4 read the dword
+            // N + (x mod W) whatever the row, each byte halved, rounded up; N = 39 W + 52 (676 at
+            // 16, 1300 at 32), type 4 at 16 x 16 660 (measured_r4 admits these sizes only). The
+            // halves leave N's byte 1 one of two values: N - 256 (16) and N + 256 (32) fit alike
+            // [infer: 39 W + 52 at both sizes]
+            let n = if self.blocks && self.w == 16 { 660 } else { 39 * self.w + 52 };
+            let i = n + x.rem_euclid(self.w as i64) as u32;
+            let d = load(self.base.wrapping_add(4 * i)).map_err(Fail::Load)?;
+            return Ok((0..4).fold(0, |o, k| o | ((d >> (8 * k) & 0xff) + 1) >> 1 << (8 * k)));
+        }
         let mut umode_extra = 0u32;
         if self.row.is_none() && (4..8).contains(&self.address[0]) {
             let (ux, vy) = (self.offset[0] + x, self.offset[1] + y);
@@ -1047,8 +1077,8 @@ impl Texture {
                     6 | 7 if v || self.row.is_none() => clamp(t),
                     m => {
                         return open(format!(
-                            "address mode {m} on u of a raster type (E1039: types 1, 3 and 4 at 16 x 16 in mode 4 read a \
-                             dword past the texture halved byte by byte, rows alike, post hoc; Q177)"
+                            "address mode {m} on u of a raster type (E1055: at 16 x 16 modes 6 and 7 read mode 4's \
+                             last column on every pixel and mode 5 one other dword, halved, post hoc; Q177)"
                         ));
                     }
                 }
@@ -1243,9 +1273,13 @@ pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
 /// The sizes of 32-bit twiddled textures, with a side above 16, that p1132 ran (E561 tx-twiddle,
 /// E562 tx-shapes) and r13-tex's 32 x 64 (E1026: three rows, every pixel the tile law's index plus
 /// the u-mode offset): the tiles of 16 x 16 and their raster order are measured there only.
-const TILE_SIZES: [(u32, u32); 16] = [
+const TILE_SIZES: [(u32, u32); 19] = [
     // E1039: 256 x 32 in mode 5 (the inside the tile law's index plus 8 M + 52, every pixel)
     (256, 32),
+    // E1052: a side of 1 at level 0 (1 x 32, 32 x 1 and, read 1D, 64 x 1), every texel its index
+    (1, 32),
+    (32, 1),
+    (64, 1),
     (32, 64),
     (32, 32),
     (64, 32),
@@ -1263,8 +1297,13 @@ const TILE_SIZES: [(u32, u32); 16] = [
     (8, 64),
 ];
 
-/// The non-square sizes whose mip chain p1132 ran (E562 tx-shapes, tx-fields).
-const CHAIN_SIZES: [(u32, u32); 5] = [(32, 16), (128, 16), (16, 32), (64, 4), (8, 64)];
+/// The non-square sizes whose mip chain p1132 ran (E562 tx-shapes, tx-fields) and r15-tex held out
+/// (E1052: a side of 1, 64 x 1 read 1D, 64 x 32 and 256 x 32; u16 also at 16 x 64, CHAIN16_SIZES).
+const CHAIN_SIZES: [(u32, u32); 10] =
+    [(32, 16), (128, 16), (16, 32), (64, 4), (8, 64), (1, 32), (32, 1), (64, 1), (64, 32), (256, 32)];
+/// E1052: the sizes a u16 (format 9) twiddled chain ran at, its levels packed in texels (the short
+/// side at most 16, so the tile law is the plain interleave).
+const CHAIN16_SIZES: [(u32, u32); 2] = [(32, 16), (16, 64)];
 
 fn tile_law_ran(w: u32, h: u32) -> bool {
     TILE_SIZES.contains(&(w, h))
@@ -1911,7 +1950,7 @@ mod tests {
 
     #[test]
     fn a_mip_chain_of_a_non_square_texture_halves_both_sides_down_to_1x1() {
-        // p1132 tx-shapes (Q104): chain A, 8 of 8 fit and 49 of 49 held-out cases exact. 32x16
+        // p1132 tx-shapes (E562): chain A, 8 of 8 fit and 49 of 49 held-out cases exact. 32x16
         // reads 512, 128, 32, 8, 2 and 1 dwords at 0, 512, 640, 672, 680 and 682; LOD 6 and 7 read
         // the last level (1x1)
         let t = Texture::new(0x07fc_0000, 12 << 24 | 31 << 12 | 15, 0x2000, 0x0080_0800).unwrap();
@@ -2641,8 +2680,9 @@ mod tests {
     fn types_1_3_4_and_5_off_what_ran_are_refused() {
         let mem = |_| 0u32;
         for ty in [1, 3] {
-            // 128 x 8 ran, but the 64-pixel window read only its first 64 columns (E910)
-            for (w, h) in [(4, 4), (16, 16), (64, 32), (8, 16), (128, 8)] {
+            // 128 x 8 ran, but the 64-pixel window read only its first 64 columns (E910); 16 x 16
+            // is E1055's (e1055_types_1_3_4_in_u_mode_4_read_a_named_dword_halved)
+            for (w, h) in [(4, 4), (64, 32), (8, 16), (128, 8)] {
                 assert!(
                     is_open(texel([T0_REP, t1(ty, 12, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)),
                     "{ty} {w}x{h}"
@@ -2669,7 +2709,8 @@ mod tests {
         // type 4: E725's sizes were fitted only, 128 x 8 and 128 x 32 read half their columns
         // (E910), the sizes that are not multiples of 32 ran at 48 x 64, 80 x 64 and 96 x 32 only
         // (E958)
-        for (w, h) in [(8, 8), (16, 16), (32, 32), (128, 8), (128, 32), (96, 64), (64, 48), (40, 32)] {
+        // (16 x 16 and 32 x 32 are E1055's)
+        for (w, h) in [(8, 8), (128, 8), (128, 32), (96, 64), (64, 48), (40, 32)] {
             assert!(
                 is_open(texel([T0_REP, t1(4, 12, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)),
                 "type 4 {w}x{h}"
@@ -2801,5 +2842,269 @@ mod tests {
         // bit 1 alone (0x2) lights nothing: not bit 1 of dword floor(t / 4) (E942's rival)
         let two = |_| 2u32;
         assert_eq!(texel(st, 16, 16, 4, 0, &two), Ok(vec![0]));
+    }
+
+    #[test]
+    fn e1052_chains_of_a_side_of_1_1d_u16_and_long_sides_read_as_e562s() {
+        // E1052 (render/closing-r15-tex chain, out/20261114-073318; fold/sim_points.out): each
+        // held-out row at y = 0, 8, 20, 28 (LOD (y >> 2) + c) and x = 5, 50 (u = v = (32 x + 17) /
+        // 2048, 1/2 on a side of 1), dword i of the texture 0xd0000000 | i: (W, H, format, 1D, T0,
+        // LOD, x, the kept pixel); chain A, u16 in texels, its MIPFILTER blend one 16-bit lerp
+        let kept: [(u32, u32, u32, bool, u32, f32, u32, u32); 128] = [
+            (1, 32, 12, false, 0x07fc0000, 0.0, 5, 0xd0000002),
+            (1, 32, 12, false, 0x07fc0000, 0.0, 50, 0xd0000019),
+            (1, 32, 12, false, 0x07fc0000, 2.0, 5, 0xd0000030),
+            (1, 32, 12, false, 0x07fc0000, 2.0, 50, 0xd0000036),
+            (1, 32, 12, false, 0x07fc0000, 5.0, 5, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 5.0, 50, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 7.0, 5, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 7.0, 50, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 0.5, 5, 0xd0000021),
+            (1, 32, 12, false, 0x07fc0000, 0.5, 50, 0xd000002c),
+            (1, 32, 12, false, 0x07fc0000, 2.5, 5, 0xd0000038),
+            (1, 32, 12, false, 0x07fc0000, 2.5, 50, 0xd000003b),
+            (1, 32, 12, false, 0x07fc0000, 5.5, 5, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 5.5, 50, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 7.5, 5, 0xd000003e),
+            (1, 32, 12, false, 0x07fc0000, 7.5, 50, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 0.0, 5, 0xd0000002),
+            (32, 1, 12, false, 0x07fc0000, 0.0, 50, 0xd0000019),
+            (32, 1, 12, false, 0x07fc0000, 2.0, 5, 0xd0000030),
+            (32, 1, 12, false, 0x07fc0000, 2.0, 50, 0xd0000036),
+            (32, 1, 12, false, 0x07fc0000, 5.0, 5, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 5.0, 50, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 7.0, 5, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 7.0, 50, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 0.5, 5, 0xd0000021),
+            (32, 1, 12, false, 0x07fc0000, 0.5, 50, 0xd000002c),
+            (32, 1, 12, false, 0x07fc0000, 2.5, 5, 0xd0000038),
+            (32, 1, 12, false, 0x07fc0000, 2.5, 50, 0xd000003b),
+            (32, 1, 12, false, 0x07fc0000, 5.5, 5, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 5.5, 50, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 7.5, 5, 0xd000003e),
+            (32, 1, 12, false, 0x07fc0000, 7.5, 50, 0xd000003e),
+            (32, 1, 12, false, 0x067c0000, 0.0, 5, 0xd0000002),
+            (32, 1, 12, false, 0x067c0000, 0.0, 50, 0xd0000019),
+            (32, 1, 12, false, 0x067c0000, 2.0, 5, 0xd0000021),
+            (32, 1, 12, false, 0x067c0000, 2.0, 50, 0xd000002c),
+            (32, 1, 12, false, 0x067c0000, 5.0, 5, 0xd000003c),
+            (32, 1, 12, false, 0x067c0000, 5.0, 50, 0xd000003d),
+            (32, 1, 12, false, 0x067c0000, 7.0, 5, 0xd000003e),
+            (32, 1, 12, false, 0x067c0000, 7.0, 50, 0xd000003e),
+            (32, 16, 9, false, 0x07fc0000, 0.0, 5, 0x0000d000),
+            (32, 16, 9, false, 0x07fc0000, 0.0, 50, 0x000000e9),
+            (32, 16, 9, false, 0x07fc0000, 2.0, 5, 0x00000140),
+            (32, 16, 9, false, 0x07fc0000, 2.0, 50, 0x0000d000),
+            (32, 16, 9, false, 0x07fc0000, 5.0, 5, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 5.0, 50, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 7.0, 5, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 7.0, 50, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 0.5, 5, 0x00000101),
+            (32, 16, 9, false, 0x07fc0000, 0.5, 50, 0x0000013a),
+            (32, 16, 9, false, 0x07fc0000, 2.5, 5, 0x00000150),
+            (32, 16, 9, false, 0x07fc0000, 2.5, 50, 0x0000d000),
+            (32, 16, 9, false, 0x07fc0000, 5.5, 5, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 5.5, 50, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 7.5, 5, 0x00000155),
+            (32, 16, 9, false, 0x07fc0000, 7.5, 50, 0x00000155),
+            (16, 64, 9, false, 0x07fc0000, 0.0, 5, 0x0000d000),
+            (16, 64, 9, false, 0x07fc0000, 0.0, 50, 0x000001d2),
+            (16, 64, 9, false, 0x07fc0000, 2.0, 5, 0x0000d000),
+            (16, 64, 9, false, 0x07fc0000, 2.0, 50, 0x0000029d),
+            (16, 64, 9, false, 0x07fc0000, 5.0, 5, 0x000002aa),
+            (16, 64, 9, false, 0x07fc0000, 5.0, 50, 0x0000d000),
+            (16, 64, 9, false, 0x07fc0000, 7.0, 5, 0x000002ab),
+            (16, 64, 9, false, 0x07fc0000, 7.0, 50, 0x000002ab),
+            (16, 64, 9, false, 0x07fc0000, 0.5, 5, 0x00000202),
+            (16, 64, 9, false, 0x07fc0000, 0.5, 50, 0x0000d000),
+            (16, 64, 9, false, 0x07fc0000, 2.5, 5, 0x000002a0),
+            (16, 64, 9, false, 0x07fc0000, 2.5, 50, 0x000002a7),
+            (16, 64, 9, false, 0x07fc0000, 5.5, 5, 0x000002ab),
+            (16, 64, 9, false, 0x07fc0000, 5.5, 50, 0x000002ab),
+            (16, 64, 9, false, 0x07fc0000, 7.5, 5, 0x000002ab),
+            (16, 64, 9, false, 0x07fc0000, 7.5, 50, 0x000002ab),
+            (32, 16, 9, false, 0x07fc0200, 0.5, 5, 0x00006881),
+            (32, 16, 9, false, 0x07fc0200, 0.5, 50, 0x00000112),
+            (32, 16, 9, false, 0x07fc0200, 2.5, 5, 0x00000148),
+            (32, 16, 9, false, 0x07fc0200, 2.5, 50, 0x0000d000),
+            (32, 16, 9, false, 0x07fc0200, 5.5, 5, 0x00000155),
+            (32, 16, 9, false, 0x07fc0200, 5.5, 50, 0x00000155),
+            (32, 16, 9, false, 0x07fc0200, 7.5, 5, 0x00000155),
+            (32, 16, 9, false, 0x07fc0200, 7.5, 50, 0x00000155),
+            (64, 32, 12, false, 0x07fc0000, 0.0, 5, 0xd0000026),
+            (64, 32, 12, false, 0x07fc0000, 0.0, 50, 0xd0000749),
+            (64, 32, 12, false, 0x07fc0000, 2.0, 5, 0xd0000a02),
+            (64, 32, 12, false, 0x07fc0000, 2.0, 50, 0xd0000a74),
+            (64, 32, 12, false, 0x07fc0000, 5.0, 5, 0xd0000aa8),
+            (64, 32, 12, false, 0x07fc0000, 5.0, 50, 0xd0000aa9),
+            (64, 32, 12, false, 0x07fc0000, 7.0, 5, 0xd0000aaa),
+            (64, 32, 12, false, 0x07fc0000, 7.0, 50, 0xd0000aaa),
+            (256, 32, 12, false, 0x07fc0000, 0.0, 5, 0xd000012c),
+            (256, 32, 12, false, 0x07fc0000, 0.0, 50, 0xd0001cc9),
+            (256, 32, 12, false, 0x07fc0000, 2.0, 5, 0xd0002822),
+            (256, 32, 12, false, 0x07fc0000, 2.0, 50, 0xd000299c),
+            (256, 32, 12, false, 0x07fc0000, 5.0, 5, 0xd0002aa0),
+            (256, 32, 12, false, 0x07fc0000, 5.0, 50, 0xd0002aa6),
+            (256, 32, 12, false, 0x07fc0000, 7.0, 5, 0xd0002aac),
+            (256, 32, 12, false, 0x07fc0000, 7.0, 50, 0xd0002aad),
+            (256, 32, 12, false, 0x07fc0000, 1.5, 5, 0xd0002822),
+            (256, 32, 12, false, 0x07fc0000, 1.5, 50, 0xd000299c),
+            (256, 32, 12, false, 0x07fc0000, 3.5, 5, 0xd0002a82),
+            (256, 32, 12, false, 0x07fc0000, 3.5, 50, 0xd0002a99),
+            (256, 32, 12, false, 0x07fc0000, 6.5, 5, 0xd0002aac),
+            (256, 32, 12, false, 0x07fc0000, 6.5, 50, 0xd0002aad),
+            (256, 32, 12, false, 0x07fc0000, 8.5, 5, 0xd0002aae),
+            (256, 32, 12, false, 0x07fc0000, 8.5, 50, 0xd0002aae),
+            (64, 1, 12, true, 0x07fc0000, 0.0, 5, 0xd0000005),
+            (64, 1, 12, true, 0x07fc0000, 0.0, 50, 0xd0000032),
+            (64, 1, 12, true, 0x07fc0000, 2.0, 5, 0xd0000061),
+            (64, 1, 12, true, 0x07fc0000, 2.0, 50, 0xd000006c),
+            (64, 1, 12, true, 0x07fc0000, 5.0, 5, 0xd000007c),
+            (64, 1, 12, true, 0x07fc0000, 5.0, 50, 0xd000007d),
+            (64, 1, 12, true, 0x07fc0000, 7.0, 5, 0xd000007e),
+            (64, 1, 12, true, 0x07fc0000, 7.0, 50, 0xd000007e),
+            (64, 1, 12, true, 0x07fc0000, 0.5, 5, 0xd0000042),
+            (64, 1, 12, true, 0x07fc0000, 0.5, 50, 0xd0000059),
+            (64, 1, 12, true, 0x07fc0000, 2.5, 5, 0xd0000070),
+            (64, 1, 12, true, 0x07fc0000, 2.5, 50, 0xd0000076),
+            (64, 1, 12, true, 0x07fc0000, 5.5, 5, 0xd000007e),
+            (64, 1, 12, true, 0x07fc0000, 5.5, 50, 0xd000007e),
+            (64, 1, 12, true, 0x07fc0000, 7.5, 5, 0xd000007e),
+            (64, 1, 12, true, 0x07fc0000, 7.5, 50, 0xd000007e),
+            (64, 1, 12, true, 0x07e60000, 0.0, 5, 0xd0000005),
+            (64, 1, 12, true, 0x07e60000, 0.0, 50, 0xd0000032),
+            (64, 1, 12, true, 0x07e60000, 2.0, 5, 0xd0000061),
+            (64, 1, 12, true, 0x07e60000, 2.0, 50, 0xd000006c),
+            (64, 1, 12, true, 0x07e60000, 5.0, 5, 0xd0000070),
+            (64, 1, 12, true, 0x07e60000, 5.0, 50, 0xd0000076),
+            (64, 1, 12, true, 0x07e60000, 7.0, 5, 0xd0000070),
+            (64, 1, 12, true, 0x07e60000, 7.0, 50, 0xd0000076),
+        ];
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4);
+        for (w, h, fmt, one_d, t0, lod, x, want) in kept {
+            let c = (32 * x + 17) as f32 / 2048.0;
+            let (u, v) = (if w == 1 { 0.5 } else { c }, if h == 1 || one_d { 0.5 } else { c });
+            let got = sample(
+                &Sample {
+                    state: [t0, t1(0, fmt, w, h), 0x1000, T3_TW],
+                    u,
+                    v,
+                    one_d,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Value(lod),
+                },
+                &mut |a| Ok(mem(a)),
+            );
+            assert_eq!(got, Ok(vec![want]), "{w}x{h} format {fmt} 1D {one_d} T0 {t0:08x} LOD {lod} x {x}");
+        }
+        // a 1D chain taller than one texel, a u16 chain at another size, a blend of 8-bit levels
+        let st = |t0: u32, fmt: u32, w: u32, h: u32| [t0, t1(0, fmt, w, h), 0x1000, T3_TW];
+        for (s, one_d) in [
+            (st(0x07fc_0000, 12, 64, 4), true),
+            (st(0x07fc_0000, 9, 64, 16), false),
+            (st(0x07fc_0200, 0, 32, 16), false),
+        ] {
+            let r = sample(
+                &Sample { state: s, u: 0.3, v: 0.3, one_d, srd: Srd::None, pcf: None, lod: Lod::Value(1.5) },
+                &mut |a| Ok(mem(a)),
+            );
+            assert!(is_open(r), "{s:08x?}");
+        }
+    }
+
+    #[test]
+    fn e1055_types_1_3_4_in_u_mode_4_read_a_named_dword_halved() {
+        // E1055 (render/closing-r15-tex ty, out/20261114-073318) and E1039 (r14-tex addr5): with
+        // u mode 4 at 32 x 32 and 16 x 16 every pixel is the dword N + (x mod W) with each byte
+        // halved, rounded up, the rows alike: N = 1300 at 32 x 32 (types 1, 3, 4), 676 (types 1,
+        // 3) and 660 (type 4) at 16 x 16; (type, W, u, the kept pixel)
+        let kept: [(u32, u32, f32, u32); 50] = [
+            (1, 32, 1.015625, 0x6800030a),
+            (1, 32, 1.234375, 0x6800030e),
+            (1, 32, 1.453125, 0x68000311),
+            (1, 32, 1.671875, 0x68000315),
+            (1, 32, 1.890625, 0x68000318),
+            (1, 32, 1.109375, 0x6800030c),
+            (1, 32, 1.328125, 0x6800030f),
+            (1, 32, 1.546875, 0x68000313),
+            (1, 32, 1.765625, 0x68000316),
+            (1, 32, 1.984375, 0x6800031a),
+            (3, 32, 1.015625, 0x6800030a),
+            (3, 32, 1.234375, 0x6800030e),
+            (3, 32, 1.453125, 0x68000311),
+            (3, 32, 1.671875, 0x68000315),
+            (3, 32, 1.890625, 0x68000318),
+            (3, 32, 1.109375, 0x6800030c),
+            (3, 32, 1.328125, 0x6800030f),
+            (3, 32, 1.546875, 0x68000313),
+            (3, 32, 1.765625, 0x68000316),
+            (3, 32, 1.984375, 0x6800031a),
+            (4, 32, 1.015625, 0x6800030a),
+            (4, 32, 1.234375, 0x6800030e),
+            (4, 32, 1.453125, 0x68000311),
+            (4, 32, 1.671875, 0x68000315),
+            (4, 32, 1.890625, 0x68000318),
+            (4, 32, 1.109375, 0x6800030c),
+            (4, 32, 1.328125, 0x6800030f),
+            (4, 32, 1.546875, 0x68000313),
+            (4, 32, 1.765625, 0x68000316),
+            (4, 32, 1.984375, 0x6800031a),
+            (1, 16, -1.46875, 0x68000156),
+            (1, 16, -1.03125, 0x6800015a),
+            (1, 16, -0.59375, 0x68000155),
+            (1, 16, -0.15625, 0x68000159),
+            (1, 16, 0.28125, 0x68000154),
+            (1, 16, 0.71875, 0x68000158),
+            (1, 16, 1.15625, 0x68000153),
+            (1, 16, 1.59375, 0x68000157),
+            (1, 16, 2.03125, 0x68000152),
+            (1, 16, 2.46875, 0x68000156),
+            (4, 16, 1.03125, 0x6800014a),
+            (4, 16, 1.46875, 0x6800014e),
+            (4, 16, 1.90625, 0x68000151),
+            (4, 16, 1.34375, 0x6800014d),
+            (4, 16, 1.78125, 0x68000150),
+            (4, 16, 1.21875, 0x6800014c),
+            (4, 16, 1.65625, 0x6800014f),
+            (4, 16, 1.09375, 0x6800014b),
+            (4, 16, 1.53125, 0x6800014e),
+            (4, 16, 1.96875, 0x68000152),
+        ];
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4);
+        for (ty, w, u, want) in kept {
+            for v in [0.1f32, 0.7] {
+                let got = sample(
+                    &Sample {
+                        state: [T0_REP | 4 << 6, t1(ty, 12, w, w), 0x1000, T3_TW],
+                        u,
+                        v,
+                        one_d: false,
+                        srd: Srd::None,
+                        pcf: None,
+                        lod: Lod::Flat,
+                    },
+                    &mut |a| Ok(mem(a)),
+                );
+                assert_eq!(got, Ok(vec![want]), "type {ty} {w}x{w} u {u} v {v}");
+            }
+        }
+        // their mode 0 references: types 1 and 3 a raster of the width, type 4 its 32 x 32 block
+        for (ty, w) in [(1, 16), (3, 16), (4, 16), (1, 32), (3, 32), (4, 32)] {
+            let stride = if ty == 4 { 32 } else { w };
+            let st = [T0_REP, t1(ty, 12, w, w), 0x1000, T3_TW];
+            assert_eq!(texel(st, w, w, 3, 5, &mem), Ok(vec![0xd000_0000 | (5 * stride + 3)]), "{ty} {w}");
+        }
+        // modes 5, 6 and 7, another size and mode 4 with another T0 stay open (E1055, Q177)
+        for st in [
+            [T0_REP | 5 << 6, t1(1, 12, 16, 16), 0x1000, T3_TW],
+            [T0_REP | 6 << 6, t1(4, 12, 16, 16), 0x1000, T3_TW],
+            [T0_REP | 7 << 6, t1(1, 12, 32, 32), 0x1000, T3_TW],
+            [T0_REP | 4 << 6, t1(1, 12, 8, 8), 0x1000, T3_TW],
+            [T0_REP | 4 << 6 | 1 << 12, t1(1, 12, 16, 16), 0x1000, T3_TW],
+        ] {
+            let e = format!("{:?}", texel(st, 16, 16, 1, 1, &mem).unwrap_err());
+            assert!(e.contains("Q177") || e.contains("T0 0x"), "{st:08x?} {e}");
+        }
     }
 }

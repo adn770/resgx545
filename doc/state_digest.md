@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-150 open: 140 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+149 open: 139 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -240,14 +240,12 @@ list.
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
 - `Q010` texture, low: what clears the colour-space words between jobs, given that a copy that does
   not load set 0 converts with the last loaded words, and the ... (E046, E271, E399)
-- `Q104` texture, low: does a mip chain of a 1D texture, of a texture with a side of 1 at level 0,
-  or of a format other than 32 bits read as the non-square chains ... (E276, E441, E562)
 - `Q114` texture, low: does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE
   value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: what do texture types 1, 3 and 4 read with u address modes 4 to 7 (at 16 x 16
-  in mode 4 a named dword past the texture with each byte ... (E1017, E1026, E1039)
+- `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
+  modes 4 to 7 at a held-out size (mode 4: 676 + (x mod 16) at ... (E1026, E1039, E1055)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -315,7 +313,7 @@ list.
 
 ## Recent records
 
-115 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+117 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
@@ -324,6 +322,12 @@ the claims are cut at 200 characters.
 - `E1056` isp, 2026-11-14: r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with
   one vertex depth at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and
   each made vertex is rounded ...
+- `E1055` texture, 2026-11-14: r15-tex stage ty on module B60AB0B4 (Q177; texture types 1, 3 and 4
+  in u modes 4 to 7, 15 probe fills at base 0 of a 32-page named scratch): both controls passed
+  (E1000's addr3-16x64-u4 and E1039's ...
+- `E1052` texture, 2026-11-14: r15-tex stage chain on module B60AB0B4 (Q104; 18 probe fills, the
+  scratch as the texture, dword i named 0xD0000000 | i, LOD (y >> 2) + c down the rows): both
+  controls passed (E562's shp-32x16-l5 and ...
 - `E1049` texture, 2026-11-14: r15-tw stage tw14 (14 probe fills on t14 with a 1 MiB scratch,
   E1047's tx_map form; safe class, no fault): T3 bit 14 on twiddled W x 32 32-bit textures at W 16,
   64 and 128, with u in (0, 1), (1, 2) ...
@@ -666,11 +670,12 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-62 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+63 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r15-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
+- `render/closing-r15-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -756,7 +761,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 28 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 29 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
