@@ -1842,7 +1842,7 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   whose zero is the carry-counted sum's and whose sign is always positive, each with the fields 0 to
   15 over six pairs under the `a` and the `o` join, 14 of 14 rows; the field value 0, both parts
   absent, is always true), with E499's and E529's tables replicated as controls. That no other bit
-  of a test word inverts a source is not run (Q137).
+  of a test word inverts a source is not run **[infer]** (E473, E499).
 - **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
   #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
   is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
@@ -5272,8 +5272,7 @@ open driver:
    fill's instances share (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
    the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
-   (Q127); whether another bit of a test word inverts a source (Q137); how long an `sa0` written
-   by `ima32` lasts (Q136) and why a write to `pa0` is lost (Q098).
+   (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost (Q098).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an

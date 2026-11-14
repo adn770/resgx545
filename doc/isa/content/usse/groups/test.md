@@ -83,7 +83,7 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   whose zero is the carry-counted sum's and whose sign is always positive, each with the fields 0 to
   15 over six pairs under the `a` and the `o` join, 14 of 14 rows; the field value 0, both parts
   absent, is always true), with E499's and E529's tables replicated as controls. That no other bit
-  of a test word inverts a source is not run (Q137).
+  of a test word inverts a source is not run **[infer]** (E473, E499).
 - **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
   #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
   is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`

@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-149 open: 139 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+148 open: 138 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -274,8 +274,6 @@ list.
   and constants other than c56, with cie on the same ... (E526, E528, E597)
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
   0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
-- `Q137` usse, low: do the rules of the test field of a class 9 test (zero part: bits 41 over 40;
-  sign part: bits 43 over 42; the parts ANDed under join `a`, ... (E529, E530, E1062)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it

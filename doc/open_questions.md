@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-149 open: 139 hw (high 18, medium 65, low 56, unrated 0), 9 fw, 1 kernel.
+148 open: 138 hw (high 18, medium 65, low 55, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -166,7 +166,6 @@
 - `Q134` (phase 11, hw, medium): which register does a client str change, and when is an idf drcN, bif required beyond an instance's own store (the host reading during the job, a texture fetch of the stored data) (E480, E481, E512, E513, E514, E533, E534)
 - `Q135` (phase 11, hw, low): what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates and constants other than c56, with cie on the same instruction, with .neg, in the dual-issue form and with the selector 3, and what does bit 46 of an ima32 word do to r14? (E493, E494, E495, E501, E525, E526, E528, E597)
 - `Q136` (phase 11, hw, low): how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and 0xff203040 mixture that pa0 reads in the first jobs of a table the colour left by the job before it? (E496, E484)
-- `Q137` (phase 11, hw, low): do the rules of the test field of a class 9 test (zero part: bits 41 over 40; sign part: bits 43 over 42; the parts ANDed under join `a`, E499, ORed with an absent part true under join `o`, E529) hold for the shifts, the 8-bit and 16-bit lane operations, the other forms of the bitwise group and the other classes' tests, with the o join and with a chan field enc[38:36] other than 0 (E530), and is a word with several conditions, greater than zero among them, usable from compiler output? (E499, E498, E529, E530, E1062)
 - `Q143` (phase 11, hw, medium): when does another instance's unfenced stad reach a load, what orders the tiles and quads (the left 32 columns before the right, a quad together), and when is an idf drcN, bif needed for another reader (the host during the job, a texture fetch of the stored data, a firmware task) (E512, E513, E514)
 - `Q146` (phase 11, hw, low): when does a load that is not waited for land, why did a load not waited for hold the loaded value after 40, 100 and 128 `nop` but not after 48 and 64, and in what order two loads and a `mov` to one register land (E517)
 - `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)
