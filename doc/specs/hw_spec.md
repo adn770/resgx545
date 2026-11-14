@@ -151,7 +151,9 @@ Key registers:
     no access passes cleanly, but the write is not refused as a read-only one is [infer: the
     last-page fault is a read by the writing unit after its writes].
   - `CACHECONSISTENT`: no change to a copy's texture read or a render's stream read of the host's
-    writes made after the map (both images exact).
+    writes made after the map (both images exact), nor to a ZLS depth load (no fault). A depth
+    load in the second render of a context reads what the host wrote to the buffer after the
+    first render loaded it, with the flag and without it: no stale data (E1046).
   - `EDMPROTECT`: a client write faults at the mapping's first page with `FAULT_TYPE` 2, nothing
     written: the transfer's and the 3D's pixel write (0xa0020) and the ZLS store (0xa0200,
     E965); the render's stream read and a copy's texture read of its `READONLY` source (PTE
@@ -159,7 +161,7 @@ Key registers:
   - `WRITEONLY` with `EDMPROTECT` (0x12) on a colour target faults as `EDMPROTECT` alone, at the
     first page before any pixel (E965).
   The rest (either flag alone on a texture read, on a depth load, on the TA's writes or the EDM's
-  buffers; `CACHECONSISTENT` on data cached before the host's write) is Q108.
+  buffers; `CACHECONSISTENT` on data cached within one render or by other units) is Q108.
 - **BIF.** The bus interface is the MMU's front end. With 16 directory lists and multiple
   memory contexts, `BIF_DIR_LIST_BASE0..15` hold up to 16 page directories at once, and
   `BIF_BANK0` says which list each requestor translates through (§5.5).

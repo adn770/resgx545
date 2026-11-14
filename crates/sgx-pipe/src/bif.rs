@@ -51,13 +51,15 @@ pub fn replay_word(int: u32, held: u32, list: u32, flushed: bool) -> Result<u32,
 /// A client access through a page whose PTE flags debugfs `vm_pte_flags` set (Q108): the
 /// transfer's or the 3D's pixel write (`FAULT_REQ` bit 5), the transfer's texture read of a copy's
 /// source (bit 1), the render's read of its GENERAL page, the VDM stream, indices and vertices
-/// (bit 3), the ZLS store of a depth-buffered render (bit 9, E965).
+/// (bit 3), the ZLS store of a depth-buffered render (bit 9, E965), the ZLS load of its depth
+/// buffer (E1046).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PteAccess {
     PixelWrite,
     TextureRead,
     StreamRead,
     ZlsStore,
+    ZlsLoad,
 }
 
 /// Where a PTE fault named its page: the mapping's first, or the last page the job wrote.
@@ -91,7 +93,10 @@ pub struct PteEnd {
 /// anything is drawn; CACHECONSISTENT changes nothing either read showed; EDMPROTECT faults a
 /// pixel write and the ZLS store at the first page (`FAULT_TYPE` 2) and lets the stream read and
 /// a copy's texture read of its READONLY source through (E964); WRITEONLY with EDMPROTECT faults
-/// a pixel write as EDMPROTECT alone (E965). Any other flag and access is refused (Q108).
+/// a pixel write as EDMPROTECT alone (E965). CACHECONSISTENT on the depth buffer the ZLS loads
+/// ends clean, and with it or without it the load of a second render on the context reads what
+/// the host wrote between the renders, never the first render's data (E1046, r14-bif, frozen). Any
+/// other flag and access is refused (Q108).
 pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
     use FaultPage::*;
     use PteAccess::*;
@@ -108,11 +113,12 @@ pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
         (0x4, PixelWrite) => fault(0x80020, First, 0),
         (0x2, ZlsStore) => fault(0x80200, LastWritten, 0),
         (0x8, StreamRead) | (0xc, TextureRead) | (0x10, StreamRead) | (0x14, TextureRead) => clean,
+        (0x8, ZlsLoad) => clean,
         (0x10, PixelWrite) | (0x12, PixelWrite) => fault(0xa0020, First, 0),
         (0x10, ZlsStore) => fault(0xa0200, First, 0),
         _ => {
             return Err(Outcome::unsupported(
-                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965)"),
+                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965, E1046)"),
                 &["Q108"],
             ));
         }
@@ -190,7 +196,7 @@ mod tests {
         for (row, pte, access, written, fault) in rows {
             assert_eq!(pte_access(*pte, *access), Ok(PteEnd { written: *written, fault: *fault }), "{row}");
         }
-        for access in [PixelWrite, TextureRead, StreamRead, ZlsStore] {
+        for access in [PixelWrite, TextureRead, StreamRead, ZlsStore, ZlsLoad] {
             assert_eq!(pte_access(0, access), Ok(PteEnd { written: true, fault: None }));
         }
     }
@@ -219,6 +225,13 @@ mod tests {
     }
 
     #[test]
+    fn cacheconsistent_on_the_zls_load_ends_clean_as_the_r14_bif_rows() {
+        // E1046 (r14-bif stage refill, frozen): CACHECONSISTENT on the depth buffer the ZLS loads
+        // (rf-cc-keep, rf-cc-refill, rf-c-unread): no fault, both renders' loads read
+        assert_eq!(pte_access(0x8, PteAccess::ZlsLoad), Ok(PteEnd { written: true, fault: None }));
+    }
+
+    #[test]
     fn pte_flags_no_row_ran_are_refused() {
         use PteAccess::*;
         let refused = |p, a| matches!(pte_access(p, a), Err(Outcome::Unsupported { .. }));
@@ -228,6 +241,8 @@ mod tests {
         assert!(refused(0x12, StreamRead), "two knob flags together on a read: not run");
         assert!(refused(0x1a, PixelWrite), "three flags together: not run");
         assert!(refused(0x8, ZlsStore), "CACHED on the ZLS store: not run");
+        assert!(refused(0x2, ZlsLoad), "WO on the ZLS load: not run");
+        assert!(refused(0x10, ZlsLoad), "EDMPROT on the ZLS load: not run");
         assert!(refused(0x4, StreamRead), "READONLY on a read: not in these rows");
         assert!(refused(0x1, PixelWrite), "VALID is no flag");
     }

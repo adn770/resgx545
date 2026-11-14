@@ -9,8 +9,11 @@
 //! fault word, the page it names (the mapping's first, or the last page the access wrote: the
 //! fill's last row, the target's last page, the ZLS store window's last page, 8 tiles of 512
 //! dwords at 64 x 64, E465) and `SB`, and, for the pixel accesses, whether the image is exact.
-//! A row the model has no access for (the depth buffer, which the clearing control does not
-//! load; the tool's isolation) is refused, never a pass. Each table's `replay` names
+//! The r14-bif refill table (`vectors/closing/r14-bif/pte/refill.table.json`, E1046) adds the ZLS
+//! load: CACHECONSISTENT on the depth buffer of a control word that loads it (0x0017500e); its
+//! rows draw nothing by design (the depth test never), so a clean end is their match. A row the
+//! model has no access for (the depth buffer, which the clearing control does not load; the
+//! tool's isolation) is refused, never a pass. Each table's `replay` names
 //! `the_model_replays_every_modelled_row_of_the_pte_tables`. Skips without the data, and fails
 //! with `RESGX545_REQUIRE_DATA` set.
 
@@ -22,6 +25,7 @@ use sgx_sim::json::{Json, parse};
 const TABLES: &[(&str, usize, usize)] = &[
     ("vectors/closing/r9-faults/pte/xf2.table.json", 12, 11),
     ("vectors/closing/r9-faults/pte/tri2.table.json", 7, 6),
+    ("vectors/closing/r14-bif/pte/refill.table.json", 6, 6),
 ];
 const NAME: &str = "the_model_replays_every_modelled_row_of_the_pte_tables";
 const PAGE: u64 = 0x1000;
@@ -59,6 +63,8 @@ fn access(args: &str, addr: u64) -> Result<(PteAccess, Option<u64>), &'static st
         ("tri", 0x3e00_1000, false) => Ok((PteAccess::PixelWrite, Some(addr + 3 * PAGE))),
         ("tri", 0x3e00_0000, _) => Ok((PteAccess::StreamRead, None)),
         ("tri", 0x3e01_5000, true) => Ok((PteAccess::ZlsStore, Some(addr + 4096 * 4 - PAGE))),
+        // E1046: a control word with the load bits (0x0017500e, either render's) loads the buffer
+        ("tri", 0x3e00_1000, true) if args.contains(" 0x0017500e") => Ok((PteAccess::ZlsLoad, None)),
         ("tri", 0x3e00_1000, true) => Err("the depth buffer: the clearing control 0x0017100c loads nothing"),
         _ => Err("no PTE knob access the model names"),
     }
@@ -70,7 +76,10 @@ fn replay(row: &Json) -> Row {
     if args.starts_with("isolation") {
         return Row::Refused("the tool's isolation: no PTE knob");
     }
-    let exact = row.get("diff").arr().first().and_then(Json::num) == Some(0.0);
+    // the depth test never (`--poke blk:1=0x00000200`, E467, E1046) draws nothing by design: the
+    // image is no reading of the access, the job's clean end is
+    let never = args.contains("--poke blk:1=0x00000200");
+    let exact = never || row.get("diff").arr().first().and_then(Json::num) == Some(0.0);
     let id = row.get("id").str().unwrap_or("?");
     let Some(l) = lines.first() else {
         // a knob-free control (or the address alone): no flags, the model's clean end
@@ -90,7 +99,7 @@ fn replay(row: &Json) -> Row {
     };
     let faults = row.get("faults").arr();
     match (fault, faults.first()) {
-        (None, None) if exact || acc == PteAccess::ZlsStore => Row::Matched,
+        (None, None) if exact || acc == PteAccess::ZlsStore || acc == PteAccess::ZlsLoad => Row::Matched,
         (Some(f), Some(got)) => {
             let (int, at) = (got.arr()[0].hex().unwrap() as u32, got.arr()[1].hex().unwrap());
             let page = match f.page {
@@ -149,4 +158,17 @@ fn each_table_names_this_test_as_its_replay() {
         assert_eq!(r.get("status").str(), Some("replayed"), "{table}");
         assert!(r.get("test").str().unwrap().ends_with(NAME), "{:?}", r.get("test").str());
     }
+}
+
+#[test]
+fn a_fault_on_the_zls_load_is_a_mismatch_and_the_clearing_control_is_refused() {
+    let row = |ctl: &str, faults: &str| {
+        parse(&format!(
+            r#"{{"id": "x", "args": "tri -n 2 --depth --depth-ctl {ctl} --depth-store --poke blk:1=0x00000200",
+               "pte_lines": [["0x3e001000", "0x14000", "0x8"]], "faults": {faults}, "diff": [1953, 2048]}}"#
+        ))
+    };
+    assert_eq!(replay(&row("0x0017500e", "[]")), Row::Matched);
+    assert!(matches!(replay(&row("0x0017500e", r#"[["0x80200", "0x3e001000"]]"#)), Row::Mismatched(_)));
+    assert!(matches!(replay(&row("0x0017100c", "[]")), Row::Refused(_)));
 }

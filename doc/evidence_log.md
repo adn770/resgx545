@@ -8592,13 +8592,24 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   model, the other nine jobs never ran).
   *dpm; HW; data: `render-closing-r14-dpm:out/20261114-052638/pr3/`,
   `render-closing-r14-dpm:fold/`.*
+- `E1046` R14-bif stage refill (Q108's stale-data clause; E1029's zb-c-id depth form, 64 x 32, depth
+  test never so the store holds the load, run twice on one context, 6 jobs, every control passed):
+  when the host rewrites the depth buffer between the two renders (tri --refill 2:depth=0x3f400000,
+  after render 1 loaded the buffer's index fill), render 2's ZLS load reads the host's new value in
+  all 2048 stored dwords, with CACHECONSISTENT (PTE flag 0x8) on the depth buffer's mapping and
+  without it; no dword of render 1's load came back; CACHECONSISTENT on the loaded buffer ends clean
+  (no fault) and, with no refill, changes nothing (render 2 stores the index as render 1 did);
+  frozen verdicts 'H-CC-COHERENT (1 of 1 rows decided)', 'H-NC-COHERENT (1 of 1 rows decided)',
+  'H-CC-NOOP (1 of 1 rows decided)' (H-CC-STALE and H-NC-STALE '0 held, 1 FAILED').
+  *bif; HW, infer; data: `render-closing-r14-bif:out/20261114-055414/refill/`,
+  `render-closing-r14-bif:fold/`, `vectors-closing-r14-bif-pte`.*
 
 ## By unit
 
 ### bif
 
 Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
-E945, E946, E964, E965, E980.
+E945, E946, E964, E965, E980, E1046.
 
 ### dpm
 
