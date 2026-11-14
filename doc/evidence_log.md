@@ -8552,6 +8552,39 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *vdm; HW, infer; data: `render-closing-r13-flag:out/20261113-220930/f3/`,
   `render-closing-r13-flag:fold/`.*
 
+### 2026-11-14
+
+- `E1038` r14-tex stage srgb4 on module B60AB0B4 (Q282; sRGB, T0 bit 27, 13 probe fills): the three
+  controls passed (E723's g-bl-st-a, r13-tex's srgb3-tri and srgb3-x1's channel 0 read through the
+  second output register, their kept images, 2048 of 2048); 'TRI-G15 (heldout) (7 of 7 rows
+  decided)': a trilinear sRGB sample (smp2dreplace, T0 bit 9) lerps the two levels' bilinear halves
+  (each E1025's flushed stage rule) with both floored to 2^-14 of the larger one's leading bit, the
+  lerp exact at f/64, rounded nearest with ties up and a result below 2^-14 flushed to +0, on every
+  pixel of a 16 x 16 counting chain at LOD 1.125, 1.5, 1.75, 1.984375, 0.25 and 1.2 and of a dark 4
+  x 4 chain at LOD 0.125 (fitted on E1025's row before the run, frozen by hash); E1025's post hoc
+  16-bit grid failed 3 rows ('TRI-RNTU ... 4 held, 3 FAILED'), the unflushed form the dark row
+  ('TRI-G15-NF ... 6 held, 1 FAILED'), every QN- form at LOD 1.2 (f = 12, the fraction floored, 0 of
+  2048); texel bytes 2 and 3 (the sample's second register) on the x stage alone, the y stage alone
+  and both: byte 2 by bytes 0 and 1's rule ('B2-FTZ-OUT (heldout) (3 of 3 rows decided)'), byte 3
+  decoded b / 255 (not sRGB) and filtered by the same stage rule ('A-LIN (heldout) (3 of 3 rows
+  decided)'; A-SRGB 0 and A-BYTE 207 to 225 of 2048).
+  *texture; HW, infer; data: `render-closing-r14-tex:out/20261114-054258/srgb4/`,
+  `render-closing-r14-tex:fold/`, `vectors-closing-r14-tex-pixels`.*
+- `E1039` r14-tex stage addr5 on module B60AB0B4 (Q177; 14 probe fills of twiddled 32-bit textures):
+  both controls passed (E1000's 16 x 64 mode 4 and E565's bd-uv5, their kept images, 2048 of 2048);
+  with u and v in mode 5 swept past both ends at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and
+  256 x 32, 'C-LOG4 (heldout) (6 of 6 rows decided)': the corner dwords read 4 log2 max(W, H) + 0
+  (above left), 1 (above right), 2 (below left), 3 (below right) texels past the base (12, 20, 28,
+  28, 28, 32), E1026's post hoc form frozen before the run, against C-SAT24 (2 held, 4 FAILED),
+  C-FLOOR16 (5 held, 1 FAILED at 8 x 8) and E1026's failed forms; 'IN-M', 'LR-M' and 'AB-M (heldout)
+  (6 of 6 rows decided)'; texture types 1, 3 and 4 (E567's 16 x 16 programs, their mode 0 runs
+  replicated, 'H-E567 (replicate) (3 of 3 rows decided)') with u mode 4 read neither the mode 0
+  image nor it plus 180 ('T-MODE0 ... 0 held, 3 FAILED', 'T-OFFSET ... 0 held, 3 FAILED'): post hoc
+  every pixel is a named dword past the texture with each byte halved (rounded up), the same on
+  every row [infer].
+  *texture; HW, infer; data: `render-closing-r14-tex:out/20261114-054258/addr5/`,
+  `render-closing-r14-tex:fold/`, `vectors-closing-r14-tex-pixels`.*
+
 ## By unit
 
 ### bif
@@ -8637,7 +8670,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039.
 
 ### transfer
 

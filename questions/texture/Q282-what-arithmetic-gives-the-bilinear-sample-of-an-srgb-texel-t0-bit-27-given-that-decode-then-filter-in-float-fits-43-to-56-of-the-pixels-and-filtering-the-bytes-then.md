@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E723", "E720", "E976", "E982", "E1004", "E1016", "E1025"]
+evidence = ["E723", "E720", "E976", "E982", "E1004", "E1016", "E1025", "E1038"]
 terms = ["T0.BIT27"]
 +++
 E723: g-bl-st-a 1147 and g-bl-st-b 876 of 2048 for decode then filter, 0 for filter then decode.
@@ -86,3 +86,15 @@ channels, negative values, other filters)". Answered: the y stage's own result i
 5.69e-5 and 6.16e-5 (a threshold at 6.4e-5 failed every row; 2^-14 the only half boundary inside
 [infer]), both channels and both directions of every stage's 1/64 weights hold; negative values are
 void [infer]. What stays: the trilinear level lerp and bytes 2 and 3.
+
+Note 2026-11-14 (round 14, session r14-tex, decision R14-1 a; E1038). Both open clauses are
+decided by held-out rows with passing controls: a trilinear sRGB sample lerps the two levels'
+bilinear halves by the LOD's fraction in 64ths, floored, with both halves floored to 2^-14 of the
+larger one's leading bit (a 15-bit grid, fitted on E1025's row before the run, frozen by hash),
+the lerp exact, rounded to nearest with ties up and flushed below 2^-14, on every pixel of seven
+rows (two chains, levels 0 to 2, fractions 8 to 63; E1025's 16-bit grid failed three, the
+unflushed form the dark row, the rounded fraction the LOD 1.2 row); texel bytes 2 and 3 come in the
+sample's second register, byte 2 decoded and filtered as bytes 0 and 1, byte 3 decoded linearly (b
+/ 255) and filtered by the same stage rule, on three bilinear rows. Negative values are void
+[infer] (E1025). sgx-sim models the level lerp; the second register stays unmodelled. Retirement
+proposed per R14-6 a (the lead confirms).

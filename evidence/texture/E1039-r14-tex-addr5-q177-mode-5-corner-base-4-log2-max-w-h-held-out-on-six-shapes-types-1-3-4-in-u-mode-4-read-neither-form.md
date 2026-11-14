@@ -1,0 +1,45 @@
++++
+id = "E1039"
+claim = "r14-tex stage addr5 on module B60AB0B4 (Q177; 14 probe fills of twiddled 32-bit textures): both controls passed (E1000's 16 x 64 mode 4 and E565's bd-uv5, their kept images, 2048 of 2048); with u and v in mode 5 swept past both ends at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and 256 x 32, 'C-LOG4 (heldout) (6 of 6 rows decided)': the corner dwords read 4 log2 max(W, H) + 0 (above left), 1 (above right), 2 (below left), 3 (below right) texels past the base (12, 20, 28, 28, 28, 32), E1026's post hoc form frozen before the run, against C-SAT24 (2 held, 4 FAILED), C-FLOOR16 (5 held, 1 FAILED at 8 x 8) and E1026's failed forms; 'IN-M', 'LR-M' and 'AB-M (heldout) (6 of 6 rows decided)'; texture types 1, 3 and 4 (E567's 16 x 16 programs, their mode 0 runs replicated, 'H-E567 (replicate) (3 of 3 rows decided)') with u mode 4 read neither the mode 0 image nor it plus 180 ('T-MODE0 ... 0 held, 3 FAILED', 'T-OFFSET ... 0 held, 3 FAILED'): post hoc every pixel is a named dword past the texture with each byte halved (rounded up), the same on every row [infer]"
+unit = "texture"
+method = "r14-tex (render/closing-r14-tex), round 14's session r14-tex (decision R14-1 (a): safe class only; the round 14 ranking plan, sections 2 and 3, stage addr5), built on the session kit (resgx545 main dddadbd, data 3309b5fd9) and frozen before the run, dataset render-closing-r14-tex; attempt out/20261114-054258 (scores score-addr5.txt); run by the lead with the kit's driver (log fold/run-r14t.log), 2026-11-14, on the laptop (host cedar, kernel 7.3.0-resgx545, module srcversion B60AB0B475DD1E8972419B5, fork 2a650d74, loaded = installed, the kit's preflight, stock firmware), tool ~/sgxfive-test-t10 (sha256 9bedc2d6db70b2691698478572e311cf2b9b54acfaf8d714ed4db47852e322eb, source resgx545 a581c06), every row replayed on the library mock built from its source before the freeze (each a probe of a program of ours, 'program not simulated'); a debugfs reset and the kit's health check around each job, no knob written; no stop, fault, hang or lead decision. The frozen scorer re-run on the kept files gave output byte-identical to the kept score files (fold/reproduce.out); no post-run fix. Stage addr5 (14 jobs, probe --temps 32 --coords --pixels, the textures at page 12 of a 32-page named scratch): addr5-ctl, addr5-bduv5 (controls), addr5-8x8-uv5, 32x32, 128x32, 32x128, 128x128, 256x32 (held out), addr5-ty1-u0, ty3-u0, ty4-u0 (E567's rt1-2d, ty3-2d, rt4-2d rerun, replicates) each followed by its u mode 4 row (held out); frozen rules: gen/addr5.py C-LOG4, C-SAT24, C-FLOOR16, CO-WH2, CO-12M4, CO-12W4, r13-tex's IN / LR / AB with M, W, H, and the type rows' T-MODE0 and T-OFFSET scored on the reference's image of the same run. Post hoc (after the score was read): fold/types_post.py and its output. freezes: FROZEN.sha256 e49eeb9efc93e74f34a118cec674b04f6f58abbe37c3c600dbe987f80cd3e15f (287 files), PREDICTIONS.sha256 e55fd102e29b393caa8ed96ae09744516d0befee1ea4a087105e5a68fff1157d (168 files); FROZEN.commits pins: resgx545:tools/closing/kit/session.py at dddadbdd, resgx545:tools/closing/kit/lib_kit.sh at dddadbdd, resgx545:tools/closing/kit/run_stage.sh at dddadbdd, resgx545:tools/closing/kit/kitscore.py at dddadbdd, resgx545:tools/closing/kit/fake/sudo at dddadbdd, resgx545:tools/closing/kit/fake/timeout at dddadbdd, resgx545:tools/closing/kit/fake/df at dddadbdd, resgx545:tools/closing/kit/fake/modinfo at dddadbdd, resgx545:tools/closing/kit/fake/sha256sum at dddadbdd, resgx545:tools/closing/kit/fake/tool.sh at dddadbdd, resgx545:tools/closing/kit/fake/tool.py at dddadbdd, resgx545:tools/closing/kit/fake/ssh.py at dddadbdd, resgx545:tools/closing/scorekit.py at dddadbdd, resgx545:tools/closing/sessioncheck.py at dddadbdd, data:cited/closing11/plan/c2-texture/rule_b.py at 3309b5fd, data:render/closing-r10-tex/bins/addr3-16x64-u4.bin at 3309b5fd, data:render/closing-r10-tex/bins/srgb2-ctl.bin at 3309b5fd, data:render/closing-r10-tex/out/20261113-102730/addr3/addr3-16x64-u4.txt.gz at 3309b5fd, data:render/closing-r13-tex/bins/addr4-64x16-uv5.bin at 3309b5fd, data:render/closing-r13-tex/bins/srgb3-tri.bin at 3309b5fd, data:render/closing-r13-tex/bins/srgb3-x1.bin at 3309b5fd, data:render/closing-r13-tex/out/20261113-214825/addr4/addr4-16x64-uv5.txt.gz at 3309b5fd, data:render/closing-r13-tex/out/20261113-214825/addr4/addr4-64x16-uv5.txt.gz at 3309b5fd, data:render/closing-r13-tex/out/20261113-214825/srgb3/srgb3-tri.txt.gz at 3309b5fd, data:render/closing-r13-tex/out/20261113-214825/srgb3/srgb3-x1.txt.gz at 3309b5fd, data:texture/p1132-recomp/raw/tx-border/bins/tx-border__17.bin at 3309b5fd, data:texture/p1132-recomp/raw/tx-types-risky/bins/tx-types-risky__0.bin at 3309b5fd, data:texture/p1132-recomp/raw/tx-types-risky/bins/tx-types-risky__6.bin at 3309b5fd, data:texture/p1132-recomp/raw/tx-types/bins/tx-types__10.bin at 3309b5fd, data:texture/p1132/tx-border/bd-uv5.txt.gz at 3309b5fd, data:texture/p1132/tx-types-risky/rt1-2d.txt.gz at 3309b5fd, data:texture/p1132/tx-types-risky/rt4-2d.txt.gz at 3309b5fd, data:texture/p1132/tx-types/ty3-2d.txt.gz at 3309b5fd, data:texture/p1141/gen/cases.json at 3309b5fd, data:texture/p1141/out-hw/p1141tex-dumps/tex-d-t0b27/g-bl-st-a.txt.gz at 3309b5fd, data:texture/p1141/out-hw/p1141tex-dumps/tex-d-t0b27/g-bl-st-b.txt.gz at 3309b5fd, data:texture/p1141/out-hw/p1141tex-dumps/tex-d-t0b27/g-st8x4-r11.txt.gz at 3309b5fd, data:texture/p1141/out-hw/p1141tex-dumps/tex-d-t0b27/g-tw8x8-r11.txt.gz at 3309b5fd, data:texture/p1141/support/build.py at 3309b5fd, data:texture/p1141/support/specs.json at 3309b5fd, data:texture/p1141/support/texmodel.py at 3309b5fd, data:texture/p1141/templates/tx_map.s at 3309b5fd, data:texture/p1141/templates/tx_map_r11.s at 3309b5fd, a581c06bb24d2f77e03d9b64f7ca1b2d5487b59f at built; tools: TOOLSRC.sha256: 23e1fa76d10bb4e7cfadb0985ac110d4681e4113f2f55f17dd81bdd4b2fe183b a581c06bb24d2f77e03d9b64f7ca1b2d5487b59f:userspace/libsgxfive/tools/sgxfive-test.c; the runner expects: run/session.env SRCV_EXPECT=B60AB0B475DD1E8972419B5; stops in the logs: none; lead decisions in the logs: none"
+tiers = ["HW", "infer"]
+date = "2026-11-14"
+data = ["render-closing-r14-tex:out/20261114-054258/addr5/", "render-closing-r14-tex:fold/", "vectors-closing-r14-tex-pixels"]
+terms = ["T0.ADDRMODE_U", "T0.ADDRMODE_V"]
++++
+**What ran.** E1026 held out the sides, above and below of mode 5 with max(W, H) at two
+shapes, and the corner base no frozen form gave; post hoc 4 log2 max(W, H) fitted its four kept
+shapes (16, 20, 24, 24). Stage addr5 ran u and v in mode 5 swept past both ends at six new shapes,
+so every region holds pixels, with the corner base frozen as 4 log2 M against a cap at 24, a floor
+at 16 and E1026's three failed forms, and the regions as r13-tex froze them. Types 1, 3 and 4 ran
+E567's 16 x 16 programs at mode 0 (replicates) and the same programs with u mode 4 (32 pages).
+
+**Frozen verdict (as printed).** `out/20261114-054258/score-addr5.txt`: "CONTROL addr5-ctl: H-E1000
+2048/2048 pixels: PASS", "CONTROL addr5-bduv5: H-E565 2048/2048 pixels: PASS"; "SUMMARY: addr5:
+C-LOG4 (heldout) (6 of 6 rows decided)"; "C-SAT24 (heldout) is not supported: 2 held, 4 FAILED";
+"C-FLOOR16 ... 5 held, 1 FAILED"; "CO-WH2 ... 0 held, 6 FAILED"; "CO-12M4 ... 1 held, 5 FAILED"
+(CO-12W4 alike); "IN-M (heldout) (6 of 6 rows decided)", the same for LR-M and AB-M; "H-E567
+(replicate) (3 of 3 rows decided)"; "T-MODE0 (heldout) is not supported: 0 held, 3 FAILED",
+"T-OFFSET (heldout) is not supported: 0 held, 3 FAILED".
+
+**Results [HW].** Corners read 12 to 15 at 8 x 8 (1344 pixels), 20 to 23 at 32 x 32, 28 to 31 at
+128 x 32, 32 x 128 and 128 x 128, 32 to 35 at 256 x 32 (512 each), every corner pixel. The inside,
+sides, above and below read the M forms on every pixel of every shape. Types 1 and 3 with u mode 4
+read the same image, 9 distinct values, every pixel 0x68xxxxxx and the 32 rows alike; type 4 another
+of 9 values. Post hoc (fold/types_post.out) each pixel is a named dword with each byte halved,
+rounded up (a 50/50 byte blend with zero [infer]): names 675 to 691 (types 1 and 3) and 659 to 675
+(type 4), rising along x, 2048 of 2048 pixels on each row.
+
+**What it shows.** Past the texture, mode 5's corner dwords start at 4 log2 max(W, H) texels past
+the
+base, the four corners in the order above left, above right, below left, below right, held out on
+six
+shapes of both orientations from 8 to 256 a side; with E1026, every region of mode 5 outside the
+texture follows max(W, H) on 32-bit twiddled textures. Types 1, 3 and 4 do not take u mode 4 as
+the twiddled type (no offset of 180 on their own reads) nor as the strided one (not mode 0): their
+reads leave the texture and come back as a byte-wise half [infer].
+
+**What it does not show.** Why these constants (the held-out formulas are 8 M + 52, 5 M, 6 M, 7 M
+and 4 M + 52 and 4 log2 M); what types 1, 3 and 4 read in mode 4 (fitted post hoc on three rows of
+one size, the halving not explained) or in modes 5 to 7; formats other than 32-bit in mode 5.
