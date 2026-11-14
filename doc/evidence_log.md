@@ -4435,28 +4435,29 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   0xc or 0x4 and no second context, 3 of 3 runs identical; read after the tool exits, page 6 holds 0
   non-zero dwords after the second context's run with flag 0xc and with flag 0x4, 2 runs of each, 4
   of 4, the cause (the creation, the render or the close of the second context) not separated for
-  this owner, whose pages were not copied before the close; pages 1 to 3 (the control, OTPM and
-  state pages) hold no owner word at all with either flag, so the owner words of the 64x64 owner are
-  not seen here) and with flag 0x4 alone 5 dwords (0x200057, 0x2000ad, 0x20007e, 0x2000c0, 0x200087)
-  are written into page 4, 2 of 2 (nothing in page 4 with flag 0xc); closing the partial owner
-  without keeping it makes the second context's render fault (BIF fault status 0x90400 at
-  0x3241100f, `job faulted, context lost`, recovered by a reset, flags 0xc and 0x4, 2 of 2, the
-  address one page below the ctx word 0x32412000 of the job's words, so the second context's render
-  reaches memory next to the closed first context's, a read or a store not shown); for a 64x64 owner
-  the kept words land by the end of the second context's render, not at the close (a copy of
-  render_kept made after that render and before the close equals the copy made after the tool exits:
-  75 non-zero dwords, words 0x00200047, 0x04000417, 0x00020001 and 2 in pages 1 to 3, flag 0xc; with
-  flag 0x4 alone the pages 1 to 3 are 0 in both copies, 71 non-zero dwords elsewhere, 2 of 2 runs
-  each); the words do not follow the buffer: 0x04000417 at P = 0x422, 0x300, 0x200 and 0x100 (4 of
-  4), 0 in page 2's word 0 when the first context rendered 2 or 3 times (0x00200047 and 0x00020001,
-  2 stay; 2 of 2 each, repeated), and the first word follows the target size (0x00200047 at 64x64,
-  0x00200044 at 64x32, 0x00200042 at 32x32); the state page's first words are (count << 16 | head)
-  and tail of the owner's 2 pages in all 8 first-context jobs; junk written into the state page
-  (page 6 of a 1024x768 context) between a geometry kick that overflows and the next render (zeros,
-  and the ramp 0xa5000000 + i, at 0x30 and 0x28 pages, 4 jobs) leaves the page table walk and the
-  image identical to a control without it (4 of 4); the next render's own partial render stores the
-  lists over the page's first 34 dwords, so a load of the lists themselves is not separated, and the
-  other 990 of the 1024 ramp dwords stay after the render with no effect on it.
+  this owner, whose pages were not copied before the close; the control and OTPM pages (pages 4 and
+  5 of a 1024x768 context; pages 1 to 3 are its tail pointers) hold no owner word with flag 0xc, so
+  the owner words of the 64x64 owner are not seen here) and with flag 0x4 alone 5 dwords (0x200057,
+  0x2000ad, 0x20007e, 0x2000c0, 0x200087) are written into page 4, the control page, 2 of 2 (nothing
+  in it with flag 0xc); closing the partial owner without keeping it makes the second context's
+  render fault (BIF fault status 0x90400 at 0x3241100f, `job faulted, context lost`, recovered by a
+  reset, flags 0xc and 0x4, 2 of 2, the address one page below the ctx word 0x32412000 of the job's
+  words, so the second context's render reaches memory next to the closed first context's, a read or
+  a store not shown); for a 64x64 owner the kept words land by the end of the second context's
+  render, not at the close (a copy of render_kept made after that render and before the close equals
+  the copy made after the tool exits: 75 non-zero dwords, words 0x00200047, 0x04000417, 0x00020001
+  and 2 in pages 1 to 3, flag 0xc; with flag 0x4 alone the pages 1 to 3 are 0 in both copies, 71
+  non-zero dwords elsewhere, 2 of 2 runs each); the words do not follow the buffer: 0x04000417 at P
+  = 0x422, 0x300, 0x200 and 0x100 (4 of 4), 0 in page 2's word 0 when the first context rendered 2
+  or 3 times (0x00200047 and 0x00020001, 2 stay; 2 of 2 each, repeated), and the first word follows
+  the target size (0x00200047 at 64x64, 0x00200044 at 64x32, 0x00200042 at 32x32); the state page's
+  first words are (count << 16 | head) and tail of the owner's 2 pages in all 8 first-context jobs;
+  junk written into the state page (page 6 of a 1024x768 context) between a geometry kick that
+  overflows and the next render (zeros, and the ramp 0xa5000000 + i, at 0x30 and 0x28 pages, 4 jobs)
+  leaves the page table walk and the image identical to a control without it (4 of 4); the next
+  render's own partial render stores the lists over the page's first 34 dwords, so a load of the
+  lists themselves is not separated, and the other 990 of the 1024 ramp dwords stay after the render
+  with no effect on it [corrected 2026-11-14, see Correction].
   *dpm; HW, infer; data: `dpm-partial-model-batch`.*
 - `E650` A model of the vertex side and the TA written for the pipeline simulator (sgx-pipe vdm,
   vtx, mte, ta, render: the VDM stream parsed, each state block and each vertex of a vertex task run
@@ -9043,6 +9044,29 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   completed both.
   *vdm; HW; data: `render-closing-r18-flag:out/20261114-133536/h2/`,
   `render-closing-r18-flag:fold/`.*
+- `E1084` r19-own stage own2 (6 jobs, t18b, render_keep armed, 1024x768 owners kept by the first
+  context's early close; t18b copied the kept TA data after the close and after the second context's
+  render): the owner's state page (page 6; 0x12000 at 2048x1536) held its lists after the close (18
+  non-zero dwords at P 0x28 in 3 of 3 rows, flags 0xc and 0x4; 24 at 0x24; 10 at 2048x1536 and 0x28;
+  20 at 0x30) and was zero after the second context's render in 5 of 6 rows (P 0x28 x3, 0x24,
+  2048x1536), so the zero E631 read after the tool exits is made between the close and the end of
+  that render, not by the close or the second context's creation; at P 0x30 (held out) the render
+  left 10 other non-zero dwords there instead (lists of other pages and the global list 0x00010001,
+  1) and 4 words 0x002002xx in the control page; frozen: 'H-RSTORE ... is not supported: 5 held, 1
+  FAILED, 0 cannot tell of 6' (o2-p30 the FAILED row, H-LATE's '>0' by count); the control o2-c-a
+  passed (overflow 1, 2 copies, 69632 bytes).
+  *dpm; HW, infer; data: `render-closing-r19-own:out/20261114-223625/own2/`,
+  `render-closing-r19-own:fold/`.*
+- `E1085` r19-own stage own1 (Q191) decided nothing: on its first flag-0xc row (o1-c-a, 64x64, P
+  0x422) t18b's copy of render_kept right after the first context's early close read 0 bytes
+  although the kernel logged the context closed and kept (slot 0, TA data 0x20000000), and the copy
+  after the second context's render read 24576 bytes with the four owner words 0x00200047,
+  0x04000417, 0x00020001, 2 (75 non-zero dwords, as E631's ow-kcopy-c); hook_check stopped the stage
+  (1 of 2 copies) and the 4 other rows did not run; the control o1-4 (flag 0x4) passed: both copies
+  24576 bytes and no owner word in either; frozen: 'own1a: cannot tell: no row decided', 'own1b:
+  cannot tell: no row decided'.
+  *dpm; HW, infer; data: `render-closing-r19-own:out/20261114-223625/own1/`,
+  `render-closing-r19-own:fold/`.*
 
 ## By unit
 
@@ -9059,7 +9083,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057.
+E1019, E1032, E1044, E1057, E1084, E1085.
 
 ### edm
 

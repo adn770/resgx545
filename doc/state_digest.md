@@ -20,7 +20,7 @@ list.
 - `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
   macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
-  page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
+  page (0x04000417) and state page (0x00020001, 2) after the ... (E631, E1084, E1085)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
   straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E963, E1009, E1013)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
@@ -52,7 +52,7 @@ list.
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q192` dpm, medium: does the store that follows the next context's render replace the state page a
-  partial-render owner left (18 non-zero dwords after its ... (E464, E591, E631)
+  partial-render owner left (18 non-zero dwords after its ... (E591, E631, E1084)
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it
@@ -303,9 +303,15 @@ list.
 
 ## Recent records
 
-140 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+142 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1085` dpm, 2026-11-14: r19-own stage own1 (Q191) decided nothing: on its first flag-0xc row
+  (o1-c-a, 64x64, P 0x422) t18b's copy of render_kept right after the first context's early close
+  read 0 bytes although the kernel ...
+- `E1084` dpm, 2026-11-14: r19-own stage own2 (6 jobs, t18b, render_keep armed, 1024x768 owners kept
+  by the first context's early close; t18b copied the kept TA data after the close and after the
+  second context's render): the ...
 - `E1076` vdm, 2026-11-14: r18-flag stage h2 (8 jobs, t10, the kit's noreset; 2 planned hangs): with
   block 1 at VDM_STATE1 bits 11:9 = 6 (E700's M1: add 4 a job), a job after a reset then two noreset
   jobs completed, completed ...
@@ -729,10 +735,12 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-72 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+73 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r19-own`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
 - `render/closing-r18-flag`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
 - `render/closing-r17-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -834,6 +842,7 @@ srcversion, fork tip, laptop tools.
 - fork pin (`tools/forkpin.py`): 456404fcffe5
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 1 sessions
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
@@ -894,4 +903,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-41 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+43 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

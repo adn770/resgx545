@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E458", "E462", "E591", "E631"]
+evidence = ["E310", "E458", "E462", "E591", "E631", "E1084", "E1085"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_STATE_BASE0", "CR_DPM_CONTROL_BASE", "ta3d_ctl"]
 +++
 
@@ -37,3 +37,12 @@ its state page is zero after the second context's run (2 runs each, Q192). Not s
 kick against the render's end (the optional kernel switch K1), a load task reading the words back,
 why a partial owner leaves no owner words, what the 5 words of page 4 are, and whether anything
 holds for another size or P (the partial owner was run at one size and one P).
+
+Round 19 (E1085, E1084), not narrowed. The kick-against-close test was not decided: on its first
+row the copy of the kept 64x64 owner right after the close read 0 bytes (the context was parked
+after the tool read, [infer] a race on the context's last reference) and the stage stopped; the
+copy after the second render repeated E631's four words (1 of 1). E631's "page 4" words of the
+partial owner with flag 0x4 are in its control page (page 4 of a 1024x768 context; E631's
+correction), and E1084 saw them again after the second render (o2-4), and at P 0x30 four other
+0x002002xx words there with flag 0xc. Still open: (a) close against render, (b) the 1024x768
+owner's state words against a constant, (c) a load reading them back.
