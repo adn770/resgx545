@@ -7,7 +7,9 @@
   --tadata-fill-render N:PAGE:VALUE[:ramp]: debugfs tadata_fill written just before render N, so
       that a page of the TA data can be changed between a geometry kick and the final render;
   --kept-copy DIR (tri --ctx2): debugfs render_kept copied to DIR/kept.N.bin after the second
-      context's render N and before any close.
+      context's render N and before any close, and with --close-first-early to
+      DIR/kept.closed.N.bin right after the first context's close (round 18, Q192);
+  --kpoke-render N:rd:11=V: the render details' ZLS control word of render N's kick (Q088).
 Run through `make check`, which builds the binary and sets SGXFIVE_TEST."""
 from __future__ import annotations
 
@@ -75,3 +77,100 @@ def test_t4_needs_ctx2():
     r = run("--mock", "tri", "--kept-copy", "/tmp")
     assert r.returncode == 2
     assert "--kept-copy is for tri --ctx2" in r.stderr
+
+
+# ---- round 18 (I1): the 1024x768 partial owner and the render details' ZLS word ---------------
+PARTIAL = ("--mock", "--mock-pb-pages=0x28", "tri", "--width", "1024", "--height", "768", "-n",
+           "1", "--keep-overflow", "--ctx2", "--close-first-early")
+
+
+def kept_pages(n: int) -> bytes:
+    """n TA data pages, page i's dwords all i (a kept copy shows which pages it holds)."""
+    return b"".join(i.to_bytes(4, "little") * 1024 for i in range(n))
+
+
+def test_kept_copy_reaches_the_1024x768_partial_owner(tmp_path):
+    """Q192: the kept first context rendered 1024x768 on 0x28 pages (a partial render), its state
+    page is page 6 (E591). --kept-copy copies the whole kept TA data (pages 1 to 6 and on) after
+    the second context's render, which overflowed too and is counted, and before that context is
+    closed."""
+    (tmp_path / "render_kept").write_bytes(kept_pages(12))
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run(*PARTIAL, "--kept-copy", str(out), dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (out / "kept.1.bin").read_bytes() == kept_pages(12)
+    lines = r.stdout.splitlines()
+    at = {k: next(i for i, ln in enumerate(lines) if ln.startswith(k)) for k in (
+        "tri: closed the first context", "tri2 1024x768 #1: overflowed",
+        "tri: render_kept after the second context's render 1:", "tri: closing the second")}
+    assert list(at.values()) == sorted(at.values()), r.stdout
+
+
+def test_kept_copy_also_after_the_early_close_before_the_second_render(tmp_path):
+    """Q192 asks whether the zero in the partial owner's state page is the store after the second
+    context's render, not the close of the first: with --close-first-early, --kept-copy also
+    copies render_kept to DIR/kept.closed.N.bin right after that close and before the second
+    context's render N, so the two copies part the close from the render."""
+    (tmp_path / "render_kept").write_bytes(kept_pages(7))
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run(*PARTIAL, "--kept-copy", str(out), dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (out / "kept.closed.1.bin").read_bytes() == kept_pages(7)
+    assert (out / "kept.1.bin").read_bytes() == kept_pages(7)
+    lines = r.stdout.splitlines()
+    closed = next(i for i, ln in enumerate(lines) if ln.startswith("tri: closed the first"))
+    copy = next(i for i, ln in enumerate(lines) if ln.startswith(
+        "tri: render_kept after closing the first context, before the second context's "
+        "render 1: "))
+    second = next(i for i, ln in enumerate(lines) if ln.startswith("tri2 1024x768 #1"))
+    assert closed < copy < second, r.stdout
+    assert f"{out}/kept.closed.1.bin (28672 bytes)" in lines[copy]
+
+
+def test_kept_copy_without_the_early_close_makes_no_closed_copy(tmp_path):
+    (tmp_path / "render_kept").write_bytes(kept_pages(1))
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run("--mock", "tri", "--width", "64", "--height", "64", "--ctx2", "--kept-copy", str(out),
+            dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert sorted(p.name for p in out.iterdir()) == ["kept.1.bin"]
+    assert "after closing the first context" not in r.stdout
+
+
+def kpoke_run(tmp_path, *args):
+    k = tmp_path / "kpoke"
+    k.write_text("")
+    env = {**os.environ, "SGXFIVE_KPOKE": str(k)}
+    r = subprocess.run([TOOL, *args], capture_output=True, text=True, timeout=60, env=env)
+    return r, k.read_text().splitlines()
+
+
+def test_kpoke_render_reaches_the_render_details_zls_word(tmp_path):
+    """Q088: the render details' ZLS control word is rd:11 (the kernel's SGX_RENDER_RD_ZLSCTL,
+    byte 0x2c of hw_render_details; E057 poked it so). --kpoke-render N:rd:11=V arms it for
+    render N's kick, after --depth's own rd:11 (its --depth-ctl), and the kernel applies a kick's
+    armed pokes in order, so the row's value is the one the job carries; on an overflowing scene
+    the partial renders run from that job's render details."""
+    r, lines = kpoke_run(tmp_path, "--mock", "--mock-pb-pages=0x28", "tri", "--width", "1024",
+                         "--height", "768", "-n", "1", "--keep-overflow", "--depth",
+                         "--depth-ctl", "0x0017100c", "--kpoke-render", "1:rd:11=0x0011700a")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "tri: kpoke before render 1: rd:11=0x0011700a" in r.stdout
+    zls = [ln for ln in lines if ln.startswith("rd:11=")]
+    assert zls == ["rd:11=0x0017100c", "rd:11=0x0011700a"], lines
+
+
+def test_kpoke_render_reaches_the_zls_word_of_the_final_render_after_a_geometry_kick(tmp_path):
+    """The final render's own kick after an overflowing geometry kick: the rd:11 poke of render
+    2 is written after render 1's job and before render 2's (the geometry kick takes none)."""
+    r, lines = kpoke_run(tmp_path, "--mock", "--mock-pb-pages=0x28", "tri", "--width", "1024",
+                         "--height", "768", "-n", "2", "--geometry", "1", "--keep-overflow",
+                         "--kpoke-render", "2:rd:11=0x0011100a")
+    assert lines == ["rd:11=0x0011100a"], (lines, r.stdout + r.stderr)
+    out = r.stdout.splitlines()
+    poke = out.index("tri: kpoke before render 2: rd:11=0x0011100a")
+    geo = next(i for i, ln in enumerate(out) if ln.startswith("tri 1024x768 #1: geometry only"))
+    assert geo < poke, r.stdout

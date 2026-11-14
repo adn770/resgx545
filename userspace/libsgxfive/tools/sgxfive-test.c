@@ -53,7 +53,10 @@
  *                                 them at ADDR (a heap's page, say, that a unit fetches
  *                                 from) instead of in the general heap; --kpoke-render writes
  *                                 SPEC to debugfs kpoke just before render N (each
- *                                 render of the context its own kernel pokes); --move
+ *                                 render of the context its own kernel pokes; rd:11=V is
+ *                                 the render details' ZLS control word, written after
+ *                                 --depth's own rd:11, so V is the one the kick carries);
+ *                                 --move
  *                                 draws render N's triangle DX, DY pixels away;
  *                                 --geometry submits render N geometry only (the scene
  *                                 left open for the next render, nothing drawn);
@@ -113,7 +116,15 @@
  *                                 second context's render N (with --overlap, 30 ms
  *                                 after the first context's job is submitted, so that
  *                                 the kernel has kicked it and the poke lands on the
- *                                 second context's kick)
+ *                                 second context's kick);
+ *                                 --kept-copy DIR (with --ctx2): debugfs render_kept (the
+ *                                 TA data of the context render_keep kept, every page) to
+ *                                 DIR/kept.N.bin after the second context's render N (an
+ *                                 overflow counted by --keep-overflow too) and before any
+ *                                 close, and with --close-first-early also to
+ *                                 DIR/kept.closed.N.bin right after the first context's
+ *                                 close and before the second context's render N (the
+ *                                 1024x768 partial owner's state page is page 6, E591)
  *   contexts [--width W --height H -n N]  N render contexts for targets up to W x H
  *                                 in one VM, and the memory they take (MemFree and
  *                                 LowFree of /proc/meminfo, before and after)
@@ -2918,6 +2929,23 @@ static int debugfs_copy(const char *name, const char *path, long long *size)
 }
 
 /*
+ * --kept-copy DIR: debugfs render_kept (the TA data of the newest context render_keep kept) to
+ * DIR/kept.TAGn.bin, said with when (what) and its size or why it failed; a failed copy is said,
+ * not a failure of the run.
+ */
+static void kept_copy(const char *dir, const char *tag, uint32_t n, const char *what)
+{
+	char path[4096];
+	long long ks;
+	int kr;
+
+	snprintf(path, sizeof(path), "%s/kept.%s%u.bin", dir, tag, n);
+	kr = debugfs_copy("render_kept", path, &ks);
+	printf("tri: render_kept %s %u: %s (%lld bytes)\n", what, n, kr ? strerror(-kr) : path,
+	       kr ? 0 : ks);
+}
+
+/*
  * --close-trace: what the kernel keeps of the cleanup that just ran (debugfs render_cleanup,
  * the last render context's) and dwords 32, 46 and 47 of the TA/3D control block (buf09: the
  * PB descriptor it holds and the loaded PB's two slots), after the event named (which: "after closing the second context").
@@ -3288,6 +3316,9 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				       "render %u\n", i + 1);
 				if (o->close_trace)
 					close_trace("after closing the first context");
+				if (o->kept_dir)
+					kept_copy(o->kept_dir, "closed.", i + 1, "after closing the first "
+						  "context, before the second context's render");
 				if (o->words_dir)
 					wr = save_words(t, o, o->words_dir, 200 + i + 1);
 			}
@@ -3322,16 +3353,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				if (!ret2 && sgxfive_render_guard_dirty(r2, &p2))
 					ret2 = -EIO;
 			}
-			if (!ret2 && !wait2 && o->kept_dir) {
-				char path[4096];
-				long long ks;
-				int kr;
-
-				snprintf(path, sizeof(path), "%s/kept.%u.bin", o->kept_dir, i + 1);
-				kr = debugfs_copy("render_kept", path, &ks);
-				printf("tri: render_kept after the second context's render %u: %s (%lld bytes)\n",
-				       i + 1, kr ? strerror(-kr) : path, kr ? 0 : ks);
-			}
+			if (!ret2 && !wait2 && o->kept_dir)
+				kept_copy(o->kept_dir, "", i + 1, "after the second context's render");
 			if (ret2 || wait2) {
 				if (ret2 && ret2 != -EIO && !wait2)
 					fail("second context render", ret2);
