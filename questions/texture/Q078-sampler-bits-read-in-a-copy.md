@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "where does T3 bit 14 send a twiddled read, where it faults the job past every mapping whatever the move E1003 measured (E566, E1033), given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1)) texels (E1003) and a bilinear footprint as a whole (E1027)?"
+question = "does T3 bit 14 on a twiddled texture read texel (s + floor(4096 frac(u)), t) of a layout of 16 x 16 tiles with W + 4096 texels a tile row at other sizes and formats (E1047: every pixel of three fills of E566's 32 x 32 32-bit texture, fitted post hoc on E1033's fault pages and held out by u = 0 only), is the tile row W + 4096 or 4128 texels, is u past 1 taken by its fraction or clamped at another width, and what does the bit do to a filtered twiddled sample?"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -128,3 +128,19 @@ in the twiddled index, the plan's H-TWMOVE; in the texel column, unwrapped or wr
 predicted an image there and failed 2 of 2; H-FAULTANY held 2 of 2. So the twiddled clause is
 narrowed to where the read goes (only each job's first faulting page is known); not retired (R13-9:
 no held-out row decodes the address).
+
+Narrowed 2026-11-14 (round 14, session r14-flag stage f1, decisions R14-4 (a) and R14-5 (a); E1047;
+the question line is rewritten to what stays; not retired). It read "where does T3 bit 14 send a
+twiddled read, where it faults the job past every mapping whatever the move E1003 measured (E566,
+E1033), given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1))
+texels (E1003) and a bilinear footprint as a whole (E1027)?". With a 1 MiB scratch (t14) no row
+faulted and every pixel of the three bit-14 fills named its dword: the read is texel (s +
+floor(4096 frac(u)), t), s the wrapped bit-clear column, of a layout of 16 x 16 tiles with W + 4096
+texels a tile row (H-TWP4128, 2048 of 2048 on each; a tile row of 4096 texels, a column without s,
+the bit-clear image at u = 0 and "every twiddled read faults" failed). E566's and E1033's faults
+are the reads past a 64 KiB scratch. Why it is not retired (R14-6): the form was fitted post hoc on
+E1033's two fault pages, and of its three rows only u = 0 is held out; f1-tw32 and f1-small rerun
+the fitted inputs (their images new, their inputs not), and only W = 32 ran, so W + 4096 is not
+parted from a constant 4128, nor the fraction of u past 1 from a clamp at another width. sgx-sim's
+tex.rs models the 32 x 32 geometry and refuses the rest. To retire: the form held out at two other
+widths (16 x 16 and 64 x 64, say) with u past 1, then filtered.

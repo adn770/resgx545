@@ -6,8 +6,12 @@
 //! poke), every target tile's modelled slot against the slots the row's dump holds for it, and
 //! the modelled wrong tiles (no surviving header at or before the last-region flag) against the
 //! image's. A row whose words the model refuses is counted refused, never a pass. The table's
-//! `replay` names `the_model_replays_every_row_of_the_q139c_slots_table`. Skips without the data,
-//! and fails with `RESGX545_REQUIRE_DATA` set.
+//! `replay` names `the_model_replays_every_row_of_the_q139c_slots_table`. The r14-flag f2 table
+//! (`vectors/closing/r14-flag/ta-slots/f2.table.json`, E1048: the 256 x 256 and 768 x 640
+//! baselines and four held-out `CR_TE_MTILE1` words, `ta:143`, whose first macrotile is 14, 15,
+//! 26 and 27 tiles wide, where E950's H-EVEN and R7-BLK part) replays the same way and names
+//! `the_model_replays_every_row_of_the_r14_flag_f2_slots_table`. Skips without the data, and
+//! fails with `RESGX545_REQUIRE_DATA` set.
 
 use sgx_pipe::data::Ctx;
 use sgx_pipe::ta::{macrotile_slots, tiling};
@@ -16,15 +20,21 @@ use std::collections::BTreeSet;
 
 const TABLE: &str = "vectors/closing/r10-geo/ta-slots/q139c.table.json";
 const NAME: &str = "the_model_replays_every_row_of_the_q139c_slots_table";
+const TABLE_R14: &str = "vectors/closing/r14-flag/ta-slots/f2.table.json";
+const NAME_R14: &str = "the_model_replays_every_row_of_the_r14_flag_f2_slots_table";
 
 fn load() -> Option<Json> {
+    load_table(TABLE)
+}
+
+fn load_table(table: &str) -> Option<Json> {
     let ctx = Ctx::from_env();
-    let Some(root) = ctx.root.as_ref().filter(|r| r.join(TABLE).is_file()) else {
-        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no {TABLE}");
-        eprintln!("SKIPPED: no {TABLE}");
+    let Some(root) = ctx.root.as_ref().filter(|r| r.join(table).is_file()) else {
+        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no {table}");
+        eprintln!("SKIPPED: no {table}");
         return None;
     };
-    Some(parse(&std::fs::read_to_string(root.join(TABLE)).unwrap()))
+    Some(parse(&std::fs::read_to_string(root.join(table)).unwrap()))
 }
 
 fn tile(s: &str) -> (u32, u32) {
@@ -37,13 +47,18 @@ fn replay(row: &Json) -> Result<usize, String> {
     let id = row.get("id").str().unwrap_or("?");
     let (w, h) = (row.get("width").num().unwrap() as u32, row.get("height").num().unwrap() as u32);
     let t = tiling(w, h);
-    let mut m2 = t.mtile2;
+    let (mut m1, mut m2) = (t.mtile1, t.mtile2);
     for p in row.get("kpokes").arr() {
         let p = p.str().unwrap();
-        let v = p.strip_prefix("1:ta:144=0x").ok_or(format!("{id}: a poke other than ta:144: {p}"))?;
-        m2 = u32::from_str_radix(v, 16).unwrap();
+        if let Some(v) = p.strip_prefix("1:ta:144=0x") {
+            m2 = u32::from_str_radix(v, 16).unwrap();
+        } else if let Some(v) = p.strip_prefix("1:ta:143=0x") {
+            m1 = u32::from_str_radix(v, 16).unwrap();
+        } else {
+            return Err(format!("{id}: a poke other than ta:143 or ta:144: {p}"));
+        }
     }
-    let (model, _) = macrotile_slots(w, h, t.mtile1, m2).map_err(|e| format!("{id}: refused {e:?}"))?;
+    let (model, _) = macrotile_slots(w, h, m1, m2).map_err(|e| format!("{id}: refused {e:?}"))?;
     let wrong: BTreeSet<(u32, u32)> = match row.get("wrong_tiles").str().unwrap() {
         "none" => BTreeSet::new(),
         s => s.split(',').map(tile).collect(),
@@ -80,6 +95,20 @@ fn the_model_replays_every_row_of_the_q139c_slots_table() {
     assert!(out.iter().all(Result::is_ok), "{out:?}");
     // two 256 x 256 and 640 x 480 baselines, three poked 256 x 256 rows, one 640 x 480
     assert_eq!(out.iter().map(|r| *r.as_ref().unwrap()).sum::<usize>(), 4 * 128 + 2 * 600);
+}
+
+#[test]
+fn the_model_replays_every_row_of_the_r14_flag_f2_slots_table() {
+    let Some(t) = load_table(TABLE_R14) else { return };
+    let rows = t.get("rows").arr();
+    assert_eq!(rows.len(), 6);
+    let out: Vec<Result<usize, String>> = rows.iter().map(replay).collect();
+    assert!(out.iter().all(Result::is_ok), "{out:?}");
+    // three 256 x 256 rows (the baseline, fx 14 and 15), three 768 x 640 (the baseline, fx 26, 27)
+    assert_eq!(out.iter().map(|r| *r.as_ref().unwrap()).sum::<usize>(), 3 * 128 + 3 * 960);
+    let r = t.get("replay");
+    assert_eq!(r.get("status").str(), Some("replayed"));
+    assert!(r.get("test").str().unwrap().ends_with(NAME_R14), "{:?}", r.get("test").str());
 }
 
 #[test]

@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3 mod 4 faulted), is the list-end flag (bit 7) on the last target tile in block order or on the highest slot of a target tile's header (E1011: no kept dump parts the two), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
+question = "what is the stride's relation to the RT data, and why do the macrotile words that fault (E509) fault, given that every kept fault at fx 2 or 3 mod 4 had a second macrotile inside the target and four held-out words whose first macrotile covers it drew with every header at 8 floor(fx / 2) slots a block row and the list end on the last target tile in block order (E1048)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011", "E1048"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -127,3 +127,21 @@ tile below another target tile's slot. sgx-pipe's `ta::macrotile_slots` admits r
 every row's wrong tiles and flag. Open: H-EVEN at fx 2 or 3 mod 4, that rival of the flag (a dump
 whose last block-order target tile is not the highest target slot, which may need such words), the
 stride's relation to the RT data and the faulting words of E509.
+
+Narrowed 2026-11-14 (round 14, session r14-flag stage f2, decision R14-5 (a); E1048; the question
+line is reworded, the question is not retired). It read "does a block row of a first macrotile that
+is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on
+E944's three readable residue dumps, every slot; no safe kept image parts it from R7-BLK, and every
+kept job at fx 2 or 3 mod 4 faulted), is the list-end flag (bit 7) on the last target tile in block
+order or on the highest slot of a target tile's header (E1011: no kept dump parts the two), what is
+the stride's relation to the RT data, and why do the words that fault (E509) fault". Four
+`CR_TE_MTILE1` words never run, the first macrotile 14 and 15 tiles wide at 256 x 256 and 26 and 27
+at 768 x 640, drew (no fault) with every target tile's header at H-EVEN's slot (4 of 4 held out;
+R7-BLK 0 of 4) and the one flagged header on the last target tile in block order (4 of 4; the
+highest target slot failed on the two 768 x 640 rows that part them). Answered: the first two
+clauses; sgx-pipe's `ta::macrotile_slots` takes H-EVEN's block row and admits the four words. Why
+it is not retired (R14-6): the stride's relation to the RT data and why the faulting words fault
+are measurable and not measured (no row of either ran; [infer] every kept fault at fx 2 or 3 mod 4
+had a second macrotile inside the target, E1048's H-COVER, post hoc). To retire: TA dumps of a
+faulting word need the TA data kept across recovery (t10 dumps nothing after a failed render), and
+a stride row with a frozen relation.
