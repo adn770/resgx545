@@ -8,13 +8,14 @@
 //! What no record states refuses by question: formats 3 and 4 otherwise and 5 to 7
 //! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), the integer formats' values outside 0 to 1 (E977),
 //! overlapping tiles in the 16-bit format and in the 24-bit one with edge tiles or four
-//! macrotiles a side (Q242; E996 and E1041 give the overlapping tiles' slots), a load of an integer format (Q243: E977
-//! read an integer format's load as the dword's float, two rows only; a loaded depth compares as
-//! its magnitude, NaN above every depth, E995), the load and the pass over edge tiles (Q243), bit 0
+//! macrotiles a side (Q242; E996 and E1041 give the overlapping tiles' slots), a load pass with an
+//! integer format (Q297: E977 and E1040 read an integer format's load as the dword's float, not
+//! modelled in the pass; a loaded depth compares as its magnitude, NaN above every depth, E995),
+//! the load and the pass over edge tiles (Q297), bit 0
 //! with a loaded stencil, bit 12 cleared with a load and bit 16 cleared with a depth load, a
 //! stencil store or the 16-bit format (Q071, E997, E1030), the stencil test's source under any
 //! mix of the control's inert bits but those that ran (Q071, E988, E989, E1030), bit 19 with a
-//! load (Q243). The depth load reads from its own base, render details dword 12, rounded down to
+//! load (Q297). The depth load reads from its own base, render details dword 12, rounded down to
 //! 16 bytes ([`load_base`]: E1029, E1040); [`pass`] still loads at the store's address. Every
 //! refusal depends on the input alone.
 
@@ -24,7 +25,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q242", "Q243"];
+pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q242", "Q297"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)
@@ -896,13 +897,13 @@ pub struct Pass {
 /// read dword i of the load buffers, the address the store writes: E467) and the clear depth.
 /// Without bits 1 and 14 the pass starts from the clear value (the background depth) with its sign
 /// cleared ([`clear_word`], E987), with them from the loaded depth with its sign cleared; the stencil store copies the loaded dword or stores 0 per 128-dword
-/// tile slot (E466, E467: the copy is by dword; a pixel's byte is [`stencil_byte`], E988). Float format only (Q243: a load
-/// of formats 1 and 2 compared the dword as a float in E977's two rows, not modelled); a
+/// tile slot (E466, E467: the copy is by dword; a pixel's byte is [`stencil_byte`], E988). Float format only (Q297: a load
+/// of formats 1 and 2 reads the dword as a float, E977, E1040, not modelled in the pass); a
 /// compare closer than the planes' tolerance refuses (Q200: 12.3's rule), a loaded NaN or
 /// infinity is above every depth (E977 under less and greater, E995 under the compares 2, 3, 5
 /// and 6), a triangle depth other than 0.5 and the ramp's refuses
-/// (Q242), bit 19 with a load refuses (Q243: a loaded depth's sign is cleared, E467, and its
-/// re-negation did not run) and so do edge tiles (Q243: E831's band is the
+/// (Q242), bit 19 with a load refuses (Q297: a loaded depth's sign is cleared, E467, and its
+/// re-negation did not run) and so do edge tiles (Q297: E831's band is the
 /// store's without a load) and overlapping tiles (Q242).
 #[allow(clippy::too_many_arguments)]
 pub fn pass(
@@ -919,7 +920,7 @@ pub fn pass(
     if has_edge(w, h) {
         return Err(open(
             format!("a pass over a {w} x {h} target: the load and the pass ran on whole tiles"),
-            &["Q243"],
+            &["Q297"],
         ));
     }
     no_overlap(w, ctl.g())?;
@@ -929,14 +930,14 @@ pub fn pass(
     if ctl.negate() && ctl.load() {
         return Err(open(
             "bit 19 with a load: the loaded sign is cleared and re-negated, not run".into(),
-            &["Q243"],
+            &["Q297"],
         ));
     }
     let mut out = Pass::default();
     let g = ctl.g();
     if ctl.store_depth() {
         if ctl.format()? != Format::F32 {
-            return Err(open("a loaded or stored integer depth format was not run".into(), &["Q243"]));
+            return Err(open("a loaded or stored integer depth format was not run".into(), &["Q297"]));
         }
         for y in 0..h {
             for x in 0..w {
@@ -1775,9 +1776,9 @@ mod tests {
     fn a_pass_refuses_edge_tiles_and_integer_formats() {
         // E831's band is the store's without a load; the load and the pass ran on whole tiles
         let r = pass(&ctl(0x0017_110c), 34, 18, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
-        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q243"]));
+        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q297"]));
         let r = run(0x0017_110c | 1 << 24, Test::Never, &|i| i);
-        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q243"]));
+        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q297"]));
     }
 
     #[test]
@@ -1857,12 +1858,12 @@ mod tests {
         assert!(p.depth.values().all(|&v| v == 0xbf80_0000));
         let r =
             pass(&ctl(0x0017_510e | 1 << 19), 32, 16, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
-        assert_eq!(ids(r), ["Q243"]);
+        assert_eq!(ids(r), ["Q297"]);
         // bit 19 with a load of the stencil only does not load the depth: still refused (the
         // loaded value would be re-negated, and nothing ran)
         let r =
             pass(&ctl(0x0017_310e | 1 << 19), 32, 16, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
-        assert_eq!(ids(r), ["Q243"]);
+        assert_eq!(ids(r), ["Q297"]);
     }
 
     #[test]

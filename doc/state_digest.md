@@ -296,8 +296,8 @@ list.
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
   the integer formats store past the target at an odd width or ... (E991, E996, E1041)
-- `Q243` zls, low: what address does the ZLS load read from when its base (render details dword 12,
-  and dword 14 for the stencil) is not the store's, and with ... (E995, E1029, E1040)
+- `Q297` zls, low: what does the ZLS load pass (a depth or stencil load feeding the depth test and
+  the store) do over edge tiles, with bit 19 set, with an ... (E995, E1029, E1040)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data

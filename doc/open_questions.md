@@ -194,7 +194,7 @@
 - `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490, E978, E985, E986, E1015, E1031, E1043)
 - `Q242` (phase 12, hw, low): which pixel's value does a dword shared by two overlapping tiles hold, what do the integer formats store past the target at an odd width or height, and why did E411's G 3 job store past its 16-page buffer (pages 16 and 18) without the fault G 5, 9 and 17 met (the formats' values over 0 to 1 and past an 80 x 40 target are E977's and E991's floor rule)? (E466, E490, E663, E977, E411, E465, E991, E996, E1041)
-- `Q243` (phase 12, hw, low): what address does the ZLS load read from when its base (render details dword 12, and dword 14 for the stencil) is not the store's, and with an integer stored format (bits 26:24 = 1 or 2) there? (E467, E628, E664, E977, E995, E1029, E1040)
+- `Q297` (phase 12, hw, low): what does the ZLS load pass (a depth or stencil load feeding the depth test and the store) do over edge tiles, with bit 19 set, with an integer stored format, and against a triangle depth other than 0.5 and 0.25 to 0.4166? (E467, E664, E831, E977, E995, E1029, E1040)
 
 ## Parked: not hardware knowledge
 

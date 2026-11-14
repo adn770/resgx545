@@ -931,10 +931,12 @@ to E665). 88 unit vectors (`zls-format` 11, `zls-load` 30 and `zls-ctl` 47) repl
 15 matched, 59 fitted, 12 refused by question and 2 empty (formats 4 and 7 store nothing without a
 stencil buffer); every result by a fitted rule is fitted. What no run measured stays refused:
 formats 3, 5 and 6 (Q120), other 16-bit pitches and depths off the ramp (Q242), a load of an integer
-format at another address and a loaded NaN under a compare (Q243) and the control bits no run
+format at another address and a loaded NaN under a compare (answered since by E995 and E1040) and
+the control bits no run
 separated, with bit 0 modelled for one control (Q071); several objects over a loaded depth are not
 modelled (no data). E466 and E467 are carried forward with dated corrections (the ramp runs 0.25 to
-0.4166, not to 0.75; the label of the control 0x0011d10a). Q242, Q243 and a third are new (the
+0.4166, not to 0.75; the label of the control 0x0011d10a). Q242, the question E1040 answered and a
+third are new (the
 third, on the control bits and bit 0, folded into Q071 on 2026-11-12). The simulator
 `sgx-sim` is unchanged. The roadmap counts the questions from the built `doc/open_questions.md`: 194
 open (Q001 to Q288), 175 hw (high 21, medium 80, low 74), 12 fw and 7 kernel; zls 10.
