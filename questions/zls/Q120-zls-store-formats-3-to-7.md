@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978", "E985", "E986", "E1015", "E1031", "E1043"]
+evidence = ["E466", "E490", "E978", "E985", "E986", "E1015", "E1031", "E1043", "E1054"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -75,3 +75,12 @@ E986's two ramps share (F7I-COMMON, F7I-COUNT); format 5 on the flat 0.5 is not 
 Open: the flat form's rule and why 0.1234 differs, format 7's depth-dependent dwords, format 5's
 layout, format 6's edge tiles and variable runs, the pitch against the tiles across, and every
 packed format without a stencil buffer.
+
+Narrowed 2026-11-14 (r15-zls, E1054). The flat form follows whether the plane is one float over
+the tile: frozen H-FLATPLANE held 3 of 3 (0.5 + 2^-20, low bits set, stored E1031's block with
+row 0's record 0x3f000010 as its format-0 twin's one float; 0.1 and 0.3 were planes of 6 and 3
+floats and stored another form) and H-LOW16 failed; FL-REC0 held at 0.375 and 0.625 and failed at
+0.9375 and 0.0625 [infer: planes of more than one float, as zp-z125's 0.125 was]. Open: the form
+of tiles whose rows hold several depths beyond F6C, format 7's depth-dependent dwords, format 5's
+layout, format 6's edge tiles and runs, the pitch, and every packed format without a stencil
+buffer.

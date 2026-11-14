@@ -81,6 +81,7 @@ fn zbits_every_stencil_rows_count_is_its_sources() {
         match zls::stencil_source(&zls::Ctl { word }) {
             Ok(zls::StencilSource::Loaded) => assert_eq!(drawn(&t), 1024, "{name}"),
             Ok(zls::StencilSource::Zero) => assert_eq!(drawn(&t), 2048, "{name}"),
+            Ok(s) => panic!("{name}: {s:?}, no row of r13-zls set bit 15 or 23 alone"),
             Err(Outcome::Unsupported { ids, .. }) => {
                 assert!(word & 1 << 12 == 0 && ids == ["Q071"], "{name}");
                 assert_eq!(drawn(&t), 1024, "{name}: refused, counted apart");

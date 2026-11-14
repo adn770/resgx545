@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E411", "E465", "E490", "E977", "E991", "E996", "E1041"]
+evidence = ["E411", "E465", "E490", "E977", "E991", "E996", "E1041", "E1051"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -26,5 +26,12 @@ rows. What sgx-pipe's `zls` still refuses was never decided there and is carried
 What would settle it: E996's overlap rows in formats 1 and 2 with edge tiles and at 640 x 480;
 E977's integer rows with the viewport's z offset and scale pushing depths past 0 and 1; E411's
 faulting pitches with a buffer sized to their extent (flagged class if a fault is expected).
+
+Narrowed 2026-11-14 (r15-zls, E1051). Overlapping stores in the 16-bit format and in the 24-bit
+one with edge tiles and four macrotiles a side hold the last-visited tile by the floor rule
+(H-LATE/HDR 4 of 4); the integer formats clamp a depth above 1 (format 0 kept 1.25) and store 0
+for a negative one (H-INT-SAT 4 of 4); E411's pitches G 5, 9 and 17 store E465's pages with the
+buffer sized (H-E465-EXT 3 of 3) and its bit-25 row the 16-bit floor of 0.5 (H-B25-FLOOR).
+sgx-pipe's `zls::store` and `encode_depth` model them.
 
 Status: open.

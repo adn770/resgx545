@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E989", "E997", "E1014", "E1030", "E1042"]
+            "E989", "E997", "E1014", "E1030", "E1042", "E1053"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -87,3 +87,10 @@ byte. The linear images of bits 12 (the loads) and 16 (the stores) have rows of 
 the stencil's bytes (P-G 4 of 4 at G 2), the depth load's dwords (H-DEPTH-LIN, bit 12 with a depth
 load) and, in the 16-bit format, halfwords (L16-HALF). Open: what bits 15 and 23 alone do, 21 or 22
 paired with 23, bit 0 under other controls, bit 20, and the ISP's use of the control.
+
+Narrowed 2026-11-14 (r15-zls, E1053). E1042's post hoc forms held out: bit 15 alone fails E988's
+stencil test at every pixel, the loaded byte kept (96 x 32 G 2 and against reference 1, H15-FAIL 2
+of 2), bit 23 alone reads one of 0x3f, 0x80 and 0 by x mod 16 whatever was loaded (96 x 32 G 2 and
+the index fill, H23-MOD16 2 of 2), and 21 or 22 with 23 read 0 as the three together do
+(H-PAIR-ZERO 2 of 2). sgx-pipe's `stencil_source` models them. Open: why bit 23 reads those bytes,
+bit 0 under other controls, bit 20, and the ISP's use of the control.

@@ -62,7 +62,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E1014, E1030, E1042)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E1030, E1042, E1053)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -177,7 +177,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E1015, E1031, E1043)
+  how are they laid out, given that they store depth and stencil ... (E1031, E1043, E1054)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -289,9 +289,9 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q297` zls, low: what does the ZLS load pass (a depth or stencil load feeding the depth test and
-  the store) do over edge tiles, with bit 19 set, with an ... (E995, E1029, E1040)
+  the store) do over edge tiles, with bit 19 set, with an ... (E1029, E1040, E1050)
 - `Q298` zls, low: which pixel does a dword shared by overlapping tiles hold in the 16-bit format,
-  and in the 24-bit one with edge tiles or four macrotiles a ... (E991, E996, E1041)
+  and in the 24-bit one with edge tiles or four macrotiles a ... (E996, E1041, E1051)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -315,7 +315,7 @@ list.
 
 ## Recent records
 
-114 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+118 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
@@ -324,6 +324,18 @@ the claims are cut at 200 characters.
 - `E1056` isp, 2026-11-14: r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with
   one vertex depth at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and
   each made vertex is rounded ...
+- `E1054` zls, 2026-11-14: r15-zls rows zl2- (Q120, 13 jobs in stage zflat2, t10): format 6 stores
+  E1031's 44-dword block with row 0's record carrying the depth where the plane is one float at
+  every pixel: frozen H-FLATPLANE 3 ...
+- `E1053` zls, 2026-11-14: r15-zls rows zb3- (Q071, 10 jobs in stage zbits3, t10): E1042's post hoc
+  forms held out: bit 15 alone fails E988's stencil test at every pixel and stores the loaded bytes
+  unchanged, at 96 x 32 G 2 ...
+- `E1051` zls, 2026-11-14: r15-zls rows zv- (Q298, 16 jobs in stage zovl, t10): overlapping stores
+  in the 16-bit format (64 x 32 G 0, 160 x 48 G 2) and in the 24-bit one with edge tiles (65 x 33 G
+  1) and four macrotiles a side ...
+- `E1050` zls, 2026-11-14: r15-zls rows zp- (Q297, 13 jobs in stages zpass and zbits3, t10): over 34
+  x 18 edge tiles the ZLS load pass tests E831's band against the loaded depth and the loaded
+  stencil and keeps the loaded ...
 - `E1048` ta, 2026-11-14: r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x
   640 baselines and four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at
   256 x 256 and 26 and 27 at 768 ...
@@ -663,9 +675,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-61 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+62 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r15-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -751,7 +764,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 27 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 28 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

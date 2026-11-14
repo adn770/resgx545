@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E467", "E664", "E831", "E977", "E995", "E1029", "E1040"]
+evidence = ["E467", "E664", "E831", "E977", "E995", "E1029", "E1040", "E1050"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE"]
 +++
 
@@ -25,5 +25,12 @@ What sgx-pipe's `zls::pass` still refuses was never a clause of Q243's line and 
 What would settle it: E467's load run at 34 x 18 with the dumps kept; a load with bit 19 under the
 depth test never and less; E977's integer rows under less and never at another depth; the pass at
 triangle depths over 0 to 1.
+
+Narrowed 2026-11-14 (r15-zls, E1050). Over 34 x 18 edge tiles the pass tests E831's band against
+the load and keeps the loaded depth and stencil past it (H-EDGE 1 of 1 each); bit 19 with a load
+stores every depth negated, the kept load too (H-19-RENEG 2 of 2); formats 1 and 2 compare the
+loaded float and store the floor rule (H-INT-PASS 2 of 2); the test is strictly less at 0, 0.75 and
+1 (H-PASS-Z 3 of 4; at 0.125 the drawn count held and the flat plane stored 1 to 9 ulps below the
+depth, Q200's plane error, post hoc). sgx-pipe's `zls::pass` models them.
 
 Status: open.
