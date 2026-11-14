@@ -119,7 +119,8 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   the band x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area, the background 1.0 past
   it (E730, E831), and the stencil's byte a pixel and its test (E988). Refused: formats 3, 5 and
   6 (Q120), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
-  abort; E1020: not E996's overlay; Q107, `final_store`) and an integer format at an edge (E1041 since);
+  abort; E1020: not E996's overlay; Q107, `final_store`) and an integer format at an edge (E1041
+  since);
   the band at odd sizes follows rule A
   (E885, E903).
 - **ta**: the region test, the object layout and its failures are built, and since 12.2 the
@@ -138,7 +139,8 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   targets up to 4096 x 4096 (E680 to E682; `sgx-pipe`'s `isp.rs` names the targets it admits); the
   depth plane is within E606's tolerance and has no bit-exact rule (Q200, Q262, Q288); negative
   sub-grid vertices refuse (E683; Q260), far vertices are clipped to the viewport's guard
-  (E1036, E1037; `isp::guard_clip_image_vp`). `doc/specs/3d.md`
+  (E1036, E1037; `isp::guard_clip_image_vp`), a depth past [0, 1] is cut as a clipped polygon
+  with rounded made vertices (E1056; `isp::depth_cut_image`, coverage only). `doc/specs/3d.md`
   §11.13 states them. The sample position, line, polygon offset and stencil rules (E214, E279,
   E071, E216) are in `isp` triangle-host vectors, not in dump directories.
 - **pbe, iter**: only whole-job vectors (`pbe` 206, the pixel-event and texture runs): the

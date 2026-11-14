@@ -202,8 +202,8 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q241` isp, low: what do ISP word 0 bits 15, 16 and 17 select (E1045: each removes E977's ramp in
-  both vertex orders, so no winding; E065: bit 15 left 48 ... (E995, E998, E1045)
+- `Q241` isp, low: what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle;
+  E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E998, E1045, E1056)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
   changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
@@ -315,12 +315,15 @@ list.
 
 ## Recent records
 
-113 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+114 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
   sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
   all ran, rc 0): the period ...
+- `E1056` isp, 2026-11-14: r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with
+  one vertex depth at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and
+  each made vertex is rounded ...
 - `E1048` ta, 2026-11-14: r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x
   640 baselines and four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at
   256 x 256 and 26 and 27 at 768 ...
@@ -660,9 +663,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-60 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+61 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r15-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -747,7 +751,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 26 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 27 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

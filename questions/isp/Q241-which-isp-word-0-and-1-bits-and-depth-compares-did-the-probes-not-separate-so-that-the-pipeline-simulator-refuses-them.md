@@ -1,12 +1,12 @@
 +++
 id = "Q241"
-question = "what do ISP word 0 bits 15, 16 and 17 select (E1045: each removes E977's ramp in both vertex orders, so no winding; E065: bit 15 left 48 pixels of the library's triangle) and bit 18, the depth compares 2, 3, 5 and 6 against equal depths, the visibility test (ISP word 1 bit 3), the polygon offset (bit 23), a pass type other than 0 over several triangles of one object, the depth and the edge pixels of the cut that a vertex depth outside [0, 1] makes (E1045: the pixels past [0, 1] are removed) and the pairs of ISP word 1 bits 31:26 and CR_ISP_CTL bits 5:0 that E232 and E235 did not run do to the image, the stored depth and the counters?"
+question = "what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle; E1045 and E1056: bits 15 to 17 select no winding, and bits 16 and 17 alone leave no pixel of it) and bit 18, the depth compares 2, 3, 5 and 6 against equal depths, the visibility test (ISP word 1 bit 3), the polygon offset (bit 23), a pass type other than 0 over several triangles of one object, the stored depth of the polygon a vertex depth outside [0, 1] cuts (E1056: its coverage is the clip at the plane with the made vertices rounded half away from zero; the plane stored differs from the original vertices' by up to 7.8e-5) and the pairs of ISP word 1 bits 31:26 and CR_ISP_CTL bits 5:0 that E232 and E235 did not run do to the image, the stored depth and the counters?"
 unit = "isp"
 kind = "hw"
 value = "low"
 phase = 12
 evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660", "E739",
-            "E757", "E995", "E998", "E1045"]
+            "E757", "E995", "E998", "E1045", "E1056"]
 terms = ["ISP0.PASS_TYPE", "ISP0.DCMP_MODE", "ISP1.VISTEST", "ISP1.POLY_OFFSET"]
 +++
 
@@ -80,3 +80,18 @@ is and clearing its sign refuted), as a clip at the near and far planes would (s
 E287) [infer]. Open: what bits 15 to 17 select (E065's 48 pixels), bit 18, the visibility counter
 and the polygon offset's units, the pass types over several triangles, the cut's made depths and
 edge pixels, and the gate pairs.
+
+Narrowed 2026-11-14 (r15-isp stage zcut, E1056, held out; the question line is reworded, the
+question is not retired). It read "what do ISP word 0 bits 15 to 17 select (E1045: each removes
+E977's ramp in both vertex orders, so no winding; E065: bit 15 left 48 pixels of the library's
+triangle) and bit 18 ... the depth and the edge pixels of the cut that a vertex depth outside [0,
+1] makes (E1045: the pixels past [0, 1] are removed) ...". A vertex depth at 1.25 or -0.25 cuts the
+triangle as a polygon clipped at the plane, each made vertex rounded half away from zero to 1/256
+pixel, then E606's coverage: 6 of 6 target images pixel for pixel on rows whose cut line passes
+within 1/512 pixel of 8 to 10 centres and every background dword of the band, the per-pixel cut
+and the unrounded polygon 0 of 6 (8 to 11 pixels a row apart). The stored depth of the drawn
+pixels is the original plane within 7.8e-5 and no plane through three vertices of the polygon fits
+(a scratch fit): open. ISP word 0 bits 16 and 17 alone on the library triangle left no pixel (2 of
+2, E065's jobs again, with the pixels printed), so they are as E1045's rows: removal, not a
+winding. Not retired: bit 18 (faults) was not run this round, nor were the visibility counter, the
+offset's units, the pass types over several triangles, the gate pairs and what bit 15 keeps.

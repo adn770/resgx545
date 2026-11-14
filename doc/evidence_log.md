@@ -8703,6 +8703,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   two); both baselines passed.
   *ta; HW, infer; data: `render-closing-r14-flag:out/20261114-060824/f2/`,
   `render-closing-r14-flag:fold/`.*
+- `E1056` r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with one vertex depth
+  at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and each made vertex is
+  rounded half away from zero to 1/256 pixel, then covered by E606's rule (frozen H-POLYCLIP held 6
+  of 6 target images pixel for pixel and the count of background dwords, and all 4608 band dwords of
+  each kept dump as words or planes; the per-pixel cut H-PIXCUT and the unrounded polygon
+  H-POLYCLIP-NR, one image on these rows, FAILED 6 of 6, on 8 to 11 pixels a row), so the cut shares
+  E1037's rounding; and ISP word 0 bit 16 or 17 flipped on the library triangle removes every pixel
+  (H-NONE held 2 of 2, H-EQUIV, the 48 pixels bit 15 leaves, FAILED 2 of 2); the three controls
+  (E1045's wind-zhi and wind-zlo and E065's bit 15 job) read their kept values.
+  *isp; HW, infer; data: `render-closing-r15-isp:out/20261114-073059/zcut/`,
+  `render-closing-r15-isp:fold/`.*
 - `E1057` r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the sampling-period
   gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs, all ran, rc 0):
   the period read 1655 to 1700 ns (gate passed), the two PR 0 controls read no bit 2 clear, and 17
@@ -8752,7 +8763,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018, E1022, E1023, E1024, E1036, E1037, E1045.
+E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056.
 
 ### mte
 

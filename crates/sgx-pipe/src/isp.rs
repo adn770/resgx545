@@ -390,13 +390,9 @@ fn guard_clip(v: &[(i128, i128)], b: (i128, i128, i128, i128)) -> Vec<(i128, i12
     poly
 }
 
-fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i128, i128, i128, i128)) -> Vec<bool> {
-    let area = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
-    if area == 0 {
-        return vec![false; (w * h) as usize];
-    }
-    let tri = if area < 0 { [v[0], v[2], v[1]] } else { *v };
-    let poly = guard_clip(&tri, b);
+/// E606's exact test of a convex polygon (counter-clockwise as `guard_image` orients it, 1/256
+/// pixel) at every pixel centre of a W x H target, left and top edges owning a tie.
+fn cover_polygon(w: u32, h: u32, poly: &[(i128, i128)]) -> Vec<bool> {
     let mut out = Vec::with_capacity((w * h) as usize);
     for y in 0..h {
         for x in 0..w {
@@ -412,6 +408,73 @@ fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i128, i128, i128, i128
         }
     }
     out
+}
+
+fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i128, i128, i128, i128)) -> Vec<bool> {
+    let area = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
+    if area == 0 {
+        return vec![false; (w * h) as usize];
+    }
+    let tri = if area < 0 { [v[0], v[2], v[1]] } else { *v };
+    cover_polygon(w, h, &guard_clip(&tri, b))
+}
+
+/// Depth in units of 2^-24, exact for a float with no bit below that.
+fn depth_units(z: f32) -> Option<i128> {
+    let u = z as f64 * (1u64 << 24) as f64;
+    (u.fract() == 0.0).then_some(u as i128)
+}
+
+/// Sutherland-Hodgman against the depth range: z <= 1, then z >= 0 (`one` is 1.0 in depth units).
+/// Each made vertex is the exact intersection with the plane, both coordinates rounded half away
+/// from zero to 1/256 pixel (E1056: H-POLYCLIP held 6 of 6, the unrounded polygon and the
+/// per-pixel cut 0 of 6).
+fn depth_clip(v: &[(i128, i128, i128)], one: i128) -> Vec<(i128, i128, i128)> {
+    let mut poly = v.to_vec();
+    for (bound, keep_ge) in [(one, false), (0, true)] {
+        let inside = |p: &(i128, i128, i128)| if keep_ge { p.2 >= bound } else { p.2 <= bound };
+        let mut out = Vec::new();
+        for i in 0..poly.len() {
+            let (cur, nxt) = (poly[i], poly[(i + 1) % poly.len()]);
+            if inside(&cur) {
+                out.push(cur);
+            }
+            if inside(&cur) != inside(&nxt) {
+                let (dz, tz) = (nxt.2 - cur.2, bound - cur.2);
+                let cut = |a: i128, b: i128| {
+                    let (num, den) = (a * dz + tz * (b - a), dz);
+                    if den < 0 { halfaway(-num, -den) } else { halfaway(num, den) }
+                };
+                out.push((cut(cur.0, nxt.0), cut(cur.1, nxt.1), bound));
+            }
+        }
+        poly = out;
+        if poly.is_empty() {
+            break;
+        }
+    }
+    poly
+}
+
+/// The coverage of a triangle with a vertex depth past [0, 1] (compare always, depth written) on a
+/// W x H target: the polygon clipped at z = 1 and z = 0 with the made vertices rounded half away
+/// from zero (E1056, held 6 of 6 on rows whose cut line passes within 1/512 pixel of 8 to 10 pixel
+/// centres, and on E1045's two, whose vertices lie past the guard box: the guard clip is not applied,
+/// the order of the two clips was not separated), then E606's test. Refuses a depth with a bit
+/// below 2^-24 (Q241).
+pub fn depth_cut_image(w: u32, h: u32, t: &FarTri, z: [f32; 3]) -> Result<Vec<bool>, Outcome> {
+    let zu = z.map(depth_units);
+    if zu.iter().any(|u| u.is_none()) {
+        return Err(open("a vertex depth with a bit below 2^-24 (E1056)", "Q241"));
+    }
+    let v = [0, 1, 2].map(|i| (t.v[i].0 as i128, t.v[i].1 as i128, zu[i].unwrap()));
+    let area = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
+    if area == 0 {
+        return Ok(vec![false; (w * h) as usize]);
+    }
+    let tri = if area < 0 { [v[0], v[2], v[1]] } else { v };
+    let poly: Vec<(i128, i128)> = depth_clip(&tri, 1 << 24).into_iter().map(|p| (p.0, p.1)).collect();
+    Ok(cover_polygon(w, h, &poly))
 }
 
 /// The coverage of a triangle with vertices anywhere in the guard or past it, under the
@@ -734,7 +797,7 @@ pub fn resolve_tile_from(
                     if uses_z && tri.z.iter().any(|z| !(0.0..=1.0).contains(z)) {
                         return Err(open(
                             format!(
-                                "a vertex depth {:?} outside [0, 1] under a compare or a depth write: the pixels past [0, 1] are removed (E1045: a z clip, as mte.rs's E287), but the cut's made vertices and its edge pixels are not modelled",
+                                "a vertex depth {:?} outside [0, 1] under a compare or a depth write: the pixels past [0, 1] are removed by a polygon clip with its made vertices rounded half away from zero (E1045, E1056: `depth_cut_image` draws its coverage), but the stored depth of the clipped polygon is not the original plane to the last bit (within 7.8e-5) and is not modelled",
                                 tri.z
                             ),
                             "Q241",
@@ -1344,6 +1407,47 @@ mod tests {
             assert_eq!(img.iter().filter(|p| **p == Some(true)).count(), drawn, "{name}");
             assert_eq!(fnv(&img), hash, "{name}");
         }
+    }
+
+    const CUT_R15: [(&str, [i64; 6], [f32; 3], usize, u64); 8] = [
+        ("zcut-ctl-zhi", [0, 0, 40960, 0, 0, 20480], [1.25, 0.25, 1.25], 1600, 0x2884b9fe7cfcb765),
+        ("zcut-ctl-zlo", [0, 0, 40960, 0, 0, 20480], [0.25, -0.75, 0.25], 1600, 0xabaf4e3a692c1f65),
+        ("zcut-hi1", [16256, 4480, -1407, -1665, 19329, 12160], [1.25, 0.5, 0.5], 719, 0x006b6b066b03fe6a),
+        ("zcut-hi2", [10880, 7808, -3455, 7808, 18560, 1665], [1.25, 0.25, 0.5], 573, 0x53279f2fa8838850),
+        ("zcut-hi3", [9344, 7808, 20865, 897, -3969, 5761], [1.25, 0.5, 0.25], 766, 0xb446f68fb4fa2b37),
+        ("zcut-lo1", [3456, 2176, 4481, 11393, 24960, 1153], [-0.25, 0.75, 0.75], 1352, 0xa19ac7b42c3d3c47),
+        ("zcut-lo2", [4992, 1152, 22913, 2433, -1152, 10369], [-0.25, 1.0, 0.5], 1203, 0x1a8d3c1cc8c5f980),
+        ("zcut-lo3", [15488, 6528, 17024, 11647, -2943, 7295], [-0.25, 0.25, 0.5], 519, 0x22686fcf4b2ab6f6),
+    ];
+
+    #[test]
+    fn a_depth_past_the_cut_is_clipped_as_a_polygon_with_rounded_made_vertices() {
+        // E1056: 80 x 40, compare always with the depth written: the triangle is clipped at z = 1
+        // and z = 0, each made vertex rounded half away from zero to 1/256 pixel (E1037), then
+        // E606's coverage; r15-isp's six held-out rows and E1045's two, pixel for pixel (the
+        // per-pixel cut and the unrounded polygon, which part from it on 8 to 11 pixels a row,
+        // fail 0 of 6)
+        for (name, v, z, drawn, hash) in CUT_R15 {
+            let t = FarTri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])] };
+            let img = depth_cut_image(80, 40, &t, z).unwrap();
+            assert_eq!(img.iter().filter(|p| **p).count(), drawn, "{name}");
+            let opt: Vec<Option<bool>> = img.iter().map(|p| Some(*p)).collect();
+            assert_eq!(fnv(&opt), hash, "{name}");
+        }
+    }
+
+    #[test]
+    fn a_depth_cut_refuses_what_it_did_not_measure() {
+        let t = FarTri { v: [(0, 0), (20480, 0), (0, 10240)] };
+        // inside the guard, depths in [0, 1]: no cut, the plain triangle
+        assert!(depth_cut_image(80, 40, &t, [1.0, 0.5, 0.0]).is_ok());
+        // a depth with bits below 2^-24 is not exact in the model
+        assert_eq!(ids_of(depth_cut_image(80, 40, &t, [1.0, 0.5, 0.1])), ["Q241"]);
+    }
+
+    fn ids_of(r: Result<Vec<bool>, Outcome>) -> Vec<String> {
+        let o = r.unwrap_err();
+        ids(Err(o))
     }
 
     #[test]
