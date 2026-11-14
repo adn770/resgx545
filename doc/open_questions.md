@@ -191,7 +191,7 @@
 - `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490, E978, E985, E986, E1015, E1031, E1043, E1054)
 - `Q297` (phase 12, hw, low): what does the ZLS load pass (a depth or stencil load feeding the depth test and the store) do over edge tiles, with bit 19 set, with an integer stored format, and against a triangle depth other than 0.5 and 0.25 to 0.4166? (E467, E664, E831, E977, E995, E1029, E1040, E1050)
-- `Q298` (phase 12, hw, low): which pixel does a dword shared by overlapping tiles hold in the 16-bit format, and in the 24-bit one with edge tiles or four macrotiles a side; what do the integer formats store for a depth outside 0 to 1; and what does a store whose pitch runs past its buffer do (E411's faulting pitches and bit 25 rows)? (E411, E465, E490, E977, E991, E996, E1041, E1051)
+- `Q299` (phase 12, hw, low): does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to 17 in a 16-page buffer), and what does a load pass store over overlapping tiles? (E411, E465, E991, E996, E1041, E1051)
 
 ## Parked: not hardware knowledge
 

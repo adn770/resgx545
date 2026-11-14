@@ -102,6 +102,7 @@ RETIRED: dict[str, str] = {
     "Q261": "answered by E1036",
     "Q199": "answered by E1037",
     "Q243": "answered by E1040",
+    "Q298": "answered by E1051",
     "Q242": "answered by E1041",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")

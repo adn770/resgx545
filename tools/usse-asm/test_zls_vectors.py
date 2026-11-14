@@ -106,8 +106,8 @@ def test_a_flip_vector_states_only_what_a_record_measured_and_refuses_the_rest()
     e = zv.flip_expect(0, runs[0])
     assert e["writes_pixels"] is False and e["pages"] == {"4": 1024}
     # the faulted jobs (G bits 2 to 8) and the formats the model does not decode refuse by question
-    assert zv.flip_expect(5, runs[5]) == {"refuse": ["Q298"]}
-    assert zv.flip_expect(25, {"ok": True, "pages": {4: 1024}, "wrong": 0}) == {"refuse": ["Q298"], "pages": {"4": 1024}}
+    assert zv.flip_expect(5, runs[5]) == {"refuse": ["Q299"]}
+    assert zv.flip_expect(25, {"ok": True, "pages": {4: 1024}, "wrong": 0}) == {"refuse": ["Q299"], "pages": {"4": 1024}}
     assert zv.flip_expect(26, {"ok": True, "pages": {12: 640}, "wrong": 0}) == {"refuse": ["Q120"], "pages": {"12": 640}}
 
 

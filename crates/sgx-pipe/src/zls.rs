@@ -7,7 +7,7 @@
 //! background depth's sign (E987), formats 3 and 4 with a loaded and stored stencil (E985, E986).
 //! What no record states refuses by question: formats 3 and 4 otherwise and 5 to 7
 //! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), a NaN depth in an
-//! integer format and a load pass over overlapping tiles (Q298; the overlapping stores themselves
+//! integer format and a load pass over overlapping tiles (Q299; the overlapping stores themselves
 //! follow E996, E1041 and E1051 in every format), a pass plane outside 0 to 1 (Q297; E1050 ran the
 //! pass over edge tiles, with bit 19, in the integer formats and at depths of 0 to 1), bit 0
 //! with a loaded stencil, bit 12 cleared with a load and bit 16 cleared with a depth load, a
@@ -23,7 +23,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q297", "Q298"];
+pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q297", "Q299"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)
@@ -482,13 +482,13 @@ pub const INT_DEPTH: std::ops::RangeInclusive<f32> = 0.0..=1.0;
 /// clamps: a depth above 1 stores 0xffffff and 0xffff, a negative one 0 (E1051: 1.25 and -0.25 by
 /// the viewport's z offset in both formats, 4 of 4 held out; format 0 stored 1.25 itself, so the
 /// clamp is the conversion's; E981: a negative depth stored 0 in every format). A NaN depth
-/// reached no store and refuses (Q298).
+/// reached no store and refuses (Q299).
 pub fn encode_depth(fmt: Format, negate: bool, z: f32) -> Result<u32, Outcome> {
     match fmt {
         Format::F32 => Ok(z.to_bits() ^ u32::from(negate) << 31),
         Format::U24 | Format::U16 => {
             if z.is_nan() {
-                return Err(open("a NaN depth in an integer format: none ran".into(), &["Q298"]));
+                return Err(open("a NaN depth in an integer format: none ran".into(), &["Q299"]));
             }
             let z = z.clamp(INT_DEPTH.start().to_owned(), INT_DEPTH.end().to_owned());
             let v = ((z as f64 * 16777216.0).floor() as u32).min(0x00ff_ffff);
@@ -534,7 +534,7 @@ fn no_overlap(w: u32, g: u32) -> Result<(), Outcome> {
                 g + 1,
                 w.div_ceil(32)
             ),
-            &["Q298"],
+            &["Q299"],
         ));
     }
     Ok(())
@@ -626,14 +626,15 @@ pub fn dword_sets(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<(Dw
 
 /// E411's scratch runs (a 16-page buffer, a 64 x 64 target): G of 0, 1 and 3 stored and G with
 /// any of bits 2 to 8 set (bits 5 to 11 of the control) faulted the job; that the store's extent
-/// ran past the buffer is [infer] (E991: G 3 stored past it without a fault). Refuses the faulted pitches in that arrangement (Q298); the same
+/// ran past the buffer is [infer] (E991: G 3 stored past it without a fault; E1051: G 5, 9 and 17 stored
+/// E465's pages in a buffer sized past them). Refuses the faulted pitches in that arrangement (Q299); the same
 /// pitches in a large buffer ran (E490 at G = 33), so this is a check of the arrangement, not of
 /// the word.
 pub fn check_scratch_pitch(ctl: &Ctl) -> Result<(), Outcome> {
     if ctl.g() > 3 {
         return Err(open(
             format!("G = {} in the 16-page scratch run: E411's jobs with bits 5 to 11 set faulted", ctl.g()),
-            &["Q298"],
+            &["Q299"],
         ));
     }
     Ok(())
@@ -943,7 +944,7 @@ pub fn pass(
 /// by [`encode_depth`]: bit 19 negates the kept loaded depth too (E1050, 2 of 2), the integer
 /// formats take the floor rule. `drawn` counts the target's pixels. The stencil store copies the
 /// loaded dword or stores 0 per 128-dword tile slot (E466, E467; a pixel's byte is
-/// [`stencil_byte`], E988). Overlapping tiles refuse (Q298: no pass ran over them), and so does a
+/// [`stencil_byte`], E988). Overlapping tiles refuse (Q299: no pass ran over them), and so does a
 /// plane depth outside 0 to 1 or NaN (Q297: E1050 ran 0, 0.125, 0.75 and 1).
 #[allow(clippy::too_many_arguments)]
 pub fn pass_plane(
@@ -1646,7 +1647,7 @@ mod tests {
             for z in [-0.5f32, -0.01, 1.01, 1.5, f32::INFINITY] {
                 assert!(encode_depth(fmt, false, z).is_ok(), "{fmt:?} {z}");
             }
-            assert_eq!(ids(encode_depth(fmt, false, f32::NAN)), ["Q298"], "{fmt:?}");
+            assert_eq!(ids(encode_depth(fmt, false, f32::NAN)), ["Q299"], "{fmt:?}");
             for z in [0.0f32, 0.2, 0.25, 0.5, 0.75, 0.9, 1.0] {
                 assert!(encode_depth(fmt, false, z).is_ok(), "{fmt:?} {z}");
             }
@@ -1839,7 +1840,7 @@ mod tests {
         assert!(r.is_ok());
         assert!(run(0x0017_110c | 1 << 24, Test::Never, &|i| i).is_ok());
         let r = pass(&ctl(0x0017_1004), 64, 32, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
-        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q298"]));
+        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q299"]));
     }
 
     #[test]
@@ -1885,7 +1886,7 @@ mod tests {
             assert!(check_scratch_pitch(&ctl(w)).is_ok(), "{w:#x}");
         }
         for b in 5..=11 {
-            assert_eq!(ids(check_scratch_pitch(&ctl(0x0017_100c ^ 1 << b))), ["Q298"], "bit {b}");
+            assert_eq!(ids(check_scratch_pitch(&ctl(0x0017_100c ^ 1 << b))), ["Q299"], "bit {b}");
         }
     }
 
@@ -2138,7 +2139,7 @@ mod tests {
             assert_eq!(encode_depth(Format::U24, neg, -0.25), Ok(0));
             assert_eq!(encode_depth(Format::U16, neg, -0.25), Ok(0));
         }
-        assert_eq!(ids(encode_depth(Format::U24, false, f32::NAN)), ["Q298"]);
+        assert_eq!(ids(encode_depth(Format::U24, false, f32::NAN)), ["Q299"]);
     }
 
     #[test]

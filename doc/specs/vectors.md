@@ -333,7 +333,7 @@ otherwise compare nothing and pass). A vector that matched but compared no item 
   dwords that left the 0xdeadbeef fill. The float, the 24-bit and the 16-bit stores answer at
   E465's address rule (the 16-bit one at G = 33, two rows to a dword), the integer formats only
   over the ramp's 0.25 to 0.4166 and at 1.0, where the fitted rounding and its fourth candidate
-  agree (Q298): 6 fitted, 2 empty (formats 4 and 7 store nothing without a stencil buffer) and 3
+  agree (Q299): 6 fitted, 2 empty (formats 4 and 7 store nothing without a stencil buffer) and 3
   refused (formats 3, 5 and 6, Q120).
 - `zls-load` (E467), 30 vectors, one per case. `init`: `w`, `h`, `ctl`, `test` (`never` or
   `less`), `z` and `clear` (the triangle's depth and the clear, as float bits), `depth_fill` and
@@ -350,7 +350,7 @@ otherwise compare nothing and pass). A vector that matched but compared no item 
   (E465), the format (E466), a load by bit 1 alone ([infer], E411 part B saw no effect) and every
   stored page make the vector fitted, and one that compares only the store enables, the negation,
   the loads by bits 13 and 14 and whether the image is written stays matched. 15 matched, 23
-  fitted, 9 refused (bits 5 to 11, which faulted the job, and bit 25: Q298; bit 26: Q120). Bit 0 is
+  fitted, 9 refused (bits 5 to 11, which faulted the job, and bit 25: Q299; bit 26: Q120). Bit 0 is
   the colour image off and stores the control's pages, modelled for 0x0017100d only (Q071).
 
 ## 6. Scene vectors

@@ -290,8 +290,8 @@ list.
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q297` zls, low: what does the ZLS load pass (a depth or stencil load feeding the depth test and
   the store) do over edge tiles, with bit 19 set, with an ... (E1029, E1040, E1050)
-- `Q298` zls, low: which pixel does a dword shared by overlapping tiles hold in the 16-bit format,
-  and in the 24-bit one with edge tiles or four macrotiles a ... (E996, E1041, E1051)
+- `Q299` zls, low: does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to
+  17 in a 16-page buffer), and what does a load pass store ... (E996, E1041, E1051)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
