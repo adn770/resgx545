@@ -274,8 +274,8 @@ tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]]
     [--kpoke-render N:SPEC]... [--kreg-render N:OFFSET=VALUE]...
     [--move N:DX,DY]...
-    [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
-    [--words DIR] [--wait-ms MS]
+    [--geometry N]... [--final-pb-pages N] [--keep-going] [--keep-overflow]
+    [--dump-render DIR [--dump-each]] [--words DIR] [--wait-ms MS]
     [--tri-full] [--tri-z A,B,C] [--bg-layer]
     [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
            [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
@@ -315,6 +315,11 @@ from) instead of in the general heap. `--kpoke-render N:SPEC` writes SPEC to the
 debugfs `kpoke` just before render N. `--move N:DX,DY` draws render N's triangle DX, DY pixels
 away (with `--tri-v` the fine vertices move too, in their unit). `--geometry N`
 submits render N as geometry only (the scene left open for the next render, nothing drawn).
+`--final-pb-pages N` (0x23 to 0x422, with `--geometry`) writes N to the kernel's debugfs
+`render_final_pb_pages` before the render context is created (the linux fork's branch
+`r18-kernel`; the next render context takes it once): the render that closes a scene a geometry
+render opened then has a PB of N pages, the others the context's `render_pb_pages` PB; the mock
+models it from its config.
 `--keep-going` reports every render, checked or not. `--dump-render DIR` copies the kernel's
 debugfs `render_param` and `render_tadata` to `DIR/tri.param.bin` and `DIR/tri.tadata.bin`
 after the renders. `--words DIR` copies the kernel's debugfs `render_words` (the render

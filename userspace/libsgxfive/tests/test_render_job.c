@@ -623,6 +623,55 @@ static void pb_overflow(void)
 }
 
 /*
+ * The kernel's debugfs render_final_pb_pages, as the mock's config: the next render context
+ * takes it once; the render that closes a scene a geometry job opened has that PB, the next
+ * scene the context's own again. With 0x23 pages 1024 x 768 overflows and with 0x40 it fits;
+ * a second context, and a value the kernel would refuse, change nothing.
+ */
+static void final_pb(void)
+{
+	static const struct { uint32_t final; int error; } runs[] = {
+		{ 0x40, 0 }, { 0, -ENOSPC }, { 0x423, -ENOSPC }, { 0x22, -ENOSPC },
+	};
+	struct sgxfive_tri_params p;
+	struct sgxfive_render *r2;
+	uint32_t ctx2;
+	struct env e;
+
+	for (unsigned int i = 0; i < sizeof(runs) / sizeof(runs[0]); i++) {
+		const struct sgxfive_mock_config cfg = { .render_pb_pages = 0x23,
+							 .render_final_pb_pages = runs[i].final };
+
+		memset(&e, 0, sizeof(e));
+		e.mock = sgxfive_mock_create(&cfg);
+		CHECK_EQ(sgxfive_dev_open(sgxfive_mock_backend(e.mock), NULL, &e.dev), 0);
+		CHECK_EQ(sgxfive_vm_create(e.dev, &e.vm), 0);
+		CHECK_EQ(sgxfive_render_ctx_create(e.vm, 1024, 768, &e.ctx), 0);
+		CHECK_EQ(sgxfive_render_create(e.vm, e.ctx, &e.r), 0);
+		sgxfive_tri_default(&p, 1024, 768);
+		CHECK_EQ(sgxfive_render_tri_flags(e.r, &p, 0, 0,
+						  DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY), 0);
+		CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+		CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+		CHECK_EQ(sgxfive_render_wait(e.r, NSEC), runs[i].error);
+		/* the next scene, whole: the context's own PB */
+		CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+		CHECK_EQ(sgxfive_render_wait(e.r, NSEC), -ENOSPC);
+		/* a second context: the knob was taken */
+		CHECK_EQ(sgxfive_render_ctx_create(e.vm, 1024, 768, &ctx2), 0);
+		CHECK_EQ(sgxfive_render_create(e.vm, ctx2, &r2), 0);
+		CHECK_EQ(sgxfive_render_tri_flags(r2, &p, 0, 0,
+						  DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY), 0);
+		CHECK_EQ(sgxfive_render_wait(r2, NSEC), 0);
+		CHECK_EQ(sgxfive_render_tri(r2, &p, 0, 0), 0);
+		CHECK_EQ(sgxfive_render_wait(r2, NSEC), -ENOSPC);
+		sgxfive_render_destroy(r2);
+		sgxfive_ctx_destroy(e.dev, ctx2);
+		env_fini(&e);
+	}
+}
+
+/*
  * fb_fill_set: the target's rows (pads included) hold fb_fill in place of the sentinel when
  * the job is kicked, the guard page after them the sentinel still. A geometry job draws
  * nothing, so its colour buffer is what the host wrote; a later render without it is back
@@ -667,6 +716,7 @@ int main(void)
 	fault();
 	fault_wait();
 	pb_overflow();
+	final_pb();
 	transfers();
 	bg_layer();
 	fb_fill();

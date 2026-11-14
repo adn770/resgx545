@@ -597,6 +597,20 @@ with the hold left as it was, and logs `BIF_CTRL` before and after and the BIF s
 `-EBUSY` with nothing held, `-ENODEV` while no firmware runs, `-EINVAL` for any other value. No
 clock-gate register is written. It is for the replay of Q003 after E848's held faults.
 
+One more is on the linux fork's branch `r18-kernel` (commits ec521047f79b and 456404fcffe5, round
+18; not landed, its module E0CC40275493F8AEAD8180B not yet booted). `render_final_pb_pages`
+(0600, default 0) takes 0 or a PB of 0x23 to 0x422 pages, any other value `-EINVAL` with the knob
+left as it was; the next render context created takes it once (it reads 0 again) and a reset
+drops it. That context's free list holds the larger of `render_pb_pages`' PB and this one, and
+its thresholds are `render_pb_pages`' (the TA's follows the list, list + 0x10); the job that
+closes a scene a geometry job opened carries this PB's thresholds in its TA command (flags bit
+13, thresholds at dwords 10 to 13, the EDM's own threshold update, edm_dataflow.md), and the next
+scene's first job carries the context's own back. A context on a sibling's PB
+(`render_share_pb`) takes the knob and ignores it. The tool's `tri --geometry K
+--final-pb-pages N` writes it before its render context is created, so a final render after an
+overflowing geometry kick can have room of its own (Q045, Q038) [infer: that the EDM applies the
+update before the final kick's TA, as edm_dataflow.md reads it, is not yet measured].
+
 Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not
 only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
 ends the query, about 0.65 s from the shell), another context's fill does not run, the

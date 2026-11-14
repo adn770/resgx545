@@ -31,6 +31,12 @@ struct sgxfive_mock_config {
 	const char *sgxfive_name;	/* driver name of the sgxfive node; NULL: "sgxfive" */
 	uint32_t render_pb_pages;	/* render contexts' PB, 0x23-0x422; 0: 0x422 */
 	/*
+	 * the kernel's debugfs render_final_pb_pages: taken once by the next render context, whose
+	 * render that closes a scene a geometry job opened has a PB of these pages (0x23-0x422,
+	 * the context's own: 0 or any other value)
+	 */
+	uint32_t render_final_pb_pages;
+	/*
 	 * the kernel's debugfs render_bg_layer and render_bg_src: with the layer on, a render's
 	 * background object is the one-layer form and its source must be set and mapped in the
 	 * render's VM (else -EINVAL at submit); the background pixels are then the source's

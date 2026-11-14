@@ -248,6 +248,50 @@ def test_tri_share_pb_without_debugfs_fails(tmp_path, monkeypatch):
     assert "render_share_pb" in r.stderr
 
 
+FINAL_ARGS = ("tri", "--width", "1024", "--height", "768", "-n", "2", "--geometry", "1")
+
+
+def test_tri_final_pb_pages_writes_the_knob_before_the_context_and_the_final_render_fits(
+        tmp_path, monkeypatch):
+    # the kernel's PB is read once, at the context's creation: --final-pb-pages writes debugfs
+    # render_final_pb_pages before it, and the context's final render after the geometry kick
+    # has that PB (0x23 pages overflow 1024 x 768 in the mock, 0x40 take it)
+    (tmp_path / "render_final_pb_pages").write_text("0x0\n")
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path))
+    r = run("--mock-pb-pages=0x23", "--mock", *FINAL_ARGS, "--final-pb-pages", "0x40")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / "render_final_pb_pages").read_text().strip() == "0x40"
+    assert "tri: final renders' PB 0x40 pages (debugfs render_final_pb_pages)" in r.stdout
+    assert "tri: 2 renders ok" in r.stdout
+    (tmp_path / "render_final_pb_pages").write_text("0x0\n")
+    r = run("--mock-pb-pages=0x23", "--mock", *FINAL_ARGS)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "overflowed" in r.stdout + r.stderr
+    assert (tmp_path / "render_final_pb_pages").read_text().strip() == "0x0"
+
+
+def test_tri_final_pb_pages_without_debugfs_fails(tmp_path, monkeypatch):
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path / "none"))
+    r = run("--mock", *FINAL_ARGS, "--final-pb-pages", "0x40")
+    assert r.returncode == 1
+    assert "render_final_pb_pages" in r.stderr
+
+
+@pytest.mark.parametrize("args", [
+    ("tri", "-n", "2", "--final-pb-pages", "0x40"),                  # no geometry kick
+    ("tri", "--final-pb-pages", "0x40"),
+    (*FINAL_ARGS, "--final-pb-pages", "0x22"),                        # the kernel's range
+    (*FINAL_ARGS, "--final-pb-pages", "0x423"),
+    (*FINAL_ARGS, "--final-pb-pages", "0"),
+    (*FINAL_ARGS, "--final-pb-pages", "64x"),
+    (*FINAL_ARGS, "--final-pb-pages", "0x40", "--final-pb-pages", "0x41"),
+    ("fill", "--final-pb-pages", "0x40"),
+])
+def test_tri_final_pb_pages_is_refused_strictly(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, (args, r.stdout + r.stderr)
+
+
 @pytest.mark.parametrize("overlap", [[], ["--overlap"]])
 def test_tri_second_context_kpoke(tmp_path, monkeypatch, overlap):
     # --kpoke-render2 writes its poke just before the second context's render N, so that the

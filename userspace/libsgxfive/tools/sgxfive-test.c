@@ -23,7 +23,8 @@
  *   isolation                     VM separation, faults, lost contexts, read-only maps
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--aa4] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
- *         [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
+ *         [--geometry N]... [--final-pb-pages N] [--keep-going] [--keep-overflow]
+ *         [--dump-render DIR [--dump-each]]
  *         [--refill K:BUF=V]...
  *         [--tri-full] [--tri-z A,B,C] [--isp2 V]
  *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
@@ -60,6 +61,13 @@
  *                                 draws render N's triangle DX, DY pixels away;
  *                                 --geometry submits render N geometry only (the scene
  *                                 left open for the next render, nothing drawn);
+ *                                 --final-pb-pages N (0x23 to 0x422, with --geometry):
+ *                                 writes N to debugfs render_final_pb_pages before the
+ *                                 render context is created (the kernel's next context
+ *                                 takes it once; the mock's config in the mock): the
+ *                                 render closing a scene a geometry render opened has a
+ *                                 PB of N pages, the context's render_pb_pages PB its
+ *                                 other renders (the kernel needs the debug option);
  *                                 --keep-going reports every render, checked or not;
  *                                 --keep-overflow counts a render whose scene overflowed
  *                                 the parameter buffer and goes on; --dump-each: the
@@ -371,6 +379,7 @@ struct opts {
 	struct { uint32_t n; const char *spec; bool second, reg, job, fill; } kpr[KPR_MAX];
 	unsigned int nkpr;
 	uint32_t geometry;		/* tri: renders submitted geometry only (bit n - 1) */
+	uint32_t final_pb;		/* tri: the final renders' PB (render_final_pb_pages), 0 */
 	const char *dump_dir;		/* tri: the scene's memory there after the renders */
 	const char *words_dir;		/* tri: the context's words there around each render */
 	const char *kept_dir;		/* tri --ctx2: debugfs render_kept after each second render */
@@ -457,6 +466,7 @@ static int usage(void)
 		"                      --aa4 --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --scratch-file FILE\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
+		"                      --final-pb-pages N\n"
 		"                      --refill K:depth|stencil|fb=V\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
 		"                      --words DIR\n"
@@ -3082,8 +3092,24 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (ret)
 			goto out;
 	}
+	/*
+	 * --final-pb-pages: the kernel reads its PB knobs when a render context is created, and
+	 * the next one takes render_final_pb_pages once; written back to 0 if none took it
+	 */
+	if (!ret && o->final_pb) {
+		char v[16];
+
+		snprintf(v, sizeof(v), "0x%x", o->final_pb);
+		ret = debugfs_set("render_final_pb_pages", v);
+		if (ret) {
+			fail("render_final_pb_pages", ret);
+			goto out;
+		}
+	}
 	if (!ret)
 		ret = sgxfive_render_ctx_create_flags(vm, max_w, max_h, ctx_flags, &ctx);
+	if (ret && o->final_pb)
+		debugfs_set("render_final_pb_pages", "0");
 	if (!ret)
 		ret = sgxfive_render_create(vm, ctx, &r);
 	if (ret) {
@@ -3091,6 +3117,9 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		goto out;
 	}
 	printf("tri: render context for targets up to %ux%u\n", max_w, max_h);
+	if (o->final_pb)
+		printf("tri: final renders' PB 0x%x pages (debugfs render_final_pb_pages)\n",
+		       o->final_pb);
 	if (o->aa4)
 		printf("tri: render context made for 4x targets (DRM_SGXFIVE_CTX_RENDER_AA_4X)\n");
 	if (o->scratch) {
@@ -3962,6 +3991,18 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			o->geometry |= 1u << (n - 1);
 			continue;
 		}
+		if (!strcmp(argv[i], "--final-pb-pages") && i + 1 < argc) {
+			uint32_t n;
+
+			/* the kernel's range: 0x23 (a ZLS threshold) to the slot's 0x422 */
+			if (o->final_pb || !parse_u32(argv[i + 1], &n) || n < 0x23 || n > 0x422) {
+				fprintf(stderr, "sgxfive-test: bad --final-pb-pages %s (once, 0x23 to "
+					"0x422)\n", argv[i + 1]);
+				return -1;
+			}
+			o->final_pb = n;
+			continue;
+		}
 		if (!strcmp(argv[i], "--dump-render") && i + 1 < argc) {
 			o->dump_dir = argv[i + 1];	/* i += 2 below */
 			continue;
@@ -4649,6 +4690,11 @@ int main(int argc, char **argv)
 			"--overlap\n");
 		return 2;
 	}
+	if (o.final_pb && (strcmp(cmd, "tri") || !o.geometry)) {
+		fprintf(stderr, "sgxfive-test: --final-pb-pages is for tri with --geometry (it sets the "
+			"PB of the render that closes a scene a geometry kick opened)\n");
+		return 2;
+	}
 	if (o.geometry && (strcmp(cmd, "tri") || o.geometry >> (o.n - 1))) {
 		fprintf(stderr, "sgxfive-test: --geometry is for tri, renders 1 to %u (the last "
 			"render closes the scene)\n", o.n - 1);
@@ -4757,6 +4803,7 @@ int main(int argc, char **argv)
 		return 2;
 	}
 
+	mcfg.render_final_pb_pages = o.final_pb;	/* the mock's debugfs (tri writes the kernel's) */
 	if (use_mock)
 		t.mock = sgxfive_mock_create(&mcfg);
 	ret = sgxfive_dev_open(use_mock ? sgxfive_mock_backend(t.mock) : NULL, device, &t.dev);

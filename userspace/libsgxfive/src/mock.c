@@ -64,6 +64,8 @@ struct mctx {
 	uint32_t max_w, max_h;	/* render: the largest target it takes */
 	bool aa4;		/* render: made for 4x targets (DRM_SGXFIVE_CTX_RENDER_AA_4X) */
 	uint32_t pb_pages;	/* render: its parameter buffer */
+	uint32_t pb_final;	/* render: its final renders' after a geometry job, 0: pb_pages */
+	bool scene_open;	/* render: a geometry job left its scene open */
 	struct mvm *vm;
 	bool lost;
 };
@@ -94,6 +96,7 @@ struct sgxfive_mock {
 	uint64_t quirks;
 	uint32_t bridge_rev;
 	uint32_t pb_pages;		/* of render contexts created from now on */
+	uint32_t final_pb;		/* debugfs render_final_pb_pages: the next one's, once */
 	bool bg_layer;			/* debugfs render_bg_layer: the one-layer background */
 	uint32_t bg_src;		/* debugfs render_bg_src */
 	struct mbo *bos[MAX_OBJS];
@@ -541,6 +544,10 @@ static int m_create_ctx(struct sgxfive_mock *m, int fd,
 	c->max_h = a->max_height;
 	c->aa4 = a->flags & DRM_SGXFIVE_CTX_RENDER_AA_4X;
 	c->pb_pages = m->pb_pages;
+	if (c->type == DRM_SGXFIVE_CTX_TYPE_RENDER) {
+		c->pb_final = m->final_pb != c->pb_pages ? m->final_pb : 0;
+		m->final_pb = 0;
+	}
 	c->vm = vm;
 	if (insert((void **)m->ctxs, c))
 		return -ENOMEM;
@@ -1117,12 +1124,13 @@ static uint32_t bgl_texel(struct xfer_state *x, const struct bgl *b, uint32_t px
  * read outside the VM's mappings is a fault and nothing is written; so is a
  * vertex shader, end-of-tile, PTOFF or end-of-render task that is not mapped
  * (their programs are not run, only their first words read). A scene
- * that overflows the context's parameter buffer would need partial renders,
- * which the kernel does not support: -ENOSPC, nothing written (the image is
- * undefined), the context kept.
+ * that overflows its parameter buffer (pb_pages: the context's, or its final
+ * renders' after a geometry job, debugfs render_final_pb_pages) would need
+ * partial renders, which the kernel does not support: -ENOSPC, nothing
+ * written (the image is undefined), the context kept.
  */
 static int run_render(struct sgxfive_mock *m, struct mctx *ctx,
-		      const struct drm_sgxfive_render_cmd *c)
+		      const struct drm_sgxfive_render_cmd *c, uint32_t pb_pages)
 {
 	struct xfer_state x = {
 		.vm = ctx->vm, .use_base = m->heaps[DRM_SGXFIVE_HEAP_USSE_PIXEL].base,
@@ -1185,7 +1193,7 @@ static int run_render(struct sgxfive_mock *m, struct mctx *ctx,
 			x.fault = true;			/* links: not used by our streams */
 		}
 	}
-	if (!x.fault && pb_overflows(ctx->pb_pages, c->mte_screen))
+	if (!x.fault && pb_overflows(pb_pages, c->mte_screen))
 		return -ENOSPC;
 	/* The target: pixel-event PDS -> EOT -> PBE state; the background colour. */
 	eot = doutu_addr(&x, rd(&x, c->event_pixel_pds_exec + 12));
@@ -1291,8 +1299,13 @@ static int m_submit(struct sgxfive_mock *m, int fd, struct drm_sgxfive_submit_jo
 			 * A geometry job only tiles: nothing drawn. The mock keeps no
 			 * scene, so the job closing one draws its own geometry only.
 			 */
-			if (!(v[i].job.flags & DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY))
-				error = run_render(m, v[i].ctx, &v[i].rc);
+			const bool closes = v[i].ctx->scene_open;
+
+			v[i].ctx->scene_open = v[i].job.flags & DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY;
+			if (!v[i].ctx->scene_open)
+				error = run_render(m, v[i].ctx, &v[i].rc,
+						   closes && v[i].ctx->pb_final ? v[i].ctx->pb_final :
+						   v[i].ctx->pb_pages);
 			m->stats.renders_run++;
 		} else if (v[i].job.flags & DRM_SGXFIVE_SUBMIT_JOB_TRANSFER_DUMMY) {
 			m->stats.dummies_run++;
@@ -1484,6 +1497,8 @@ struct sgxfive_mock *sgxfive_mock_create(const struct sgxfive_mock_config *cfg)
 	m->bg_src = cfg->bg_src;
 	m->pb_pages = cfg->render_pb_pages >= 0x23 && cfg->render_pb_pages <= 0x422 ?
 		      cfg->render_pb_pages : 0x422;
+	m->final_pb = cfg->render_final_pb_pages >= 0x23 && cfg->render_final_pb_pages <= 0x422 ?
+		      cfg->render_final_pb_pages : 0;
 	return m;
 }
 

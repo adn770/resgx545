@@ -856,11 +856,17 @@ stays with what a session must do around it.
   depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
   extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
   than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
-- no `tri` job can make a final render that does not overflow itself after an overflowing
+- no `tri` job could make a final render that does not overflow itself after an overflowing
   `--geometry` kick (Q045's load-readback, Q038's reload without overflow): the fork reads debugfs
-  `render_pb_pages` once, when a render context is created, and builds the PB from it at creation
-  and after a reset only (`sgxfive_render.c`, `r->pb_pages`), so a knob write between the kicks
-  would not reach the context (round 18's T-pbfinal was dropped for it). It needs a kernel change.
+  `render_pb_pages` once, when a render context is created (round 18's T-pbfinal was dropped for
+  it). The kernel change is on the fork's branch `r18-kernel` (456404fcffe5: debugfs
+  `render_final_pb_pages`, taken once by the next render context; the final job after a geometry
+  job sets that PB's thresholds through its TA command), and the tool has `tri --final-pb-pages
+  N` (round 18, branch `r18-kernel-tool`). It stays listed until the fork lands it and a session
+  runs on its module (srcversion E0CC40275493F8AEAD8180B): such a session declares the knob in
+  session.toml `[knobs]` at default 0 (the guard refuses the option otherwise), so the preflight
+  refuses a module without the file. Whether the EDM applies the update before the final kick's
+  TA (`0x0624` of the final job reading N - 0x22) is that session's first control.
 - sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
   refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
   path before E902's seeds. A session that needs the sim as an oracle checks first that its
