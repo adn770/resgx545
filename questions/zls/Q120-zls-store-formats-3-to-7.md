@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978", "E985", "E986", "E1015", "E1031"]
+evidence = ["E466", "E490", "E978", "E985", "E986", "E1015", "E1031", "E1043"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -66,3 +66,12 @@ of 16: each block holds the same 44 dwords, another form (post hoc, no rule). Op
 form, format 7 under a varying stencil, format 5 under constant rows, format 6's edge tiles and
 variable-length runs, what parts the pitch from the tiles across, and every packed format without a
 stencil buffer.
+
+Narrowed 2026-11-14 (r14-zls, E1043). A flat format-6 tile at 0.25, 0.75, 1.0 and 0.0 stores
+E1031's 44 dwords a block, its first 16 bytes E1015's F6C group 0 for the depth (FL-HEAD, FL-SHAPE 4
+of 5); post hoc every block is E1031's with row 0's record carrying the depth, while 0.1234 stores
+another form of 52 to 60 dwords. Format 7 under the index stencil keeps on a flat 0.5 the 771 dwords
+E986's two ramps share (F7I-COMMON, F7I-COUNT); format 5 on the flat 0.5 is not format 6's block.
+Open: the flat form's rule and why 0.1234 differs, format 7's depth-dependent dwords, format 5's
+layout, format 6's edge tiles and variable runs, the pitch against the tiles across, and every
+packed format without a stencil buffer.

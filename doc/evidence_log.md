@@ -8605,6 +8605,53 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   every row [infer].
   *texture; HW, infer; data: `render-closing-r14-tex:out/20261114-054258/addr5/`,
   `render-closing-r14-tex:fold/`, `vectors-closing-r14-tex-pixels`.*
+- `E1040` r14-zls rows zg- (Q243, 12 jobs in stages zgran and zbits2, t10): the ZLS depth load base
+  (render details dword 12) is rounded down to 16 bytes: frozen G16 held 5 of 5 held-out moves (+8
+  loaded unmoved, +16, +32, +0x1008 and +0x1020 moved by 16-byte steps) while G8, G32, G64 and
+  H-BYTE failed, and with E1029's six offset moves no other granule of 4 to 128 bytes fits
+  (fold/look.py); formats 1 and 2 loaded from a base moved by +0x1000 read E465's 32-bit layout from
+  it, each dword a float stored by the floor rule (frozen I-MOVED-L32 2 of 2; the 16-bit layout, the
+  unmoved base and the store's buffer failed); the stencil load base (dword 14) moved by +0x1000
+  moves the stencil load (frozen S-MOVED, 2048 of 2048 bytes; S-UNMOVED and S-STOREBASE failed); all
+  six controls passed.
+  *zls; HW; data: `render-closing-r14-zls:out/20261114-054846/zgran/`,
+  `render-closing-r14-zls:out/20261114-054846/zbits2/`, `render-closing-r14-zls:fold/`.*
+- `E1041` r14-zls rows zo- (Q242, 11 jobs in stage zodd, t10): past odd targets (63 x 31 at G 1, 65
+  x 33 at G 2) formats 1 and 2 store, at every dword of the edge tiles, the floor rule of the float
+  the same pixel stores in format 0 (frozen INT-FLOOR-EXT 4 of 4; zero past the target and the edge
+  pixel's value failed 4 of 4); an overlapping store holds the tile the 3D visits last in region
+  header order with edge tiles (65 x 33 at G 1) and at four macrotiles a side (640 x 480 at G 2,
+  54784 of 54784 dwords) (frozen H-LATE/HDR 2 of 2; the raster order failed where it parts, the
+  early rivals 2 of 2); E411's G 3 arrangement with 20 pages stores tile rows 2 and 3 on pages 16
+  and 18 (frozen H-NEXTTILE, 1024 dwords of 0.5 on each of pages 12, 14, 16 and 18; H-STRAY failed);
+  the control passed.
+  *zls; HW; data: `render-closing-r14-zls:out/20261114-054846/zodd/`,
+  `render-closing-r14-zls:fold/`.*
+- `E1042` r14-zls rows zb2- (Q071, 20 jobs in stages zbits2, zgran and zodd, t10): no frozen model
+  of the set half held all 11 rows (best Z-ONE-23 and Z-GRP-21-23, 9 of 11): bits 21 to 23 set
+  together make E988's stencil test read 0 (2048 drawn, every stored byte 0xff) while 21, 22 and 27
+  to 31 alone and 27 to 31 together change nothing (1024 drawn, E988's image), and post hoc bit 15
+  alone fails the test at every pixel (0 drawn, the loaded bytes stored unchanged) and bit 23 alone
+  has it read a value of x mod 16 (1536 drawn, 0x00, 0x80 or 0x3f by column), not the loaded byte;
+  the linear stencil images have rows of 32 (G + 1) bytes (frozen P-G 4 of 4 at 96 x 32 and 64 x 32,
+  G 2; P-64 failed 4, the width 2); bit 12 cleared with a depth load reads the depth linearly, pixel
+  (x, y) at dword 64 y + x (frozen H-DEPTH-LIN 1 of 1, 2048 of 2048); bit 16 cleared on the 16-bit
+  format stores a linear image of 16-bit values, halfword 96 y + x at G 2 (frozen L16-HALF 1 of 1,
+  2304 of 2304); all five controls passed.
+  *zls; HW; data: `render-closing-r14-zls:out/20261114-054846/zbits2/`,
+  `render-closing-r14-zls:out/20261114-054846/zgran/`,
+  `render-closing-r14-zls:out/20261114-054846/zodd/`, `render-closing-r14-zls:fold/`.*
+- `E1043` r14-zls rows zl- (Q120, 9 jobs in stage zflat, t10): format 6 on flat planes at 0.25,
+  0.75, 1.0 and 0.0 stores E1031's 44 dwords a block, the four blocks alike and the 0x9e markers in
+  place, with the first 16 bytes E1015's F6C group 0 for the depth (frozen FL-HEAD and FL-SHAPE 4 of
+  5; FL-CONST 0 of 5), and post hoc every one of those 16 blocks is E1031's with row 0's record
+  (bytes 7 to 10) carrying the depth; at 0.1234 the blocks hold 52, 60, 60 and 44 dwords of another
+  form (no frozen model held); format 7 under the index stencil on a flat 0.5 keeps the 771 dwords
+  E986's two ramps share and changes 784, 392 in each of blocks 0 and 1 (frozen F7I-COMMON and
+  F7I-COUNT 1 of 1); format 5 on the flat 0.5 is not format 6's block (F5-EQ-F6 failed; 172, 296,
+  176, 128 and 172 dwords in five blocks); both controls passed.
+  *zls; HW; data: `render-closing-r14-zls:out/20261114-054846/zflat/`,
+  `render-closing-r14-zls:fold/`.*
 - `E1044` r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1, 4 and 7 partial
   renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage stopped by its
   own rule (rc 24) because its sampling period read 1682 ns where the frozen premise was at most
@@ -8754,4 +8801,4 @@ E1035.
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
-E996, E997, E1015, E1020, E1029, E1030, E1031.
+E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043.
