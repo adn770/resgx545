@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965"]
+evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965", "E1046"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT"]
 +++
 
@@ -59,4 +59,15 @@ predictions, read as post hoc (E964). What stays: CACHECONSISTENT on data cached
 host's write (a tool that reads, writes from the host and reads again in one context);
 WRITEONLY and EDMPROTECT alone on a texture read (the copy maps its source READONLY); either flag
 on a depth load, the TA's own writes and the EDM's buffers; which unit makes the last-page access
+under WRITEONLY.
+
+Narrowed 2026-11-14 (round 14, session r14-bif, decision R14-4 (a); E1046, frozen, every control
+passed). CACHECONSISTENT on data cached before the host's write, on a depth load: with tri
+--refill the host rewrote the depth buffer between two renders of one context, after render 1
+had loaded it, and render 2's ZLS load read the new value in every stored dword, with the flag on
+the buffer's mapping and without it (H-CC-COHERENT, H-NC-COHERENT); no stale copy of render 1's
+load came back. The flag on the loaded buffer faulted nothing and, with no refill, changed
+nothing (H-CC-NOOP). What stays: data cached within one render, other units' reads under the flag
+(texture, TA, EDM), WRITEONLY and EDMPROTECT alone on a texture read, WRITEONLY or EDMPROTECT on
+a depth load, the TA's own writes and the EDM's buffers; which unit makes the last-page access
 under WRITEONLY.

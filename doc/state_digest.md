@@ -52,7 +52,7 @@ list.
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
-  do on the hardware, which of the bus interface's requestors do ... (E946, E964, E965)
+  do on the hardware, which of the bus interface's requestors do ... (E964, E965, E1046)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q192` dpm, medium: does the store that follows the next context's render replace the state page a
@@ -321,9 +321,12 @@ list.
 
 ## Recent records
 
-100 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+101 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1046` bif, 2026-11-14: R14-bif stage refill (Q108's stale-data clause; E1029's zb-c-id depth
+  form, 64 x 32, depth test never so the store holds the load, run twice on one context, 6 jobs,
+  every control passed): when the ...
 - `E1044` dpm, 2026-11-14: r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1,
   4 and 7 partial renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage
   stopped by its own rule (rc ...
@@ -627,10 +630,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-54 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+55 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r14-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r14-bif`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t14
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
 - `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r9-lgeo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -707,7 +711,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 20 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 21 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

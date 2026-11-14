@@ -1,0 +1,9 @@
+title = "r14-bif refill: the PTE knobs, the kernel's PTE and BIF fault lines and the job's outcome of each job (6 jobs)"
+repo = "data"
+paths = ["vectors/closing/r14-bif/pte/"]
+method = "tools/usse-asm/closing_tables.py pte on the published render/closing-r14-bif session (stage refill of its one attempt, out/20261114-055414), one file; rows are measurements; replayed by crates/sgx-pipe/tests/pte_table.rs::the_model_replays_every_modelled_row_of_the_pte_tables (sgx-pipe bif::pte_access with the ZLS load access; 6 rows modelled, none refused)"
+date = "2026-11-14"
+files = 1
+size = 6251
+sha256 = "26ef0654a6780ac400597e54471754df79214b4d97bd8b0e7cfe94ba2db38d00"
+recipe = "tools/usse-asm/closing_tables.py"
