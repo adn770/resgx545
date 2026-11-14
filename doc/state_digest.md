@@ -64,7 +64,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E997, E1014, E1030)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E1014, E1030, E1042)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -181,7 +181,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E986, E1015, E1031)
+  how are they laid out, given that they store depth and stencil ... (E1015, E1031, E1043)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -295,9 +295,9 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
-  the integer formats store past the target at an odd width or ... (E977, E991, E996)
-- `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
-  an address other than the one the store writes, and when ... (E977, E995, E1029)
+  the integer formats store past the target at an odd width or ... (E991, E996, E1041)
+- `Q243` zls, low: what address does the ZLS load read from when its base (render details dword 12,
+  and dword 14 for the stencil) is not the store's, and with ... (E995, E1029, E1040)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -321,12 +321,24 @@ list.
 
 ## Recent records
 
-100 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+104 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1044` dpm, 2026-11-14: r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1,
   4 and 7 partial renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage
   stopped by its own rule (rc ...
+- `E1043` zls, 2026-11-14: r14-zls rows zl- (Q120, 9 jobs in stage zflat, t10): format 6 on flat
+  planes at 0.25, 0.75, 1.0 and 0.0 stores E1031's 44 dwords a block, the four blocks alike and the
+  0x9e markers in place, with the ...
+- `E1042` zls, 2026-11-14: r14-zls rows zb2- (Q071, 20 jobs in stages zbits2, zgran and zodd, t10):
+  no frozen model of the set half held all 11 rows (best Z-ONE-23 and Z-GRP-21-23, 9 of 11): bits 21
+  to 23 set together make ...
+- `E1041` zls, 2026-11-14: r14-zls rows zo- (Q242, 11 jobs in stage zodd, t10): past odd targets (63
+  x 31 at G 1, 65 x 33 at G 2) formats 1 and 2 store, at every dword of the edge tiles, the floor
+  rule of the float the same ...
+- `E1040` zls, 2026-11-14: r14-zls rows zg- (Q243, 12 jobs in stages zgran and zbits2, t10): the ZLS
+  depth load base (render details dword 12) is rounded down to 16 bytes: frozen G16 held 5 of 5
+  held-out moves (+8 loaded ...
 - `E1035` vdm, 2026-11-13: r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and
   idle:S): E700's counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a
   completed one hung on a 128 x ...
@@ -627,9 +639,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-54 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+55 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
 - `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -707,7 +720,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 20 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 21 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

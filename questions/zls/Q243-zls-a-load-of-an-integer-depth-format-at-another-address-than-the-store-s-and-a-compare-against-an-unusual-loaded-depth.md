@@ -1,11 +1,11 @@
 +++
 id = "Q243"
-question = "what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at an address other than the one the store writes, and when the loaded depth is a NaN or infinity or is compared with a depth equal to it?"
+question = "what address does the ZLS load read from when its base (render details dword 12, and dword 14 for the stencil) is not the store's, and with an integer stored format (bits 26:24 = 1 or 2) there?"
 unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E467", "E628", "E664", "E977", "E995", "E1029"]
+evidence = ["E467", "E628", "E664", "E977", "E995", "E1029", "E1040"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -43,3 +43,18 @@ onto the store's own buffer all held out (the frozen H-MOVED, 6 of 7; the store'
 unmoved base refuted), but a base 4 bytes off loaded as the unmoved one while 64 bytes moved it
 (post hoc: the base rounded down to 8, 16, 32 or 64 bytes). Open: that granule (a base moved by 8,
 16 and 32 bytes), and the moved base with an integer format or a moved stencil load base.
+
+Text fix 2026-11-14 (round 14, decision R14-7 (a)). The question line drops the integer-format
+compare, NaN, infinity and equal-depth clauses, answered by E977 (an integer load compares as the
+dword's float) and E995 (the loaded depth enters the compare with its sign cleared, NaN above every
+depth, under every compare); what stays is the moved base and an integer format at it.
+
+Narrowed 2026-11-14 (r14-zls, E1040). The depth load base is rounded down to 16 bytes: frozen G16
+held 5 of 5 held-out moves (+8 unmoved; +16, +32, +0x1008, +0x1020 moved), and with E1029's moves
+no other granule of 4 to 128 bytes fits; formats 1 and 2 loaded from a base moved by a page read
+E465's 32-bit layout from it, each dword a float (I-MOVED-L32 2 of 2), and the stencil load base,
+dword 14, moved by a page moves the stencil load (S-MOVED, 2048 of 2048 bytes); every control
+passed. sgx-pipe models the base (`zls::load_base`). Every clause of the question line is now
+decided by held-out rows with passing controls: proposed for retirement as answered by E1040
+(R14-6 (a), [infer], the lead to confirm). sgx-pipe's refusals that still cite Q243 (a load pass
+over edge tiles, bit 19 with a load) would move to a question of their own on retirement.

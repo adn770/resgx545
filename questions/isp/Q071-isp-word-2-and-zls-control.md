@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E989", "E997", "E1014", "E1030"]
+            "E989", "E997", "E1014", "E1030", "E1042"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -78,3 +78,12 @@ stencil load read a linear image of 64-byte rows and bit 16 cleared makes the st
 bit 20 changes nothing seen. sgx-pipe models bit 16's depth store and these stencil sources. Open:
 which bit of the set half reads 0, the linear stencil images' rows at another pitch, bit 12 or 16
 with a depth load, bit 20, and bit 0 under other controls.
+
+Narrowed 2026-11-14 (r14-zls, E1042). No set-half bit alone makes E988's stencil test read 0 (no
+frozen single-bit or group model held all 11 rows): bits 21 to 23 together do (2048 drawn, every
+stored byte 0xff), 21, 22 and 27 to 31 alone and 27 to 31 together change nothing; post hoc bit 15
+alone fails the test at every pixel and bit 23 alone has it read a value of x mod 16, not the loaded
+byte. The linear images of bits 12 (the loads) and 16 (the stores) have rows of 32 (G + 1) units:
+the stencil's bytes (P-G 4 of 4 at G 2), the depth load's dwords (H-DEPTH-LIN, bit 12 with a depth
+load) and, in the 16-bit format, halfwords (L16-HALF). Open: what bits 15 and 23 alone do, 21 or 22
+paired with 23, bit 0 under other controls, bit 20, and the ISP's use of the control.

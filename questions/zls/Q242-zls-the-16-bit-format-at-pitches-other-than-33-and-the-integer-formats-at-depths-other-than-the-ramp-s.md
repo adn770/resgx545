@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E466", "E490", "E663", "E977", "E411", "E465", "E991", "E996"]
+evidence = ["E466", "E490", "E663", "E977", "E411", "E465", "E991", "E996", "E1041"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -55,3 +55,16 @@ raster inside): 5 of 5 held out pitches at 64 x 32 to 256 x 64 and format 1 at 6
 shared dword, no slot mixed; the raster order fails where it parts from the header order. Open: the
 integer formats at an odd width or height, what lies past page 15 in E411's arrangement, and an
 overlapping store with edge tiles or four macrotiles a side.
+
+Narrowed 2026-11-14 (r14-zls, E1041). Past odd targets (63 x 31 at G 1, 65 x 33 at G 2) formats 1
+and 2 store the floor rule of the float the same pixel stores in format 0 at every dword of the edge
+tiles (INT-FLOOR-EXT 4 of 4 held out); an overlapping store holds the tile the 3D visits last in
+region header order with edge tiles (65 x 33 at G 1) and at four macrotiles a side (640 x 480 at
+G 2; H-LATE/HDR 2 of 2, raster order failed where it parts); E411's G 3 arrangement with 20 pages
+stores tile rows 2 and 3 on pages 16 and 18, 1024 dwords each, as E465's rule puts them
+(H-NEXTTILE); the control passed. sgx-pipe stores the integer formats at odd sizes and the float
+format's overlaps with edge tiles and four macrotiles a side, replaying the kept rows. Every clause
+of the question line is decided by held-out rows with a passing control: proposed for retirement as
+answered by E1041 (R14-6 (a), [infer], the lead to confirm). sgx-pipe's refusals that still cite
+Q242 (overlaps in the 16-bit format and in the 24-bit one with edge tiles or four macrotiles,
+integer values outside 0 to 1) would move to a question of their own on retirement.
