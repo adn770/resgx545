@@ -9486,7 +9486,8 @@ open driver:
    fill's instances share (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
    the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
-   (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost (Q098).
+   (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost
+   (Q098).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
