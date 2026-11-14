@@ -224,6 +224,9 @@ EOF
 		else FAULT_EVENTS=$((FAULT_EVENTS + 1)); fi
 		echo "  $class (a reading): events $FAULT_EVENTS of $FAULT_LIMIT; reset, then strict health"
 		reset_gpu; strict_health "$name" </dev/null
+		# the files of its class the scorer reads (REQUIRED's "fault:", "hang:" and "any:" ones)
+		miss=$(required_missing "$name" "$class" | tr '\n' ' ')
+		[ -z "$miss" ] || { echo "## STOP: the scorer reads $miss, which $name ($class) did not write or the runner did not keep"; exit 23; }
 		hook_fault "$name" > "$JW/check.txt"
 		why=$(cat "$JW/check.txt")
 		[ -z "$why" ] || { echo "## STOP (stage $STAGE): $why, after $name"; exit 24; }

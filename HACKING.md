@@ -238,7 +238,10 @@ and calls from its own tests, rather than hand-rolling the check:
   status or a `command not found` / `No such file` line (r6-dpm staged no `lib_check.sh`, so
   `num_eq` was not found at a control on the laptop).
 - **Every scorer input is declared, made and kept.** A scorer names the files it reads in
-  `REQUIRED = {stage: (".suffix" per row, or a file name)}`; after a mock run
+  `REQUIRED = {stage: (".suffix" per row that ended ok, "fault:.suffix", "hang:.suffix" or
+  "any:.suffix" per row that ended so or per row, or a file name)}` (a row that ends in a
+  planned fault or hang keeps no dump: r14-flag and r18-flag scored those outside the kit;
+  the class is cases.tsv's, the guard refuses another prefix); after a mock run
   `sessioncheck.py kept score/<scorer>.py STAGE KEPT_DIR [--call F]` fails on a declared file the
   kept output lacks and, with `F(stage, dir)`, on a file read there that `REQUIRED` does not
   declare. The runner checks the same before it moves on (a stop of its own status), and before
@@ -286,6 +289,11 @@ bounds every command with `timeout -k`, resets and checks health between jobs, r
 after every job and by its exit trap, makes the directories `outdir_opts` name and stops when a file
 the scorer requires was not kept.
 
+The driver keeps its own logs: `stage` appends to `out/stage.log` and `run` writes
+`out/ATTEMPT/run.log` (each line it prints), so nothing is teed into the session's top, where
+verify would report a new file. Sessions published before round 18 keep the run.log and stage.log
+teed at their top; verify passes those two names there (and only there).
+
 The freeze is pinned by commit, so main and data may move while sessions are built and run:
 FROZEN.sha256 names the session's files by relative path and each pinned input by absolute path,
 and FROZEN.commits gives each kit copy and each pin as `<sha256>  <commit>  resgx545:PATH` or
@@ -312,7 +320,11 @@ When the row's program files are not ones the mock runs and the replay ends rc 3
 failure than `probe NAME: failed: job faulted, context lost (Input/output error)` after NAME's
 scratch line, the row passes and the replay lists it as "program not simulated": its argv, usage
 and the kernel's refusals were checked, its program was not (round 13's t10p name, a second name
-for t10 with `no_source`, is no longer needed).
+for t10 with `no_source`, is no longer needed). The replay also has a debugfs directory
+(`SGXFIVE_DEBUGFS`) holding, empty, the kernel's dumps the tool copies (`render_param`,
+`render_tadata`, `render_kept`, `render_words`, `buf09`), so `tri` and `probe --tri
+--dump-render`, `--kept-copy` and `--words` replay (r18-flag dropped `--dump-render` from two
+rows for want of it); it holds no knob, which only a row's `dbg:` words give.
 A tool needs a `source` or a `no_source = "reason"` (the guard, so the mock and the freeze, fail
 without either; round 8's sessions declared neither and no row was replayed), and `new_session.py`
 demands `--tool-src` or `--no-source NAME=REASON` for every tool. Then it copies the
@@ -645,6 +657,11 @@ stays with what a session must do around it.
   depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
   extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
   than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
+- no `tri` job can make a final render that does not overflow itself after an overflowing
+  `--geometry` kick (Q045's load-readback, Q038's reload without overflow): the fork reads debugfs
+  `render_pb_pages` once, when a render context is created, and builds the PB from it at creation
+  and after a reset only (`sgxfive_render.c`, `r->pb_pages`), so a knob write between the kicks
+  would not reach the context (round 18's T-pbfinal was dropped for it). It needs a kernel change.
 - sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
   refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
   path before E902's seeds. A session that needs the sim as an oracle checks first that its

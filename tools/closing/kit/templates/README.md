@@ -13,4 +13,5 @@ had mode 644: "permission denied", nothing staged, the first stage exited 127):
 - Offline: `bash tests/run_all.sh` (guard, own tests, mock of every world, verify).
 - Freeze: `python3 kit/session.py freeze .` once the tests pass, before the first job.
 - Laptop: `python3 kit/session.py stage .`, then `python3 kit/session.py run .`
-  (stop codes: kit/session.py).
+  (stop codes: kit/session.py). The driver keeps its own logs, `out/stage.log` and
+  `out/ATTEMPT/run.log`; tee nothing into this directory's top (verify reports a new file there).

@@ -841,8 +841,8 @@ srcversion, fork tip, laptop tools.
   a2788bd8
 - module srcversion 230E0EF50FFFD606C53AE3C: last named 2026-11-10, 3 sessions
 - module srcversion B21FDA82BD5E5CB5A627E3B: last named 2026-11-10, 9 sessions
-- `tools/closing/scorekit.py` sha256 cc918255382e022e
-- `tools/closing/sessioncheck.py` sha256 6816ff3f316ba139
+- `tools/closing/scorekit.py` sha256 a10bcec039edeefe
+- `tools/closing/sessioncheck.py` sha256 75546a6e5ea0b3e1
 
 ## Known tool weaknesses
 
@@ -856,6 +856,11 @@ stays with what a session must do around it.
   depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
   extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
   than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
+- no `tri` job can make a final render that does not overflow itself after an overflowing
+  `--geometry` kick (Q045's load-readback, Q038's reload without overflow): the fork reads debugfs
+  `render_pb_pages` once, when a render context is created, and builds the PB from it at creation
+  and after a reset only (`sgxfive_render.c`, `r->pb_pages`), so a knob write between the kicks
+  would not reach the context (round 18's T-pbfinal was dropped for it). It needs a kernel change.
 - sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
   refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
   path before E902's seeds. A session that needs the sim as an oracle checks first that its

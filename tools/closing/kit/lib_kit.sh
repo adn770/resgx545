@@ -145,13 +145,18 @@ keep() { # NAME FILE [SUFFIX]: gzip the whole raw file (mtime 0), its size and r
 	echo "$1${3:-.txt} $raw $sum" >> "$KEEP/raw.sha256"
 }
 has_kept() { [ -s "$KEEP/$1" ] || [ -s "$KEEP/$1.gz" ]; }
-# required_missing NAME: the per-row files the scorer reads (run/required.tsv, from its REQUIRED)
-# that the kept directory lacks for row NAME; with no NAME, the stage's fixed files
+# required_missing NAME [CLASS]: the per-row files the scorer reads (run/required.tsv, from its
+# REQUIRED) that the kept directory lacks for row NAME, which ended CLASS (ok when not given):
+# ".suffix" is an ok row's, "fault:.suffix", "hang:.suffix" (and "ok:") the rows' that ended so,
+# "any:.suffix" every row's; with no NAME, the stage's fixed files
 required_missing() {
-	local s f
+	local s c=${2:-ok}
 	for s in $(awk -F'\t' -v st="$STAGE" '$1 == st { print $2 }' "$STAGED/run/required.tsv"); do
 		case "$s" in
-		.*) [ -n "${1:-}" ] && { has_kept "$1$s" || echo "$1$s"; } ;;
+		.*) [ -n "${1:-}" ] && [ "$c" = ok ] && { has_kept "$1$s" || echo "$1$s"; } ;;
+		ok:.*|fault:.*|hang:.*|any:.*)
+			[ -n "${1:-}" ] && { [ "${s%%:*}" = any ] || [ "${s%%:*}" = "$c" ]; } \
+				&& { has_kept "$1${s#*:}" || echo "$1${s#*:}"; } ;;
 		*) [ -z "${1:-}" ] && { has_kept "$s" || echo "$s"; } ;;
 		esac
 	done

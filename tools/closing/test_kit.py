@@ -1289,3 +1289,178 @@ def test_the_library_mock_replays_noreset_and_idle_rows_and_says_it_has_no_state
     assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
     assert re.search(r"^note libmock: 1 noreset row\(s\) replayed without the state of the row "
                      r"before", m.stdout, re.M), m.stdout
+
+
+# ---- round 18: REQUIRED per row class, the replay's debugfs dumps, the driver's logs ----------
+def kept_dir_with(tmp_path, rows, files):
+    """A kept directory: cases.tsv rows (name, class) in the runner's columns and the files."""
+    k = tmp_path / "kept"
+    k.mkdir()
+    (k / "cases.tsv").write_text("".join(
+        f"{n}\ts0\tfit\tsafe\t-\tt4\tfill\t{0 if c == 'ok' else 3}\t{c}\t-\t-\t-\n"
+        for n, c in rows))
+    for f in files:
+        (k / f).write_text("x")
+    return k
+
+
+def test_required_per_row_class_spares_a_planned_fault_the_dumps_of_an_ok_row(tmp_path):
+    """r14-flag and r18-flag: a row that ends in a planned fault or hang keeps no dump, and the
+    driver's kept check asked every row for the per-row files of REQUIRED (the runner asked only
+    the rows that ended ok), so f2's stores were scored outside the kit. A plain ".suffix" is now
+    the ok rows' (as the runner reads it); "fault:", "hang:" and "any:" name the files of the
+    rows that ended so, or of every row."""
+    import sessioncheck
+    k = kept_dir_with(tmp_path, [("a", "ok"), ("f", "fault"), ("h", "hang")],
+                      ["a.txt.gz", "a.dump.gz", "f.txt.gz", "h.txt.gz", "f.dmesg.gz"])
+    rows = sessioncheck.kept_classes(str(k))
+    assert rows == {"a": "ok", "f": "fault", "h": "hang"}
+    assert sessioncheck.kept_problems(str(k), (".txt", ".dump", "any:.txt", "fault:.dmesg"),
+                                      rows) == []
+    assert sessioncheck.kept_problems(str(k), ("any:.dump",), rows) == [
+        "the scorer reads f.dump, which is not kept", "the scorer reads h.dump, which is not kept"]
+    assert sessioncheck.kept_problems(str(k), ("hang:.dmesg", "ok:.dmesg"), rows) == [
+        "the scorer reads a.dmesg, which is not kept", "the scorer reads h.dmesg, which is not kept"]
+    # a list of names (no classes): every row is an ok row, as before
+    assert sessioncheck.kept_problems(str(k), (".dump",), ["a", "f"]) == [
+        "the scorer reads f.dump, which is not kept"]
+
+
+def test_the_kept_check_declares_every_class_s_files_for_every_row(tmp_path):
+    """Declaring is about what the scorer reads, not what must be kept: a file a REQUIRED entry
+    of any class names, for any row, is declared."""
+    import sessioncheck
+    k = kept_dir_with(tmp_path, [("a", "ok"), ("f", "fault")], ["a.dump.gz", "f.dmesg.gz"])
+
+    def reads():
+        for f in ("a.dump.gz", "f.dmesg.gz"):
+            open(k / f).read()
+    assert sessioncheck.kept_problems(str(k), (".dump", "fault:.dmesg"),
+                                      sessioncheck.kept_classes(str(k)), reads) == []
+
+
+def test_the_kept_cli_reads_the_row_classes_from_cases_tsv(tmp_path):
+    k = kept_dir_with(tmp_path, [("a", "ok"), ("f", "fault")], ["a.dump"])
+    sc = tmp_path / "score.py"
+    sc.write_text('REQUIRED = {"s0": (".dump", "cases.tsv")}\n')
+    r = subprocess.run([PY, str(HERE / "sessioncheck.py"), "kept", str(sc), "s0", str(k)],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    sc.write_text('REQUIRED = {"s0": ("any:.dump", "cases.tsv")}\n')
+    r = subprocess.run([PY, str(HERE / "sessioncheck.py"), "kept", str(sc), "s0", str(k)],
+                       capture_output=True, text=True)
+    assert r.returncode == 1 and "f.dump" in r.stdout, r.stdout
+
+
+def required_missing(tmp_path, entries, name="", cls=""):
+    """The runner's required_missing NAME CLASS over a required.tsv of entries (stage s0)."""
+    lib = (KIT / "lib_kit.sh").read_text()
+    fns = "".join(re.search(rf"^{f}\(\).*?^}}\n", lib, re.M | re.S).group(0)
+                  for f in ("has_kept", "required_missing"))
+    (tmp_path / "run").mkdir(exist_ok=True)
+    (tmp_path / "run/required.tsv").write_text("".join(f"s0\t{e}\n" for e in entries))
+    keep = tmp_path / "keep"
+    keep.mkdir(exist_ok=True)
+    (keep / "a.txt.gz").write_text("x")
+    r = subprocess.run(["bash", "-c", fns + 'required_missing "$1" "$2"', "x", name, cls],
+                       capture_output=True, text=True,
+                       env=dict(os.environ, STAGE="s0", STAGED=str(tmp_path), KEEP=str(keep)))
+    assert r.returncode == 0, r.stderr
+    return r.stdout.split()
+
+
+def test_the_runner_asks_each_row_for_the_files_of_its_class(tmp_path):
+    entries = (".txt", ".dump", "any:.err", "fault:.dmesg", "hang:.snap", "cases.tsv")
+    assert required_missing(tmp_path, entries, "a", "ok") == ["a.dump", "a.err"]
+    assert required_missing(tmp_path, entries, "a") == ["a.dump", "a.err"]     # ok by default
+    assert required_missing(tmp_path, entries, "a", "fault") == ["a.err", "a.dmesg"]
+    assert required_missing(tmp_path, entries, "a", "hang") == ["a.err", "a.snap"]
+    assert required_missing(tmp_path, entries) == ["cases.tsv"]
+
+
+def test_the_runner_checks_a_fault_or_hang_row_s_files_after_its_recovery():
+    run = (KIT / "run_stage.sh").read_text()
+    fh = run[run.index("\tfault|hang)"):run.index("\tfail)")]
+    assert re.search(r'required_missing "\$name" "\$class"', fh), fh
+    assert "exit 23" in fh
+
+
+def test_the_guard_refuses_a_required_entry_of_no_class(repos):
+    kp = scaffold(repos)
+    sc = kp / "score/score.py"
+    text = sc.read_text()
+    sc.write_text(text.replace('REQUIRED = {"s0": (".txt",', 'REQUIRED = {"s0": ("fualt:.txt",'))
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "fualt:.txt" in g.stdout, g.stdout
+    sc.write_text(text.replace('REQUIRED = {"s0": (".txt",',
+                               'REQUIRED = {"s0": ("any:.txt", "fault:.dmesg",'))
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+
+
+DUMP_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+case "$*" in *--dump-render*)
+    for f in render_param render_tadata; do
+        [ -f "${SGXFIVE_DEBUGFS:-/sys/kernel/debug/dri/0/sgx}/$f" ] || {
+            echo "probe p: failed: --dump-render: No such file or directory"; exit 3; }
+    done ;;
+esac
+case "$*" in *--words*)
+    for f in render_words buf09; do
+        [ -f "${SGXFIVE_DEBUGFS:-/sys/kernel/debug/dri/0/sgx}/$f" ] || {
+            echo "sgxfive-test: --words: No such file or directory" >&2; exit 1; }
+    done ;;
+esac
+[ -e "${SGXFIVE_DEBUGFS:-/nonexistent}/render_bg_layer" ] && { echo "a knob file" >&2; exit 1; }
+echo "job: ok"; echo "diff: 0 of 2048 pixels"
+"""
+
+
+def test_the_replay_gives_the_tool_the_debugfs_dumps_it_copies(repos):
+    """r18-flag dropped `--dump-render` from h1's and ix32-n's `probe --tri` rows (E756 had it):
+    the library mock has no debugfs, so the dump's copy failed and the replay refused the row.
+    The replay now gives the tool a debugfs directory (SGXFIVE_DEBUGFS) holding the files it
+    copies (render_param, render_tadata, render_kept, render_words, buf09), empty, and no knob:
+    a knob still comes only from the row's dbg: words."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=DUMP_SRC)
+    base = (kp / "tables/s0.txt").read_text()
+    m, bad = replay_findings(repos, kp, base,
+                             'd1|fit|safe|-|t4|probe --tri pixel --dump-render "$W" x.bin\n'
+                             'd2|fit|safe|-|t4|tri --dump-render "$W" --words "$W"\n')
+    assert not bad, (bad, m.stdout)
+    assert re.search(r"^ok +libmock: 4 rows of t4 replayed", m.stdout, re.M), m.stdout
+
+
+def test_the_driver_keeps_its_logs_under_out_never_at_the_session_s_top(repos):
+    """r9-x, r13-flag, r17-zls and r18-flag: the driver's output was teed to run.log and
+    stage.log at the session's top, where verify reports them "not frozen". The driver now
+    writes them itself: stage to out/stage.log, run to out/ATTEMPT/run.log."""
+    kp = scaffold(repos)
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    top = next((kp / "debug").glob("mock.*"))
+    stage_log = top / "tree/out/stage.log"
+    assert "staged " in stage_log.read_text()
+    run_log = (top / "model/out/model/run.log").read_text()
+    assert run_log.startswith("attempt model: ") and "SUMMARY: s0" in run_log, run_log
+    assert not (top / "tree/run.log").exists() and not (top / "tree/stage.log").exists()
+
+
+def test_verify_takes_a_published_session_with_its_logs_at_the_top(repos):
+    """Older published sessions keep their teed run.log and stage.log at the top (they are never
+    touched): verify passes them, and still refuses any other new file."""
+    kp = frozen_session(repos)
+    (kp / "run.log").write_text("attempt 1\n")
+    (kp / "stage.log").write_text("staged 3 files\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode == 0, v.stdout
+    (kp / "notes.txt").write_text("new\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode != 0 and "notes.txt: not frozen" in v.stdout, v.stdout
+    for d in ("tables", "score"):
+        (kp / d / "run.log").write_text("x\n")
+    v = kit(kp, repos, "verify")
+    assert "tables/run.log: not frozen" in v.stdout, v.stdout

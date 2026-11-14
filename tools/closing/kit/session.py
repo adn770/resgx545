@@ -73,7 +73,10 @@ GENERATED = ("run/session.env", "run/required.tsv", "run/staged.lst")
 NOT_FROZEN_DIRS = ("out", "debug", "fold")
 # directories a tool leaves in a session as it runs: never session files, wherever they sit
 SKIP_PARTS = {"__pycache__", ".pytest_cache"}
-NOT_FROZEN = ("FROZEN.sha256", "FROZEN.commits", "PREDICTIONS.sha256")
+# run.log and stage.log at the top: the logs older sessions teed there (r9-x to r18-flag),
+# published so; the driver now writes its own under out/ (run: out/ATTEMPT/run.log, stage:
+# out/stage.log)
+NOT_FROZEN = ("FROZEN.sha256", "FROZEN.commits", "PREDICTIONS.sha256", "run.log", "stage.log")
 COMMITS_HEADER = """\
 # FROZEN.commits: the commit that holds each file this session's FROZEN.sha256 pins outside the
 # session (resgx545:PATH, data:PATH) and each byte copy of the kit (kit/ <- resgx545
@@ -297,6 +300,15 @@ def guard(kp):
                        f"{', '.join(ON_STOP)}")
     if c.get("health_tool") not in c["tools"]:
         bad.append("session.toml: health_tool is not one of [tools]")
+    try:
+        req = scorer(kp).REQUIRED
+    except Exception:       # a scorer that does not load is the freeze's and the mock's finding
+        req = {}
+    for st, files in req.items():
+        for f in files:
+            if scorekit.required_entry(f) is None:
+                bad.append(f"score/score.py: REQUIRED[{st!r}] entry {f!r} is neither a file, a "
+                           f"\".suffix\" nor \"CLASS:.suffix\" of {', '.join(scorekit.ROW_CLASSES)}")
     laptop = [f for f in ("kit/lib_kit.sh", "kit/run_stage.sh", "run/hooks.sh") if (kp / f).exists()]
     for f in laptop:
         hook = f == "run/hooks.sh"
@@ -648,7 +660,31 @@ def tool_sha(c, t):
     return (ENV or os.environ).get(f"KIT_TOOL_SHA_{t}", c["tools"][t]["sha256"])
 
 
+def _logger(path, say):
+    """say, and each line also appended to path (its directory made)."""
+    path = pathlib.Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    def log(msg):
+        with open(path, "a") as f:
+            f.write(f"{msg}\n")
+        say(msg)
+    return log
+
+
 def stage(kp, say=print):
+    """Stage the laptop list (its lines said and kept in out/stage.log, a Stop's message too)."""
+    log = _logger(pathlib.Path(kp) / "out" / "stage.log", say)
+    log(f"stage {time.strftime('%Y%m%d-%H%M%S')}")
+    try:
+        _stage(kp, log)
+    except Stop as e:
+        with open(pathlib.Path(kp) / "out" / "stage.log", "a") as f:
+            f.write(f"{e}\n")
+        raise
+
+
+def _stage(kp, say):
     kp = pathlib.Path(kp)
     c = config(kp)
     bad = guard(kp) + verify(kp)
@@ -698,6 +734,7 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
     out_root = pathlib.Path(out_root or kp / "out")
     root = out_root / att
     root.mkdir(parents=True, exist_ok=True)
+    say = _logger(root / "run.log", say)       # the attempt's log, never the session's top
     roots = [str(root)] + [str(d) for d in sorted(out_root.iterdir(), reverse=True)
                            if d.is_dir() and d != root]
     fsha = sha_file(kp / "FROZEN.sha256")
@@ -782,6 +819,9 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
 
 # ---- the library mock ------------------------------------------------------------------------
 LIBMOCK_TREES = ("userspace/libsgxfive", "include/uapi")
+# the debugfs files sgxfive-test copies (tri and probe --tri --dump-render, --kept-copy, --words),
+# which the replay gives it empty: the kernel's dumps, read only, never a knob
+LIBMOCK_DUMPS = ("render_param", "render_tadata", "render_kept", "render_words", "buf09")
 
 
 def libmock_build(kp, c, t):
@@ -912,8 +952,13 @@ def libmock(kp, say=print):
             # the real runner's debugfs kpoke file: a tri row's --depth and --kpoke-render pokes
             kpoke = w / "kpoke"
             kpoke.write_text("")
+            # and its debugfs: the dumps the tool copies, empty; no knob (dbg: words give those)
+            (w / "dbg").mkdir()
+            for f in LIBMOCK_DUMPS:
+                (w / "dbg" / f).write_bytes(b"")
             env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home),
-                   "W": str(w / "w"), "S": str(kp), "SGXFIVE_KPOKE": str(kpoke)}
+                   "W": str(w / "w"), "S": str(kp), "SGXFIVE_KPOKE": str(kpoke),
+                   "SGXFIVE_DEBUGFS": str(w / "dbg")}
             argv = _expand(args, env)
             where = f"tables/{st}.txt {name}"
             if argv is None:
@@ -1108,7 +1153,8 @@ def mock(kp, worlds=None, say=print):
         back = [k for k, d in c["knobs"].items()
                 if (real / k).read_text().strip() != d["default"]]
         probs += [f"knob {k} not back at its default" for k in back]
-        logs = [x for x in (m / "out" / w).rglob("*.log")] if (m / "out" / w).exists() else []
+        logs = [x for x in (m / "out" / w).rglob("*.log") if x != m / "out" / w / "run.log"] \
+            if (m / "out" / w).exists() else []
         for p in logs:
             probs += [f"{p.name}: {ln}" for ln in p.read_text(errors="replace").splitlines()
                       if sessioncheck.FINDING.search(ln)]
@@ -1118,7 +1164,7 @@ def mock(kp, worlds=None, say=print):
             if src == 0 and kept.exists():
                 sc = load_module(tree / "score/score.py", "kit_session_score")
                 probs += [f"kept {st}: {x}" for x in sessioncheck.kept_problems(
-                    str(kept), req[st], sessioncheck.kept_rows(str(kept)),
+                    str(kept), req[st], sessioncheck.kept_classes(str(kept)),
                     lambda: sc.read_files(st, str(kept)))]
         staged_kit = lr / "stage/kit"
         if staged_kit.exists():

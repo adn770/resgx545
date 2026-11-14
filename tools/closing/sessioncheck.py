@@ -16,7 +16,9 @@ it imports, and its tests call it. Each check is the design-out of a round-6 sli
                         non-zero status or a "command not found" / "No such file" line
   kept SCORER STAGE DIR [--call F]
                         every file the scorer's REQUIRED[STAGE] names is in the kept directory
-                        DIR (rows: cases.tsv's first column), and F(STAGE, DIR) reads no file
+                        DIR (rows: cases.tsv's first column; a ".suffix" for the rows that
+                        ended ok, "fault:", "hang:" or "any:" ones for the rows that ended so,
+                        or for every row, by cases.tsv's class), and F(STAGE, DIR) reads no file
                         there that REQUIRED does not declare (r6-misc: no depth dump kept)
   outdirs [--dir-opt=O] [--file-opt=O] -- ARGV
                         every directory a tool writes into exists before it runs: an O argument
@@ -242,16 +244,32 @@ def kept_rows(kept_dir):
     return out
 
 
+def kept_classes(kept_dir):
+    """{row name: how it ended} of a kept directory: cases.tsv's first column and its class (the
+    ninth, the runner's ok, fault, hang or fail; ok when the line has none)."""
+    p = os.path.join(kept_dir, "cases.tsv")
+    out = {}
+    for name in kept_rows(kept_dir):
+        out[name] = "ok"
+    if out:
+        for line in open(p):
+            f = line.rstrip("\n").split("\t")
+            if f[0].strip() in out and len(f) > 8 and f[8].strip():
+                out[f[0].strip()] = f[8].strip()
+    return out
+
+
 def kept_problems(kept_dir, required, rows, fn=None):
-    """The files of REQUIRED the kept directory lacks, then the files fn() reads there that
-    REQUIRED does not declare."""
-    rows = list(rows)
+    """The files of REQUIRED the kept directory lacks (a per-row file for the rows of its class:
+    rows a list of names, each ok, or {name: class}), then the files fn() reads there that
+    REQUIRED does not declare (any class's file of any row is declared)."""
+    rows = rows if isinstance(rows, dict) else list(rows)
     out = [f"the scorer reads {m}, which is not kept"
            for m in scorekit.missing_files(required, kept_dir, rows)]
     if fn is None:
         return out
-    names = [f for f in required if not f.startswith(".")]
-    names += [n + s for n in rows for s in required if s.startswith(".")]
+    names = [f for f in required if (scorekit.required_entry(f) or ("x",))[0] is None]
+    names += scorekit.row_files(required, rows, every_class=True)
     declared = set(names) | {n + ".gz" for n in names}
     root = os.path.realpath(kept_dir)
     seen = []
@@ -367,7 +385,7 @@ def main(argv=None):
             print(f"FAIL {a.scorer} declares no REQUIRED[{a.stage!r}]")
             return 1
         rows = [line.strip() for line in open(a.rows) if line.strip()] if a.rows \
-            else kept_rows(a.dir)
+            else kept_classes(a.dir)
         fn = (lambda: getattr(mod, a.call)(a.stage, a.dir)) if a.call else None
         return _report(kept_problems(a.dir, req[a.stage], rows, fn),
                        f"kept {a.stage}: {len(rows)} rows, every file REQUIRED names is kept"

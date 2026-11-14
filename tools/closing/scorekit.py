@@ -33,7 +33,9 @@ cannot pass a gate by being truthy.
   declared (None, "" or "-"), or that did not run, STOPS the session at the premise stage; it
   never reaches a gate to shut it silently.
 - missing_files(required, kept_dir, rows): the files a scorer reads (its REQUIRED: ".suffix"
-  per row, any other name once) that the kept directory lacks, kept plain or gzipped.
+  per row that ended ok, "CLASS:.suffix" per row that ended CLASS (ok, fault or hang) and
+  "any:.suffix" per row, any other name once) that the kept directory lacks, kept plain or
+  gzipped; rows a list of names (each ended ok) or {name: class} (the runner's cases.tsv).
 """
 import os
 from dataclasses import dataclass, field
@@ -271,16 +273,39 @@ def premise_stops(controls, readings):
 
 
 # ---- files a scorer reads --------------------------------------------------------------------
+# the classes a REQUIRED entry "CLASS:.suffix" may name (the runner's ends of a row), and "any"
+ROW_CLASSES = ("ok", "fault", "hang", "any")
+
+
+def required_entry(entry):
+    """(class, suffix) of a per-row REQUIRED entry (".suffix" is ok's), (None, name) of a stage
+    file, or None for an entry of neither form (an unknown class, a suffix without its dot)."""
+    cls, sep, rest = entry.partition(":")
+    if not sep:
+        return ("ok", entry) if entry.startswith(".") else (None, entry)
+    return (cls, rest) if cls in ROW_CLASSES and rest.startswith(".") and len(rest) > 1 else None
+
+
+def row_files(required, rows, every_class=False):
+    """NAME.suffix of every per-row entry of `required` that applies to each row's class (all of
+    them with every_class); rows a list of names (each ok) or {name: class}."""
+    rows = rows if isinstance(rows, dict) else {n: "ok" for n in rows}
+    per = [e for e in map(required_entry, required) if e and e[0]]
+    return [n + s for n, c in rows.items() for k, s in per
+            if every_class or k in ("any", c)]
+
+
 def missing_files(required, kept_dir, rows):
-    """The files of `required` (".suffix": NAME.suffix for every row; any other name: that file)
-    not in kept_dir, plain or with ".gz". Per-row files and no row: "(no row)"."""
+    """The files of `required` (".suffix": NAME.suffix for every row that ended ok, "CLASS:.suffix"
+    for every row that ended CLASS, "any:.suffix" for every row; any other name: that file) not
+    in kept_dir, plain or with ".gz". Per-row files and no row: "(no row)"."""
     def kept(f):
         p = os.path.join(kept_dir, f)
         return os.path.exists(p) or os.path.exists(p + ".gz")
-    rows = list(rows)
-    fixed = [f for f in required if not f.startswith(".")]
-    per = [f for f in required if f.startswith(".")]
+    rows = rows if isinstance(rows, dict) else list(rows)
+    fixed = [f for f in required if (required_entry(f) or ("x",))[0] is None]
+    per = [f for f in required if (required_entry(f) or (None,))[0]]
     out = [f for f in fixed if not kept(f)]
     if per and not rows:
         return out + ["(no row)"]
-    return out + [n + s for n in rows for s in per if not kept(n + s)]
+    return out + [f for f in row_files(required, rows) if not kept(f)]

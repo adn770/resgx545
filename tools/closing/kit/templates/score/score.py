@@ -7,7 +7,9 @@ read through kit/kitscore.py (byte copies of resgx545 @COMMIT12@, pinned in FROZ
   score.py gate STAGE ROOTS...         exit 0 when every control of GATES[STAGE] passed
   score.py premise STAGE KEPT_DIR      STOP lines and exit 1 when a control has no reading
 
-REQUIRED: the files each stage's scorer reads (the runner and sessioncheck.py kept check them);
+REQUIRED: the files each stage's scorer reads (the runner and sessioncheck.py kept check them:
+".suffix" for each row that ended ok, "fault:.suffix", "hang:.suffix" or "any:.suffix" for each
+row that ended so or for every row, a plain name once);
 read_files(STAGE, DIR) reads exactly what score() reads; producible(row) is the set of reading
 keys a row's job can produce (the freeze refuses a control that reads anything else)."""
 import os
