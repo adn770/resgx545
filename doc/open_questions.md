@@ -59,7 +59,7 @@
 
 - `Q039` (phase 10, hw, medium): where is a user clip plane's state held between jobs, what resets it, and when do the vertex's distance dwords decide a plane? (E198, E280, E418)
 - `Q069` (phase 11, hw, medium): what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and why does the viewport's z offset (state-block word 10) scale the depth plane when it is below 0.5? (E057, E061, E066, E192, E193, E198, E284, E286, E287, E411, E419, E465, E466, E490, E981, E987)
-- `Q116` (phase 11, hw, medium): what does the MTE state's region clip (enable bit, first and last 32-pixel tile column, first and last 16-pixel tile row) do to the objects and the clear when it covers part of the target, and what does it do beyond a scissor? (E340, E347, E348)
+- `Q116` (phase 11, hw, medium): what does the MTE state's region clip (enable bit, first and last 32-pixel tile column, first and last 16-pixel tile row) do to the objects and the clear when it covers part of the target, and what does it do beyond a scissor? (E340, E347, E348, E1060)
 
 ### pbe
 

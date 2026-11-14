@@ -76,7 +76,7 @@ list.
 - `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and
   why does the viewport's z offset (state-block word 10) scale ... (E490, E981, E987)
 - `Q116` mte, medium: what does the MTE state's region clip (enable bit, first and last 32-pixel
-  tile column, first and last 16-pixel tile row) do to the objects ... (E340, E347, E348)
+  tile column, first and last 16-pixel tile row) do to the objects ... (E347, E348, E1060)
 - `Q012` pbe, medium: what float formats are pack modes 22 and 34, given that both read o0 as an
   IEEE single (sign, NaN and exponent) and store it at some of the ... (E387, E406, E429)
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
@@ -313,12 +313,15 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+123 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1065` texture, 2026-11-14: r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8
   x 8, 64 x 64 and type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base
   0 of a 32-page named scratch): ...
+- `E1060` mte, 2026-11-14: r16-mte stage rclip on module B60AB0B4 (Q116; the MTE state's region
+  clip, presence bit 7 and its two words, added to the probe triangle's block by t10's --blk-add
+  7=C0,C1, 0xdf43 becoming the closed ...
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
   sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
   all ran, rc 0): the period ...
@@ -685,10 +688,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-65 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+66 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r16-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r16-mte`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
@@ -778,7 +782,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 31 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 32 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
