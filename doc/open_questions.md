@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-150 open: 140 hw (high 18, medium 65, low 57, unrated 0), 9 fw, 1 kernel.
+149 open: 139 hw (high 18, medium 65, low 56, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -126,7 +126,6 @@
 - `Q008` (phase 6, hw, low): how is the luma compared at the luma key's high cut, where five colours with the weighted sum 1000 to 1016 above the cut are outside the band while others up to 1016 above are inside, and what do bits 31:16 of the alpha word and the offset's precision do? (E039, E275, E426)
 - `Q010` (phase 6, hw, low): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271, E399)
 - `Q078` (phase 11, hw, high): does T3 bit 14 on a twiddled texture read texel (s + floor(4096 frac(u)), t) of a layout of 16 x 16 tiles with W + 4096 texels a tile row at other sizes and formats (E1047: every pixel of three fills of E566's 32 x 32 32-bit texture, fitted post hoc on E1033's fault pages and held out by u = 0 only), is the tile row W + 4096 or 4128 texels, is u past 1 taken by its fraction or clamped at another width, and what does the bit do to a filtered twiddled sample? (E274, E397, E566, E564, E722, E723, E968, E975, E1003, E1027, E1033, E1047)
-- `Q104` (phase 11, hw, low): does a mip chain of a 1D texture, of a texture with a side of 1 at level 0, or of a format other than 32 bits read as the non-square chains of E562 do (both sides halving to 1, T0's fields reading it as a square chain)? (E276, E441, E562, E1052)
 - `Q114` (phase 11, hw, low): does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE value does, E567, E726), and if one does, how are its slices laid out and how do the third coordinate and the filter combine them? (E342, E567, E726, E923, E930, E894, E910, E911, E940, E941, E942, E958)
 - `Q115` (phase 11, hw, low): does the sampler filter anisotropically on this core, and which bits of the texture words or the smp operands select it and its ratio? (E041, E342, E564, E720, E723)
 - `Q177` (phase 11, hw, low): which dword do texture types 1, 3 and 4 read, each byte halved, in u address modes 4 to 7 at a held-out size (mode 4: 676 + (x mod 16) at 16 x 16 held out, 1300 + (x mod 32) at 32 x 32 post hoc; modes 6 and 7 one value, mode 4's last column, mode 5 another, post hoc, E1055), and what is the half, and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners) (E565, E033, E932, E957, E983, E1000, E1017, E1026, E1039, E1055)

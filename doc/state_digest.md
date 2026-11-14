@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-150 open: 140 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+149 open: 139 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -240,8 +240,6 @@ list.
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
 - `Q010` texture, low: what clears the colour-space words between jobs, given that a copy that does
   not load set 0 converts with the last loaded words, and the ... (E046, E271, E399)
-- `Q104` texture, low: does a mip chain of a 1D texture, of a texture with a side of 1 at level 0,
-  or of a format other than 32 bits read as the non-square chains ... (E441, E562, E1052)
 - `Q114` texture, low: does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE
   value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the

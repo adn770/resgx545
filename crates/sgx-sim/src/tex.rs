@@ -790,7 +790,7 @@ impl Texture {
         if mag && !min && l <= 0.5 {
             return open("magnification linear, minification point, a LOD in (0, 0.5]");
         }
-        // p1132 tx-shapes (Q104): both sides halve down to 1, so the chain ends at the longer side's log2
+        // p1132 tx-shapes (E562) and E1052: both sides halve down to 1, so the chain ends at the longer side's log2
         let last = self.w.trailing_zeros().max(self.h.trailing_zeros()).min(mx);
         if one_d && self.h != 1 {
             // E1052: smp1d on 64 x 1 reads chain A (both sides halve to 1) like smp2d
@@ -1940,7 +1940,7 @@ mod tests {
 
     #[test]
     fn a_mip_chain_of_a_non_square_texture_halves_both_sides_down_to_1x1() {
-        // p1132 tx-shapes (Q104): chain A, 8 of 8 fit and 49 of 49 held-out cases exact. 32x16
+        // p1132 tx-shapes (E562): chain A, 8 of 8 fit and 49 of 49 held-out cases exact. 32x16
         // reads 512, 128, 32, 8, 2 and 1 dwords at 0, 512, 640, 672, 680 and 682; LOD 6 and 7 read
         // the last level (1x1)
         let t = Texture::new(0x07fc_0000, 12 << 24 | 31 << 12 | 15, 0x2000, 0x0080_0800).unwrap();
