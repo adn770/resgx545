@@ -8829,6 +8829,16 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   6 FAILED'); all three controls (bit-clear 32 x 8 and 16 x 64, E1049's tw-bl32 rerun) passed.
   *texture; HW, infer; data: `render-closing-r16-tw:out/20261114-093404/tw16/`,
   `render-closing-r16-tw:fold/`, `vectors-closing-r16-tw-pixels`.*
+- `E1059` r16-zls rows zp2- (Q297, 15 jobs in stage zpass2, t10): E1050's load pass (64 x 32, the
+  bit:9 load of 0.25 and 0.75, depth less) at the flat depths 0.125, 0.0625, 0.1, 0.3, 0.375, 0.625
+  and 0.5 + 2^-20 stores at every dword the float its no-load twin (the same triangle from the clear
+  1.0) stores where that float is below the load, else the load (frozen H-PASS-TWIN 7 of 7, 2048 of
+  2048 dwords and the drawn count on each); at the one-float depths 0.375, 0.625 and 0.5 + 2^-20
+  that is the depth's own float (H-PASS-EXACT 3 of 3), while the twins at 0.125, 0.0625, 0.1 and 0.3
+  hold 3 to 10 floats up to 9 ulps below the depth, so the depth's own float failed there
+  (H-PASS-OWN 3 held, 4 FAILED); both controls passed.
+  *zls; HW; data: `render-closing-r16-zls:out/20261114-092344/zpass2/`,
+  `render-closing-r16-zls:fold/`.*
 - `E1060` r16-mte stage rclip on module B60AB0B4 (Q116; the MTE state's region clip, presence bit 7
   and its two words, added to the probe triangle's block by t10's --blk-add 7=C0,C1, 0xdf43 becoming
   the closed driver's 0xdfc3, the first run of the clip on the hardware: 15 probe triangles at 64 x
@@ -8847,6 +8857,28 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   kept tiles exactly; no fault, hang or stray value.
   *mte; HW, infer; data: `render-closing-r16-mte:out/20261114-093233/rclip/`,
   `render-closing-r16-mte:fold/`, `vectors-closing-r16-mte-pixels`.*
+- `E1063` r16-zls rows zb4- (Q071, 14 jobs in stages zbits4, zovp and zoff, t10): bit 0 under E988's
+  stencil row, E1030's bit 16 cleared and E1031's flat format-6 and F7K rows writes no colour pixel
+  and leaves the depth dump and the stencil store byte for byte the kept twin's (frozen H-B0 4 of 4;
+  nothing stored, H-B0-NOSTORE, failed 4 of 4); bit 23's bytes 0x3f, 0x80 and 0 by x mod 16 stay
+  with the reference at 0x80, the compare mask at 0xff and the background stencil (CR_ISP_BGOBJVALS,
+  render details dword 17) at 0x5a (H23-FIXED 3 of 3, each named source refuted on its own row); bit
+  20 cleared changed nothing at 640 x 480 in format 0 nor with bit 12 cleared and a depth load
+  (H-INERT20 2 of 2 there), but in formats 6 and 7 it moved the stored records (H-INERT20 failed 2
+  of 2: post hoc, the twin's per-tile records packed one after another from dword 2048); all
+  controls passed.
+  *zls; HW; data: `render-closing-r16-zls:out/20261114-092344/zbits4/`,
+  `render-closing-r16-zls:out/20261114-092344/zovp/`,
+  `render-closing-r16-zls:out/20261114-092344/zoff/`, `render-closing-r16-zls:fold/`.*
+- `E1064` r16-zls rows zo- (Q299, 11 jobs in stages zovp and zbits4, t10): a load pass over
+  overlapping tiles (64 x 32 G 0 and 160 x 48 G 2) loads each tile's slot by E465, passes each tile
+  on its own and leaves in a shared slot the tile visited last in region header order, for the depth
+  load over E996's plane and the stencil load under E988's test (frozen H-OVL-PASS 4 of 4; the first
+  tile failed 2 of 2, shared slots without a load 4 of 4); a NaN load (0x7fc00000, 0xffc00000,
+  0x7f800001) kept under never stores 0x00ffffff in format 1 and 0xffffffff in format 2 (H-NAN-SAT 5
+  of 5; 0 and the word's low bits failed 5 of 5); both controls passed.
+  *zls; HW; data: `render-closing-r16-zls:out/20261114-092344/zovp/`,
+  `render-closing-r16-zls:out/20261114-092344/zbits4/`, `render-closing-r16-zls:fold/`.*
 - `E1065` r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8 x 8, 64 x 64 and
   type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base 0 of a 32-page
   named scratch): the control passed (E1055's ty-ty1u4r rerun, its kept image, 2048 of 2048);
@@ -8866,6 +8898,14 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   (x mod 32) in the next 32.
   *texture; HW, infer; data: `render-closing-r16-tex:out/20261114-090305/ty/`,
   `render-closing-r16-tex:fold/`, `vectors-closing-r16-tex-pixels`.*
+- `E1066` r16-zls rows zw2- (Q069, 9 jobs in stage zoff, t10): on E987's ramp (256 x 128, t = x /
+  512, format 0) the viewport's z offset w at 0, 1/16, 3/16, 5/16, 3/8 and 7/16 stored (1.6 w + 0.2)
+  t (frozen H-LIN [fitted on E981's and E987's two rows by the offline gate OQ069] 6 of 6) and at w
+  0.25 with the z scale s at 0.25 and 0.75 stored (1.6 w + 0.4 s) t (H-LIN-S 2 of 2), at every dword
+  outside the 912 pixels by the far edge where the kept rows bend; E1056's polygon cut at z = 0
+  failed 7 of 8 (it held only at s 0.25, where no vertex is below 0); the control passed.
+  *mte; HW; data: `render-closing-r16-zls:out/20261114-092344/zoff/`,
+  `render-closing-r16-zls:fold/`.*
 
 ## By unit
 
@@ -8911,7 +8951,7 @@ E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056.
 ### mte
 
 Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248, E280, E286, E287, E347,
-E348, E418, E419, E1060.
+E348, E418, E419, E1060, E1066.
 
 ### pbe
 
@@ -8987,4 +9027,4 @@ E1035.
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
-E1054.
+E1054, E1059, E1063, E1064.

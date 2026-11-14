@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E061", "E066", "E192", "E193", "E198", "E284", "E286", "E287", "E411", "E419",
-            "E465", "E466", "E490", "E981", "E987"]
+            "E465", "E466", "E490", "E981", "E987", "E1066"]
 terms = ["OUTSEL", "VIEWPORT.Z_OFFSET", "VIEWPORT.Z_SCALE", "PRESENCE"]
 +++
 
@@ -43,3 +43,15 @@ z offset, word 10, is an offset at 0.5 to 1.0 (z = t + w - 0.5 at every dword, E
 gave 0.6 t (E981) and at 0.125 0.4 t (E987) [infer: two points], not t + w - 0.5. Open: why a
 low offset turns into a scale (a sweep of word 10 from 0 to 0.5 with the plane over 0 to 1, and
 the viewport's z scale beside it).
+
+Narrowed 2026-11-14 (r16-zls, E1066; the offline gate OQ069 first). On E987's ramp a z offset w
+below 0.5 does not cut the plane at z = 0 (E1056's polygon cut failed 7 of 8): the plane is (1.6 w
++ 0.4 s) t, the near vertices at 0 and the far one at w + s + 0.6 (w - s), at w from 0 to 7/16 and
+the z scale s at 0.25 and 0.75 (8 of 8 held out), except 912 pixels by the far edge that bend the
+same way at every offset with a negative vertex [post hoc]. sgx-pipe's `mte::triangle` refuses a
+viewport depth below 0. Open: why 0.6 and the bend, another triangle, OUTSEL bit 13 and the
+presence bits 16 to 31.
+
+Carried here 2026-11-14 with Q297's retirement (answered by E1059): a ZLS load pass over a plane
+whose depth leaves 0 to 1, which only the z offset brings (E1051 stored 1.25 in format 0), did not
+run; sgx-pipe's `zls::pass_plane` refuses it naming Q069.
