@@ -50,7 +50,7 @@ fn depth_jobs(set: &str, file: &str, dir: &str) -> Totals {
         let tri = match tri_of(&c) {
             Ok(tri) => tri,
             Err(Outcome::Unsupported { ids, .. }) => {
-                assert!(ids == ["Q240"] || ids == ["Q199"], "{ids:?}");
+                assert!(ids == ["Q240"], "{ids:?}");
                 t.refused += 1;
                 continue;
             }

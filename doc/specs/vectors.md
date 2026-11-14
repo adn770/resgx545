@@ -533,8 +533,9 @@ Rules, and what each rests on:
   `matched`, and names E606, E607 (the grid) and, where the depth is stored, E465. A render only
   inside what E606 ran: the targets 64 x 64, 128 x 128 and 256 x 128 (Q262 on E680's ten, where
   the depth missed E606's tolerance on 1- and 2-pixel triangles, E912; Q240 for every other),
-  vertices from -9% to +124% of the target (Q199), 1/w = 1 and a single sample (Q202), `x >= 0`
-  for a coordinate with a fraction below the grid (Q199). The coverage alone (`isp::coverage_image`)
+  vertices from -9% to +124% of the target (Q240; far ones through the guard clip, E1036), 1/w = 1
+  and a single sample (Q202), `x >= 0` for a coordinate with a fraction below the grid (Q260). The
+  coverage alone (`isp::coverage_image`)
   is admitted on E680's ten targets and on E913's ten (the family around E606's, two below one
   tile, 4096 x 16 and two odd heights), each kept image of R7-geo's zd and zf stages replayed pixel
   for pixel (`tests/isp_closing_r7_geo.rs`).

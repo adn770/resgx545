@@ -8554,6 +8554,27 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
 
 ### 2026-11-14
 
+- `E1036` r14-isp stage g14 (21 jobs): the guard the ISP clips far edges to is a quarter of the
+  viewport past each edge (clip x and y within 1.5 w): frozen H-VP drew every held-out far triangle
+  pixel for pixel, 19 of 19 (64 x 64 along -x, 128 x 128 and 256 x 256 along each axis, 128 x 64 and
+  64 x 128, and three rows with the viewport words poked: 64 x 64 on a 128 x 128 target cut at
+  window 80, 128 x 128 on a 64 x 64 target), and every rival failed (a quarter of the target 16 of
+  19, of max(W, H) or min(W, H) 14 of 19, a guard fixed in pixels 7 of 19, no clip 4 of 19); the
+  lower x bound on 64 x 64 is -16 (the family fits -16 and not -9), on 128 x 128 x <= 160; both
+  controls (E979's far-ctl, E1023's t128-1) drew their kept images.
+  *isp; HW, infer; data: `render-closing-r14-isp:out/20261114-060059/g14/`,
+  `render-closing-r14-isp:fold/`.*
+- `E1037` r14-isp stage clipr (10 jobs): a vertex the guard-band clip makes is rounded half away
+  from zero to 1/256 pixel (frozen CLIP-HA held 3 of 3 rows with the clip vertex on an exact 1/512
+  tie at x = 80: up on the two positive ties, away from zero on the negative one; half up 2 of 3,
+  half to even 2 of 3, toward zero 0 of 3); vertices inside the guard of a 4096 x 16 target at x =
+  5000 and -1000 with their y on a 1/512 tie round as E607 and E943 (half up at y >= 0, away from
+  zero below: IN-E607 held 2 of 2, 280 and 16 decisive pixels); a far vertex at 2^24 px on 4096 x 16
+  is clipped at x = 5120 (the family fits 5120 alone) and the int32 ends x = 2^31 - 1 and y = -2^31
+  px draw the clip (H-VP 3 of 3; saturation, wrap and removal 0 of 2); both controls (E979's
+  far-ctl, E1024's far-x30p) drew their kept images.
+  *isp; HW, infer; data: `render-closing-r14-isp:out/20261114-060059/clipr/`,
+  `render-closing-r14-isp:fold/`.*
 - `E1044` r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1, 4 and 7 partial
   renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage stopped by its
   own rule (rc 24) because its sampling period read 1682 ns where the frozen premise was at most
@@ -8562,6 +8583,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   model, the other nine jobs never ran).
   *dpm; HW; data: `render-closing-r14-dpm:out/20261114-052638/pr3/`,
   `render-closing-r14-dpm:fold/`.*
+- `E1045` r14-isp stage wind (8 jobs, E998's form: E977's ramp at 80 x 40, the depth dumped): ISP
+  word 0 bit 15, 16 or 17 set alone removes the ramp triangle in the reversed vertex order too (no
+  pixel, the background depth in every tile dword: frozen H-KILL held 3 of 3, H-CULL, one winding
+  removed, FAILED 3 of 3), so on this triangle the bits are no face cull; and a vertex depth above 1
+  or below 0, under the compare always with the depth written, removes the pixels whose depth lies
+  past [0, 1] and stores the background's 1.0 there (frozen H-ZCLIP held 2 of 2, 1600 of 3200 pixels
+  drawn each; H-CLAMP, H-RAW and H-ABS FAILED 2 of 2); the three controls (the reversed order
+  unpoked, E998's bit 15 replicate, the compare always at E977's depths) drew their kept dumps byte
+  for byte.
+  *isp; HW, infer; data: `render-closing-r14-isp:out/20261114-060059/wind/`,
+  `render-closing-r14-isp:fold/`.*
 
 ## By unit
 
@@ -8602,7 +8634,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018, E1022, E1023, E1024.
+E1018, E1022, E1023, E1024, E1036, E1037, E1045.
 
 ### mte
 

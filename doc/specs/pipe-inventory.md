@@ -137,7 +137,8 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   left and top ties; E660 reproduces 2752 of 2752 images through the pipeline), held on ten more
   targets up to 4096 x 4096 (E680 to E682; `sgx-pipe`'s `isp.rs` names the targets it admits); the
   depth plane is within E606's tolerance and has no bit-exact rule (Q200, Q262, Q288); negative
-  sub-grid vertices and far vertices refuse (E683, E684; Q199, Q260, Q261). `doc/specs/3d.md`
+  sub-grid vertices refuse (E683; Q260), far vertices are clipped to the viewport's guard
+  (E1036, E1037; `isp::guard_clip_image_vp`). `doc/specs/3d.md`
   §11.13 states them. The sample position, line, polygon offset and stencil rules (E214, E279,
   E071, E216) are in `isp` triangle-host vectors, not in dump directories.
 - **pbe, iter**: only whole-job vectors (`pbe` 206, the pixel-event and texture runs): the

@@ -1,12 +1,12 @@
 +++
 id = "Q241"
-question = "what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6 against equal depths, the visibility test (ISP word 1 bit 3), the polygon offset (bit 23), a pass type other than 0 over several triangles of one object, a vertex depth outside [0, 1] and the pairs of ISP word 1 bits 31:26 and CR_ISP_CTL bits 5:0 that E232 and E235 did not run do to the image, the stored depth and the counters?"
+question = "what do ISP word 0 bits 15, 16 and 17 select (E1045: each removes E977's ramp in both vertex orders, so no winding; E065: bit 15 left 48 pixels of the library's triangle) and bit 18, the depth compares 2, 3, 5 and 6 against equal depths, the visibility test (ISP word 1 bit 3), the polygon offset (bit 23), a pass type other than 0 over several triangles of one object, the depth and the edge pixels of the cut that a vertex depth outside [0, 1] makes (E1045: the pixels past [0, 1] are removed) and the pairs of ISP word 1 bits 31:26 and CR_ISP_CTL bits 5:0 that E232 and E235 did not run do to the image, the stored depth and the counters?"
 unit = "isp"
 kind = "hw"
 value = "low"
 phase = 12
 evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660", "E739",
-            "E757", "E995", "E998"]
+            "E757", "E995", "E998", "E1045"]
 terms = ["ISP0.PASS_TYPE", "ISP0.DCMP_MODE", "ISP1.VISTEST", "ISP1.POLY_OFFSET"]
 +++
 
@@ -65,3 +65,18 @@ change neither the image nor the stored depth of that ramp (2 of 2). Open: what 
 select (the other vertex order, E065's 48 pixels), bit 18 (faults), the visibility counter and the
 polygon offset's units, the pass types over several triangles, a vertex depth outside [0, 1] and
 the gate pairs.
+
+Narrowed 2026-11-14 (r14-isp stage wind, E1045, held out; the question line is reworded, the
+question is not retired). It read "what do ISP word 0 bits 15, 16, 17 and 18, the depth compares
+2, 3, 5 and 6 against equal depths, the visibility test (ISP word 1 bit 3), the polygon offset (bit
+23), a pass type other than 0 over several triangles of one object, a vertex depth outside [0, 1]
+and the pairs of ISP word 1 bits 31:26 and CR_ISP_CTL bits 5:0 that E232 and E235 did not run do to
+the image, the stored depth and the counters?". Each of bits 15, 16 and 17 removes E977's ramp
+triangle with its vertex order reversed as well (no pixel, the background depth: 3 of 3, the
+frozen one-winding cull refuted), so on that triangle the bits select no winding. Under the
+compare always with the depth written, a vertex depth above 1 or below 0 removes the pixels whose
+depth lies past [0, 1] and stores the background there (2 of 2; clamping, storing the plane as it
+is and clearing its sign refuted), as a clip at the near and far planes would (sgx-pipe mte.rs,
+E287) [infer]. Open: what bits 15 to 17 select (E065's 48 pixels), bit 18, the visibility counter
+and the polygon offset's units, the pass types over several triangles, the cut's made depths and
+edge pixels, and the gate pairs.
