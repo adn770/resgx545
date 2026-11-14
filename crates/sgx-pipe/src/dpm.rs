@@ -152,7 +152,8 @@ pub fn overflows(pb_pages: u32, need: u32) -> bool {
 /// E1019, round 12 offline over 697 timelines and 1594 after-reads, held out). What 0x0748 bit 2
 /// marks is not modelled ([infer] it clears with partial renders, E1019; not once per partial render, and
 /// never without one in 2 of 2 runs, E1032; one register alone samples every 1682 ns and its PR 0 job
-/// read no clear, E1044, no verdict; Q036).
+/// read no clear, E1044, no verdict; at that period a clear is a pulse of about 4 us, 17 in 35
+/// labelled partial renders and none at PR 0, E1057; Q036).
 pub const STATUS2_HIGH_HALF: u32 = 0;
 
 /// How a 4x job of the tool's full-screen triangle (`--tri-full --aa4`, `CR_TE_AA` 0xe0000000) on a

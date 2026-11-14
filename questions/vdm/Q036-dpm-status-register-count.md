@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044", "E1057"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -165,3 +165,12 @@ register is 1682 ns, not the 460 ns the plan extrapolated (a floor near 1.3 us p
 register, 16 registers 7.5 us). The 0, 1, 4 and 7 partial-render rows did not run; a re-run gates
 the period at about 2000 ns or only reports it, and a one-register timeline gains 4.5 times, not
 16, over E1032's.
+
+Round 15 (E1057, pr4, 10 jobs): the re-run with the period gate at 2000 ns read 1655 to 1700 ns,
+both PR 0 controls read no bit 2 clear, and the eight jobs with a labelled partial render (35 in
+all) held 17 clear events, each one run about 4 us wide (3890 to 4090 ns) with 0x0748 at 0xb or
+0x1b: 0, 1 at PR 1; 3, 0, 2 at PR 4; 5, 3, 3 at PR 7. The strict form (a clear per partial render)
+failed again, 7 of 8 rows, and R-RARE's total (1 to 8) failed at 17: no ranking. Bit 2 clears in
+a pulse of about 4 us, at about half a partial render [infer; the label is not read back];
+whether the other half is missed or never happens, what the clear marks, the other bits of
+0x0748, the owner words, CR_DMS_CTRL and the builder-fault clause stay open.

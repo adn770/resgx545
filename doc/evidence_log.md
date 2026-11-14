@@ -8703,6 +8703,15 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   two); both baselines passed.
   *ta; HW, infer; data: `render-closing-r14-flag:out/20261114-060824/f2/`,
   `render-closing-r14-flag:fold/`.*
+- `E1057` r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the sampling-period
+  gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs, all ran, rc 0):
+  the period read 1655 to 1700 ns (gate passed), the two PR 0 controls read no bit 2 clear, and 17
+  clear events fell in the 8 jobs with a partial render (35 labelled partial renders, 0.49 each;
+  frozen R-PULSE needed at least one per partial render at every row: 1 held, 7 FAILED; frozen
+  R-RARE-TOTAL 1-8 FAILED at 17; ranking NO RANKING; log-loss R-PULSE 9.29, R-RARE 6.80, R-CONST
+  7.25); every clear is 3890 to 4090 ns wide with 0x0748 reading 0xb or 0x1b.
+  *dpm; HW; data: `render-closing-r15-dpm:out/20261114-071243/pr4/`,
+  `render-closing-r15-dpm:fold/`.*
 
 ## By unit
 
@@ -8719,7 +8728,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044.
+E1019, E1032, E1044, E1057.
 
 ### edm
 

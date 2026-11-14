@@ -1,0 +1,9 @@
+title = "laptop session r15-dpm of the question-closing pass, round 15 (decision R15-3 (a): session r15-dpm of round 15's plan, safe class only), built on the session kit: one stage, pr4 (Q036: r14-dpm's pr3 re-run with the period gate at 2000 ns; 0x0748 sampled alone against a controlled partial-render count, 10 jobs, all ran), with the freeze, the frozen table, predictions, scorer and mock, and the kept attempt"
+repo = "data"
+paths = ["render/closing-r15-dpm/"]
+method = "the session kit's driver (kit/session.py stage and run on the Mac, kit/run_stage.sh with lib_kit.sh and run/hooks.sh on the laptop, every file under ~/scratch/r15d/ and one mktemp -d ~/scratch/tmp/r15d.XXXXXX work directory a stage, never /tmp) over ssh on the laptop, 2026-11-14, module srcversion B60AB0B475DD1E8972419B5 (fork 2a650d74, the round 9 test boot; installed = loaded), stock firmware; tool t10 (~/sgxfive-test-t10, sha256 9bedc2d6db70b2691698478572e311cf2b9b54acfaf8d714ed4db47852e322eb, source resgx545 a581c06) under ~/regtimeline; FROZEN.commits pins the kit and every input at resgx545 158bdc5 and resgx545-data cddc7b60b; one attempt, out/20261114-071243, 10 jobs, rc 0; scored by the frozen score/score.py (out/ATT/score-pr4.txt), reproduced byte for byte at the fold; fold/ (added at the fold, outside the freeze): reproduce.sh and readall.py with their outputs, post hoc, and the lead's run log. debug/ and the bytecode caches are not in the copy; bins/ holds r9-ldpm's p1139-green.bin only"
+date = "2026-11-14"
+files = 106
+size = 320520
+sha256 = "33452118de2ea68102d8b82b8f976b09f7fb6cc0e5406a69318341a766a0b23e"
+recipe = "kit/session.py"

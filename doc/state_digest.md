@@ -165,7 +165,7 @@ list.
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
 - `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
-  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1019, E1032, E1044)
+  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1032, E1044, E1057)
 - `Q042` vdm, medium: what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do,
   when its low bits move the list's first index and 0x0f000000 ... (E307, E308, E414)
 - `Q092` vdm, medium: what do bits 31:28 of the index list's first trailing word count, which the
@@ -315,9 +315,12 @@ list.
 
 ## Recent records
 
-112 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+113 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
+  sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
+  all ran, rc 0): the period ...
 - `E1048` ta, 2026-11-14: r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x
   640 baselines and four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at
   256 x 256 and 26 and 27 at 768 ...
@@ -657,9 +660,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-59 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+60 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r15-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -743,7 +747,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 25 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 26 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
