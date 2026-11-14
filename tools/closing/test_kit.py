@@ -872,6 +872,34 @@ def test_the_replay_has_the_declared_knob_files_for_a_tool_that_writes_one(repos
     assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
 
 
+FILL_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+case "$*" in
+*--use-fill*) [ -f "${SGXFIVE_DEBUGFS:-/nonexistent}/tadata_fill" ] \\
+    || { echo "sgxfive-test: tadata_fill: No such file or directory" >&2; exit 1; } ;;
+esac
+echo "job: ok"; echo "diff: 0 of 2048 pixels"
+"""
+
+
+def test_the_replay_creates_every_debugfs_file_the_session_declares_and_no_other(repos):
+    """`tri --tadata-fill-render` needs debugfs tadata_fill, which session.toml declares in
+    `debugfs = [...]` and the worlds' fake laptop creates; the replay made only the dumps and the
+    knobs, so the row failed `tadata_fill: No such file`. It creates each declared file, empty;
+    a file not declared stays absent, so an undeclared use still fails."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=FILL_SRC)
+    base = (kp / "tables/s0.txt").read_text()
+    row = "d1|fit|safe|-|t4|tri --use-fill\n"
+    m, bad = replay_findings(repos, kp, base, row)
+    assert len(bad) == 1 and "tadata_fill" in bad[0], (bad, m.stdout)
+    toml = kp / "session.toml"
+    toml.write_text(toml.read_text().replace("debugfs = []", 'debugfs = ["tadata_fill"]', 1))
+    m, bad = replay_findings(repos, kp, base, row)
+    assert not bad, (bad, m.stdout)
+
+
 UNKNOWN_SRC = """#!/bin/sh
 [ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
 shift

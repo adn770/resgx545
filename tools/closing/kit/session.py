@@ -979,6 +979,9 @@ def libmock(kp, say=print):
                 (w / "dbg" / f).write_bytes(b"")
             for k, d in c["knobs"].items():
                 (w / "dbg" / k).write_text(f"{d['default']}\n")
+            # every file the session declares in debugfs = [...], empty, as the fake laptop does
+            for f in c["debugfs"]:
+                (w / "dbg" / f).touch()
             env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home),
                    "W": str(w / "w"), "S": str(kp), "SGXFIVE_KPOKE": str(kpoke),
                    "SGXFIVE_DEBUGFS": str(w / "dbg")}
