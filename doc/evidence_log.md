@@ -8552,6 +8552,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *vdm; HW, infer; data: `render-closing-r13-flag:out/20261113-220930/f3/`,
   `render-closing-r13-flag:fold/`.*
 
+### 2026-11-14
+
+- `E1044` r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1, 4 and 7 partial
+  renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage stopped by its
+  own rule (rc 24) because its sampling period read 1682 ns where the frozen premise was at most
+  1000 ns (extrapolated at 0.46 us a register; the period has a floor near 1.3 us plus 0.4 us a
+  register); the control read no bit 2 clear (0 of 118 lines); no verdict ('cannot tell' for every
+  model, the other nine jobs never ran).
+  *dpm; HW; data: `render-closing-r14-dpm:out/20261114-052638/pr3/`,
+  `render-closing-r14-dpm:fold/`.*
+
 ## By unit
 
 ### bif
@@ -8567,7 +8578,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032.
+E1019, E1032, E1044.
 
 ### edm
 
