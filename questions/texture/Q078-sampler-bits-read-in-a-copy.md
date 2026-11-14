@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "under a bilinear sample, does T3 bit 14 on a twiddled texture read taps at columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W frac(u) - 1/2) (E1049: post hoc on two rows across the texture's edge, every frozen footprint failed), given that a point sample reads texel (s + floor(4096 frac(u)), t) of 16 x 16 tiles with W + 4096 texels a tile row at W 16 to 128 by 32 and in u16 texels (E1047, E1049), and what does it read at heights other than 32?"
+question = "under a bilinear sample, which columns does T3 bit 14 on a twiddled texture read where the footprint crosses the texture's left or right edge (E1049's post hoc taps at X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W frac(u) - 1/2), held out in E1058: held inside the texture and across the v edge, failed at the left edge and where u lies off the 1/4096 grid), given that a point sample reads texel (s + floor(4096 frac(u)), t) of E561's tiles of 16 x min(H, 16) texels with W + 4096 texels a tile row at W 16 to 128 by 8 to 64 and in u16 texels (E1047, E1049, E1058)?"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047", "E1049"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047", "E1049", "E1058"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -165,3 +165,24 @@ texel 0 of 2, the second column unwrapped 1 of 2, the filter dropped 0 of 2); po
 read columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W frac(u) - 1/2), 2048 of 2048
 on both. To retire: that form held out (other widths, footprints inside the texture and across
 the left edge, v's edge), and a height other than 32 where the reach fits the scratch.
+
+Narrowed 2026-11-14 (round 16, session r16-tw stage tw16, decision R16-2 (a); E1058; the question
+line is rewritten to what stays; not retired: R16-6 (a) asks every clause decided by held-out
+rows, and the bilinear clause failed its frozen form). It read "under a bilinear sample, does T3
+bit 14 on a twiddled texture read taps at columns X mod W and X + 1 plus floor(4096 frac(u)), X =
+floor(W frac(u) - 1/2) (E1049: post hoc on two rows across the texture's edge, every frozen
+footprint failed), given that a point sample reads texel (s + floor(4096 frac(u)), t) of 16 x 16
+tiles with W + 4096 texels a tile row at W 16 to 128 by 32 and in u16 texels (E1047, E1049), and
+what does it read at heights other than 32?". Held out with every control passing: the point read
+at 32 and 128 by 8 and 16 and at 16 and 64 by 64 is texel (s + floor(4096 frac(u)), floor(H v)
+mod H) of E561's tiles of 16 x min(H, 16) texels (16 x 8 at H 8; 16 x 16 tiles there failed) with
+W + 4096 texels a tile row (H-TWP-H 8 of 8; the move and widening scaled by H, rows mod 32, a 4128
+tile row and one strip after the texture failed every row where they part). So "heights other
+than 32" is answered for 8, 16 and 64 [infer: the heights run]; sgx-sim models them. Open: the
+bilinear sample at the edges. E1049's post hoc form (F-FRAC) failed its held-out test, 3 of 6: it
+held on the rows inside the texture and across the v edge (whose second row wraps to row 0) and
+failed on the three crossing the left edge; the other frozen footprints failed too. Post hoc, not
+held out: leaving the left column unwrapped (X + m) reads all of bl64left, but misses where u lies
+between two 1/4096 steps on the two 128-wide rows and 17 pixels of each of E1049's rows, so no one
+form fits both rounds. To retire: a footprint form that fits E1049's and E1058's edge rows, held
+out on u on and off the 1/4096 grid at both edges.

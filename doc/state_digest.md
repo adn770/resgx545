@@ -43,8 +43,8 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: under a bilinear sample, does T3 bit 14 on a twiddled texture read taps at
-  columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W ... (E1033, E1047, E1049)
+- `Q078` texture, high: under a bilinear sample, which columns does T3 bit 14 on a twiddled texture
+  read where the footprint crosses the texture's left or right ... (E1047, E1049, E1058)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -313,12 +313,15 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+123 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1065` texture, 2026-11-14: r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8
   x 8, 64 x 64 and type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base
   0 of a 32-page named scratch): ...
+- `E1058` texture, 2026-11-14: r16-tw stage tw16 (17 probe fills on t14 with a 1 MiB scratch,
+  E1047's tx_map form; safe class, no fault, no stop): T3 bit 14 on twiddled 32-bit textures point
+  sampled at 32 and 128 by 8, 32 and 128 ...
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
   sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
   all ran, rc 0): the period ...
@@ -685,9 +688,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-65 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+66 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r16-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t14
 - `render/closing-r16-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
@@ -778,7 +783,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 31 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 32 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

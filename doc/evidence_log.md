@@ -8814,6 +8814,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   7.25); every clear is 3890 to 4090 ns wide with 0x0748 reading 0xb or 0x1b.
   *dpm; HW; data: `render-closing-r15-dpm:out/20261114-071243/pr4/`,
   `render-closing-r15-dpm:fold/`.*
+- `E1058` r16-tw stage tw16 (17 probe fills on t14 with a 1 MiB scratch, E1047's tx_map form; safe
+  class, no fault, no stop): T3 bit 14 on twiddled 32-bit textures point sampled at 32 and 128 by 8,
+  32 and 128 by 16 and 16 and 64 by 64 (u in (0, 1), (1, 2) and (2, 2.5), frac(u) at most 0.37 at H
+  64) reads on every pixel of all eight held-out fills texel (s + floor(4096 frac(u)), floor(H v)
+  mod H) in E561's tiles of 16 x min(H, 16) texels with a tile row of W + 4096 texels ('H-TWP-H ...
+  (8 of 8 rows decided)'; 16 x 16 tiles at H 8 '6 held, 2 FAILED', failing both H 8 rows; the move
+  and widening 128 H '0 held, 4 FAILED'; rows mod 32, one 4096 x H strip and a 4128 tile row each
+  failing the four H 64 rows); E1049's post hoc bilinear form failed its held-out test: taps at
+  columns X mod W and X + 1 plus floor(4096 frac(u)) 'F-FRAC ... 3 held, 3 FAILED' (held on the
+  three rows whose footprints stay inside the texture or cross only the v edge, failed on the three
+  that cross the left edge), and every other frozen footprint failed too ('H-FOOT-SHIFT ... 3 held,
+  3 FAILED', 'H-FOOT-TW ... 3 held, 3 FAILED', 'F-VNEXT ... 1 held, 5 FAILED', 'H-POINT ... 0 held,
+  6 FAILED'); all three controls (bit-clear 32 x 8 and 16 x 64, E1049's tw-bl32 rerun) passed.
+  *texture; HW, infer; data: `render-closing-r16-tw:out/20261114-093404/tw16/`,
+  `render-closing-r16-tw:fold/`, `vectors-closing-r16-tw-pixels`.*
 - `E1065` r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8 x 8, 64 x 64 and
   type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base 0 of a 32-page
   named scratch): the control passed (E1055's ty-ty1u4r rerun, its kept image, 2048 of 2048);
@@ -8920,7 +8935,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1065.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065.
 
 ### transfer
 

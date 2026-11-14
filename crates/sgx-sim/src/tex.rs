@@ -75,11 +75,14 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
         // at W 16, 64 and 128 with H 32, u in (0, 1), (1, 2) and (2, 3), and a u16 32 x 32):
         // column s + floor(4096 frac(u)), s the wrapped bit-clear column, in E561's 16 x 16
         // tiles with a tile row of W + 4096 texels (a constant 4128 failed 6 of 6), in texels on
-        // u16 (the half T & 1 of dword T >> 1). Other heights and widths, filtered samples
-        // (E1049's bilinear footprint is post hoc), other modes and formats stay open (Q078)
-        if !matches!(tex.w, 16 | 32 | 64 | 128)
-            || tex.h != 32
+        // u16 (the half T & 1 of dword T >> 1). E1058: held out at H 8 (32 and 128 wide), 16 (32,
+        // 128) and 64 (16, 64; tile rows 2 and 3): row t = floor(H v) mod H, E561's tiles of 16 x
+        // min(H, 16) texels (16 x 8 at H 8; 16 x 16 there failed), the tile row W + 4096 texels.
+        // Other sizes, filtered samples (E1049's post hoc footprint failed 3 of 6 held-out rows
+        // in E1058), other modes and formats stay open (Q078)
+        if !(matches!(tex.w, 16 | 32 | 64 | 128) && tex.h == 32 || T3B14_SIZES.contains(&(tex.w, tex.h)))
             || !matches!(tex.format, 9 | 12)
+            || tex.format == 9 && (tex.w, tex.h) != (32, 32)
             || bilinear
             || levels != [(0, 64)]
             || s.pcf.is_some()
@@ -91,16 +94,17 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
             || tex.address != [0, 0]
         {
             return open(
-                "T3 bit 14 on a twiddled texture other than E1047's and E1049's: W 16 to 128 by 32, \
-                 format 12 or 9, point sampled, repeat, unconverted (Q078)",
+                "T3 bit 14 on a twiddled texture other than E1047's, E1049's and E1058's: W 16 to 128 \
+                 by 32 (format 12 or 9), 32 and 128 by 8 and 16, 16 and 64 by 64 (format 12), point \
+                 sampled, repeat, unconverted (Q078)",
             );
         }
         let w = tex.w;
         let col = ((u * w as f64).floor() as i64).rem_euclid(w as i64) as u32
             + (4096.0 * (u - u.floor())).floor() as u32;
-        let row = tex.row_of(v, false).rem_euclid(32) as u32;
+        let row = tex.row_of(v, false).rem_euclid(tex.h as i64) as u32;
         let bytes = if tex.format == 9 { 2 } else { 4 };
-        let a = tex.base.wrapping_add(morton(col, row, w + 4096, 32) * bytes);
+        let a = tex.base.wrapping_add(morton(col, row, w + 4096, tex.h) * bytes);
         let dw = load(a & !3).map_err(Fail::Load)?;
         return Ok(vec![if bytes == 4 { dw } else { dw >> (8 * (a & 3)) & 0xffff }]);
     }
@@ -385,7 +389,7 @@ fn half_to_f32(h: u32) -> f32 {
 /// compare mode 31:29 (for .pcf) and the data size 26:23 change nothing seen;
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
-/// texture only those are measured, and bit 14 at W 16 to 128 by 32 (E1047, E1049, see sample); bits 10, 13,
+/// texture only those are measured, and bit 14 at W 16 to 128 by 32 and the sizes of E1058 (see sample); bits 10, 13,
 /// 27 and 28 act in ways not modelled here; bits 11 and 12 change nothing on a strided texture again in E975, and on a
 /// twiddled chain select the level (E1027, Texture::pick). Bit 14 on
 /// a stride texture moves the texel by floor(4096 clamp(u, 0, 1)) texels (E968's S * S rule
@@ -715,10 +719,13 @@ impl Texture {
         // E1049 (tw-refu16): a u16 32 x 32 read E561's tiles in texels, every pixel
         let u16_ran = tex.format == 9 && (w, h) == (32, 32);
         let u16_chain = tex.format == 9 && CHAIN16_SIZES.contains(&(w, h));
+        // E1058 (pt128h8): a 128 x 8 ran under T3 bit 14 only (sample's bit-14 read)
+        let b14_ran = t3 >> 14 & 1 != 0 && tex.format == 12 && T3B14_SIZES.contains(&(w, h));
         if tex.row.is_none()
             && (w > 16 || h > 16)
             && !(tile_law_ran(w, h) && (tex.bytes()? == 4 || u16_ran))
             && !u16_chain
+            && !b14_ran
         {
             return open(format!(
                 "a twiddled {w}x{h} texture of format {} (the 16 x 16 tiles ran only on 32-bit texels in the sizes of E561 and E562)",
@@ -1296,7 +1303,9 @@ pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
 /// The sizes of 32-bit twiddled textures, with a side above 16, that p1132 ran (E561 tx-twiddle,
 /// E562 tx-shapes) and r13-tex's 32 x 64 (E1026: three rows, every pixel the tile law's index plus
 /// the u-mode offset): the tiles of 16 x 16 and their raster order are measured there only.
-const TILE_SIZES: [(u32, u32); 19] = [
+const TILE_SIZES: [(u32, u32); 20] = [
+    // E1058: 32 x 8 (ref32h8, E561's 16 x 8 tiles, every pixel)
+    (32, 8),
     // E1039: 256 x 32 in mode 5 (the inside the tile law's index plus 8 M + 52, every pixel)
     (256, 32),
     // E1052: a side of 1 at level 0 (1 x 32, 32 x 1 and, read 1D, 64 x 1), every texel its index
@@ -1319,6 +1328,10 @@ const TILE_SIZES: [(u32, u32); 19] = [
     (64, 4),
     (8, 64),
 ];
+
+/// E1058 (r16-tw tw16): the sizes besides W x 32 at which T3 bit 14 on a twiddled 32-bit texture
+/// read E1049's wide layout with E561's tile height, every pixel of each held-out row.
+const T3B14_SIZES: [(u32, u32); 6] = [(32, 8), (128, 8), (32, 16), (128, 16), (16, 64), (64, 64)];
 
 /// The non-square sizes whose mip chain p1132 ran (E562 tx-shapes, tx-fields) and r15-tex held out
 /// (E1052: a side of 1, 64 x 1 read 1D, 64 x 32 and 256 x 32; u16 also at 16 x 64, CHAIN16_SIZES).
@@ -1935,10 +1948,11 @@ mod tests {
         for (w, h) in [(32, 32), (64, 32), (64, 16), (64, 64), (128, 16), (128, 32), (32, 128), (128, 128)] {
             assert!(at(state(0, 12, w, h, 1, 0, 0), 0.3, 0.7).is_ok(), "{w}x{h}");
         }
-        for (w, h) in [(16, 64), (8, 128), (32, 16), (16, 32), (64, 4), (8, 64)] {
+        // E1058: 32 x 8 (ref32h8, bit clear); 128 x 8 ran under T3 bit 14 only
+        for (w, h) in [(16, 64), (8, 128), (32, 16), (16, 32), (64, 4), (8, 64), (32, 8)] {
             assert!(at(state(0, 12, w, h, 1, 0, 0), 0.3, 0.7).is_ok(), "{w}x{h}");
         }
-        for (w, h) in [(256, 256), (256, 16), (16, 256), (128, 8), (4, 64), (64, 8), (32, 8), (512, 512)] {
+        for (w, h) in [(256, 256), (256, 16), (16, 256), (128, 8), (4, 64), (64, 8), (512, 512)] {
             let r = at(state(0, 12, w, h, 1, 0, 0), 0.3, 0.7);
             assert!(matches!(&r, Err(Fail::Open(m)) if m.contains("twiddled")), "{w}x{h}: {r:?}");
         }
@@ -2462,6 +2476,32 @@ mod tests {
         assert!(at(state(0, 12, 32, 32, 1, 1 << 12, 1 << 14), 0.0, 0.0).is_err(), "bilinear");
         assert!(at(state(0, 12, 32, 32, 1, 2 << 6, 1 << 14), 0.0, 0.0).is_err(), "u clamped");
         assert!(at(state(0, 5, 32, 32, 1, 0, 1 << 14), 0.0, 0.0).is_err(), "format 5");
+    }
+
+    #[test]
+    fn t3_bit_14_on_twiddled_heights_8_16_and_64_keeps_e561s_tile_height() {
+        // E1058 (r16-tw tw16, H-TWP-H 8 of 8): column s + floor(4096 frac(u)), row t = floor(H v)
+        // mod H, in E561's tiles of 16 x min(H, 16) texels with a tile row of W + 4096 texels:
+        // 16 x 8 tiles at H 8 (16 x 16 failed there), tile rows t div 16 at H 64
+        let tw = |w: u32, h: u32, u: f32, v: f32| at(state(0, 12, w, h, 1, 0, 1 << 14), u, v);
+        // 32 x 8, u = 149 / 128, v = 11 / 64 (pt32h8 x 10, y 5)
+        assert_eq!(tw(32, 8, 149.0 / 128.0, 11.0 / 64.0), Ok(vec![0x100 + 5411]));
+        // 128 x 8, u = 81 / 256, v = 61 / 64 (pt128h8 x 40, y 30)
+        assert_eq!(tw(128, 8, 81.0 / 256.0, 61.0 / 64.0), Ok(vec![0x100 + 10709]));
+        // 32 x 16 and 128 x 16 (pt32h16 x 50, y 29; pt128h16 x 33, y 7)
+        assert_eq!(tw(32, 16, 101.0 / 128.0, 59.0 / 64.0), Ok(vec![0x100 + 52182]));
+        assert_eq!(tw(128, 16, 579.0 / 256.0, 15.0 / 64.0), Ok(vec![0x100 + 17671]));
+        // 16 x 64 and 64 x 64, tile rows 3 and 2 (pt16h64u0 x 60, y 31; pt64h64u1 x 45, y 20)
+        assert_eq!(tw(16, 64, 361.0 / 1024.0, 127.0 / 128.0), Ok(vec![0x100 + 220631]));
+        assert_eq!(tw(64, 64, 1295.0 / 1024.0, 105.0 / 128.0), Ok(vec![0x100 + 217264]));
+        // the bit-clear 32 x 8 (ref32h8): E561's 16 x 8 tiles
+        assert_eq!(at(state(0, 12, 32, 8, 1, 0, 0), 149.0 / 128.0, 11.0 / 64.0), Ok(vec![0x100 + 35]));
+        // not run: other sizes at these heights, a filter (E1058's bilinear forms failed)
+        assert!(tw(64, 8, 0.0, 0.0).is_err(), "64 x 8");
+        assert!(tw(32, 64, 0.0, 0.0).is_err(), "32 x 64");
+        assert!(tw(128, 64, 0.0, 0.0).is_err(), "128 x 64");
+        assert!(at(state(0, 12, 128, 8, 1, 0, 0), 0.0, 0.0).is_err(), "128 x 8 bit clear");
+        assert!(at(state(0, 12, 32, 16, 1, 1 << 12, 1 << 14), 0.0, 0.0).is_err(), "bilinear");
     }
 
     #[test]

@@ -15,8 +15,12 @@
 //! tw14 (`render/closing-r15-tw`, E1049: the same rule held out at W 16, 64 and 128 by 32 with u
 //! past 1 and 2, and on a u16 32 x 32 in texels): its state words and coordinates are gen/tw.py's
 //! (u a ramp of x, v = (y + 1/2) / 32), every point row and reference read as kept; its two
-//! bilinear rows (post hoc footprint) are refused on every pixel. Bit 14 at other sizes, filtered
-//! or with T3's offset stays refused.
+//! bilinear rows (post hoc footprint) are refused on every pixel. And r16-tw's stage tw16
+//! (`render/closing-r16-tw`, E1058: the rule held out at 32 and 128 by 8 and 16, 16 and 64 by 64,
+//! E561's tile height): its state words and coordinates are gen/tw16.py's (u and v ramps of x
+//! and y), every point row and both bit-clear references read as kept; its six bilinear rows and
+//! E1049's tw-bl32 rerun are refused on every pixel (E1049's post hoc footprint failed 3 of 6).
+//! Bit 14 at other sizes, filtered or with T3's offset stays refused.
 
 use sgx_pipe::data::Ctx;
 use sgx_sim::tex::{self, Lod, Sample, Srd};
@@ -30,6 +34,8 @@ const R14: &str = "render/closing-r14-flag";
 const R14_ATT: &str = "out/20261114-060824/f1";
 const R15: &str = "render/closing-r15-tw";
 const R15_ATT: &str = "out/20261114-074356/tw14";
+const R16: &str = "render/closing-r16-tw";
+const R16_ATT: &str = "out/20261114-093404/tw16";
 const SCRATCH: u32 = 0x5caf_0000;
 
 fn base() -> Option<PathBuf> {
@@ -252,6 +258,67 @@ fn r15_tw_tw14_bit_14_twiddled_reads_a_tile_row_of_w_plus_4096_texels_at_every_w
                     state: [t0, fmt << 24 | (w - 1) << 12 | 31, SCRATCH, 0x0080_0800 | u32::from(b14) << 14],
                     u: (a + (x as f64 + c) / d) as f32,
                     v: v as f32,
+                    one_d: false,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat,
+                };
+                let mut load = |a: u32| Ok(0xd000_0000 | (a.wrapping_sub(SCRATCH) / 4));
+                match tex::sample(&s, &mut load) {
+                    Ok(v) if v[0] == img[(y * 64 + x) as usize] => ok += 1,
+                    Ok(_) => {}
+                    Err(_) => open += 1,
+                }
+            }
+        }
+        let want = if bilinear { (0, 2048) } else { (2048, 0) };
+        assert_eq!((ok, open), want, "{name}");
+    }
+}
+
+/// An r16-tw tw16 row: (name, W, H, bilinear, T3 bit 14, u = u0 + x du, v = v0 + y dv).
+const TW16: [(&str, u32, u32, bool, bool, f64, f64, f64, f64); 17] = [
+    ("ref32h8", 32, 8, false, false, 1.0 + 1.0 / 128.0, 1.0 / 64.0, 1.0 / 64.0, 1.0 / 32.0),
+    ("ref16h64", 16, 64, false, false, 1.0 / 1024.0, 3.0 / 512.0, 0.5 + 1.0 / 128.0, 1.0 / 64.0),
+    ("pt128h8", 128, 8, false, true, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0, 1.0 / 32.0),
+    ("pt128h16", 128, 16, false, true, 2.0 + 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0, 1.0 / 32.0),
+    ("pt32h8", 32, 8, false, true, 1.0 + 1.0 / 128.0, 1.0 / 64.0, 1.0 / 64.0, 1.0 / 32.0),
+    ("pt32h16", 32, 16, false, true, 1.0 / 128.0, 1.0 / 64.0, 1.0 / 64.0, 1.0 / 32.0),
+    ("bl16h16in", 16, 16, true, true, 0.25, 1.0 / 256.0, 1.0 / 32.0, 1.0 / 32.0),
+    ("bl64left", 64, 32, true, true, 2.0 + 1.0 / 4096.0, 1.0 / 4096.0, 3.0 / 128.0, 1.0 / 32.0),
+    ("bl128h16right", 128, 16, true, true, 2.0 - 32.0 / 8192.0, 1.0 / 8192.0, 1.0 / 32.0, 1.0 / 32.0),
+    ("bl128vedge", 128, 32, true, true, 0.25, 1.0 / 512.0, 63.0 / 64.0, 1.0 / 2048.0),
+    ("bl64in", 64, 32, true, true, 0.25, 1.0 / 256.0, 3.0 / 128.0, 1.0 / 32.0),
+    ("bl32r", 32, 32, true, true, 63.0 / 64.0, 1.0 / 2048.0, 3.0 / 128.0, 1.0 / 32.0),
+    ("bl128right", 128, 32, true, true, 2.0 - 32.0 / 8192.0, 1.0 / 8192.0, 3.0 / 128.0, 1.0 / 32.0),
+    ("pt16h64u0", 16, 64, false, true, 1.0 / 1024.0, 3.0 / 512.0, 0.5 + 1.0 / 128.0, 1.0 / 64.0),
+    ("pt16h64u1", 16, 64, false, true, 1.0 + 1.0 / 1024.0, 3.0 / 512.0, 0.5 + 1.0 / 128.0, 1.0 / 64.0),
+    ("pt64h64u0", 64, 64, false, true, 1.0 / 1024.0, 3.0 / 512.0, 0.5 + 1.0 / 128.0, 1.0 / 64.0),
+    ("pt64h64u1", 64, 64, false, true, 1.0 + 1.0 / 1024.0, 3.0 / 512.0, 0.5 + 1.0 / 128.0, 1.0 / 64.0),
+];
+
+#[test]
+fn r16_tw_tw16_bit_14_twiddled_keeps_e561s_tile_height_at_h_8_16_64() {
+    let Some(b) = Ctx::from_env().root.filter(|r| r.join(R16).join(R16_ATT).is_dir()) else {
+        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no {R16}/{R16_ATT}");
+        eprintln!("SKIPPED: no {R16}/{R16_ATT} (set RESGX545_DATA)");
+        return;
+    };
+    for (name, w, h, bilinear, b14, u0, du, v0, dv) in TW16 {
+        let img = image(&b.join(R16).join(R16_ATT).join(format!("{name}.txt.gz")));
+        let t0 = if bilinear { 0x07fe_1400 } else { 0x07fe_0000 };
+        let (mut ok, mut open) = (0, 0);
+        for y in 0..32 {
+            for x in 0..64 {
+                let s = Sample {
+                    state: [
+                        t0,
+                        12 << 24 | (w - 1) << 12 | (h - 1),
+                        SCRATCH,
+                        0x0080_0800 | u32::from(b14) << 14,
+                    ],
+                    u: (u0 + x as f64 * du) as f32,
+                    v: (v0 + y as f64 * dv) as f32,
                     one_d: false,
                     srd: Srd::None,
                     pcf: None,

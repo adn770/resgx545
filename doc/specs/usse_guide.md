@@ -5280,7 +5280,7 @@ open driver:
    of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30817 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 473 pixel vectors; it stops on 2182 rather than
+float functions within their measured bound) and 477 pixel vectors; it stops on 2178 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)
