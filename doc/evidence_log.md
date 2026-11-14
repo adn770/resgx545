@@ -8718,6 +8718,31 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   E1047's f1-zero rerun) passed.
   *texture; HW, infer; data: `render-closing-r15-tw:out/20261114-074356/tw14/`,
   `render-closing-r15-tw:fold/`, `vectors-closing-r15-tw-pixels`.*
+- `E1050` r15-zls rows zp- (Q297, 13 jobs in stages zpass and zbits3, t10): over 34 x 18 edge tiles
+  the ZLS load pass tests E831's band against the loaded depth and the loaded stencil and keeps the
+  loaded value past it (frozen H-EDGE 1 of 1 in each stage, 2048 of 2048 dwords and bytes; the clear
+  past the band and edge tiles without a load failed); with bit 19 and a load every stored depth is
+  negated, the kept loaded one too (frozen H-19-RENEG 2 of 2, never and less; H-19-ABS failed 2 of
+  2); formats 1 and 2 under a load compare the loaded dword as a float and store the floor rule of
+  the depth kept or drawn (frozen H-INT-PASS 2 of 2; the integer reading of the word failed 2 of 2);
+  triangle depths 0, 0.75 and 1 over loaded 0.25 / 0.75 halves are tested strictly less (frozen
+  H-PASS-Z 3 of 4, H-PASS-LE refuted at 0.75: 0 drawn), and at 0.125 both models drew the frozen
+  2048 pixels but the flat plane stored 1 to 9 ulps below 0.125 (post hoc, fold/look.py), so
+  H-PASS-Z failed that row on the stored floats; all seven controls passed.
+  *zls; HW; data: `render-closing-r15-zls:out/20261114-073826/zpass/`,
+  `render-closing-r15-zls:out/20261114-073826/zbits3/`, `render-closing-r15-zls:fold/`.*
+- `E1051` r15-zls rows zv- (Q298, 16 jobs in stage zovl, t10): overlapping stores in the 16-bit
+  format (64 x 32 G 0, 160 x 48 G 2) and in the 24-bit one with edge tiles (65 x 33 G 1) and four
+  macrotiles a side (640 x 480 G 2) hold the tile the 3D visits last in region header order by
+  E991's floor rule of a kept full-pitch reference (frozen H-LATE/HDR 4 of 4, 54784 of 54784 dwords
+  at 640 x 480; H-LATE/RASTER 2 of 4, the early orders 0 of 4); with the viewport's z offset at 1.25
+  the integer formats store 0xffffff and 0xffff while format 0 stores 1.25, and at -0.25 they store
+  0 (frozen H-INT-SAT 4 of 4; the wrap 0 of 4, the magnitude 2 of 4); E411's pitches G 5, 9 and 17
+  store E465's pages 12 to 39 with the buffer sized past them, without a fault (frozen H-E465-EXT 3
+  of 3; the 16-page bound failed 3 of 3), and E411's bit-25 row stores the 16-bit floor of 0.5,
+  0x80008000, on pages 12 and 13 (frozen H-B25-FLOOR 1 of 1); all three controls passed.
+  *zls; HW; data: `render-closing-r15-zls:out/20261114-073826/zovl/`,
+  `render-closing-r15-zls:fold/`.*
 - `E1052` r15-tex stage chain on module B60AB0B4 (Q104; 18 probe fills, the scratch as the texture,
   dword i named 0xD0000000 | i, LOD (y >> 2) + c down the rows): both controls passed (E562's
   shp-32x16-l5 and shp-128x16-l7-x0 rerun, their kept images, 2048 of 2048); 'A (heldout) (11 of 11
@@ -8732,6 +8757,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   (a (64 - f) + b f + 32) >> 6, not per byte (A-TX-BL8 1536 of 2048).
   *texture; HW, infer; data: `render-closing-r15-tex:out/20261114-073318/chain/`,
   `render-closing-r15-tex:fold/`, `vectors-closing-r15-tex-pixels`.*
+- `E1053` r15-zls rows zb3- (Q071, 10 jobs in stage zbits3, t10): E1042's post hoc forms held out:
+  bit 15 alone fails E988's stencil test at every pixel and stores the loaded bytes unchanged, at 96
+  x 32 G 2 and against reference 1 (frozen H15-FAIL 2 of 2; the read of 0xff failed against
+  reference 1, 0 drawn of its 2048); bit 23 alone reads one of 0x3f, 0x80 and 0 by x mod 16 whatever
+  was loaded, at 96 x 32 G 2 (2304 drawn) and over the index fill (frozen H23-MOD16 2 of 2; a map of
+  the loaded byte failed over the index fill); bits 21 or 22 with 23 read 0, as 21 to 23 together
+  (frozen H-PAIR-ZERO 2 of 2, 2048 drawn, every stored byte 0xff; as 23 alone and the loaded byte
+  failed); all four controls passed, the reference flip by ISP word 0 bits 7:0 drawing E988's
+  complement.
+  *zls; HW; data: `render-closing-r15-zls:out/20261114-073826/zbits3/`,
+  `render-closing-r15-zls:fold/`.*
+- `E1054` r15-zls rows zl2- (Q120, 13 jobs in stage zflat2, t10): format 6 stores E1031's 44-dword
+  block with row 0's record carrying the depth where the plane is one float at every pixel: frozen
+  H-FLATPLANE 3 of 3 (0.5 + 2^-20, whose float has low bits set, stored the block of 0x3f000010 as
+  its format-0 twin's one value; at 0.1 and 0.3 the twins held 6 and 3 floats and the blocks another
+  form), H-LOW16 failed at 0.5 + 2^-20; FL-REC0 held at 0.375 and 0.625 and failed at 0.9375 (block
+  0 only) and 0.0625 (no block), planes that by zp-z125's 0.125 need not be one float [infer]; all
+  three controls passed.
+  *zls; HW; data: `render-closing-r15-zls:out/20261114-073826/zflat2/`,
+  `render-closing-r15-zls:fold/`.*
 - `E1055` r15-tex stage ty on module B60AB0B4 (Q177; texture types 1, 3 and 4 in u modes 4 to 7, 15
   probe fills at base 0 of a 32-page named scratch): both controls passed (E1000's addr3-16x64-u4
   and E1039's addr5-ty1-u4 rerun, their kept images, 2048 of 2048); 'H-HALF (heldout) (10 of 10 rows
@@ -8889,4 +8934,5 @@ E1035.
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
-E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043.
+E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
+E1054.

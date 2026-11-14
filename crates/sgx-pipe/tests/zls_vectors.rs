@@ -153,12 +153,12 @@ fn the_control_words_are_matched_fitted_or_refused_as_what_they_rest_on() {
             o => panic!("{id}: {o:?} {:?}", r.seen.notes),
         }
     }
-    // bits 5 to 11 faulted the job in the scratch run (G past the buffer: Q298), format 4 with a
+    // bits 5 to 11 faulted the job in the scratch run (G past the buffer: Q299), format 4 with a
     // stencil buffer Q120; the 16-bit format at G = 1 (flip-25) replays since E977 held its layout
     // at other pitches
     let q = |ids: &[&str]| ids.iter().map(|s| s.to_string()).collect::<Vec<_>>();
     let want: Vec<(String, Vec<String>)> = (5..=11)
-        .map(|b| (format!("flip-{b:02}"), q(&["Q298"])))
+        .map(|b| (format!("flip-{b:02}"), q(&["Q299"])))
         .chain([("flip-26".to_string(), q(&["Q120"]))])
         .collect();
     assert_eq!(refused, want);
