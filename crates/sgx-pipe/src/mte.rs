@@ -12,7 +12,7 @@
 use crate::Outcome;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q069", "Q039", "Q116", "Q162", "Q230", "Q296"];
+pub const OPEN: &[&str] = &["Q069", "Q039", "Q162", "Q230", "Q296"];
 
 /// A refusing stub for the parts of the unit nothing models yet.
 pub fn refuse() -> Outcome {

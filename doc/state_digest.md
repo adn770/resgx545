@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-149 open: 139 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+148 open: 138 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -75,8 +75,6 @@ list.
   do the vertex's distance dwords decide a plane? (E198, E280, E418)
 - `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and
   why does the viewport's z offset (state-block word 10) scale ... (E490, E981, E987)
-- `Q116` mte, medium: what does the MTE state's region clip (enable bit, first and last 32-pixel
-  tile column, first and last 16-pixel tile row) do to the objects ... (E347, E348, E1060)
 - `Q012` pbe, medium: what float formats are pack modes 22 and 34, given that both read o0 as an
   IEEE single (sign, NaN and exponent) and store it at some of the ... (E387, E406, E429)
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
