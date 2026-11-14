@@ -831,7 +831,7 @@ srcversion, fork tip, laptop tools.
 
 ## Tool and fork versions
 
-- fork pin (`tools/forkpin.py`): 2a650d74b3a1
+- fork pin (`tools/forkpin.py`): 456404fcffe5
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
