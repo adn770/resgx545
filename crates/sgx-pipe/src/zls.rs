@@ -6,9 +6,7 @@
 //! tile (E730, E831, E885, E903), the stencil's byte a pixel and its test (E284, E988), the
 //! background depth's sign (E987), formats 3 and 4 with a loaded and stored stencil (E985, E986).
 //! What no record states refuses by question: formats 3 and 4 otherwise and 5 to 7
-//! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), a NaN depth in an
-//! integer format other than a kept load's (Q299; the overlapping stores follow E996, E1041 and
-//! E1051 in every format, the pass over them E1064 and, with edge tiles, E1068), a pass plane outside 0 to 1 (Q069: only the viewport's z offset brings one; E1050 ran the pass over edge tiles, with bit 19, in
+//! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), a pass plane outside 0 to 1 (Q069: only the viewport's z offset brings one; E1050 ran the pass over edge tiles, with bit 19, in
 //! the integer formats and at depths of 0 to 1, E1059 at seven depths fed the no-load plane), bit
 //! 20 cleared with formats 5 to 7, bit 12 cleared with a load and bit 16 cleared with a depth load,
 //! a stencil store or the 16-bit format (Q071, E997, E1030, E1063), the stencil test's source under any
@@ -23,7 +21,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q069", "Q071", "Q107", "Q120", "Q299"];
+pub const OPEN: &[&str] = &["Q069", "Q071", "Q107", "Q120"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)

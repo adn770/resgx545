@@ -110,7 +110,6 @@ fn the_counts_of_the_records_hold() {
     assert_eq!(rep.items_refused["zls"]["Q107"], 128_640 + 6_656);
     // E411's seven faulted flips are predicted faults at their pages (E1070); format 4 refuses
     assert_eq!((rep.units["zls"].fault, rep.units["zls"].refused["Q120"]), (7, 3 + 1));
-    assert!(!rep.units["zls"].refused.contains_key("Q299"));
     assert_eq!(rep.items_refused["zls"].len(), 1, "Q107's tiles only: E489's cases are even sizes");
     assert_eq!(rep.items_fitted["isp"], 773);
     assert_eq!(rep.items_refused["isp"]["Q141"], 13);

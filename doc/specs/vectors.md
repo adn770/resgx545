@@ -333,8 +333,8 @@ otherwise compare nothing and pass). A vector that matched but compared no item 
   dwords that left the 0xdeadbeef fill. The float, the 24-bit and the 16-bit stores answer at
   E465's address rule (the 16-bit one at G = 33, two rows to a dword), the integer formats only
   over the ramp's 0.25 to 0.4166 and at 1.0, where the fitted rounding and its fourth candidate
-  agree (Q299): 6 fitted, 2 empty (formats 4 and 7 store nothing without a stencil buffer) and 3
-  refused (formats 3, 5 and 6, Q120).
+  agree (E977, E1051): 6 fitted, 2 empty (formats 4 and 7 store nothing without a stencil buffer)
+  and 3 refused (formats 3, 5 and 6, Q120).
 - `zls-load` (E467), 30 vectors, one per case. `init`: `w`, `h`, `ctl`, `test` (`never` or
   `less`), `z` and `clear` (the triangle's depth and the clear, as float bits), `depth_fill` and
   `stencil_fill` (the load buffers' pattern, `index` by default). `expect`: `depth` and `stencil`
