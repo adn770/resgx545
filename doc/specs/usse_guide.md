@@ -2085,9 +2085,9 @@ and `idiv` the full one).
   multiply to it for register operands; its cost was not measured. Raw words with the field
   `enc[37:36]` set and `enc[38]` clear, with `enc[38]` set and `iK` = 3 and with the bits 45, 44 and
   35 set changed neither `r10`, `i0` to `i2` nor `r14` to `r17`; with bit 46 set `r14` read 0x2255
-  in 3 of 3 jobs, what the bit does is **[open]** (Q135). Immediates and constants other than c56
+  in 3 of 3 jobs, what the bit does is **[open]** (Q127). Immediates and constants other than c56
   with the extra operand, the extra operand together with `cie` or `.neg`, an `iK` that is also a
-  source, a destination other than `r10`, the dual-issue form and `K` = 3 are **[open]** (Q135).
+  source, a destination other than `r10`, the dual-issue form and `K` = 3 are **[open]** (Q127).
   `ima32 ... cie, iN` adds bit 0 of `iN` only **[HW]**: `i0` to `i2` with the values 0x10000,
   0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and 0xaaaaaaab (24 of 24, E494; and 10
   of 10 with 0, 1, 2, 0xffff and 0xffffffff in `i0`, E470; adding all of `iN` fits 0 of 24, E494).
@@ -4175,7 +4175,7 @@ writes the iN named for `i0` and `i1` (E494).
 **Undecided:** `imae` with both `.rsN` and saturation, or with a repeat, a `u16`/`z16` source or a
 `.rsN` shift and its carries; `ima32` with `cie` or `.neg` and the extra operand, or with immediates
 and constants other than c56 there, its dual-issue secondary form, its selector 3 and what bit 46 of
-its word does to `r14` (Q135, Q127); when a repeated `idiv`'s result becomes visible to its own
+its word does to `r14` (Q127); when a repeated `idiv`'s result becomes visible to its own
 later iterations.
 
 ### 8.8 Shift amounts of 32 and over
@@ -5272,7 +5272,7 @@ open driver:
    of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
    a source 1 above 0x7fff, which no test tells, and the value it writes into `sa0`, which the
    fill's instances share (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
-   the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
+   the extra operand, its selector 3 and what bit 46 does, and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
    (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost
    (Q098).

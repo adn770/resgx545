@@ -475,7 +475,7 @@ it (E492). `ima32.u d, iK, a, b, c` writes the high 32 bits of the product with 
 (15 of 15 cases of five `.u` register triples), where the model kept the `i` registers, so a
 subtract gives its borrow in one `ima32` and an unsigned compare is two instructions on the 64 pairs
 of eight values run, unsigned and not padded (E493, E501); the raw words run for that field changed
-nothing seen except that bit 46 changed `r14` (3 of 3 jobs, open: Q135). `cie` adds bit 0 of `iN`
+nothing seen except that bit 46 changed `r14` (3 of 3 jobs, open: Q127). `cie` adds bit 0 of `iN`
 for `i0` to `i2` and eight values (E494); 17 more immediates, `.neg` on `.s` immediates and
 constants and dependent readers up to 8 nops are exact (E495); `ima32` writes `sa0`, `o0`, `i1`,
 `i2` and the six r-bank destinations run (r0, r9, r18, r28, r30, r31) but not `pa0`, as `mov` does
@@ -488,8 +488,8 @@ join was not run: E499). Four runs of the `pclink` readers show 64 pixels of 0xe
 and quads that repeat in part (E500). The records state the pairs and values that ran and count
 programs and jobs apart where one program ran twice. E469 to E473, E475 and E476 are carried forward
 with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
-Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q135, Q136 and the test-field question
-(answered since by E1062) are new.
+Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q136, the ima32 high-word question
+(folded into Q127 since) and the test-field question (answered since by E1062) are new.
 
 Sub-phase 11.26 ran seven script tables on the laptop (the identity maps of multisampling, the TA
 output under the TE anti-aliasing bits, the macrotile words at six sizes, the 4x render of our stack
@@ -544,7 +544,8 @@ hypotheses did not fit; each is stated in its record, the first runs kept), and 
 which rules were read after the data and which were predicted. Records E512-E520 and E525-E530
 (E521-E524 are kept for a later phase); E478, E480-E483, E487, E488, E493, E499 and E501 are carried
 forward with dated corrections where 11.27 answers what they listed as not run. Q051, Q052, Q128,
-Q133, Q134, Q135 and the test-field question (answered since by E1062) are narrowed, none retired;
+Q133, Q134, the ima32 high-word question (folded into Q127 since) and the test-field question
+(answered since by E1062) are narrowed, none retired;
 Q143 to Q146 and two more, since answered by E1062, are new
 (all hw, Q143 medium, the others low).
 

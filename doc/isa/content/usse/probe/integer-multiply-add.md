@@ -53,5 +53,5 @@ writes the iN named for `i0` and `i1` (E494).
 **Undecided:** `imae` with both `.rsN` and saturation, or with a repeat, a `u16`/`z16` source or a
 `.rsN` shift and its carries; `ima32` with `cie` or `.neg` and the extra operand, or with immediates
 and constants other than c56 there, its dual-issue secondary form, its selector 3 and what bit 46 of
-its word does to `r14` (Q135, Q127); when a repeated `idiv`'s result becomes visible to its own
+its word does to `r14` (Q127); when a repeated `idiv`'s result becomes visible to its own
 later iterations.

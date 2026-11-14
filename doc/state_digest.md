@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-146 open: 136 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+145 open: 135 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -268,8 +268,6 @@ list.
   on drc0 issued after a wdf drc1 that waited for four ldad ... (E479)
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
   when it is 0 or 196 to 252, whatever the task was started ... (E535, E540, E594)
-- `Q135` usse, low: what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates
-  and constants other than c56, with cie on the same ... (E526, E528, E597)
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
   0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold

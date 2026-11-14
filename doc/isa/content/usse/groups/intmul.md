@@ -80,9 +80,9 @@ and `idiv` the full one).
   multiply to it for register operands; its cost was not measured. Raw words with the field
   `enc[37:36]` set and `enc[38]` clear, with `enc[38]` set and `iK` = 3 and with the bits 45, 44 and
   35 set changed neither `r10`, `i0` to `i2` nor `r14` to `r17`; with bit 46 set `r14` read 0x2255
-  in 3 of 3 jobs, what the bit does is **[open]** (Q135). Immediates and constants other than c56
+  in 3 of 3 jobs, what the bit does is **[open]** (Q127). Immediates and constants other than c56
   with the extra operand, the extra operand together with `cie` or `.neg`, an `iK` that is also a
-  source, a destination other than `r10`, the dual-issue form and `K` = 3 are **[open]** (Q135).
+  source, a destination other than `r10`, the dual-issue form and `K` = 3 are **[open]** (Q127).
   `ima32 ... cie, iN` adds bit 0 of `iN` only **[HW]**: `i0` to `i2` with the values 0x10000,
   0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and 0xaaaaaaab (24 of 24, E494; and 10
   of 10 with 0, 1, 2, 0xffff and 0xffffffff in `i0`, E470; adding all of `iN` fits 0 of 24, E494).

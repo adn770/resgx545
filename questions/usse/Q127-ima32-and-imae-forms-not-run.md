@@ -1,6 +1,6 @@
 +++
 id = "Q127"
-question = "what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result?"
+question = "what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result, and (folded from Q135) what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates and constants other than c56, with cie on the same instruction, with .neg, in the dual-issue form and with the selector 3, and what does bit 46 of an ima32 word do to r14?"
 unit = "usse"
 kind = "hw"
 value = "low"
@@ -32,3 +32,18 @@ was run with every one of the 15 partitions of {d, a, b, c} into registers (300 
 and in the 64-bit compares on five more register triples and with a previous compare's high word in
 i0 (256 of 256, E595): the sources are read before the write, i0 is the high word, and the test
 reads the fresh one. Not run in a firmware task (the verifier refuses the form).
+
+**Correction 2026-11-14 (round 18, offline):** Q135 is folded into this question (retired as
+folded into Q127 after E1069; a fold is not an answer): its line asked the same clause as this
+line's "extra i register of ima32", which this text deferred to it. Its clauses are appended to the
+line above, its evidence (E493, E494, E495, E501, E525, E526, E528, E597) was already in this list
+and its terms are the same. Its open text, kept here: the high word for immediates and constants
+other than c56, the extra operand together with `cie` or `.neg` (the assembler writes both), the
+dual-issue secondary (two 16-bit lanes), the selector 3 (an i3 that no `mov` of the assembler
+reads), an iK that is also a source or the destination, a destination other than r10, what bit 46
+does (with bit 46 set r14 read 0x2255 instead of its preset in 3 of 3 jobs, E493: an unnamed
+destination, a second result or a write mask are all possible), and whether the other unmapped
+bits (enc[38:36], bits 45, 44 and 35: no change in r10 and i0 to i2, 24 of 24, E493) do anything
+outside the registers read. To settle it (Q135's plan): the generic-value tables of E525 over each
+of those forms, with the i registers and r10 to r17 read after; and the raw word with bit 46 set
+over operands that show where 0x2255 comes from.
