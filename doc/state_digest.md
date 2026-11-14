@@ -10,17 +10,15 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-144 open: 134 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+143 open: 133 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
   EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
   stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1020, E1081, E1082)
-- `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
-  macrotile lists a partial render stores in the RT data's state ... (E631, E1079, E1080)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
-  page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
+  page (0x04000417) and state page (0x00020001, 2) after the ... (E631, E1079, E1080)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
   straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E963, E1009, E1013)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500

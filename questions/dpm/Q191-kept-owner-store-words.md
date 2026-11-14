@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E458", "E462", "E591", "E631"]
+evidence = ["E310", "E458", "E462", "E591", "E631", "E1079", "E1080"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_STATE_BASE0", "CR_DPM_CONTROL_BASE", "ta3d_ctl"]
 +++
 
@@ -37,3 +37,10 @@ its state page is zero after the second context's run (2 runs each, Q192). Not s
 kick against the render's end (the optional kernel switch K1), a load task reading the words back,
 why a partial owner leaves no owner words, what the 5 words of page 4 are, and whether anything
 holds for another size or P (the partial owner was run at one size and one P).
+
+Joined 2026-11-14 from Q045 (retired, answered by E1079 and E1080): Q045's clause (c), what
+accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept
+owner's gone context, and the kept owner's slot step, is this question's now, with when a raised
+job stores its second set of lists (the TA's end, the final render's start or an abort). A closing
+render that does not overflow reads none of the lists a partial render stored (E1079), and their
+counts sum to the last run's peak less 1 when raised and to thr0 less 1 when not (E1080).

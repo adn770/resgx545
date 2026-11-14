@@ -214,7 +214,8 @@ later by E828) stay open, parked. By unit: bif 4, dpm
 with a firmware or kernel part was narrowed to the hardware part or folded into the hardware
 question that holds it (seven so far: the control block's per-VM copy and the render context count
 bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults after a
-base-only fault or a kept owner into Q036 and Q045, the points question into Q161), and a fold is
+base-only fault or a kept owner into Q036 and the state-page question (answered by E1080), the
+points question into Q161), and a fold is
 not an answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new
 parked question: how a kick tells its directory is in no list (Q118, from the render context count)
 and whether a command with both kick flags acts as two (Q119, from Q065).
@@ -249,7 +250,8 @@ reading and records.
 - **Render flags.** Bit 10's only test in the firmware adds one to the RT data set's executed count
   (E164, E166), and no image changes with it (E051, E052); bit 2 keeps its owner through a
   later live context's job (E451); through a gone context bit 2 alone keeps it and the next
-  render is exact, while after bit 3 a later render faults (E458, E462, Q036, Q045).
+  render is exact, while after bit 3 a later render faults (E458, E462, Q036; the state-page
+  question, answered by E1080).
 - **Words read from the firmware alone.** The per-render-target strides of the TA command, the
   render details and the RT data (E158, E163) and a PB block's first page (E200, E201) rest on what
   the kicks and the page-table builder do with them.
@@ -267,7 +269,8 @@ reading and records.
   (Q048).
 
 Some open readings have no glossary row, so `doc/open_rows.md` does not list them: register 0x0740
-(Q045), the render context's dword 7 (Q049), and dword 6 of the TA command, which changes nothing
+(the state-page question, answered by E1080), the render context's dword 7 (Q049), and dword 6 of
+the TA command, which changes nothing
 at any value (E054).
 
 ### 4.3 Work that needs a capture host
@@ -749,8 +752,9 @@ in the end-of-tile task lands and the job then faults, at one of three addresses
 STATUS2's high halves and register 0x0740 read 0 in 36 jobs and 0x0748 bit 2 clears in 5 of them,
 one reading each, about 29 microseconds apart (E574). Q053 is narrowed to what has no rule (a vertex
 task's g18 and g21, each tile's end-of-tile registers), Q183 is new (the fault after a store in the
-end-of-tile task); Q023, Q036, Q045 and Q076 are narrowed. Not run: Q066, the state page's reader
-and page 0x20003000 in Q045, the client directory against BASE1 in Q076. sgx-sim gains a vertex
+end-of-tile task); Q023, Q036, the state-page question (answered by E1080) and Q076 are narrowed.
+Not run: Q066, the state page's reader
+and page 0x20003000 (now Q191), the client directory against BASE1 in Q076. sgx-sim gains a vertex
 task's global registers (twelve hardware vectors; it refuses the registers and draws not measured);
 the fixed-function DPM and BIF models wait for phase 12. The roadmap counts the questions from the
 built `doc/open_questions.md`: 152 open, 136 hw (high 12, medium 66, low 58), 10 fw and 6 kernel.
@@ -762,10 +766,12 @@ no clock-gate register written. Three evidence records (E590 to E592): in a 64x6
 render no poke of the words 3 to 16 of the background object, ten values a word, changes the image,
 so the ISP is not shown to read them in that scene, and the words 0 to 2 can be shown neither read
 nor not read (E590, Q066); with the first context's mappings, slot and memory kept the render after
-a kept DPM owner is exact (13 of 13) and the kept pages hold words stored after it (E591, Q045); the
+a kept DPM owner is exact (13 of 13) and the kept pages hold words stored after it (E591; the
+state-page question, answered by E1080); the
 page-directory word of a render context equals the list register the kick wrote in 15 of 15 jobs,
 BASE1 after a reset (E592, Q076), which also corrects the landed statements that it was not
-comparable. Q066, Q045 and Q076 are narrowed and none is retired, the kernel question on the module
+comparable. Q066, the state-page question (answered by E1080) and Q076 are narrowed and none is
+retired, the kernel question on the module
 load is narrowed (the amended module's load failed three cases on an order-5 allocation failure, the
 first kernel line for the allocation reading; no load was on a fresh boot), and three questions are
 new
@@ -863,7 +869,8 @@ simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bi
 triangles (Q003), ZLS band and depth plane results are E727 to E731 (four questions opened then, up
 to Q288; E829 answered the first), E732 the accounting. Four questions are
 folded into Q163, the one on two EDM tasks (answered by E752) and the one on the end of a pass
-(answered later by E836, the two folds now in Q294), Q045 is split (Q277 for the
+(answered later by E836, the two folds now in Q294), the state-page question (answered by E1080) is
+split (Q277 for the
 firmware) and the kernel part of the wide-scene question (since folded into Q211) is
 Q278; no question is answered. The roadmap counts the questions from the built
 `doc/open_questions.md`: 184 open (Q001 to Q288), 165 hw (high 20, medium 76, low 69), 12 fw and 7
