@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-149 open: 139 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+148 open: 138 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -286,8 +286,6 @@ list.
   (the `[r4,+r5]` form, 8 temporaries, 128x128 and 256x128) ... (E374, E572, E708)
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
-- `Q297` zls, low: what does the ZLS load pass (a depth or stencil load feeding the depth test and
-  the store) do over edge tiles, with bit 19 set, with an ... (E1040, E1050, E1059)
 - `Q299` zls, low: does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to
   17 in a 16-page buffer), and what does a load pass store ... (E1041, E1051, E1064)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which

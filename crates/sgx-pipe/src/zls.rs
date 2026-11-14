@@ -9,7 +9,7 @@
 //! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), a NaN depth in an
 //! integer format other than a kept load's and a load pass over overlapping tiles with edge tiles
 //! (Q299; the overlapping stores follow E996, E1041 and E1051 in every format, the pass over them
-//! E1064), a pass plane outside 0 to 1 (Q297; E1050 ran the pass over edge tiles, with bit 19, in
+//! E1064), a pass plane outside 0 to 1 (Q069: only the viewport's z offset brings one; E1050 ran the pass over edge tiles, with bit 19, in
 //! the integer formats and at depths of 0 to 1, E1059 at seven depths fed the no-load plane), bit
 //! 20 cleared with formats 5 to 7, bit 12 cleared with a load and bit 16 cleared with a depth load,
 //! a stencil store or the 16-bit format (Q071, E997, E1030, E1063), the stencil test's source under any
@@ -24,7 +24,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q297", "Q299"];
+pub const OPEN: &[&str] = &["Q069", "Q071", "Q107", "Q120", "Q299"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)
@@ -955,7 +955,7 @@ pub fn pass(
 /// its slot's dwords and passes on its own, and a shared slot holds the tile visited last
 /// ([`visit_order`]: E1064 at 64 x 32 G 0 and 160 x 48 G 2 with E996's plane, the depth and the
 /// stencil load, 4 of 4 held out); with edge tiles that refuses (Q299: not run). A plane depth
-/// outside 0 to 1 or NaN refuses (Q297: E1050 ran 0, 0.125, 0.75 and 1; E1059 the planes of 0.0625
+/// outside 0 to 1 or NaN refuses (Q069, the z offset's: E1050 ran 0, 0.125, 0.75 and 1; E1059 the planes of 0.0625
 /// to 0.625 a no-load twin stores, 7 of 7).
 #[allow(clippy::too_many_arguments)]
 pub fn pass_plane(
@@ -977,7 +977,7 @@ pub fn pass_plane(
         for x in 0..32 * tw {
             let d = z(x, y);
             if !(0.0..=1.0).contains(&d) {
-                return Err(open(format!("a plane at depth {d}: E1050 ran 0 to 1"), &["Q297"]));
+                return Err(open(format!("a plane at depth {d}: E1050 ran 0 to 1"), &["Q069"]));
             }
         }
     }
@@ -1962,7 +1962,7 @@ mod tests {
     fn a_pass_refuses_a_triangle_depth_outside_0_to_1_and_nan() {
         for z in [5.0f32, -1.0, f32::NAN, f32::INFINITY] {
             let r = pass(&ctl(0x0017_110c), 32, 16, 1.0, z, Test::Never, &|_, _| true, &|i| i, &|i| i);
-            assert_eq!(ids(r), ["Q297"], "{z}");
+            assert_eq!(ids(r), ["Q069"], "{z}");
         }
         // E467, E411 and the ramps, and since E1050 0 to 1 (0, 0.125, 0.75, 1 held out)
         for z in [0.5f32, 0.25, 0.4166, 0.0, 0.9, 1.0] {
@@ -2160,7 +2160,7 @@ mod tests {
         assert_eq!(p.depth[&store_dword(63, 0, 1)], 0.125f32.to_bits() - 8);
         for z in [-0.25f32, 1.25, f32::NAN] {
             let r = pass(&ctl(0x0017_500e), 64, 32, 1.0, z, Test::Less, &|_, _| true, &ld, &|i| i);
-            assert_eq!(ids(r), ["Q297"], "{z}");
+            assert_eq!(ids(r), ["Q069"], "{z}");
         }
     }
 
