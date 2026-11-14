@@ -83,10 +83,10 @@ pub fn sample(bg: &[u32], state: [u32; 4], x: u32, y: u32, load: &mut tex::Load)
     let (u, v) = coords(bg, x, y)?;
     let s = tex::Sample { state, u, v, one_d: false, srd: tex::Srd::None, pcf: None, lod: lod_of(bg) };
     let r = tex::sample(&s, load).map_err(|f| match f {
-        tex::Fail::Open(w) => open(format!("texture sample: {w}"), &["Q078"]),
-        tex::Fail::Load(e) => open(format!("texture read: {e:?}"), &["Q078"]),
+        tex::Fail::Open(w) => open(format!("texture sample: {w}"), &["Q300"]),
+        tex::Fail::Load(e) => open(format!("texture read: {e:?}"), &["Q300"]),
     })?;
-    r.first().copied().ok_or_else(|| open("an empty texture sample", &["Q078"]))
+    r.first().copied().ok_or_else(|| open("an empty texture sample", &["Q300"]))
 }
 
 #[cfg(test)]
@@ -155,6 +155,17 @@ mod tests {
         o[6] = 0;
         o[4] = 1.0f32.to_bits(); // v0 = 1: v = 1 - px/64 at the top, from 1 down
         assert_eq!(at(&o, 0, 0), Ok(texel(0, 63)));
+    }
+
+    #[test]
+    fn a_sampler_word_the_texture_unit_refuses_is_refused_under_q300() {
+        // T0 bit 30 (the second format table, x-smp2 17: not measured) on the copy's texture:
+        // tex::sample refuses it, and the layer names Q300 (Q078's successor), not Q078
+        let mut st = STATE;
+        st[0] |= 1 << 30;
+        let mut load = |_: u32| Ok(0);
+        let e = sample(&identity(), st, 1, 1, &mut load).unwrap_err();
+        assert!(format!("{e:?}").contains("[\"Q300\"]"), "{e:?}");
     }
 
     #[test]

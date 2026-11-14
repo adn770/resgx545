@@ -5,5 +5,5 @@ method = "tools/usse-asm/transfer_scenes.py on the landed sweeps of transfer, is
 date = "2026-11-09"
 files = 39
 size = 5946895
-sha256 = "4ffb815656b05e1ff4a9828f082d13f96373daebf2c3d777ca0446a9cf474596"
+sha256 = "49c9979d43b9dfb730ef33d2060c5af921eb0104b5f0526cb2ab4757a19d942d"
 recipe = "tools/usse-asm/transfer_scenes.py"

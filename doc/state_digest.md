@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-146 open: 136 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+147 open: 137 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -129,6 +129,8 @@ list.
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
   |ma| is not a power of two (E923, E931, E956: up or down by the ... (E956, E1001, E1002)
+- `Q300` texture, medium: what does a texture sample read and return for the sampler words, formats,
+  sizes and modes that sgx-sim's tex::sample refuses, where a ... (E1049, E1058, E1067)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
