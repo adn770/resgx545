@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574", "E591", "E625", "E627", "E631"]
+evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574", "E591", "E625", "E627", "E631", "E1086"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_TASK_CONTROL", "CR_DPM_STATE_CONTEXT_ID"]
 +++
 
@@ -118,3 +118,13 @@ another layout), mostly by 3 (570 or 571 against peaks of 573 or 574 on the 4096
 1500-vertex scenes). The locator is not general, so the test is weak: a raised 4096 x 4096 job with
 the state
 page located per width would decide it.
+
+Narrowed in round 19 (E1086, the flagged session r19-flag, 3 jobs, module E0CC4027): the lists a partial
+render stored in the state page are not read back by a closing render that does not overflow.
+On a 1024 x 768 scene whose geometry kick overflows once (P 0x28) and whose closing render has 0x100
+pages, the state page filled with the ramp 0xa5000000 + i just before that render's kick changed
+nothing: the job ended ok, the final image, the parameter buffer and the rest of the TA data equal
+the unfilled control's, and all 1024 ramp dwords stayed (2 of 2, a row and its replicate; no fault,
+no hang). That removes E631's blind spot (its next kick stored over the first 34 dwords) for this
+form. Open: the zero fill and the state-page statistic of the same round's r19-dpm, a final that
+overflows itself, and the kept-owner cases (Q191, Q192).
