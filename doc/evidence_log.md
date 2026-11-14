@@ -8682,6 +8682,27 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   'H-CC-NOOP (1 of 1 rows decided)' (H-CC-STALE and H-NC-STALE '0 held, 1 FAILED').
   *bif; HW, infer; data: `render-closing-r14-bif:out/20261114-055414/refill/`,
   `render-closing-r14-bif:fold/`, `vectors-closing-r14-bif-pte`.*
+- `E1047` r14-flag stage f1 (5 probe fills on E566's twiddled 32 x 32 32-bit texture in the tx_map
+  form, t14 with a 1 MiB scratch (probe --scratch-pages 256) that maps E1033's two fault pages; 3
+  planned faults, none happened): T3 bit 14 reads, on every pixel of all three bit-14 fills, the
+  dword of column s + floor(4096 frac(u)) (s the wrapped bit-clear column) in E561's 16 x 16 tiles
+  with a tile row of W + 4096 = 4128 texels; frozen 'H-TWP4128 (3 of 3 rows decided)', 'H-TWP4096',
+  'H-TWP4096-NS' and 'H-FAULTANY' 'not supported: 0 held, 3 FAILED', 'H-MOVE0' '0 held, 1 FAILED';
+  H-TWP4128 was fitted post hoc on E1033's two fault pages, so f1-tw32 and f1-small (E1033's inputs
+  rerun) are in sample and only f1-zero (u = 0) is held out; both bit-clear references passed.
+  *texture; HW, infer; data: `render-closing-r14-flag:out/20261114-060824/f1/`,
+  `render-closing-r14-flag:fold/`.*
+- `E1048` r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x 640 baselines and
+  four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at 256 x 256 and 26
+  and 27 at 768 x 640, fx 2 or 3 mod 4 and covering the target; 4 planned faults, none happened):
+  every row drew, and E950's H-EVEN (a block row of the first macrotile takes 8 floor(fx / 2) slots)
+  gave every header slot of all four, held out; frozen 'H-COVER (4 of 4 rows decided)', 'H-FAULT23'
+  '0 held, 4 FAILED'; with the dumps (score.py dumps f2, fold/score-f2-dumps.txt) 'H-EVEN (4 of 4
+  rows decided)', R7-BLK 'blkrow' '0 held, 4 FAILED', 'H-LASTBLOCK (4 of 4 rows decided)',
+  'H-HIGHSLOT' '2 held, 2 FAILED' (it fails on the two 768 x 640 rows, the only ones that part the
+  two); both baselines passed.
+  *ta; HW, infer; data: `render-closing-r14-flag:out/20261114-060824/f2/`,
+  `render-closing-r14-flag:fold/`.*
 
 ## By unit
 
@@ -8759,7 +8780,8 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007, E1011.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007, E1011,
+E1048.
 
 ### texture
 
@@ -8768,7 +8790,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047.
 
 ### transfer
 

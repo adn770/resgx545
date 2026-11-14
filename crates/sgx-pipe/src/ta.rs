@@ -663,7 +663,17 @@ pub const MEASURED_MTILE2: [(u32, u32, u32); 11] = [
 /// the same dumps: every slot at H-EVEN's, which is R7-BLK's at these first macrotiles, 4, 5, 8,
 /// 12, 16, 20 and 28 tiles wide (0x02010018 clears bit 31: two macrotiles), and the one flagged
 /// header at the last target tile in block order, 21 of 21 rows never read for the flag).
-pub const MEASURED_MTILE1: [(u32, u32, u32); 10] = [
+///
+/// E1048 (r14-flag f2, held out): four words whose first macrotile is 2 or 3 mod 4 tiles wide and
+/// covers the target, where E950's H-EVEN (8 floor(fx / 2) slots a block row) and R7-BLK part:
+/// fx 14 and 15 at 256 x 256, 26 and 27 at 768 x 640 (n 4, B1 past B2 and B3); every slot at
+/// H-EVEN's and the flag on the last target tile in block order, which at 768 x 640 is not the
+/// highest target slot (E1011's rival failed).
+pub const MEASURED_MTILE1: [(u32, u32, u32); 14] = [
+    (256, 256, 0x0100_e004),
+    (256, 256, 0x0100_f004),
+    (768, 640, 0x8681_0018),
+    (768, 640, 0x86c1_0018),
     (256, 256, 0x0140_4004),
     (256, 256, 0x0100_8004),
     (256, 256, 0x0100_5004),
@@ -681,15 +691,16 @@ pub const MEASURED_MTILE1: [(u32, u32, u32); 10] = [
 /// comparing the words' bounds in order of use (E877; n 4 with `CR_TE_MTILE1` bit 31: bounds 0,
 /// B1, B2, B3 per axis; else 0, B2), the first macrotile's width and height being the axis's first
 /// bound; the TA writes every tile up to the last bound plus that width, past the target too, in
-/// block order (E944), at (mcol n + mrow) stride + ((ly >> 2)(fx >> 2) + (lx >> 2)) 16 + (r & 3)
-/// 4 + (c & 3) (E907), a later header overwriting an earlier one. Flag bit 7 marks the header of
+/// block order (E944), at (mcol n + mrow) stride + (ly >> 2) 8 floor(fx / 2) + (lx >> 2) 16 + (r
+/// & 3) 4 + (c & 3) (E907; the block row's width E950's H-EVEN, held out by E1048, R7-BLK's 16
+/// floor(fx / 4) whenever fx is 0 or 1 mod 4), a later header overwriting an earlier one. Flag bit 7 marks the header of
 /// the last target tile written whose header survives, and the 3D reads the list up to it: a
 /// target tile draws iff its header survives at or before that slot (E1007, held out on four
 /// dumps; E959 post hoc on 24; E1011, offline on r7-rp's 21 poked dumps of another module build,
 /// where the highest slot written lies past the flag on 17). Only `MEASURED_MTILE2`,
 /// `MEASURED_MTILE1` and the rule's own words are admitted;
-/// other words refuse (Q139: E950's first-macrotile rule at fx 2 or 3 mod 4 is fitted, and most
-/// poked words faulted, E505 and E509).
+/// other words refuse (Q139: most poked words whose first macrotile ends inside the target
+/// faulted, E505 and E509; E1048's four drew, H-COVER [infer]).
 pub fn macrotile_slots(
     w: u32,
     h: u32,
@@ -737,8 +748,10 @@ fn slots(t: &Tiling, mtile1: u32, mtile2: u32, stride: u32) -> (BTreeMap<(u32, u
     for r in 0..t.ty.max(by[by.len() - 1] + fy) {
         for c in 0..t.tx.max(bx[bx.len() - 1] + fx) {
             let ((mc, lx), (mr, ly)) = (place(c, &bx), place(r, &by));
+            // a block row of the first macrotile's width: 8 floor(fx / 2) slots (E950's H-EVEN,
+            // held out by E1048 at fx 14, 15, 26, 27), R7-BLK's 16 floor(fx / 4) at fx 0 or 1 mod 4
             let sl =
-                (mc * n + mr) * stride + ((ly >> 2) * (fx >> 2) + (lx >> 2)) * 16 + (r & 3) * 4 + (c & 3);
+                (mc * n + mr) * stride + (ly >> 2) * 8 * (fx >> 1) + (lx >> 2) * 16 + (r & 3) * 4 + (c & 3);
             ws.push(((r >> 2, c >> 2, r, c), sl, (c, r)));
         }
     }

@@ -43,8 +43,8 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: where does T3 bit 14 send a twiddled read, where it faults the job past
-  every mapping whatever the move E1003 measured (E566, E1033), given ... (E1003, E1027, E1033)
+- `Q078` texture, high: does T3 bit 14 on a twiddled texture read texel (s + floor(4096 frac(u)), t)
+  of a layout of 16 x 16 tiles with W + 4096 texels a tile row ... (E1027, E1033, E1047)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -117,8 +117,8 @@ list.
   multisampled target, whose 64x64 words are 0x802002, ... (E824, E886, E908)
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
-- `Q139` ta, medium: does a block row of a first macrotile that is not a multiple of 4 wide take 8
-  floor(fx / 2) slots on held-out hardware rows (E950, fitted ... (E959, E1007, E1011)
+- `Q139` ta, medium: what is the stride's relation to the RT data, and why do the macrotile words
+  that fault (E509) fault, given that every kept fault at fx 2 ... (E1007, E1011, E1048)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -315,9 +315,15 @@ list.
 
 ## Recent records
 
-110 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+112 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1048` ta, 2026-11-14: r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x
+  640 baselines and four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at
+  256 x 256 and 26 and 27 at 768 ...
+- `E1047` texture, 2026-11-14: r14-flag stage f1 (5 probe fills on E566's twiddled 32 x 32 32-bit
+  texture in the tx_map form, t14 with a 1 MiB scratch (probe --scratch-pages 256) that maps E1033's
+  two fault pages; 3 planned ...
 - `E1046` bif, 2026-11-14: R14-bif stage refill (Q108's stale-data clause; E1029's zb-c-id depth
   form, 64 x 32, depth test never so the store holds the load, run twice on one context, 6 jobs,
   every control passed): when the ...
@@ -651,12 +657,14 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-58 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+59 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r14-flag`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t14
 - `render/closing-r14-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-bif`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t14
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -735,7 +743,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 24 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 25 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

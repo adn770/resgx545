@@ -69,9 +69,39 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     let mut tex = Texture::new(t0, t1, t2, t3)?;
     let (levels, bilinear) = tex.pick(t0, &s.lod, s.one_d)?;
     let (u, v) = (s.u as f64, if s.one_d { 0.0 } else { s.v as f64 });
+    if t3 >> 14 & 1 != 0 && tex.row.is_none() {
+        // T3 bit 14 on a twiddled texture (E1047: E566's 32 x 32 32-bit texture, every pixel of
+        // three fills, u in (1, 2), u = x / 4096 and u = 0, with a 1 MiB scratch; E566 and E1033
+        // faulted at 64 KiB, the reads lying past it): column s + floor(4096 frac(u)), s the
+        // wrapped bit-clear column, in E561's 16 x 16 tiles with a tile row of W + 4096 texels.
+        // Fitted on E1033's fault pages; held out by f1-zero only (the other two rerun E1033's
+        // inputs), so other sizes (W + 4096 or 4128), filters and modes stay open (Q078)
+        if (tex.w, tex.h) != (32, 32)
+            || tex.format != 12
+            || bilinear
+            || levels != [(0, 64)]
+            || s.pcf.is_some()
+            || s.srd != Srd::None
+            || s.one_d
+            || t3 >> 16 & 3 != 0
+            || tex.offset != [0, 0]
+            || tex.shift != 0
+            || tex.address != [0, 0]
+        {
+            return open(
+                "T3 bit 14 on a twiddled texture other than E1047's: 32 x 32, format 12, point sampled, \
+                 repeat, unconverted (Q078)",
+            );
+        }
+        let col =
+            ((u * 32.0).floor() as i64).rem_euclid(32) as u32 + (4096.0 * (u - u.floor())).floor() as u32;
+        let row = tex.row_of(v, false).rem_euclid(32) as u32;
+        let a = tex.base.wrapping_add(morton(col, row, 32 + 4096, 32) * 4);
+        return Ok(vec![load(a).map_err(Fail::Load)?]);
+    }
     if t3 >> 14 & 1 != 0 {
         // T3 bit 14 on a stride texture (E1003, held out on six geometries; E975 post hoc; on a
-        // twiddled texture it faults the job, E566 and E1033, and is refused): the
+        // twiddled texture above): the
         // bit-clear texel moved by floor(4096 clamp(u, 0, 1)) texels, measured point sampled, on
         // level 0, at formats 12 (32-bit) and 9 (16-bit), without T3's offset, scale or conversion
         if bilinear
@@ -345,14 +375,14 @@ fn half_to_f32(h: u32) -> f32 {
 /// compare mode 31:29 (for .pcf) and the data size 26:23 change nothing seen;
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
-/// texture only those are measured; bits 10, 13, 14, 27 and 28 act in ways
-/// not modelled here; bits 11 and 12 change nothing on a strided texture again in E975, and on a
+/// texture only those are measured, and bit 14 on a 32 x 32 one (E1047, see sample); bits 10, 13,
+/// 27 and 28 act in ways not modelled here; bits 11 and 12 change nothing on a strided texture again in E975, and on a
 /// twiddled chain select the level (E1027, Texture::pick). Bit 14 on
 /// a stride texture moves the texel by floor(4096 clamp(u, 0, 1)) texels (E968's S * S rule
 /// failed; E975 post hoc; E1003: texels, not dwords, on a 16-bit texture; held out on six
 /// geometries), see sample.
 fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
-    let not_measured = if stride { 0x1800_2400 } else { 0x187c_67ff };
+    let not_measured = if stride { 0x1800_2400 } else { 0x187c_27ff };
     if t3 & not_measured != 0 {
         return open(format!("T3 bits 0x{:08x}", t3 & not_measured));
     }
@@ -2319,6 +2349,23 @@ mod tests {
     }
 
     #[test]
+    fn t3_bit_14_on_the_twiddled_32x32_widens_its_tile_rows_by_4096_texels() {
+        // E1047 (r14-flag f1): column s + floor(4096 frac(u)) in 16 x 16 tiles, 258 a tile row
+        let tw = |u: f32, v: f32, t3: u32| at(state(0, 12, 32, 32, 1, 0, t3), u, v);
+        // u = x / 4096 at x = 5, row 3: column 5, inside tile 0 (y bits 0, 2; x bits 0, 2 at 1, 5)
+        assert_eq!(tw(5.0 / 4096.0, 3.5 / 32.0, 1 << 14), Ok(vec![0x100 + 39]));
+        // u = 0, row 16: the second tile row, 258 tiles on (W + 4096 = 4128 texels)
+        assert_eq!(tw(0.0, 16.5 / 32.0, 1 << 14), Ok(vec![0x100 + 258 * 256]));
+        // u = 1 + 33 / 64 (E566's map, q = 16): wrapped column 16, + 4096 * 33 / 64 = 2128
+        assert_eq!(tw(1.0 + 33.0 / 64.0, 0.5 / 32.0, 1 << 14), Ok(vec![0x100 + 133 * 256]));
+        // without the bit the tile law; another size, a filter, a mode other than repeat: open
+        assert_eq!(tw(0.0, 16.5 / 32.0, 0), Ok(vec![0x100 + 2 * 256]));
+        assert!(at(state(0, 12, 64, 32, 1, 0, 1 << 14), 0.0, 0.0).is_err(), "64 x 32");
+        assert!(at(state(0, 12, 32, 32, 1, 1 << 12, 1 << 14), 0.0, 0.0).is_err(), "bilinear");
+        assert!(at(state(0, 12, 32, 32, 1, 2 << 6, 1 << 14), 0.0, 0.0).is_err(), "u clamped");
+    }
+
+    #[test]
     fn what_is_not_measured_stops() {
         assert!(at(state(6, 12, 4, 4, 4, 1 << 27, 0), 0.0, 0.0).is_err(), "T0 bit 27");
         // T3 bit 14 (E1003): a stride texture point sampled moves by floor(4096 clamp(u)) texels;
@@ -2326,7 +2373,7 @@ mod tests {
         assert_eq!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 0.25, 0.0), Ok(vec![0x100 + 1 + 1024]), "T3 bit 14");
         assert_eq!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 1.5, 0.0), Ok(vec![0x100 + 3 + 4096]), "u clamped");
         assert_eq!(at(state(6, 9, 4, 4, 4, 0, 1 << 14), 0.5, 0.0), Ok(vec![0x100 + 1025]), "16-bit: texels");
-        assert!(at(state(0, 12, 4, 4, 1, 0, 1 << 14), 0.25, 0.0).is_err(), "T3 bit 14 twiddled");
+        assert!(at(state(0, 12, 4, 4, 1, 0, 1 << 14), 0.25, 0.0).is_err(), "T3 bit 14 twiddled 4x4");
         assert!(at(state(6, 12, 4, 4, 4, 1 << 12, 1 << 14), 0.25, 0.0).is_err(), "T3 bit 14 bilinear");
         assert!(at(state(6, 12, 4, 4, 4, 0, 1 << 14 | 2 << 16), 0.25, 0.0).is_err(), "T3 bit 14 converted");
         assert!(at(state(6, 12, 4, 4, 4, 0, 0xa080_0000), 0.0, 0.0).is_ok(), "the copies' T3");
