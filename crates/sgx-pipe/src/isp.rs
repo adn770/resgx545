@@ -14,7 +14,7 @@
 use crate::Outcome;
 
 pub const OPEN: &[&str] =
-    &["Q066", "Q086", "Q089", "Q199", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073", "Q032"];
+    &["Q066", "Q086", "Q089", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073", "Q032"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the ISP past triangle coverage and depth is not modelled (12.3)", OPEN)
@@ -40,7 +40,7 @@ fn open(why: impl AsRef<str>, id: &str) -> Outcome {
 }
 
 /// floor(256 c + 0.5): the vertex grid and its rounding (E607), exact for c >= 0. A negative
-/// coordinate with a sub-grid fraction refuses (Q199, Q260): its tie rounds away from zero (E914,
+/// coordinate with a sub-grid fraction refuses (Q260): its tie rounds away from zero (E914,
 /// E943), but the pixels within 6.4e-4 pixel of a long edge go either way (E943, held out on
 /// none; on E683 neither E943's far-vertex reading nor its band is a rule, and no fixed-point
 /// edge evaluation fitted on E914 and E943 beats the exact one, E952), so no image of such a
@@ -49,7 +49,7 @@ pub fn snap(c: f64) -> Result<i64, Outcome> {
     if !c.is_finite() || c.abs() > 1.0e6 {
         return Err(open(
             format!("window coordinate {c}: not a finite coordinate of the tested range"),
-            "Q199",
+            "Q240",
         ));
     }
     let q = c * GRID as f64;
@@ -58,7 +58,7 @@ pub fn snap(c: f64) -> Result<i64, Outcome> {
             &format!(
                 "window coordinate {c}: negative with a sub-grid fraction, rounded away from zero at a tie (E914, E943), but the pixels near a long edge are not modelled"
             ),
-            &["Q199", "Q260"],
+            &["Q260"],
         ));
     }
     Ok((q + 0.5).floor() as i64)
@@ -156,7 +156,7 @@ pub fn coverage_target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
 pub fn coverage_vertices_in_envelope(w: u32, h: u32, t: &Tri) -> Result<(), Outcome> {
     vertices_in_envelope(w, h, t)?;
     if (w, h) == (4096, 4096) && t.v.iter().any(|&(x, _)| x < 0) {
-        return Err(open("a negative x on a 4096 x 4096 target: E680 drew none there", "Q199"));
+        return Err(open("a negative x on a 4096 x 4096 target: E680 drew none there", "Q240"));
     }
     Ok(())
 }
@@ -239,14 +239,14 @@ pub const FAR_BAND: f64 = 1.0e-3;
 /// and is not one angle. E1012 (round 11 offline, post hoc, no held-out row) fits all 48 of those
 /// rows with one integer: the far edges clipped to a guard x in [-G, 64 + G] (G 16 to 22 fit; the
 /// lower bound fits anywhere from -8 to -32, the y bounds untested), each new vertex rounded half
-/// up to 1/256, the edges then exact; being fitted, the band stays `None`. Refuses other
-/// targets, three far vertices and the band's own form (Q261), and coordinates past what ran
-/// (Q199).
+/// up to 1/256, the edges then exact; being fitted, the band stays `None` here, and
+/// `guard_clip_image` models it (E1036, E1037). Refuses other targets (Q240), three far vertices
+/// and coordinates past what ran (Q230).
 pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
     if !FAR_TARGETS.contains(&(w, h)) {
         return Err(open(
             format!("far vertices on a {w} x {h} target: E684 and E979 ran 64 x 64 and 512 x 512"),
-            "Q261",
+            "Q240",
         ));
     }
     let far = |&(x, y): &(i64, i64)| {
@@ -254,7 +254,7 @@ pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>
         !(inside(x, w) && inside(y, h))
     };
     if t.v.iter().filter(|v| far(v)).count() > 2 {
-        return Err(open("three far vertices: E979 ran one or two", "Q261"));
+        return Err(open("three far vertices: E979 ran one or two", "Q230"));
     }
     for &(x, y) in &t.v {
         for c in [x, y] {
@@ -264,7 +264,7 @@ pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>
                         "a vertex coordinate of {} pixels: E979 ran -2^25 to +2^24",
                         c as f64 / GRID as f64
                     ),
-                    "Q199",
+                    "Q230",
                 ));
             }
         }
@@ -298,22 +298,59 @@ pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>
     Ok(out)
 }
 
-/// The guard the far edges are clipped to on a 64 x 64 target, in pixels: x in [-16, 80] or
-/// [-9, 80] (both fit every row), y in [-16, 80] (E1023, E1024: held out, 21 rows of r13-isp).
-pub const GUARD_64: (i64, i64, i64, i64) = (-16, 80, -16, 80);
-/// The other lower x bound the held-out rows leave (E1023: a in {9, 16}).
-pub const GUARD_64_XLO_ALT: i64 = -9;
-/// How far a vertex ran, in pixels: 2^30 both ways along x and y, which the tool's float32 clip
-/// coordinate sends as 2^30 + 32 (E1024).
-pub const GUARD_REACH: i64 = (1 << 30) + 32;
-
-fn halfup(n: i128, d: i128) -> i128 {
-    // n / d rounded half up (E607), d > 0
-    (2 * n + d).div_euclid(2 * d)
+/// The viewport words of the state block (render.c `sgxfive_tri_block` words 6 to 9: x offset,
+/// x scale, y offset, y scale), in 1/256 pixel: window = offset + scale x the clip coordinate.
+/// The library writes W/2, W/2, H/2, H/2; E1036 poked 32.0 and 64.0 (offset = scale).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Viewport {
+    pub ox: i64,
+    pub sx: i64,
+    pub oy: i64,
+    pub sy: i64,
 }
 
-/// The edge p-q cut at `axis` = `bound` (1/256 pixel), the other coordinate rounded half up to the
-/// 1/256 grid (c6's `inter`, closing11/plan/c6-q261/q261_rule2.py).
+impl Viewport {
+    /// The library's viewport of a W x H target.
+    pub fn of(w: u32, h: u32) -> Viewport {
+        let (w, h) = (w as i64 * GRID / 2, h as i64 * GRID / 2);
+        Viewport { ox: w, sx: w, oy: h, sy: h }
+    }
+}
+
+/// How far a vertex ran, in pixels: x = 2^31 - 1 and y = -2^31 at the tool's whole-pixel unit,
+/// which its float32 clip coordinate sends as 2^31 + 32 (E1037; E1024 ran 2^30).
+pub const GUARD_REACH: i64 = (1 << 31) + 32;
+
+/// The guard box (x low, x high, y low, y high) in 1/256 pixel: a quarter of the viewport past
+/// each edge, the clip coordinate within 1.5 w (E1036: held out on 19 rows, 64 x 64 to 256 x 256,
+/// 128 x 64, 64 x 128 and three poked viewports, every other frozen guard refuted; on 64 x 64 it
+/// is E1023's x in [-16, 80], y in [-16, 80], the lower x bound -16, not -9). A box off the
+/// 1/256 grid did not run.
+pub fn guard_box(vp: Viewport) -> Result<(i128, i128, i128, i128), Outcome> {
+    let mut b = [0i128; 4];
+    for (k, (o, s)) in [(vp.ox, vp.sx), (vp.oy, vp.sy)].into_iter().enumerate() {
+        let (o, s) = (o as i128, s as i128);
+        if s <= 0 || s % 2 != 0 {
+            return Err(open(
+                format!("a viewport scale of {} pixels: E1036 ran whole ones", s as f64 / 256.0),
+                "Q240",
+            ));
+        }
+        b[2 * k] = o - 3 * s / 2;
+        b[2 * k + 1] = o + 3 * s / 2;
+    }
+    Ok((b[0], b[1], b[2], b[3]))
+}
+
+/// n / d rounded half away from zero, d > 0: the clip-made vertex's rounding (E1037: CLIP-HA held
+/// 3 of 3, half up on the positive ties as E607 and E1012, away from zero on the negative one).
+fn halfaway(n: i128, d: i128) -> i128 {
+    if n >= 0 { (2 * n + d).div_euclid(2 * d) } else { -(-2 * n + d).div_euclid(2 * d) }
+}
+
+/// The edge p-q cut at `axis` = `bound` (1/256 pixel), the other coordinate rounded half away
+/// from zero to the 1/256 grid (c6's `inter`, closing11/plan/c6-q261/q261_rule2.py, with E1037's
+/// rounding).
 fn guard_cut(p: (i128, i128), q: (i128, i128), axis: usize, bound: i128) -> (i128, i128) {
     let c = |v: (i128, i128), k: usize| if k == 0 { v.0 } else { v.1 };
     let (a, b) = (c(p, axis), c(q, axis));
@@ -323,16 +360,15 @@ fn guard_cut(p: (i128, i128), q: (i128, i128), axis: usize, bound: i128) -> (i12
         num = -num;
         den = -den;
     }
-    let r = halfup(num, den);
+    let r = halfaway(num, den);
     if axis == 0 { (bound, r) } else { (r, bound) }
 }
 
-/// Sutherland-Hodgman against the box (pixels), x then y, the low bound then the high one.
-fn guard_clip(v: &[(i128, i128)], b: (i64, i64, i64, i64)) -> Vec<(i128, i128)> {
+/// Sutherland-Hodgman against the box (1/256 pixel), x then y, the low bound then the high one.
+fn guard_clip(v: &[(i128, i128)], b: (i128, i128, i128, i128)) -> Vec<(i128, i128)> {
     let mut poly = v.to_vec();
-    let g = GRID as i128;
     for (axis, lo, hi) in [(0usize, b.0, b.1), (1, b.2, b.3)] {
-        for (bound, keep_ge) in [(lo as i128 * g, true), (hi as i128 * g, false)] {
+        for (bound, keep_ge) in [(lo, true), (hi, false)] {
             let at = |v: (i128, i128)| if axis == 0 { v.0 } else { v.1 };
             let inside = |v: (i128, i128)| if keep_ge { at(v) >= bound } else { at(v) <= bound };
             let mut out = Vec::new();
@@ -354,7 +390,7 @@ fn guard_clip(v: &[(i128, i128)], b: (i64, i64, i64, i64)) -> Vec<(i128, i128)> 
     poly
 }
 
-fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i64, i64, i64, i64)) -> Vec<bool> {
+fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i128, i128, i128, i128)) -> Vec<bool> {
     let area = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
     if area == 0 {
         return vec![false; (w * h) as usize];
@@ -378,39 +414,37 @@ fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i64, i64, i64, i64)) -
     out
 }
 
-/// The coverage of a triangle with far vertices on a 64 x 64 target, band included: its edges
-/// are clipped to `GUARD_64` (a quarter of the target past each edge), each new vertex rounded
-/// half up to 1/256 pixel, then E606's exact test with its tie rule (E1012's clip, fitted on 48
-/// kept rows; held out on r13-isp's 21 new rows, E1023 and E1024: one guard, x <= 80 and
-/// y in [-16, 80], and no saturation, wrap or removal of a vertex up to 2^30 pixels). The lower x
-/// bound is -16 or -9 (both fit): a pixel the two draw differently is `None`. Refuses other
-/// targets (128 x 128 fits x <= 147 among the frozen 128 + G, so neither the same G nor the same
-/// pixels; the quarter of the target fits it post hoc: Q261), and coordinates past 2^30 pixels
-/// (Q199).
+/// The coverage of a triangle with vertices anywhere in the guard or past it, under the
+/// library's viewport: `guard_clip_image_vp` with `Viewport::of(w, h)`.
 pub fn guard_clip_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
-    if (w, h) != (64, 64) {
-        return Err(open(
-            format!(
-                "the guard on a {w} x {h} target: held at 64 x 64 only, 128 x 128 fit it post hoc (E1023)"
-            ),
-            "Q261",
-        ));
-    }
+    guard_clip_image_vp(w, h, Viewport::of(w, h), t)
+}
+
+/// The coverage of a triangle (window vertices in 1/256 pixel, as the viewport maps them) on a
+/// W x H target, band included: its edges are clipped to `guard_box` (a quarter of the viewport
+/// past each edge, E1036), each new vertex rounded half away from zero to 1/256 pixel (E1037),
+/// then E606's exact test with its tie rule (E1012's clip, fitted on 48 kept rows; held out on
+/// r13-isp's 21 rows, E1023 and E1024, and r14-isp's 31, E1036 and E1037: up to 256 x 256,
+/// 4096 x 16, poked viewports, vertices inside the guard on 1/512 ties and far vertices to
+/// 2^31 pixels, with no saturation, wrap or removal). Refuses vertices past 2^31 + 32 pixels,
+/// which the tool cannot send (Q230).
+pub fn guard_clip_image_vp(w: u32, h: u32, vp: Viewport, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
     for &(x, y) in &t.v {
         for c in [x, y] {
             if c.abs() > GUARD_REACH * GRID {
                 return Err(open(
-                    format!("a vertex coordinate of {} pixels: E1024 ran to 2^30", c as f64 / GRID as f64),
-                    "Q199",
+                    format!(
+                        "a vertex coordinate of {} pixels: the tool sends none past 2^31 (E1037)",
+                        c as f64 / GRID as f64
+                    ),
+                    "Q230",
                 ));
             }
         }
     }
+    let b = guard_box(vp)?;
     let v = [0, 1, 2].map(|i| (t.v[i].0 as i128, t.v[i].1 as i128));
-    let a = guard_image(w, h, &v, GUARD_64);
-    let (_, x1, y0, y1) = GUARD_64;
-    let b = guard_image(w, h, &v, (GUARD_64_XLO_ALT, x1, y0, y1));
-    Ok(a.iter().zip(&b).map(|(p, q)| if p == q { Some(*p) } else { None }).collect())
+    Ok(guard_image(w, h, &v, b).into_iter().map(Some).collect())
 }
 
 /// The range of E606's vertices, as fractions of the target: -8.9% to +124.1%.
@@ -425,10 +459,10 @@ pub fn vertices_in_envelope(w: u32, h: u32, t: &Tri) -> Result<(), Outcome> {
             if !(RANGE_LOW..=RANGE_HIGH).contains(&f) {
                 return Err(open(
                     format!(
-                        "a vertex at {:.3} of the {w} x {h} target: E606 tested -9% to +124% (far vertices: far_coverage_image, E979)",
+                        "a vertex at {:.3} of the {w} x {h} target: E606 tested -9% to +124% (far vertices: guard_clip_image, E1036)",
                         f
                     ),
-                    "Q199",
+                    "Q240",
                 ));
             }
         }
@@ -567,11 +601,12 @@ pub fn decode_words(isp: [u32; 2], ctl: u32, nprims: usize) -> Result<Mode, Outc
         ));
     }
     // bits 15 to 17 changed the image when flipped (48 pixels left, empty: E065), each removed
-    // E977's ramp triangle under less with writes (E998: one vertex order), and bit 18 faults
+    // E977's ramp triangle under less with writes in both vertex orders (E998, E1045: no winding
+    // cull, yet E065's 48 pixels say not every triangle), and bit 18 faults
     if w0 & 0x0007_8000 != 0 {
         return Err(open(
             format!(
-                "ISP word 0 bit 15 to 18 set ({w0:#x}): E065 saw a changed image, no pixels or a fault, E998 the triangle removed on one vertex order"
+                "ISP word 0 bit 15 to 18 set ({w0:#x}): E065 saw a changed image, no pixels or a fault, E998 and E1045 the ramp removed in both vertex orders"
             ),
             "Q241",
         ));
@@ -699,7 +734,7 @@ pub fn resolve_tile_from(
                     if uses_z && tri.z.iter().any(|z| !(0.0..=1.0).contains(z)) {
                         return Err(open(
                             format!(
-                                "a vertex depth {:?} outside [0, 1] under a compare or a depth write: E287 saw it clamped in clip space (one run, inferred), the plane's value is not the stored one",
+                                "a vertex depth {:?} outside [0, 1] under a compare or a depth write: the pixels past [0, 1] are removed (E1045: a z clip, as mte.rs's E287), but the cut's made vertices and its edge pixels are not modelled",
                                 tri.z
                             ),
                             "Q241",
@@ -954,7 +989,8 @@ mod tests {
         }
         // the band is no fixed rule: far-x24p draws its band pixels down to d = -288 and not from
         // -416 (D in (339, 467) px), while far-x23p and far-x25n draw theirs at every d to -544
-        // (D above 586): neither "the band drawn" nor "the band empty" holds, nor one D (Q261)
+        // (D above 586): neither "the band drawn" nor "the band empty" holds, nor one D (E1012's
+        // clip draws it: E1036)
         let hw = |n: &str| E1005_ROWS.iter().find(|r| r.0 == n).unwrap().4;
         assert_eq!((hw("piv-x24p-m288"), hw("piv-x24p-m416")), (2432, 2422));
         assert_eq!((hw("piv-x23p-m544"), hw("piv-x25n-m544")), (312, 2610));
@@ -1010,36 +1046,355 @@ mod tests {
         }
     }
 
+    /// r14-isp's rows (E1036 g14, E1037 clipr), every one held out: the target, the viewport
+    /// (x offset, x scale, y offset, y scale, 1/256 pixel), the vertices the tool submitted
+    /// rounded to 1/256 (E607 and E943), the kept drawn count and FNV-1a 64 of the kept image
+    /// (r14-isp fold/rust_rows.py).
+    const GUARD_R14: [(&str, u32, u32, [i64; 4], [i64; 6], usize, u64); 31] = [
+        (
+            "g14-ctl-far21",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [4066, 8385, 7356, 9765, 536870912, 11776],
+            208,
+            0x899e6f8bd3e540d7,
+        ),
+        (
+            "g14-64-nx-1",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [14400, 1984, 14464, 14272, -3841495808, -341912544],
+            2686,
+            0xa0a2777558789507,
+        ),
+        (
+            "g14-64-nx-2",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [14400, 1984, 14464, 14272, -1749931776, -484768128],
+            2573,
+            0x8dd31e2557a37278,
+        ),
+        (
+            "g14-128-px-1",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [3200, 4736, 4864, 27520, 3688592128, 680997504],
+            9856,
+            0x0197cf324d3c7aa1,
+        ),
+        (
+            "g14-128-px-2",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [3200, 4736, 4864, 27520, 4201202688, -800223744],
+            10092,
+            0x66645adac30f2fc7,
+        ),
+        (
+            "g14-128-nx-1",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [28800, 3968, 28928, 28544, -3242799616, -192614736],
+            10844,
+            0xc44833c825ddb065,
+        ),
+        (
+            "g14-128-nx-2",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [28800, 3968, 28928, 28544, -3868934912, -761103616],
+            10722,
+            0x2be4d8a4439a95a3,
+        ),
+        (
+            "g14-128-ny",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [3456, 29824, 29312, 28032, -291918688, -3649321984],
+            11472,
+            0xb82dc03e0d93cd23,
+        ),
+        (
+            "g14-128-py",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [3712, 3200, 28800, 3968, 506296704, 4284020736],
+            11131,
+            0x2d476c3a49227966,
+        ),
+        (
+            "g14-256-px",
+            256,
+            256,
+            [32768, 32768, 32768, 32768],
+            [6400, 9472, 9728, 55040, 3939484416, -122758320],
+            40050,
+            0x02a07e10fd026705,
+        ),
+        (
+            "g14-256-nx",
+            256,
+            256,
+            [32768, 32768, 32768, 32768],
+            [57600, 7936, 57856, 57088, -2185202176, 121106480],
+            43306,
+            0x6d36b84b63da105b,
+        ),
+        (
+            "g14-256-py",
+            256,
+            256,
+            [32768, 32768, 32768, 32768],
+            [7424, 6400, 57600, 7936, -183276576, 2026603904],
+            44811,
+            0xbdb92598cc64e0c2,
+        ),
+        (
+            "g14-256-ny",
+            256,
+            256,
+            [32768, 32768, 32768, 32768],
+            [6912, 59648, 58624, 56064, 321675680, -2517970176],
+            45242,
+            0xd247a3e8aef854bd,
+        ),
+        (
+            "g14-128x64-px",
+            128,
+            64,
+            [16384, 16384, 8192, 8192],
+            [3200, 2368, 4864, 13760, 2947662848, 917796352],
+            3867,
+            0x3bd54ef00835afaa,
+        ),
+        (
+            "g14-128x64-py",
+            128,
+            64,
+            [16384, 16384, 8192, 8192],
+            [3712, 1600, 28800, 1984, -203525200, 3205582080],
+            5592,
+            0xdfcf279137afd3db,
+        ),
+        (
+            "g14-64x128-px",
+            64,
+            128,
+            [8192, 8192, 16384, 16384],
+            [1600, 4736, 2432, 27520, 1942205312, -761643776],
+            5047,
+            0x833b61f841cbc968,
+        ),
+        (
+            "g14-64x128-py",
+            64,
+            128,
+            [8192, 8192, 16384, 16384],
+            [1856, 3200, 14400, 3968, 6559872, 2382557184],
+            5584,
+            0xf1bb4af7eca07f45,
+        ),
+        (
+            "g14-ctl-t128",
+            128,
+            128,
+            [16384, 16384, 16384, 16384],
+            [3200, 4736, 4864, 27520, 2059603072, 248161664],
+            9901,
+            0x4ec1c9be836842d4,
+        ),
+        (
+            "g14-vp64-px",
+            128,
+            128,
+            [8192, 8192, 8192, 8192],
+            [1600, 2368, 2432, 13760, 1073741824, 67108864],
+            3197,
+            0xe9672078a44b47b8,
+        ),
+        (
+            "g14-vp64-py",
+            128,
+            128,
+            [8192, 8192, 8192, 8192],
+            [1856, 1600, 14400, 1984, 67108864, 1073741824],
+            3567,
+            0xf861ac136fd98e42,
+        ),
+        (
+            "g14-vp128-px",
+            64,
+            64,
+            [16384, 16384, 16384, 16384],
+            [1600, 2368, 2432, 13760, 2395214080, -951026176],
+            2334,
+            0xfd61f7350e0ab563,
+        ),
+        (
+            "clipr-ctl-far21",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [4066, 8385, 7356, 9765, 536870912, 11776],
+            208,
+            0x899e6f8bd3e540d7,
+        ),
+        (
+            "clipr-tie-a",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [4096, 10637, 4096, 6669, 4198400, 5901],
+            766,
+            0xfa89402368f061fb,
+        ),
+        (
+            "clipr-tie-b",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [4096, 11900, 4096, 9980, 4198400, 13308],
+            341,
+            0x78037687dc6aac6e,
+        ),
+        (
+            "clipr-tie-c",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [4096, 1234, 4096, 7245, 36864, -2541],
+            914,
+            0x0f2df04f099fb067,
+        ),
+        (
+            "clipr-w4-d",
+            4096,
+            16,
+            [524288, 524288, 2048, 2048],
+            [512, 1146, 512, 1926, 1280000, 1157],
+            7835,
+            0x2b636c8b4cc59a40,
+        ),
+        (
+            "clipr-w4-e",
+            4096,
+            16,
+            [524288, 524288, 2048, 2048],
+            [1048064, 258, 1048064, 1026, -256000, -2],
+            7285,
+            0xdb4b7e7b1ec5b88e,
+        ),
+        (
+            "clipr-w4-f",
+            4096,
+            16,
+            [524288, 524288, 2048, 2048],
+            [1088, 1160, 1728, 2936, 4294967296, -35592],
+            24914,
+            0x89fb3b1049b45e73,
+        ),
+        (
+            "clipr-ctl-x30p",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [1536, 2304, 2560, 13824, 274877915136, 33886466048],
+            2492,
+            0x2c88cb6cfe0c9e77,
+        ),
+        (
+            "clipr-i32-x",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [1536, 2304, 2560, 13824, 549755822080, -81111678976],
+            2551,
+            0x269d999648c57882,
+        ),
+        (
+            "clipr-i32-y",
+            64,
+            64,
+            [8192, 8192, 8192, 8192],
+            [1792, 14848, 14592, 14080, -26686109696, -549755805696],
+            2835,
+            0x9ef84454fde31cf4,
+        ),
+    ];
+
     #[test]
-    fn the_guard_refuses_other_targets_and_vertices_past_2_to_the_30() {
+    fn the_quarter_viewport_guard_draws_every_r14_row() {
+        // E1036: 64 x 64 to 256 x 256, 128 x 64, 64 x 128 and three poked viewports; E1037: the
+        // clip-made ties (rounded half away from zero), 4096 x 16 and the int32 ends
+        for (name, w, h, vp, v, drawn, hash) in GUARD_R14 {
+            let t = FarTri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])] };
+            let vp = Viewport { ox: vp[0], sx: vp[1], oy: vp[2], sy: vp[3] };
+            let img = guard_clip_image_vp(w, h, vp, &t).unwrap();
+            assert!(img.iter().all(|p| p.is_some()), "{name}");
+            assert_eq!(img.iter().filter(|p| **p == Some(true)).count(), drawn, "{name}");
+            assert_eq!(fnv(&img), hash, "{name}");
+        }
+    }
+
+    #[test]
+    fn the_guard_box_is_a_quarter_of_the_viewport_past_each_edge() {
+        assert_eq!(guard_box(Viewport::of(64, 64)), Ok((-16 * 256, 80 * 256, -16 * 256, 80 * 256)));
+        assert_eq!(guard_box(Viewport::of(4096, 16)), Ok((-1024 * 256, 5120 * 256, -4 * 256, 20 * 256)));
+        // the 64 x 64 viewport poked on a 128 x 128 target (E1036's vp64 rows)
+        let vp = Viewport { ox: 32 * 256, sx: 32 * 256, oy: 32 * 256, sy: 32 * 256 };
+        assert_eq!(guard_box(vp), Ok((-16 * 256, 80 * 256, -16 * 256, 80 * 256)));
+    }
+
+    #[test]
+    fn a_clip_made_tie_rounds_half_away_from_zero() {
+        // E1037: CLIP-HA held 3 of 3 (half up on the two positive ties, away from zero on the
+        // negative one, clipr-tie-c)
+        assert_eq!(halfaway(5, 2), 3);
+        assert_eq!(halfaway(-5, 2), -3);
+        assert_eq!(halfaway(-3, 2), -2);
+        assert_eq!(halfaway(-4, 3), -1);
+        assert_eq!(halfaway(7, 3), 2);
+    }
+
+    #[test]
+    fn the_guard_refuses_vertices_past_what_the_tool_sends() {
+        // E1037 drew x = 2^31 - 1 and y = -2^31 pixels (sent as 2^31 + 32): nothing farther runs
+        let t = FarTri { v: [(1024, 1024), (1024, 14000), ((1i64 << 40) + 33 * 256, 8000)] };
+        assert!(
+            matches!(guard_clip_image(64, 64, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q230"])
+        );
         let t = FarTri { v: [(400, 592), (608, 3440), (257450388 * 8, 31020207 * 8)] };
-        assert!(
-            matches!(guard_clip_image(128, 128, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q261"])
-        );
-        let t = FarTri { v: [(1024, 1024), (1024, 14000), ((1i64 << 38) + 33 * 256, 8000)] };
-        assert!(
-            matches!(guard_clip_image(64, 64, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q199"])
-        );
+        assert!(guard_clip_image(128, 128, &t).is_ok());
     }
 
     #[test]
     fn far_coverage_refuses_what_did_not_run() {
         let far = |x: i64| FarTri { v: [(1024, 1024), (1024, 14000), (x, 8000)] };
-        // past 2^24 pixels to the right and 2^25 to the left: not reachable with the tool (Q199)
+        // past 2^24 pixels to the right and 2^25 to the left: past E979's rows (Q230)
         for x in [(1i64 << 32) + 256, -(1i64 << 33) - 256] {
             assert!(
-                matches!(far_coverage_image(64, 64, &far(x)), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q199"]),
+                matches!(far_coverage_image(64, 64, &far(x)), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q230"]),
                 "{x}"
             );
         }
         // targets other than E684's and E979's
         assert!(
-            matches!(far_coverage_image(4096, 4096, &far(1 << 32)), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q261"])
+            matches!(far_coverage_image(4096, 4096, &far(1 << 32)), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q240"])
         );
         // three far vertices did not run
         let t = FarTri { v: [(1 << 32, 0), (-(1 << 32), 0), (0, 1 << 32)] };
         assert!(
-            matches!(far_coverage_image(64, 64, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q261"])
+            matches!(far_coverage_image(64, 64, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q230"])
         );
     }
 
@@ -1064,12 +1419,12 @@ mod tests {
     }
 
     #[test]
-    fn a_negative_vertex_with_a_sub_grid_fraction_refuses_and_names_q199_and_q260() {
+    fn a_negative_vertex_with_a_sub_grid_fraction_refuses_and_names_q260() {
         // the tie rounds away from zero (E914, E943), but the pixels within 6.4e-4 pixel of a
         // long edge go either way (E943: 738 of 738 off pixels there): no image is exact
         for c in [-0.3 / 256.0, -3.3, -0.5 / 256.0] {
             match snap(c) {
-                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199", "Q260"], "{c}"),
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q260"], "{c}"),
                 o => panic!("{c}: {o:?}"),
             }
         }
@@ -1273,16 +1628,16 @@ mod tests {
             Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"]),
             o => panic!("{o:?}"),
         }
-        // E606's vertex range applies; at 4096 x 4096 E680 drew no negative x (Q199)
+        // E606's vertex range applies; at 4096 x 4096 E680 drew no negative x (Q240)
         let far = tri([(0, 0), (130 * 256, 0), (0, 64 * 256)]);
         match coverage_image(96, 64, &far) {
-            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199"]),
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"]),
             o => panic!("{o:?}"),
         }
         let neg = tri([(-256, 0), (4096 * 256, 0), (0, 4096 * 256)]);
         assert!(vertices_in_envelope(4096, 4096, &neg).is_ok());
         match coverage_vertices_in_envelope(4096, 4096, &neg) {
-            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199"]),
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"]),
             o => panic!("{o:?}"),
         }
         let neg_y = tri([(256, -256), (4096 * 256, 0), (0, 4096 * 256)]);
@@ -1290,14 +1645,14 @@ mod tests {
     }
 
     #[test]
-    fn vertices_beyond_minus_9_and_plus_124_percent_refuse_naming_q199() {
+    fn vertices_beyond_minus_9_and_plus_124_percent_refuse_naming_q240() {
         let at = |x: i64, y: i64| tri([(x, y), (2560, 0), (0, 2560)]);
         // a 64 x 64 target: -5.7 pixels is -8.9%, 79.4 pixels is 124.1%
         assert!(vertices_in_envelope(64, 64, &at(-5 * 256 - 190, 0)).is_ok());
         assert!(vertices_in_envelope(64, 64, &at(79 * 256 + 100, 0)).is_ok());
         for bad in [at(-6 * 256, 0), at(0, -6 * 256), at(80 * 256, 0), at(0, 80 * 256)] {
             match vertices_in_envelope(64, 64, &bad) {
-                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199"]),
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"]),
                 o => panic!("{o:?}"),
             }
         }

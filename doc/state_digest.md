@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-152 open: 142 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+150 open: 140 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -29,8 +29,6 @@ list.
   and what are the other words of a render's background object? (E972, E973, E1006)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
-- `Q199` isp, high: does E607's half-up rounding to 1/256 pixel hold for negative vertices and for
-  the vertices the guard-band clip makes, and what of the ... (E684, E979, E1024)
 - `Q200` isp, high: why do the dyadic controls of E731 store one or two ulps below the truncated
   exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q202` isp, high: do the attribute and depth planes of E606 hold with perspective (w other than
@@ -69,8 +67,6 @@ list.
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
-- `Q261` isp, medium: on targets other than 64 x 64, where is the guard that the ISP clips far edges
-  to (E1023: on 64 x 64 x in [-16 or -9, 80] and y in [-16, ... (E1012, E1023, E1024)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -206,8 +202,8 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
-  against equal depths, the visibility test (ISP word 1 bit 3), ... (E757, E995, E998)
+- `Q241` isp, low: what do ISP word 0 bits 15, 16 and 17 select (E1045: each removes E977's ramp in
+  both vertex orders, so no winding; E065: bit 15 left 48 ... (E995, E998, E1045)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
   changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
@@ -319,12 +315,15 @@ list.
 
 ## Recent records
 
-103 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+106 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1046` bif, 2026-11-14: R14-bif stage refill (Q108's stale-data clause; E1029's zb-c-id depth
   form, 64 x 32, depth test never so the store holds the load, run twice on one context, 6 jobs,
   every control passed): when the ...
+- `E1045` isp, 2026-11-14: r14-isp stage wind (8 jobs, E998's form: E977's ramp at 80 x 40, the
+  depth dumped): ISP word 0 bit 15, 16 or 17 set alone removes the ramp triangle in the reversed
+  vertex order too (no pixel, the ...
 - `E1044` dpm, 2026-11-14: r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1,
   4 and 7 partial renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage
   stopped by its own rule (rc ...
@@ -334,6 +333,12 @@ the claims are cut at 200 characters.
 - `E1038` texture, 2026-11-14: r14-tex stage srgb4 on module B60AB0B4 (Q282; sRGB, T0 bit 27, 13
   probe fills): the three controls passed (E723's g-bl-st-a, r13-tex's srgb3-tri and srgb3-x1's
   channel 0 read through the second ...
+- `E1037` isp, 2026-11-14: r14-isp stage clipr (10 jobs): a vertex the guard-band clip makes is
+  rounded half away from zero to 1/256 pixel (frozen CLIP-HA held 3 of 3 rows with the clip vertex
+  on an exact 1/512 tie at x = 80: ...
+- `E1036` isp, 2026-11-14: r14-isp stage g14 (21 jobs): the guard the ISP clips far edges to is a
+  quarter of the viewport past each edge (clip x and y within 1.5 w): frozen H-VP drew every
+  held-out far triangle pixel for ...
 - `E1035` vdm, 2026-11-13: r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and
   idle:S): E700's counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a
   completed one hung on a 128 x ...
@@ -634,10 +639,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-56 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+57 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r14-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r14-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-bif`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t14
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -716,7 +722,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 22 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 23 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
