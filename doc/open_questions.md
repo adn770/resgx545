@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-147 open: 137 hw (high 18, medium 65, low 54, unrated 0), 9 fw, 1 kernel.
+146 open: 136 hw (high 17, medium 65, low 54, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -124,7 +124,6 @@
 
 - `Q008` (phase 6, hw, low): how is the luma compared at the luma key's high cut, where five colours with the weighted sum 1000 to 1016 above the cut are outside the band while others up to 1016 above are inside, and what do bits 31:16 of the alpha word and the offset's precision do? (E039, E275, E426)
 - `Q010` (phase 6, hw, low): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271, E399)
-- `Q078` (phase 11, hw, high): under a bilinear sample, which columns does T3 bit 14 on a twiddled texture read where the footprint crosses the texture's left or right edge (E1049's post hoc taps at X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W frac(u) - 1/2), held out in E1058: held inside the texture and across the v edge, failed at the left edge and where u lies off the 1/4096 grid), given that a point sample reads texel (s + floor(4096 frac(u)), t) of E561's tiles of 16 x min(H, 16) texels with W + 4096 texels a tile row at W 16 to 128 by 8 to 64 and in u16 texels (E1047, E1049, E1058)? (E274, E397, E566, E564, E722, E723, E968, E975, E1003, E1027, E1033, E1047, E1049, E1058, E1067)
 - `Q114` (phase 11, hw, low): does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE value does, E567, E726), and if one does, how are its slices laid out and how do the third coordinate and the filter combine them? (E342, E567, E726, E923, E930, E894, E910, E911, E940, E941, E942, E958)
 - `Q115` (phase 11, hw, low): does the sampler filter anisotropically on this core, and which bits of the texture words or the smp operands select it and its ratio? (E041, E342, E564, E720, E723)
 - `Q177` (phase 11, hw, low): which dword do texture types 1, 3 and 4 read, each byte halved, in u address modes 4 to 7 at a size other than 16 x 16 and 32 x 32 (E1055's two-point fit 39 W + 52 + (x mod W), 40 W + 20 for type 4, failed at 8 x 8, 64 x 64 and 64 x 16, E1065; post hoc type 1 reads W H + 7 W + 52 + (x mod W) at five sizes, mode 5 7 W + 51, modes 6 and 7 mode 4's last column, type 4 at 64 x 64 two 32-wide blocks), and what is the half, and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners) (E565, E033, E932, E957, E983, E1000, E1017, E1026, E1039, E1055, E1065)

@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-147 open: 137 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+146 open: 136 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -43,8 +43,6 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: under a bilinear sample, which columns does T3 bit 14 on a twiddled texture
-  read where the footprint crosses the texture's left or right ... (E1049, E1058, E1067)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
