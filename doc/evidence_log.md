@@ -9097,6 +9097,18 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   cannot tell: no row decided'.
   *dpm; HW, infer; data: `render-closing-r19-own:out/20261114-223625/own1/`,
   `render-closing-r19-own:fold/`.*
+- `E1086` r19-flag stage fl (3 jobs, t18b, module E0CC40275493F8AEAD8180B, the flagged session with
+  the user's OK, 2 planned rows, no fault and no hang): on a 1024 x 768 scene whose geometry kick
+  overflows once at P = 0x28 and whose closing render has N = 0x100 pages and does not overflow,
+  filling the state page (page 6 of the TA data, 18 non-zero list dwords after the kick) with the
+  ramp 0xa5000000 + i just before the closing render's kick (the kernel logged the fill applied)
+  changed nothing: both junk rows ended ok with the same last target hash (0xed1bce7108aded25, 0 of
+  786432 pixels wrong) as the unfilled control, the same parameter buffer and the same TA data
+  except page 6, whose 1024 ramp dwords all stayed (the render stored nothing over them); H-NOLOAD
+  held on the fit row and its held-out replicate, 2 of 2, against H-LOAD-FAULT, H-LOAD-HANG and
+  H-LOAD-CORRUPT.
+  *dpm; HW; data: `render-closing-r19-flag:out/20261114-225916/fl/`,
+  `render-closing-r19-flag:fold/`.*
 - `E1087` r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context closed early;
   t18b copied the kept TA data right after the close and after the second context's render, every
   copy made): the 64x64 owner's words 0x00200047, 0x04000417, 0x00020001 and 2 (control, OTPM and
@@ -9128,7 +9140,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057, E1077, E1078, E1084, E1085, E1087.
+E1019, E1032, E1044, E1057, E1077, E1078, E1084, E1085, E1086, E1087.
 
 ### edm
 

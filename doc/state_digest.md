@@ -18,7 +18,7 @@ list.
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
   stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E629, E996, E1020)
 - `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
-  macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
+  macrotile lists a partial render stores in the RT data's state ... (E627, E631, E1086)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E1084, E1085, E1087)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
@@ -303,12 +303,15 @@ list.
 
 ## Recent records
 
-145 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+146 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1087` dpm, 2026-11-14: r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context
   closed early; t18b copied the kept TA data right after the close and after the second context's
   render, every copy made): the ...
+- `E1086` dpm, 2026-11-14: r19-flag stage fl (3 jobs, t18b, module E0CC40275493F8AEAD8180B, the
+  flagged session with the user's OK, 2 planned rows, no fault and no hang): on a 1024 x 768 scene
+  whose geometry kick overflows ...
 - `E1085` dpm, 2026-11-14: r19-own stage own1 (Q191) decided nothing: on its first flag-0xc row
   (o1-c-a, 64x64, P 0x422) t18b's copy of render_kept right after the first context's early close
   read 0 bytes although the kernel ...
@@ -744,7 +747,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-76 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+77 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -755,6 +758,8 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r19-k0b`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t18b
 - `render/closing-r19-k0`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools not named
+- `render/closing-r19-flag`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
 - `render/closing-r18-flag`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
 - `render/closing-r17-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -856,7 +861,7 @@ srcversion, fork tip, laptop tools.
 - fork pin (`tools/forkpin.py`): 456404fcffe5
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 4 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 5 sessions
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
@@ -917,4 +922,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-46 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+47 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
