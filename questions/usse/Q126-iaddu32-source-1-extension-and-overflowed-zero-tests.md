@@ -1,11 +1,11 @@
 +++
 id = "Q126"
-question = "which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations"
+question = "which extension of a source 1 above 0x7fff does the test of iaddu32 read (no test tells it, E498), and what value does iaddu32 write into sa0 for one instance (the fill's instances share sa0: E1061's sa0 row read other pairs' values, post hoc)"
 unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E472", "E498", "E521"]
+evidence = ["E472", "E498", "E521", "E1061"]
 terms = ["Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -31,3 +31,17 @@ is zero for no pair under either extension but (0, 0), and the sign tests read n
 scratch dword 0) only: with a repeat, an immediate or a constant in source 2 or other destinations
 it was not run (the `chan` fields other than `chan0` are Q150). To settle it: the same pairs with
 r1 of 0x8000 to 0xffff in those forms, the value read back.
+
+Narrowed 2026-11-14 (round 16, session r16-usse, decisions R16-5 a and R16-6 a; E1061; the question
+line is rewritten to what stays, the question is not retired). Held out and holding, with E521's
+pairs and E498's tests replicated as controls: the value iaddu32 writes zero-extends source 1 with
+source 2 #1, #127 and c56 (0xffffffff) and into i0 (8 of 8 pairs each, seven of which the sign
+extension writes otherwise), and a write mask `.xy` or `.xyzw` on its test repeats it, component k
+writing d + k from the sources advanced by k (2 of 2 rows, against the mask ignored and every
+component the first's value). The row into sa0 FAILED its frozen prediction: two of eight dwords
+read later pairs' values and its pixels mixed four values; post hoc [infer], sa0 is one register
+shared by the fill's instances, every value read being a zero-extended sum of some pair. What
+stays: the extension the test reads, which no test tells (the sum counted with its carry is zero
+for (0, 0) only under both, the sign tests read nothing: [infer] not observable, as Q276's
+predicate clause), and sa0 written by one instance alone. sgx-sim models the mask on the iaddu32
+test and refuses the masks of the other tests, naming E1061.

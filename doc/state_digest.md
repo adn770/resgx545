@@ -260,8 +260,8 @@ list.
   stores after them, and which write registers? (E297, E368)
 - `Q125` usse, low: which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3
   of the instances that do not read the last job's value, ... (E477, E484, E500)
-- `Q126` usse, low: which extension of a source 1 above 0x7fff does the test of iaddu32 read, and
-  does the value it writes zero-extend source 1 with a repeat, ... (E472, E498, E521)
+- `Q126` usse, low: which extension of a source 1 above 0x7fff does the test of iaddu32 read (no
+  test tells it, E498), and what value does iaddu32 write into ... (E498, E521, E1061)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
 - `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
@@ -275,7 +275,7 @@ list.
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
   0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
 - `Q137` usse, low: do the rules of the test field of a class 9 test (zero part: bits 41 over 40;
-  sign part: bits 43 over 42; the parts ANDed under join `a`, ... (E499, E529, E530)
+  sign part: bits 43 over 42; the parts ANDed under join `a`, ... (E529, E530, E1062)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
@@ -313,12 +313,18 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+124 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1065` texture, 2026-11-14: r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8
   x 8, 64 x 64 and type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base
   0 of a 32-page named scratch): ...
+- `E1062` usse, 2026-11-14: r16-usse stage utest on module B60AB0B4 (Q137; 20 client fills, one form
+  and one join a program, the 16 values of the test field enc[43:40] packed one bit a field from p0
+  by `p0 or`, with the ...
+- `E1061` usse, 2026-11-14: r16-usse stages uadd and urpt on module B60AB0B4 (Q126; client fills,
+  `iaddu32.testtaz.chan0 DST, p0, r1, SRC2` over eight (r1, source 2) pairs a program, r1's low half
+  0x8000 to 0xffff in seven of ...
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
   sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
   all ran, rc 0): the period ...
@@ -685,9 +691,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-65 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+66 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r16-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
@@ -778,7 +785,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 31 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 32 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

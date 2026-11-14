@@ -46,9 +46,15 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   nonzero, and the wrapped sum reads zero for pairs that are nonzero (E498 lists the 16 pairs).
   The value `iaddu32` writes is the low 16 bits of source 1, zero-extended, plus source 2 **[HW]**
   (E521: 16 pairs, seven of which a sign extension writes otherwise, such as 0x8000 + 0x8000 =
-  0x10000); which extension its test reads is **[open]** (Q126): no test of the 16 pairs of E498
-  tells it. With source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz`
-  (8 of 8 values each) (*The 32-bit adds `iadd32` and `iaddu32`*).
+  0x10000), and so it does with source 2 `#1`, `#127` and `c56` (0xffffffff) and into `i0` (E1061:
+  eight pairs each, seven with bit 15 of r1 set, 8 of 8 each); a write mask `.xy` or `.xyzw` on the
+  test repeats it as on the other forms, component k writing d + k from r1 + k and r5 + k (E1061,
+  16 of 16; the predicate it leaves was not read). Into `sa0`, read back by `mov`, two of eight
+  dwords held another pair's value and the pixels mixed four values (E1061: one register shared by
+  the fill's instances **[infer]**), so that destination is **[open]** (Q126); which extension its
+  test reads is **[open]** (Q126): no test of the 16 pairs of E498 tells it. With source 1 = `#0`
+  the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values each) (*The
+  32-bit adds `iadd32` and `iaddu32`*).
 - **The test field is two parts, ANDed under the `a` join and ORed under the `o` join [HW]** (E499,
   E529): `enc[43:40]` holds taz = bit 40, tanz = bit 41, nat = bit 42 and pat = bit 43 (the
   assembler's `.test<S><J><Z>` writes the sign and zero conditions together: `.testpanz` is the
@@ -71,10 +77,13 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   always true (E529: `and r1, r2` over the 15 values and six pairs, 90 of 90 for a rule read from
   those readbacks after the first prediction, the parts ORed with an absent part false, fitted 75 of
   90; then 270 of 270 predicted on `or` and `xor` with registers and `and` with #7, 90 cases each;
-  `and` with #7 gives no negative result). **[infer]** The rule is not run for the shifts `shl`,
-  `shr` and `asr`, `or` and `rol` with #7, 8-bit and 16-bit lane operations, the `o` join with a
-  chan other than chan0, the field value 0 and the other classes' tests, and that no other bit of a
-  test word inverts a source is not run (Q137).
+  `and` with #7 gives no negative result). **The same rule holds on the shifts, the #7 forms and
+  the sums under both joins [HW]** (E1062, frozen from sgx-sim and held out: `shl`, `shr` and `asr`
+  with registers, `or` and `rol` with #7, `iadd32`, whose sign is the true sum's, and `iaddu32`,
+  whose zero is the carry-counted sum's and whose sign is always positive, each with the fields 0 to
+  15 over six pairs under the `a` and the `o` join, 14 of 14 rows; the field value 0, both parts
+  absent, is always true), with E499's and E529's tables replicated as controls. That no other bit
+  of a test word inverts a source is not run (Q137).
 - **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
   #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
   is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
@@ -119,8 +128,10 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   one constant per field (taz 0, tanz 1, nat 0, pat 1, taz with pat 0, tanz with pat 1), chan4 and
   chan6 (`andall`, `and02`) read tanz and pat of the value with taz and nat false, and chan5 and
   chan7 (`orall`, `or02`) taz and nat of the value with tanz and pat true, which is the rule just
-  given applied after the data (**[infer]**, 252 of 252 cases; not predicted); the same on 8-bit and
-  16-bit lane operations is **[open]** (Q137). The masks of class 15, `.partial` and `.quadlead` on
+  given applied after the data (**[infer]**, 252 of 252 cases; not predicted). On 8-bit and 16-bit
+  lane operations the same rule held, predicted, under both joins (E1062: `iadd8` with the bytes
+  0, 3, 0xf1, 8 and `iadd16` with the halves 0 and -15, chan0 to or02, the nine fields the
+  assembler names, 144 of 144 tests a join). The masks of class 15, `.partial` and `.quadlead` on
   tests are **[open]**.
 - **The unsigned and unorm byte operations [HW]** (E092, E094). `uadd8`, `usub8`, `umul8`,
   `uadd16` and `umul16` work lane by lane, unsigned and wrapping, and `.sat` clamps a byte at

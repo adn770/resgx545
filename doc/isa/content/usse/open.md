@@ -57,13 +57,12 @@ open driver:
    or a cold boot (Q158; at the next entry they are what the task left, E809, E810); what leaves
    0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
    of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
-   a source 1 above 0x7fff, which no test tells, and the value it writes with a repeat, an immediate
-   or a constant in source 2 (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   a source 1 above 0x7fff, which no test tells, and the value it writes into `sa0`, which the
+   fill's instances share (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
    the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
-   (Q127); the rule of the test field on the shifts, the lane operations and the other classes, with
-   the `o` join (Q137) and the chan field (Q137); how long an `sa0` written by `ima32` lasts (Q136)
-   and why a write to `pa0` is lost (Q098).
+   (Q127); whether another bit of a test word inverts a source (Q137); how long an `sa0` written
+   by `ima32` lasts (Q136) and why a write to `pa0` is lost (Q098).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an

@@ -156,7 +156,8 @@ impl Insn {
 
 /// The word of a class 9 test whose test field enc[43:40] the table has no text for, with the
 /// field that means the same. Hardware (E499, usse-rawcond, usse-rawcond2: 540 of 540 cases on
-/// `and`, `or`, `xor` and `rol`, with the join `a` (enc[39]) and chan0, enc[50] clear; the join `o`: E529, 360 of 360): the
+/// `and`, `or`, `xor` and `rol`, with the join `a` (enc[39]) and chan0, enc[50] clear; the join `o`: E529, 360 of 360;
+/// E1062: `shl`, `shr`, `asr`, `iadd32`, `iaddu32` and `or`/`rol` with #7 under both joins, 1344 of 1344): the
 /// field is two parts ANDed, a zero part (tanz if bit 41, else taz if bit 40) and a sign part (pat
 /// if bit 43, else nat if bit 42), so that field 3 reads as 2, 7 as 6, 0xb as 0xa, 0xc as 8, 0xd
 /// as 9 and 0xe and 0xf as 0xa. Any other word is returned as it is.
@@ -197,7 +198,11 @@ impl Program {
                             let i =
                                 Insn { form, v: f.v, word: canonical_test_word(w), text, firh_later: false };
                             match i.name("op", core).as_deref() {
-                                Some("and" | "or" | "xor" | "rol") => Ok(i),
+                                // E1062: the shifts and the 32-bit sums as well (chan0)
+                                Some(
+                                    "and" | "or" | "xor" | "rol" | "shl" | "shr" | "asr" | "iadd32"
+                                    | "iaddu32",
+                                ) => Ok(i),
                                 _ => Err(i.text),
                             }
                         }
@@ -994,6 +999,11 @@ impl Machine {
                 self.now = Now::default();
                 next = self.op(it, bus)?;
             }
+            // E1061 read the registers of an iaddu32 test under a write mask, not the predicate it
+            // leaves: a later read of it is refused as not set
+            if op == "test" && its.len() > 1 {
+                self.p_set &= !(1 << insn.get("p").unwrap());
+            }
         }
         Ok(match (next, end) {
             (_, true) => Next::End,
@@ -1091,9 +1101,15 @@ impl Machine {
         // from sources advanced by k, as iteration k of a repeat; immediates
         // stay.
         if let Some(mi) = insn.form.role("mask").filter(|&i| insn.v[i] != 1) {
-            if !matches!(op, "mov" | "bitwise" | "movc" | "pack" | "fsc") {
+            // E1061 (r16-usse urpt): the mask of an iaddu32 test into temporaries (.xy, .xyzw) repeats
+            // it the same way; the masks of the other tests were not run
+            let iaddu32_test = op == "test"
+                && insn.name("op", self.core).as_deref() == Some("iaddu32")
+                && insn.get("dst").is_some_and(|d| d >> 7 == 0);
+            if !matches!(op, "mov" | "bitwise" | "movc" | "pack" | "fsc") && !iaddu32_test {
                 let m = insn.name("mask", self.core).unwrap();
-                return Err(why(format!("write mask {m} on {op}")));
+                let ran = if op == "test" { " (E1061 ran it on iaddu32 only)" } else { "" };
+                return Err(why(format!("write mask {m} on {op}{ran}")));
             }
             let comps: Vec<i32> = (0..4).filter(|k| insn.v[mi] >> k & 1 != 0).collect();
             return self.steps(insn, mi, 1, &comps, 1, true).map(Some);
@@ -3404,14 +3420,27 @@ impl Machine {
                 }
             }
         };
-        // hardware (E529): the join `o` ran on and, or and xor only (not on rol, the shifts or the
-        // other classes)
+        // hardware (E529): the join `o` ran on and, or and xor; E1062 on rol, shl, shr, asr, iadd32,
+        // iaddu32, and on iadd8 and iadd16 with every chan field (not on the other operations)
         if test.strip_prefix("test").and_then(|t| t.chars().nth(1)) == Some('o')
             && !test.contains("all")
             && !test.contains("02")
-            && !matches!(name.as_str(), "and" | "or" | "xor")
+            && !matches!(
+                name.as_str(),
+                "and"
+                    | "or"
+                    | "xor"
+                    | "rol"
+                    | "shl"
+                    | "shr"
+                    | "asr"
+                    | "iadd32"
+                    | "iaddu32"
+                    | "iadd8"
+                    | "iadd16"
+            )
         {
-            return Err(why(format!("test {name} with the join o (not run, E529)")));
+            return Err(why(format!("test {name} with the join o (not run, E529, E1062)")));
         }
         let write = insn.name("write", self.core).as_deref() != Some("!");
         if let Some(kind) =
@@ -8574,15 +8603,15 @@ mod after_11_27 {
 
     #[test]
     fn what_was_not_run_stays_refused() {
-        // E516: the registers of a fetch ran up to r33; E529: the join o ran on and, or and xor
+        // E516: the registers of a fetch ran up to r33; E529, E1062: the join o
         let (_, _, r) = memory_run(40, &[8], &["stad.fetch4 [r40,+#0], r32"]);
         assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("E516")), "{r:?}");
         let (_, _, r) = memory_run(40, &[8], &["stad.fetch4 [r40,+#0], r14"]);
         assert_eq!(r, Ok(()));
-        // rol.testtanz.chan0 !c0, p0, r1, r2 with enc[39] clear (the join o), and the same for and
-        for (word, ok) in
-            [(0x4808_1281_000D_4082u64 & !(1 << 39), false), (0x4808_1281_000C_0082u64 & !(1 << 39), true)]
-        {
+        // E1062 ran the join o on the shifts, rol, iadd32, iaddu32, iadd8 and iadd16 as well; isub16 with
+        // it (isub16.testtanz.chan0 !c0, p0, r1, r2, enc[39] clear) was not run, and the same on and was
+        let isub16 = usse_isa::encode("isub16.testtanz.chan0 !c0, p0, r1, r2", Core::Sgx545).unwrap();
+        for (word, ok) in [(isub16 & !(1 << 39), false), (0x4808_1281_000C_0082u64 & !(1 << 39), true)] {
             let mut words: Vec<u64> = ["mov r1, #5", "mov r2, #5"]
                 .iter()
                 .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
@@ -8593,6 +8622,156 @@ mod after_11_27 {
             let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100);
             assert_eq!(r == Ok(()), ok, "{word:#x}: {r:?}");
         }
+    }
+
+    /// p0 of one raw test word on (r1, r2), read as E499 read it (`mov r10, #0; p0 mov r10, #1`).
+    fn test_word_p0(word: u64, a: u32, b: u32) -> Result<u32, Error> {
+        let mut words: Vec<u64> =
+            [format!("mov r1, #0x{a:08x}"), format!("mov r2, #0x{b:08x}"), "mov r10, #0".into()]
+                .iter()
+                .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+                .collect();
+        words.extend([
+            word,
+            usse_isa::encode("p0 mov r10, #1", Core::Sgx545).unwrap(),
+            usse_isa::encode("nop.end", Core::Sgx545).unwrap(),
+        ]);
+        let (mut m, mut mem) = (Machine::default(), Memory { base: 0x1000, words: vec![0; 4] });
+        m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100).map(|_| m.r[10])
+    }
+
+    #[test]
+    fn the_test_field_on_the_shifts_the_sums_and_with_the_o_join() {
+        // E1062 (r16-usse utest, 14 rows): the test field enc[43:40] = 0 to 15 under the a join
+        // (enc[39] set) and the o join (clear), chan0, on six pairs a form; the hardware's p0 of
+        // field f is bit f of each mask (a join, o join), E499's two-part rule and E529's o join
+        let forms: [(&str, &str, [(u32, u32); 6], [u16; 6], [u16; 6]); 7] = [
+            (
+                "shl",
+                "r2",
+                [(0, 5), (0x8000_0000, 1), (1, 4), (0x6000_0000, 1), (0x7fff_ffff, 1), (0x1234_5678, 0)],
+                [0x3303, 0x3303, 0xdd0d, 0x00dd, 0x00dd, 0xdd0d],
+                [0xff3f, 0xff3f, 0xffdf, 0xddff, 0xddff, 0xffdf],
+            ),
+            (
+                "shr",
+                "r2",
+                [(0, 3), (1, 1), (0x8000_0000, 0), (0xffff_ffff, 0), (0x8000_0000, 31), (0xf000_0000, 4)],
+                [0x3303, 0x3303, 0x00dd, 0x00dd, 0xdd0d, 0xdd0d],
+                [0xff3f, 0xff3f, 0xddff, 0xddff, 0xffdf, 0xffdf],
+            ),
+            (
+                "asr",
+                "r2",
+                [(0, 7), (1, 1), (0x8000_0000, 31), (0x8000_0000, 4), (0x7fff_ffff, 30), (0x4000_0000, 2)],
+                [0x3303, 0x3303, 0x00dd, 0x00dd, 0xdd0d, 0xdd0d],
+                [0xff3f, 0xff3f, 0xddff, 0xddff, 0xffdf, 0xffdf],
+            ),
+            (
+                "or",
+                "#7",
+                [(0, 0), (8, 0), (0x7fff_fff8, 0), (0x8000_0000, 0), (0xffff_fff8, 0), (0x1234_5670, 0)],
+                [0xdd0d, 0xdd0d, 0xdd0d, 0x00dd, 0x00dd, 0xdd0d],
+                [0xffdf, 0xffdf, 0xffdf, 0xddff, 0xddff, 0xffdf],
+            ),
+            (
+                "rol",
+                "#7",
+                [(0, 0), (1, 0), (0x0100_0000, 0), (0x8000_0000, 0), (0xffff_ffff, 0), (0x0200_0000, 0)],
+                [0x3303, 0xdd0d, 0x00dd, 0xdd0d, 0x00dd, 0xdd0d],
+                [0xff3f, 0xffdf, 0xddff, 0xffdf, 0xddff, 0xffdf],
+            ),
+            (
+                "iadd32",
+                "r2",
+                [(0, 0), (1, 0xffff_ffff), (0x8000, 0x8000), (5, 3), (0xffff, 0), (0x7fff, 0x7fff_ffff)],
+                [0x3303, 0x3303, 0x3303, 0xdd0d, 0x00dd, 0xdd0d],
+                [0xff3f, 0xff3f, 0xff3f, 0xffdf, 0xddff, 0xffdf],
+            ),
+            (
+                "iaddu32",
+                "r2",
+                [
+                    (0, 0),
+                    (0xffff, 1),
+                    (1, 0xffff_ffff),
+                    (0x8000, 0x8000),
+                    (0, 0x8000_0000),
+                    (0xabcd, 0x1234_5678),
+                ],
+                [0x3303, 0xdd0d, 0xdd0d, 0xdd0d, 0xdd0d, 0xdd0d],
+                [0xff3f, 0xffdf, 0xffdf, 0xffdf, 0xffdf, 0xffdf],
+            ),
+        ];
+        for (op, src2, pairs, a_bits, o_bits) in forms {
+            let text = format!("{op}.testtaz.chan0 !c0, p0, r1, {src2}");
+            let base = usse_isa::encode(&text, Core::Sgx545).unwrap() & !(0xff << 36);
+            for (j, &(a, b)) in pairs.iter().enumerate() {
+                for (join, bits) in [(8u64, a_bits[j]), (0, o_bits[j])] {
+                    for f in 0..16u64 {
+                        let r = test_word_p0(base | (f << 4 | join) << 36, a, b);
+                        assert_eq!(
+                            r,
+                            Ok((bits >> f & 1) as u32),
+                            "{op} {a:#x} {b:#x} field {f:#x} join {join}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_lane_tests_with_the_o_join() {
+        // E1062 (r16-usse utest t-iadd8-o, t-iadd16-o): the chan field chan0 to or02 under the o join
+        // on iadd8 (bytes 0, 3, 0xf1, 8) and iadd16 (halves 0 and -15; chan1 and chan3 without a
+        // lane), the nine fields the assembler names; bit f of each chan's mask is the hardware's p0
+        // (the same masks on both operations), and E1062's a join rows as before
+        let o: [u16; 8] = [0x0737, 0x0757, 0x0577, 0x0757, 0x0517, 0x0777, 0x0537, 0x0777];
+        let a: [u16; 8] = [0x0303, 0x0505, 0x0055, 0x0505, 0x0001, 0x0757, 0x0001, 0x0357];
+        for (op, x, y) in [("iadd8", 0x05f0_0100u32, 0x0301_0200u32), ("iadd16", 0xfff0_0005, 0x0001_fffb)] {
+            let base = usse_isa::encode(&format!("{op}.testtaz.chan0 !c0, p0, r1, r2"), Core::Sgx545)
+                .unwrap()
+                & !(0xff << 36);
+            for chan in 0..8u64 {
+                for f in [0u64, 1, 2, 4, 5, 6, 8, 9, 10] {
+                    for (join, bits) in [(0u64, o[chan as usize]), (8, a[chan as usize])] {
+                        let r = test_word_p0(base | (f << 4 | join | chan) << 36, x, y);
+                        assert_eq!(
+                            r,
+                            Ok((bits >> f & 1) as u32),
+                            "{op} chan {chan} field {f:#x} join {join}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_write_mask_on_an_iaddu32_test_repeats_it() {
+        // E1061 (r16-usse urpt): iaddu32.testtaz.chan0 r10.xy (.xyzw), p0, r1, r5 writes r10 + k with
+        // (r1 + k & 0xffff) + r5 + k, as the masks of the other forms (component k from the sources
+        // advanced by k); the predicate it leaves was not read, so a later read of it is refused
+        let a = [0x8000u32, 0x8001, 0xabcd, 0xffff];
+        let b = [0x8000u32, 0x7fff_0000, 1, 0xffff_ffff];
+        let want = [0x0001_0000u32, 0x7fff_8001, 0x0000_abce, 0x0000_fffe];
+        for (mask, n) in [(".xy", 2), (".xyzw", 4)] {
+            let mut init: Vec<String> = (0..4).map(|k| format!("mov r{}, #0x{:08x}", 1 + k, a[k])).collect();
+            init.extend((0..4).map(|k| format!("mov r{}, #0x{:08x}", 5 + k, b[k])));
+            init.extend((0..4).map(|k| format!("mov r{}, #0xa0a0a0a{k}", 10 + k)));
+            let text = format!("iaddu32.testtaz.chan0 r10{mask}, p0, r1, r5");
+            let (m, r) = with(&init, &[text.as_str()]);
+            assert_eq!(r, Ok(()), "{mask}");
+            for k in 0..4 {
+                let w = if k < n { want[k] } else { 0xa0a0_a0a0 | k as u32 };
+                assert_eq!(m.r[10 + k], w, "{mask} r{}", 10 + k);
+            }
+            assert!(refused(&with(&init, &[text.as_str(), "p0 mov r20, #1"]).1), "{mask}: p0 after the mask");
+        }
+        // the mask on the other tests was not run
+        assert!(refused(&with(&set(1, 2, 3), &["iadd32.testtaz.chan0 r10.xy, p0, r1, r2"]).1));
+        assert!(refused(&with(&set(1, 2, 3), &["and.testtaz.chan0 r10.xy, p0, r1, r2"]).1));
     }
 
     #[test]

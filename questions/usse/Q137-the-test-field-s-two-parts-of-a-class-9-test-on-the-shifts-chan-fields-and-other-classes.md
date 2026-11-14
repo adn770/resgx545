@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E499", "E498", "E529", "E530"]
+evidence = ["E499", "E498", "E529", "E530", "E1062"]
 terms = ["Universal Scalable Shader Engine (USSE)"]
 +++
 E499: the test field enc[43:40] of `and.test.chan0 !c0, p0, r1, r2` gives, for the 15 values, the
@@ -60,3 +60,12 @@ conditions, 'x is zero or negative', which the o join writes as one instruction 
 the assembler writes as `.testnoz`), a case E529's field 5 reads as predicted by the rule: 1 for the
 results 0, 0x80000000 and 0xffffffff. To settle it: the same 15 values over those forms, with the
 rule as the hypothesis.
+
+Narrowed 2026-11-14 (round 16, session r16-usse, decision R16-5 a; E1062). Held out and holding (18
+of 18 rows, E499's and E529's tables replicated as controls, every rival failing): the rule of the
+two parts with the a join's AND and the o join's OR on shl, shr and asr with registers, or and rol
+with #7, iadd32 and iaddu32 under both joins with the field values 0 to 15 (0 always true), and on
+iadd8 and iadd16 with chan0 to or02 under both joins over the nine fields the assembler names; the
+rows ran the assembler's text forms, whose words are the raw fields byte for byte (OQ137). sgx-sim
+models these, naming E1062. What stays: the other classes' tests and whether another bit of a test
+word inverts a source.
