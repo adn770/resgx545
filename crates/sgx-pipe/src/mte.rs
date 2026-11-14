@@ -12,7 +12,7 @@
 use crate::Outcome;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q069", "Q039", "Q116", "Q162", "Q230", "Q296"];
+pub const OPEN: &[&str] = &["Q069", "Q039", "Q162", "Q230", "Q296"];
 
 /// A refusing stub for the parts of the unit nothing models yet.
 pub fn refuse() -> Outcome {
@@ -36,6 +36,15 @@ const WCLAMP: [u32; 2] = [0x3727_c5ac, 0x3a83_126f];
 
 pub fn state(w: &[u32]) -> Result<State, Outcome> {
     let open = |why: String, id: &str| Outcome::unsupported(&why, &[id]);
+    if w.len() == 20 && w[0] == 0xdfc3 {
+        return Err(open(
+            format!(
+                "an MTE state block with the region clip (presence 0xdfc3, clip words {:#x}, {:#x}): its pixels are `region_clip`'s (E1060: whole 32 x 16 tiles), but the TA's region lists under it were not dumped, so the block is not placed",
+                w[6], w[7]
+            ),
+            "Q069",
+        ));
+    }
     if w.len() != 18 || w[0] != 0xdf43 {
         return Err(open(
             format!(
@@ -73,6 +82,45 @@ pub fn state(w: &[u32]) -> Result<State, Outcome> {
     }
     let f = |i: usize| f32::from_bits(w[i]);
     Ok(State { isp: [w[1], w[2]], pds: [w[3], w[4], w[5]], vp: [f(6), f(7), f(8), f(9), f(10), f(11)] })
+}
+
+/// The region clip of presence bit 7: the two words after the pixel programs (E347), word 0 the
+/// enable in bit 31 and the first and last 32-pixel tile columns in bits 30:16 and 15:0, word 1 the
+/// first and last 16-pixel tile rows in 31:16 and 15:0 (E348, from the closed driver's captures).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RegionClip {
+    pub enable: bool,
+    pub cols: (u32, u32),
+    pub rows: (u32, u32),
+}
+
+pub fn region_clip(c0: u32, c1: u32) -> RegionClip {
+    RegionClip {
+        enable: c0 >> 31 != 0,
+        cols: ((c0 >> 16) & 0x7fff, c0 & 0xffff),
+        rows: (c1 >> 16, c1 & 0xffff),
+    }
+}
+
+impl RegionClip {
+    /// Whether the clip keeps pixel (x, y) of an object (E1060, 13 held-out rows at 64 x 64 to
+    /// 256 x 256 and 100 x 60, every pixel): whole tiles of 32 x 16, first <= tile <= last in both,
+    /// the rows counted from memory row 0 (GL's bottom under E348's positive y scale); with bit 31
+    /// clear the object is not clipped.
+    pub fn keeps(&self, x: u32, y: u32) -> bool {
+        let (tx, ty) = (x / 32, y / 16);
+        !self.enable || (self.cols.0 <= tx && tx <= self.cols.1 && self.rows.0 <= ty && ty <= self.rows.1)
+    }
+}
+
+/// An object's pixels under the clip, row by row: a covered pixel in a tile the clip drops is not
+/// drawn and the background object writes it, as it writes every pixel no object covers (E1060:
+/// no pixel left at the target's fill).
+pub fn clipped(w: u32, h: u32, covered: &[bool], clip: RegionClip) -> Vec<bool> {
+    (0..h)
+        .flat_map(|y| (0..w).map(move |x| (x, y)))
+        .map(|(x, y)| covered[(y * w + x) as usize] && clip.keeps(x, y))
+        .collect()
 }
 
 /// The end-of-scene block (presence 0x2000): its term word.
@@ -629,6 +677,49 @@ mod tests {
     use super::*;
 
     const F: fn(f32) -> u32 = f32::to_bits;
+
+    #[test]
+    fn the_region_clip_words_read_as_e348_lays_them_out() {
+        // E348's viewport 40,20,16,30 triangle clip: enable, column 1 to 1, rows 1 to 3
+        assert_eq!(
+            region_clip(0x8001_0001, 0x0001_0003),
+            RegionClip { enable: true, cols: (1, 1), rows: (1, 3) }
+        );
+        // E348's clear clip of a 64 x 64 target, E1060's gate row
+        assert_eq!(region_clip(0x8000_0001, 3), RegionClip { enable: true, cols: (0, 1), rows: (0, 3) });
+        assert!(!region_clip(0x0001_0002, 0x0002_0004).enable);
+    }
+
+    #[test]
+    fn the_region_clip_keeps_whole_32_by_16_tiles_inclusive_rows_from_y_0_e1060() {
+        let c = region_clip(0x8001_0001, 0x0001_0003);
+        // column 1 is x 32..63, rows 1 to 3 are y 16..63 (memory rows from 0, not from the bottom)
+        assert!(c.keeps(32, 16) && c.keeps(63, 63) && c.keeps(40, 30));
+        assert!(!c.keeps(31, 16) && !c.keeps(32, 15) && !c.keeps(64, 16) && !c.keeps(32, 64));
+        // the last bound is inclusive: rows 1 to 2 keep y 47 (row 2), not 48 (row 3)
+        let c = region_clip(0x8001_0002, 0x0001_0002);
+        assert!(c.keeps(95, 47) && !c.keeps(95, 48) && !c.keeps(96, 47));
+        // bit 31 clear: no clip at all (E1060's e128-off)
+        let off = region_clip(0x0001_0002, 0x0002_0004);
+        assert!(off.keeps(0, 0) && off.keeps(127, 127));
+    }
+
+    #[test]
+    fn a_clipped_object_leaves_the_background_outside_the_kept_tiles_e1060() {
+        // a full-target object on 64 x 64 under column 0, rows 2 to 3: x < 32, y >= 32
+        let img = clipped(64, 64, &vec![true; 64 * 64], region_clip(0x8000_0000, 0x0002_0003));
+        assert_eq!(img.iter().filter(|&&k| k).count(), 1024);
+        assert!(img[32 * 64] && !img[31 * 64] && !img[32 * 64 + 32]);
+    }
+
+    #[test]
+    fn a_block_with_the_region_clip_names_e1060_and_is_not_placed() {
+        let mut b = block([64.0, 64.0, 64.0, 64.0]);
+        b[0] = 0xdfc3;
+        b.splice(6..6, [0x8000_0003, 7]);
+        let Err(Outcome::Unsupported { why, .. }) = state(&b) else { panic!("a clip block is placed") };
+        assert!(why.contains("E1060"), "{why}");
+    }
 
     /// The library's state block for a 128 x 128 target (build.rs of the scene: render.c).
     fn block(vp: [f32; 4]) -> Vec<u32> {

@@ -397,8 +397,8 @@ hardware part (Q033, Q094, Q096), Q065 was narrowed to the 3D's wait, two parked
 were split off (Q118, Q119), and ten new hardware questions open the gaps the specs left:
 the page table flags and page sizes and the bus interface's tiled ranges (Q108 to Q110), which
 event sets which status bit (Q111), the index list's width bits (Q112), cube maps (answered since
-by E844), volume textures and anisotropy (Q114, Q115), the region clip as a scissor (Q116) and
-points (folded into Q161 in 11.31; E544 answers its size and footprint).
+by E844), volume textures and anisotropy (Q114, Q115), the region clip as a scissor (answered since
+by E1060) and points (folded into Q161 in 11.31; E544 answers its size and footprint).
 
 Sub-phase 11.22 ran three tables on the laptop with no kernel change, about the depth and stencil
 load and store (ZLS): `zls/store-layout.toml`, `store-format.toml` and `load-copy.toml`. The tool's

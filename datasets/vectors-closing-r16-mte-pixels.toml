@@ -1,0 +1,9 @@
+title = "r16-mte: the --pixels words of each job of stage rclip (Q116's region clip at 64 x 64, 128 x 128, 256 x 256 and 100 x 60, 15 jobs)"
+repo = "data"
+paths = ["vectors/closing/r16-mte/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture --replayed crates/sgx-pipe/tests/mte_region_clip.rs::r16_mte_rclip_the_region_clip_keeps_whole_tiles_on_every_pixel on the published render/closing-r16-mte session (its one attempt, out/20261114-093233), one file as the tool wrote it; rows are measurements; replayed (sgx-pipe mte.rs region_clip, every pixel of the 15 rows)"
+date = "2026-11-14"
+files = 1
+size = 12893
+sha256 = "5db5487856bb509dc51a88e05e8c43749ef94c58c45e86b6c6a3c2bea3218fe2"
+recipe = "tools/usse-asm/closing_tables.py"

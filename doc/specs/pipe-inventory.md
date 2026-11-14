@@ -174,8 +174,8 @@ probes' images only, no dump. What they establish:
 - **Not established**: whether x and y are clipped at a guard band or only at the z planes; the
   clipped polygon's vertices (only pixel counts of the result exist); anything below the 64 x 64
   target. So an MTE model can state the z clip volume and the w clamp as measured and must
-  refuse x or y clipping (Q069, Q116), and the pixel counts of the clipped scenes can only be
-  reproduced by a model of the ISP arithmetic (E606, Q200).
+  refuse x or y clipping (Q069; the region clip, E1060, is whole tiles), and the pixel counts of
+  the clipped scenes can only be reproduced by a model of the ISP arithmetic (E606, Q200).
 
 ## 5. Corrections to the plan's numbers
 

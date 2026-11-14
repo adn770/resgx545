@@ -8829,6 +8829,24 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   6 FAILED'); all three controls (bit-clear 32 x 8 and 16 x 64, E1049's tw-bl32 rerun) passed.
   *texture; HW, infer; data: `render-closing-r16-tw:out/20261114-093404/tw16/`,
   `render-closing-r16-tw:fold/`, `vectors-closing-r16-tw-pixels`.*
+- `E1060` r16-mte stage rclip on module B60AB0B4 (Q116; the MTE state's region clip, presence bit 7
+  and its two words, added to the probe triangle's block by t10's --blk-add 7=C0,C1, 0xdf43 becoming
+  the closed driver's 0xdfc3, the first run of the clip on the hardware: 15 probe triangles at 64 x
+  64, 128 x 128, 256 x 256 and 100 x 60): both controls passed (E348's clear clip of the whole 64 x
+  64 target, 0x80000001 and 0x00000003, gives the no-clip image, 4096 of 4096 pixels, equal to its
+  twin without the clip); 'H-TILECLIP + H-BG + H-EN (13 of 13 rows decided)': **the clip keeps the
+  object in whole tiles of 32 x 16 pixels, from the first to the last column of word 0 and the first
+  to the last row of word 1 inclusive, the rows counted from memory row 0 (window y = 0, GL's bottom
+  under E348's positive y scale), the background object writing every pixel of the tiles it drops;
+  with word 0 bit 31 clear the object is not clipped**; of the 54 frozen combinations (nine region
+  forms, two outside forms, three enable forms) only that one is allowed by every row: the last
+  bound exclusive, the rows counted from the target's last tile row, the fields as pixel bounds, the
+  words ignored, the dropped tiles left at the target's fill, the bounds applied with bit 31 clear
+  and the object dropped with it clear all fail; a clip that keeps no tile of the object leaves the
+  target the background's; the default triangle cut by a clip edge reads E606's coverage inside the
+  kept tiles exactly; no fault, hang or stray value.
+  *mte; HW, infer; data: `render-closing-r16-mte:out/20261114-093233/rclip/`,
+  `render-closing-r16-mte:fold/`, `vectors-closing-r16-mte-pixels`.*
 - `E1065` r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8 x 8, 64 x 64 and
   type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base 0 of a 32-page
   named scratch): the control passed (E1055's ty-ty1u4r rerun, its kept image, 2048 of 2048);
@@ -8893,7 +8911,7 @@ E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056.
 ### mte
 
 Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248, E280, E286, E287, E347,
-E348, E418, E419.
+E348, E418, E419, E1060.
 
 ### pbe
 
