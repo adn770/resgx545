@@ -8857,6 +8857,41 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   kept tiles exactly; no fault, hang or stray value.
   *mte; HW, infer; data: `render-closing-r16-mte:out/20261114-093233/rclip/`,
   `render-closing-r16-mte:fold/`, `vectors-closing-r16-mte-pixels`.*
+- `E1061` r16-usse stages uadd and urpt on module B60AB0B4 (Q126; client fills,
+  `iaddu32.testtaz.chan0 DST, p0, r1, SRC2` over eight (r1, source 2) pairs a program, r1's low half
+  0x8000 to 0xffff in seven of them, each value stored to its own scratch dword): the three controls
+  passed (E521's pairs twice and E498's four tests on two pairs, their kept readbacks, 8 of 8 dwords
+  each); 'H-ZX (heldout) is not supported: 4 held, 1 FAILED': iaddu32 writes (r1 & 0xffff) + source
+  2 with source 2 #1, #127 and c56 (0xffffffff) and into i0 read back by mov (8 of 8 dwords each;
+  H-SX, the sign extension, 1 of 8: the 0x7fff pair only, where both agree), and the row into sa0
+  FAILED: its dwords 4 and 5 read 0x8000fedc and 0x0001ffff, H-ZX's values of the pairs 6 and 7, not
+  of their own pairs (6 of 8 dwords; H-SX 0 of 8), its pixels mixed; 'H-ZX-ADV (heldout) (2 of 2
+  rows decided)': the write mask .xy or .xyzw on the iaddu32 test repeats it, component k writing
+  r10 + k with (r(1 + k) & 0xffff) + r(5 + k), 8 of 8 dwords each, against H-NOREP (the mask
+  ignored, 4 and 2 of 8), H-NOADV (every component the first's value, 4 and 2) and H-SX (1); post
+  hoc [infer]: sa0 is one register shared by the fill's instances, so an instance read another's
+  later write.
+  *usse; HW, infer; data: `usse-closing-r16-usse:out/20261114-092913/uadd/`,
+  `usse-closing-r16-usse:out/20261114-092913/urpt/`, `usse-closing-r16-usse:fold/`,
+  `vectors-closing-r16-usse`.*
+- `E1062` r16-usse stage utest on module B60AB0B4 (Q137; 20 client fills, one form and one join a
+  program, the 16 values of the test field enc[43:40] packed one bit a field from p0 by `p0 or`,
+  with the operation's value, over six input pairs whose results are zero, positive and negative):
+  both controls passed (E499's rawcond and E529's rawjoin-o tables replicated through the packed
+  readout, 6 of 6 dwords each); 'H-RULE (heldout) (18 of 18 rows decided)': E499's two-part rule
+  (the zero part tanz if bit 41, else taz if bit 40, else true; the sign part pat if bit 43, else
+  nat if bit 42, else true; `p` reading a zero as positive), the parts ANDed under the a join and
+  ORed under the o join (E529), held on shl, shr and asr with registers, or and rol with #7, iadd32
+  (its sign the true sum's) and iaddu32 (its zero the carry-counted sum's, its sign always
+  positive), each under both joins with fields 0 to 15 (field 0 always true), and on iadd8 and
+  iadd16 with the chan fields chan0 to or02 under both joins over the nine fields the assembler
+  names (each channel's lane as Test channels says, a channel with no lane positive and nonzero);
+  every rival 0 held (H-SETAND 0 of 7, H-AJOIN 0 of 9, H-ORFALSE 0 of 9, H-SETOR 0 of 9, H-CHAN0 0
+  of 4) and the values sgx-sim's on 18 of 18 rows; the rows ran the assembler's text forms wherever
+  it names the field, whose words are the raw fields byte for byte (OQ137, checked before the
+  freeze).
+  *usse; HW; data: `usse-closing-r16-usse:out/20261114-092913/utest/`,
+  `usse-closing-r16-usse:fold/`, `vectors-closing-r16-usse`.*
 - `E1063` r16-zls rows zb4- (Q071, 14 jobs in stages zbits4, zovp and zoff, t10): bit 0 under E988's
   stencil row, E1030's bit 16 cleared and E1031's flat format-6 and F7K rows writes no colour pixel
   and leaves the depth dump and the stencil store byte for byte the kept twin's (frozen H-B0 4 of 4;
@@ -9014,7 +9049,8 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
+E1061, E1062.
 
 ### vdm
 

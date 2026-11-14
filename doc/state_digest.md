@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-147 open: 137 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+146 open: 136 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -258,8 +258,8 @@ list.
   stores after them, and which write registers? (E297, E368)
 - `Q125` usse, low: which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3
   of the instances that do not read the last job's value, ... (E477, E484, E500)
-- `Q126` usse, low: which extension of a source 1 above 0x7fff does the test of iaddu32 read, and
-  does the value it writes zero-extend source 1 with a repeat, ... (E472, E498, E521)
+- `Q126` usse, low: which extension of a source 1 above 0x7fff does the test of iaddu32 read (no
+  test tells it, E498), and what value does iaddu32 write into ... (E498, E521, E1061)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
 - `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
@@ -272,8 +272,6 @@ list.
   and constants other than c56, with cie on the same ... (E526, E528, E597)
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
   0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
-- `Q137` usse, low: do the rules of the test field of a class 9 test (zero part: bits 41 over 40;
-  sign part: bits 43 over 42; the parts ANDed under join `a`, ... (E499, E529, E530)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
@@ -309,7 +307,7 @@ list.
 
 ## Recent records
 
-128 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+130 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1066` mte, 2026-11-14: r16-zls rows zw2- (Q069, 9 jobs in stage zoff, t10): on E987's ramp (256
@@ -324,6 +322,12 @@ the claims are cut at 200 characters.
 - `E1063` zls, 2026-11-14: r16-zls rows zb4- (Q071, 14 jobs in stages zbits4, zovp and zoff, t10):
   bit 0 under E988's stencil row, E1030's bit 16 cleared and E1031's flat format-6 and F7K rows
   writes no colour pixel and leaves ...
+- `E1062` usse, 2026-11-14: r16-usse stage utest on module B60AB0B4 (Q137; 20 client fills, one form
+  and one join a program, the 16 values of the test field enc[43:40] packed one bit a field from p0
+  by `p0 or`, with the ...
+- `E1061` usse, 2026-11-14: r16-usse stages uadd and urpt on module B60AB0B4 (Q126; client fills,
+  `iaddu32.testtaz.chan0 DST, p0, r1, SRC2` over eight (r1, source 2) pairs a program, r1's low half
+  0x8000 to 0xffff in seven of ...
 - `E1060` mte, 2026-11-14: r16-mte stage rclip on module B60AB0B4 (Q116; the MTE state's region
   clip, presence bit 7 and its two words, added to the probe triangle's block by t10's --blk-add
   7=C0,C1, 0xdf43 becoming the closed ...
@@ -699,9 +703,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-68 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+69 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r16-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r16-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
@@ -796,7 +801,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 34 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 35 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

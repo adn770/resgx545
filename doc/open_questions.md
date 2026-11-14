@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-147 open: 137 hw (high 18, medium 64, low 55, unrated 0), 9 fw, 1 kernel.
+146 open: 136 hw (high 18, medium 64, low 54, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -155,7 +155,7 @@
 - `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380, E484, E496, E748, E820)
 - `Q123` (phase 11, hw, medium): does lapc reach instruction indices past the first 65536 words of a code base and the 18th bit of the program counter, and every index from 256 to 8191 in a fill? (E475, E476, E492)
 - `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484, E500)
-- `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations (E472, E498, E521)
+- `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read (no test tells it, E498), and what value does iaddu32 write into sa0 for one instance (the fill's instances share sa0: E1061's sa0 row read other pairs' values, post hoc) (E472, E498, E521, E1061)
 - `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result? (E469, E470, E471, E493, E494, E495, E496, E501, E525, E526, E527, E528, E595, E597)
 - `Q128` (phase 11, hw, medium): why does a client emitpds fault the job at page 0xd2000 or hang it, what do the s0, s1 and s2 operands of the started PDS program become (it saw ir0.0 2 or 3 whatever s2 was), and what in the control word's addend the PDS uses (0xFFF to 0x2000 left the fill's own value, 0x100 did not): why does the addend, from 0xFFF to 0x2000, leave the fill's own dword 0x403 where 0x100 gives 3 or 2, and what does 0x800 do (E488, E513, E520)
 - `Q129` (phase 11, hw, low): why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and sa7 show those sa values as their output, and how long does an sa written by one job stay readable (one job, or until the next job that writes it) (E484)
@@ -165,7 +165,6 @@
 - `Q134` (phase 11, hw, medium): which register does a client str change, and when is an idf drcN, bif required beyond an instance's own store (the host reading during the job, a texture fetch of the stored data) (E480, E481, E512, E513, E514, E533, E534)
 - `Q135` (phase 11, hw, low): what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates and constants other than c56, with cie on the same instruction, with .neg, in the dual-issue form and with the selector 3, and what does bit 46 of an ima32 word do to r14? (E493, E494, E495, E501, E525, E526, E528, E597)
 - `Q136` (phase 11, hw, low): how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and 0xff203040 mixture that pa0 reads in the first jobs of a table the colour left by the job before it? (E496, E484)
-- `Q137` (phase 11, hw, low): do the rules of the test field of a class 9 test (zero part: bits 41 over 40; sign part: bits 43 over 42; the parts ANDed under join `a`, E499, ORed with an absent part true under join `o`, E529) hold for the shifts, the 8-bit and 16-bit lane operations, the other forms of the bitwise group and the other classes' tests, with the o join and with a chan field enc[38:36] other than 0 (E530), and is a word with several conditions, greater than zero among them, usable from compiler output? (E499, E498, E529, E530)
 - `Q143` (phase 11, hw, medium): when does another instance's unfenced stad reach a load, what orders the tiles and quads (the left 32 columns before the right, a quad together), and when is an idf drcN, bif needed for another reader (the host during the job, a texture fetch of the stored data, a firmware task) (E512, E513, E514)
 - `Q146` (phase 11, hw, low): when does a load that is not waited for land, why did a load not waited for hold the loaded value after 40, 100 and 128 `nop` but not after 48 and 64, and in what order two loads and a `mov` to one register land (E517)
 - `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)

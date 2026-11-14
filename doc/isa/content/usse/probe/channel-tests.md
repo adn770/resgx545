@@ -29,8 +29,9 @@ input pairs in each of seven tables, the prediction that the field is ignored ha
 they read as this rule says **[infer]** (252 of 252 cases; the rule was applied after the data, it
 predates the runs and was not predicted for them): `chan1`-`chan3` test a channel with no lane, and
 `andall`, `orall`, `and02` and `or02` (chan4 to chan7) combine channel 0 with such channels, so a
-test of a 32-bit value must name `chan0`. The same on 8-bit and 16-bit lane operations with raw
-words is not run (Q137).
+test of a 32-bit value must name `chan0`. On 8-bit and 16-bit lane operations, where the other
+channels have lanes, the same rule held under both joins **[HW]** (E1062: `iadd8` and `iadd16`,
+chan0 to or02, the nine fields the assembler names, predicted and held, 288 of 288 tests).
 
 **Undecided:** the mask forms of class 15 (`.bmsk`/`.wmsk`/`.dmsk`); float tests of `-0`,
 infinities and NaNs; the one-source tests (`frcp`, `frsq`, `flog`, `fexp`); `fsubflr`, `fdp`,

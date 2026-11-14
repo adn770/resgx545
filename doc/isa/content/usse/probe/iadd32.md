@@ -34,9 +34,11 @@ its `n` never (16 of 16 pairs each). The probe table's model tested the wrapped 
 
 The value `iaddu32` writes zero-extends source 1 **[HW]** (E521, from the readbacks of two earlier
 probes, `usse-decoder-vectors-iaddu32-taz` and `usse-integer-iaddu32-value`: 16 distinct pairs,
-seven that a sign extension writes otherwise, such as (0x8000, 0x8000) giving 0x10000).
+seven that a sign extension writes otherwise, such as (0x8000, 0x8000) giving 0x10000), with source
+2 `#1`, `#127` and `c56` and into `i0` as well, and under a write mask `.xy` or `.xyzw`, which
+repeats the test as on the other forms (E1061, held out). The combined conditions of the test
+field and the `o` join read on these adds as on the bitwise group (E1062, held out).
 
 **Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
-that would tell it are nonzero under both readings, so no test of those pairs settles it, and the
-value `iaddu32` writes with an immediate, a constant or a repeat was not run (Q126); the `chan`
-fields other than `chan0`, and the combined conditions of the test field on these adds (Q137).
+that would tell it are nonzero under both readings, so no test of those pairs settles it; the value
+written into `sa0`, which the fill's instances share (E1061) (Q126).

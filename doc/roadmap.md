@@ -195,7 +195,8 @@ sub-phase did.
 ### 4.1 Open questions
 
 `doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q192, 155
-open (the two ids between Q132 and Q137 are reserved, unused, and so is the one between Q181 and
+open (the two ids between Q132 and the test-field question, answered since by E1062, are reserved,
+unused, and so is the one between Q181 and
 Q183, and the six between Q183 and the layered-object question, answered by E971 on 2026-11-13;
 the six ids after Q168 belong to phases not in this
 tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
@@ -487,7 +488,8 @@ join was not run: E499). Four runs of the `pclink` readers show 64 pixels of 0xe
 and quads that repeat in part (E500). The records state the pairs and values that ran and count
 programs and jobs apart where one program ran twice. E469 to E473, E475 and E476 are carried forward
 with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
-Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q135 to Q137 are new.
+Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q135, Q136 and the test-field question
+(answered since by E1062) are new.
 
 Sub-phase 11.26 ran seven script tables on the laptop (the identity maps of multisampling, the TA
 output under the TE anti-aliasing bits, the macrotile words at six sizes, the 4x render of our stack
@@ -542,8 +544,8 @@ hypotheses did not fit; each is stated in its record, the first runs kept), and 
 which rules were read after the data and which were predicted. Records E512-E520 and E525-E530
 (E521-E524 are kept for a later phase); E478, E480-E483, E487, E488, E493, E499 and E501 are carried
 forward with dated corrections where 11.27 answers what they listed as not run. Q051, Q052, Q128,
-Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146 and two more, since folded
-into Q137, are new
+Q133, Q134, Q135 and the test-field question (answered since by E1062) are narrowed, none retired;
+Q143 to Q146 and two more, since answered by E1062, are new
 (all hw, Q143 medium, the others low).
 
 Sub-phase 11.28 made no run and no kernel change, and the data repository's raw readbacks are the
@@ -572,8 +574,9 @@ records the replay (the simulator against the vectors, offline); E521, found in 
 value `iaddu32` writes zero-extends source 1 (16 pairs in two datasets run before, seven of which a
 sign extension writes otherwise): Q126 is narrowed to the extension its test reads and to the forms
 not run, none retired; Q132 is new (hw, medium: where a write past a task's allocation goes, which
-E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q132 and Q137 stay
-reserved. The ZLS and the multisampling are not in the model: they stay for phase 12.
+E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q132 and the
+test-field
+question stay reserved. The ZLS and the multisampling are not in the model: they stay for phase 12.
 
 Sub-phase 11.29 ran our own firmware (EDM) tasks on the laptop for the first time, over the cable,
 with the linux fork tip d614af574cc6 (three debug-only commits, 43 to 45, on 6ee9501832af, reworked

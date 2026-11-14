@@ -1,0 +1,9 @@
+title = "r16-usse: the replay vectors of stages uadd, utest and urpt (30 jobs, one vector a job: the program words, a probe fill's init and the scratch dwords and o0 the job printed)"
+repo = "data"
+paths = ["vectors/closing/r16-usse/usse/"]
+method = "fold/make_vectors.py of the published usse/closing-r16-usse session (its one attempt, out/20261114-092913) in the sgx545-vectors format of tools/usse-asm/vectors.py, one file a stage; a fold-local converter, since tools/usse-asm/closing_tables.py has no kit kind for probe scratch dwords; replayed by sgx-sim's tests/vectors.rs (probe_vectors_match_where_modelled): 29 match, u-sa0's mixed o0 not compared"
+date = "2026-11-14"
+files = 3
+size = 177780
+sha256 = "3ce122f913e32eefadfe7fddde117c646b92d2f23983f2fe5c8b4d8866a6e3c5"
+recipe = "usse/closing-r16-usse/fold/make_vectors.py"
