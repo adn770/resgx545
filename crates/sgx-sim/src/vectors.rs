@@ -416,7 +416,8 @@ fn compare(v: &Json, m: &Machine, mem: &Memory) -> Result<Outcome, String> {
 /// The task a PDS vector's program runs as: a fill's secondary program,
 /// whose douta writes (value, then the attribute in bits 19-8 of the control
 /// word) reach the secondary attributes of the fill's USE tasks, within the
-/// PDS state's secondary attribute size (pds_isa 3.4). Its doutu is taken; the
+/// PDS state's secondary attribute size (pds_isa 3.4; E1096: attributes 0-31 at
+/// 0 to 8 rows, the size word echoed as sent). Its doutu is taken; the
 /// other ports are open.
 struct Secondary {
     attrs: usize,

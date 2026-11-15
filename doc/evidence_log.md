@@ -9250,6 +9250,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   0x38) and 118784 after one that was not (0x3c, 0x50), and no signed window dword: H-ZCOUNT 4 of 4
   held out (frozen from E1082's and E1090's kept rows), H-ZP 0 of 4; premises passed.
   *zls; HW; data: `render-closing-r21-zls:out/20261115-140052/zz/`, `render-closing-r21-zls:fold/`.*
+- `E1096` r23-pk stages pk and q019 (44 jobs) on t22, whose probe echoes every poke as sent: bg:1
+  left the library as 0x00130000 (4 rows) and reached the fill's job as poked in every poked job
+  (0x30000, 0x70000, 0xb0000, 0x130000 and 0x230000), and E391's 40 jobs read as E391 did: the
+  markers of attributes 0-15 and 16-31 at their own sa at 0, 1, 2, 4 and 8 rows in both runs, those
+  of 32-63 in none of the printed sa0-sa31 (H-E391 40 of 40; H-ROWS 16 of 16 held out at 2 and 8
+  rows, its fit table flat); the repeats of E391's case 0 and E125's case 0 read their records
+  (H-E391, H-E125 1 of 1 each) and the unpoked control echoed nothing; controls passed.
+  *pds; HW; data: `render-closing-r23-pk:out/20261115-202948/pk/`,
+  `render-closing-r23-pk:out/20261115-202948/q019/`, `render-closing-r23-pk:fold/`.*
+- `E1097` r23-pk stage q181 (8 jobs) and pk-e568 gave no frozen verdict: the control c-copy-none
+  (E037's UYVY copy, load flag clear) read 0xb6067a95fa98de2d, the hash of c-copy-csc that ran just
+  before it with set 0 loaded, not E037's black 0xd3522437a14b6325; post hoc, all seven YUV fills,
+  with the colour-space poke (echoed as sent: xfer:17 0x0 -> 0x1, xfer:18 to 22 the BT.601 words)
+  and without it, read E037's conversion of their texel at 2048 of 2048 pixels (format 28 as Y0 U Y1
+  V, 29 as U Y0 V Y1, texel x mod 16), neither E568's black nor E568's declared model (texel 15 at
+  every pixel, 128 of 2048), so a loaded set is read by later jobs that do not load it, across the
+  runner's GPU reset [post hoc].
+  *texture; HW, infer; data: `render-closing-r23-pk:out/20261115-202948/q181/`,
+  `render-closing-r23-pk:out/20261115-202948/pk/`, `render-closing-r23-pk:fold/`.*
+- `E1098` r23-pk stages q123 and q123h (10 jobs): in placed programs whose every word outside the
+  code ends the task with its own number, the instruction index counts as an 18-bit counter across
+  the 0x80000-byte code step: a straight run of nops crosses index 0xffff to 0x10000 (cbase at
+  0x7fe00, 600 words; at 0x78000, 8192 words to word 8100) and 0x1ffff to 0x20000 (exe18 at
+  0xffe00), and a ba and a lapc to 0x10010 and to 0x20010 land on their target word (H-CARRY18 7 of
+  7 held out; H-WRAP 0 of 4, H-WRAP17 0 of 3); an exe18 DOUTU with EXE bit 16 starts at index
+  0x10008 (H-EXE18 1 of 1, H-EXE16 0 of 1); the in-step controls (a run and a lapc to word 590 at
+  0x40000) passed and every placed program read back as built; with E476's and E492's ten links,
+  0x80000 is the only step of all multiples of 8 up to 16 MiB that fits [post hoc fit].
+  *usse; HW; data: `render-closing-r23-pk:out/20261115-202948/q123/`,
+  `render-closing-r23-pk:out/20261115-202948/q123h/`, `render-closing-r23-pk:fold/`.*
 - `E1099` r23-dpm stage rl (Q038, 10 jobs): with E442's reload background (a pixel shader fetching
   the target at the pixel) in every render of a geometry kick and a moved final on its own PB, and
   the target kept from render 1 to render 2 (no sentinel before the final), every pixel the final
@@ -9337,7 +9367,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880, E905.
+E808, E838, E850, E858, E871, E878, E880, E905, E1096.
 
 ### platform
 
@@ -9367,7 +9397,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
 E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
-E1067.
+E1067, E1097.
 
 ### transfer
 
@@ -9389,7 +9419,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062.
+E1061, E1062, E1098.
 
 ### vdm
 

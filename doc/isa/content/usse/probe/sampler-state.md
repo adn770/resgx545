@@ -66,9 +66,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   `0xff` when the format has none; 13 swaps red and blue (R8G8B8A8), 19 clears the sign bit,
   21 the top byte, 30 sets it. 6, 14, 20 and 23-29 (signed, 10-bit, compressed or YUV
   layouts) are recorded (`texture-sampler-smp-formats-other`); 14 writes two registers. **28 and
-  29 (YUV) read opaque black** in a fill with the colour-space set not loaded, and the poke of the
-  fill's transfer command did not load it (E568, Q181); E037 gives the conversion with the set
-  loaded in a copy.
+  29 (YUV) read opaque black** in a fill with the colour-space set not loaded (E568, through a
+  dangling poke set, see its correction); with the set loaded a fill reads E037's conversion of
+  its texel, format 28 as Y0 U Y1 V and 29 as U Y0 V Y1, two texels a dword (E1097: 2048 of 2048
+  in 7 fills) **[HW]**. The set is kept from one job to the next, across a debugfs reset: a copy
+  that does not load it reads the last loaded set (E1097, post hoc). Whether a fill's transfer
+  command loads it is open (Q181); E037 gives the conversion with the set loaded in a copy.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,

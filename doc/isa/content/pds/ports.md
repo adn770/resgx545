@@ -46,7 +46,10 @@ other units **[RE]**. What each port does with its words, where we know it:
 - **`douta`** writes its first word to the secondary attribute named by bits 19-8 of the
   second **[HW]**: from a fill's secondary program the words reach `sa0`-`sa15` of its pixel
   tasks, given room for them in the PDS state's secondary attribute size; from the primary
-  program nothing reached the USE task. Our pixel-event program uses it before starting the
+  program nothing reached the USE task. Attributes 0-31 arrive at their own `sa` with the size
+  word (the background object's dword 1, bits 24:18, echoed as sent) at 0, 1, 2, 4 and 8 rows,
+  attributes 32-63 in none of `sa0`-`sa31` (E391, E1096); what the size limits is open (Q019).
+  Our pixel-event program uses it before starting the
   end-of-tile task. Secondary attributes keep their values from one job to the next **[HW]**:
   a task reads what an earlier one left in any it was not given.
 - **`douti`** and **`doutt`** **[HW]**: our copy's primary program issues one iterator word pair

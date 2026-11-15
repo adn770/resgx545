@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "medium"
 phase = 7
-evidence = ["E125", "E391", "E973"]
+evidence = ["E125", "E391", "E973", "E1096"]
 terms = []
 +++
 
@@ -55,3 +55,13 @@ all, H-NOTEX, refuted), while at 1 and 4 rows every pixel had its own texel. So 
 limits what reaches the background layer's task [infer], unlike E125's and E391's fill, where 0 rows
 passed all of the attributes tried. Which attributes go missing is not read (the texels are a
 symptom, not a register dump), and the 32 or 64 attribute experiment above stays to be run.
+
+Narrowed 2026-11-15 (E1096, round 23's r23-pk on t22, whose probe echoes each poke as sent): the
+size word reached the fill's job as poked in all 44 poked jobs (the library builds 0x00130000, 4
+rows, so E125's 4-row cases ran on the built size), and E391's 40 jobs read as E391 did: attributes
+0-31 at their own sa at 0, 1, 2, 4 and 8 rows, 32-63 in none of sa0-sa31 (H-E391 40 of 40, H-ROWS
+16 of 16 held out). "The bits were poked, not read back" is settled: they reach the command. Still
+open: what the field limits (E973's layered background at 0 rows) and whether attributes 32-63
+arrive in sa32-sa63. The probe prints the first 32 changed scratch dwords only (every job counts
+`scratch 32 more changed`), so the 32 or 64 attribute experiment above needs a probe that prints
+sa32-sa63 (a tool change) before it can be read.

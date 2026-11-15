@@ -8796,4 +8796,49 @@ mod after_11_27 {
         let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
         assert_eq!((m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100), m.o[0]), (Ok(()), 0x600d));
     }
+
+    #[test]
+    fn a_placed_program_counts_on_across_the_code_step() {
+        // E1098 (r23-pk q123, q123h): the index is an 18-bit counter from the code base, so a run
+        // of nops, a ba and a lapc cross 0xffff to 0x10000 and 0x1ffff to 0x20000; every word
+        // outside the code ends with o0 = 0xb0000000 | its word (gen/q123.py's pads)
+        let pad = |k: usize| format!("mov.skipinv.end o0, #0x{:08X}", 0xB000_0000u32 | k as u32);
+        let placed = |code: Vec<String>, n: usize| -> Vec<u64> {
+            let mut t = code;
+            let k0 = t.len();
+            t.extend((k0..n).map(pad));
+            t.iter().map(|w| usse_isa::encode(w, Core::Sgx545).unwrap()).collect()
+        };
+        for (idx0, n, kind, t) in [
+            (0x8000u32, 600usize, "run", 590usize),
+            (0x8000, 600, "lapc", 590),
+            (0xffc0, 600, "run", 590),
+            (0xffc0, 600, "ba", 80),
+            (0xffc0, 600, "lapc", 80),
+            (0xf000, 8192, "run", 8100),
+            (0x1ffc0, 600, "run", 590),
+            (0x1ffc0, 600, "ba", 80),
+            (0x1ffc0, 600, "lapc", 80),
+        ] {
+            let tgt = idx0 + t as u32;
+            let mut code = vec!["phas #0, #0, pixel, end, parallel".to_string()];
+            match kind {
+                "run" => code.extend((1..t).map(|_| "nop".to_string())),
+                "ba" => code.extend([format!("ba #0x{tgt:05X}"), "mov.skipinv.end o0, #0xFA11".into()]),
+                _ => code.extend([
+                    "nop".into(),
+                    format!("mov.skipinv r5, #0x{tgt:05X}"),
+                    "mov pclink, r5".into(),
+                    "nop".into(),
+                    "lapc".into(),
+                    "mov.skipinv.end o0, #0xFA11".into(),
+                ]),
+            }
+            let words = placed(code, n);
+            let mut m = Machine { code_index: idx0, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+            let ran = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 20000);
+            assert_eq!((ran, m.o[0]), (Ok(()), 0xB000_0000 | t as u32), "{kind} at {idx0:#x}");
+        }
+    }
 }

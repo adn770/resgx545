@@ -393,7 +393,9 @@ flag into `p0` without writing a register and branches on it.
   0xa, 0xfe0a, 0xa, 0xa). The link values themselves (0x2002, 0xfe02, 2) are reads, not targets. No
   index outside these is known to fail, and no other was run: indices from 256 to 8191 in a fill
   and a jump across a 65536-word step of the code base were not run, the tool refusing programs of
-  over 256 words: **[open]** (Q123).
+  over 256 words: **[open]** (Q123). With programs placed across the 0x80000 step (E1098) a
+  run of nops, a `ba` and a `lapc` cross index 0xffff to 0x10000 and 0x1ffff to 0x20000 and land
+  on their target word: the index is an 18-bit counter from the code base **[HW]**.
 - **Where indices count from [HW].** The index of a `ba`, `lapc` or `pclink` counts from the code
   base the task was started with (E476). A program placed at heap offset X by `sgxfive-test probe
   --place X=FILE --place-form cbase` runs with the code base X rounded down to a multiple of 0x80000
@@ -9126,9 +9128,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   `0xff` when the format has none; 13 swaps red and blue (R8G8B8A8), 19 clears the sign bit,
   21 the top byte, 30 sets it. 6, 14, 20 and 23-29 (signed, 10-bit, compressed or YUV
   layouts) are recorded (`texture-sampler-smp-formats-other`); 14 writes two registers. **28 and
-  29 (YUV) read opaque black** in a fill with the colour-space set not loaded, and the poke of the
-  fill's transfer command did not load it (E568, Q181); E037 gives the conversion with the set
-  loaded in a copy.
+  29 (YUV) read opaque black** in a fill with the colour-space set not loaded (E568, through a
+  dangling poke set, see its correction); with the set loaded a fill reads E037's conversion of
+  its texel, format 28 as Y0 U Y1 V and 29 as U Y0 V Y1, two texels a dword (E1097: 2048 of 2048
+  in 7 fills) **[HW]**. The set is kept from one job to the next, across a debugfs reset: a copy
+  that does not load it reads the last loaded set (E1097, post hoc). Whether a fill's transfer
+  command loads it is open (Q181); E037 gives the conversion with the set loaded in a copy.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,

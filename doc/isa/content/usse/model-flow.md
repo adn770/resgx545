@@ -47,7 +47,9 @@
   0xa, 0xfe0a, 0xa, 0xa). The link values themselves (0x2002, 0xfe02, 2) are reads, not targets. No
   index outside these is known to fail, and no other was run: indices from 256 to 8191 in a fill
   and a jump across a 65536-word step of the code base were not run, the tool refusing programs of
-  over 256 words: **[open]** (Q123).
+  over 256 words: **[open]** (Q123). With programs placed across the 0x80000 step (E1098) a
+  run of nops, a `ba` and a `lapc` cross index 0xffff to 0x10000 and 0x1ffff to 0x20000 and land
+  on their target word: the index is an 18-bit counter from the code base **[HW]**.
 - **Where indices count from [HW].** The index of a `ba`, `lapc` or `pclink` counts from the code
   base the task was started with (E476). A program placed at heap offset X by `sgxfive-test probe
   --place X=FILE --place-form cbase` runs with the code base X rounded down to a multiple of 0x80000

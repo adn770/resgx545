@@ -76,7 +76,7 @@ list.
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
-  background object) limit, given that all sixteen douta words reach sa0 ... (E125, E391, E973)
+  background object) limit, given that all sixteen douta words reach sa0 ... (E391, E973, E1096)
 - `Q020` pds, medium: what does a douta in the triangle's primary pixel program do, when its markers
   never reach the USE task and the readback is the memory ... (E381, E440, E545)
 - `Q025` pds, medium: what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a
@@ -241,7 +241,7 @@ list.
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
-  and xfer:18 to 22 made no difference for formats 28 and 29, ... (E037, E040, E568)
+  and xfer:18 to 22 made no difference for formats 28 and 29, ... (E040, E568, E1097)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
@@ -297,7 +297,7 @@ list.
 
 ## Recent records
 
-63 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+66 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1101` zls, 2026-11-15: r23-dpm stage zn (Q088, 5 jobs): after a geometry kick that overflowed
@@ -309,6 +309,15 @@ the claims are cut at 200 characters.
 - `E1099` dpm, 2026-11-15: r23-dpm stage rl (Q038, 10 jobs): with E442's reload background (a pixel
   shader fetching the target at the pixel) in every render of a geometry kick and a moved final on
   its own PB, and the target ...
+- `E1098` usse, 2026-11-15: r23-pk stages q123 and q123h (10 jobs): in placed programs whose every
+  word outside the code ends the task with its own number, the instruction index counts as an 18-bit
+  counter across the ...
+- `E1097` texture, 2026-11-15: r23-pk stage q181 (8 jobs) and pk-e568 gave no frozen verdict: the
+  control c-copy-none (E037's UYVY copy, load flag clear) read 0xb6067a95fa98de2d, the hash of
+  c-copy-csc that ran just before it with ...
+- `E1096` pds, 2026-11-15: r23-pk stages pk and q019 (44 jobs) on t22, whose probe echoes every poke
+  as sent: bg:1 left the library as 0x00130000 (4 rows) and reached the fill's job as poked in every
+  poked job (0x30000, ...
 - `E1095` zls, 2026-11-15: r21-zls stage zz (Q107, 4 jobs): on E629's ramp with the final on its own
   PB the final's G 33 store (depth.2) holds 184320 zero window dwords in tile rows 0-11 after a
   raised kick (0x24, 0x38) and ...
@@ -492,9 +501,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-82 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+83 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r23-pk`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t22
 - `render/closing-r23-dpm`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t22b
 - `render/closing-r21-zls`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -614,7 +625,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 10 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 11 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
