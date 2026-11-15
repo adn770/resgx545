@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E568", "E037", "E040", "E1097"]
+evidence = ["E568", "E037", "E040", "E1097", "E1103"]
 terms = ["TEXFORMAT"]
 +++
 
@@ -22,3 +22,9 @@ poked fill of the session already converted, so a fill's transfer command loads 
 but no fill ran on a set known to be unloaded. To settle it: a copy that loads set 0 with zeros
 (E037: black), then the poked fill (the conversion if a fill loads), then the same fill unpoked
 (the conversion kept), frozen in that order.
+
+Decided 2026-11-15 (E1103, round 25's r25-csc on t22, frozen): after a copy that loads set 0 with
+zeros the poked fill converts and the next unpoked one still does; after a copy that loads BT.601
+the fill poked with zeros reads black and the next unpoked one too (H-FILLLOAD fit 4 of 4, held
+out 4 of 4; H-FILLIGNORE 0 of 8). The fill's transfer command loads the set when its load flag is
+set; a fill without the flag reads the last loaded set.

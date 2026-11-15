@@ -9132,8 +9132,10 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   dangling poke set, see its correction); with the set loaded a fill reads E037's conversion of
   its texel, format 28 as Y0 U Y1 V and 29 as U Y0 V Y1, two texels a dword (E1097: 2048 of 2048
   in 7 fills) **[HW]**. The set is kept from one job to the next, across a debugfs reset: a copy
-  that does not load it reads the last loaded set (E1097, post hoc). Whether a fill's transfer
-  command loads it is open (Q181); E037 gives the conversion with the set loaded in a copy.
+  that does not load it reads the last loaded set (E1097, post hoc). A fill's transfer command
+  loads set 0 when its load flag (xfer:17 bit 0) is set, as a copy's does (E037): BT.601 words
+  turn a set of zeros into the conversion, zeros turn the conversion into black, and a later fill
+  without the flag keeps the loaded set (E1103, held out, formats 28 and 29) **[HW]**.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,

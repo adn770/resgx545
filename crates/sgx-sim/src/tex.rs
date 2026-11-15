@@ -1021,8 +1021,9 @@ impl Texture {
                 return open(format!("texture format {f}, compressed: four texels fix no decoder"));
             }
             // 28 and 29 (YUV): opaque black with the colour-space set not loaded (E037, E040,
-            // E568); with it loaded (E037, E1097: a fill too) the conversion is not modelled,
-            // nor the set kept from job to job (E1097, post hoc). Machine::smp lets
+            // E568); with it loaded (E037; a fill's transfer command loads it too, E1103) the
+            // conversion is not modelled, nor the set a job without the load flag keeps from the
+            // last load (E1097, E1103: it survives later jobs and the reset). Machine::smp lets
             // them through only where the vector says the set is unloaded (init.job.pokes).
             28 | 29 => 2,
             f => return open(format!("texture format {f}")),
