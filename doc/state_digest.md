@@ -18,7 +18,7 @@ list.
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
   stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1020, E1081, E1082)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
-  page (0x04000417) and state page (0x00020001, 2) after the ... (E1084, E1085, E1087)
+  page (0x04000417) and state page (0x00020001, 2) after the ... (E1087, E1091, E1092)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
   straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E963, E1009, E1013)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
@@ -301,9 +301,15 @@ list.
 
 ## Recent records
 
-151 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+54 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1092` dpm, 2026-11-15: r20-own stage owp (5 jobs, t18b under regtimeline, render_keep armed, a
+  1024x768 owner closed early after its overflowing render, the second context drawing the default
+  triangle): the kept owner's ...
+- `E1091` dpm, 2026-11-15: r20-own stages ow and owt (6 jobs, t18b under regtimeline, render_keep
+  armed, a 1024x768 owner at P 0x422 closed early, the second context drawing the library's default
+  triangle): with the owner's ...
 - `E1087` dpm, 2026-11-14: r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context
   closed early; t18b copied the kept TA data right after the close and after the second context's
   render, every copy made): the ...
@@ -460,309 +466,14 @@ the claims are cut at 200 characters.
 - `E1036` isp, 2026-11-14: r14-isp stage g14 (21 jobs): the guard the ISP clips far edges to is a
   quarter of the viewport past each edge (clip x and y within 1.5 w): frozen H-VP drew every
   held-out far triangle pixel for ...
-- `E1035` vdm, 2026-11-13: r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and
-  idle:S): E700's counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a
-  completed one hung on a 128 x ...
-- `E1034` pbe, 2026-11-13: r13-flag stage f2 (4 jobs, E383's probe --tri form; planned faults): the
-  frozen control failed, so every row is cannot tell ('controls FAILED: f2-ctl: FAILED'): E383's
-  bit-12 mode 0 job (sideband ...
-- `E1033` texture, 2026-11-13: r13-flag stage f1 (4 probe fills on a twiddled 32 x 32 32-bit texture
-  in E566's tx_map form, the default 16-page scratch; planned faults): T3 bit 14 faulted both
-  twiddled rows, E566's own tw32-t3b14 ...
-- `E1032` dpm, 2026-11-13: r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with
-  partial renders; one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two
-  replicates each, 8 jobs): both ...
-- `E1031` zls, 2026-11-13: r13-zls stage zfmt (6 jobs, t10): E1015's format-7 template F7K holds
-  held out at the stencil fills 0x3f and 0x1f, equal to its markers (48 of 48 dwords each, no other
-  dword changed; the fixed-byte ...
-- `E1030` zls, 2026-11-13: r13-zls stage zbits (16 jobs, t10): of the ZLS control's bits 12, 16 and
-  20 cleared alone and in pairs, bit 16 alone turns E977's tiled ramp store into E997's linear image
-  (frozen L-BIT-16 held 6 of ...
-- `E1029` zls, 2026-11-13: r13-zls stage zbase (11 jobs, E977's z243 form on t10 with the depth test
-  never and the load buffer filled with its own dword indices, render details dword 12 poked after
-  the tool's own pokes): the ...
-- `E1028` pbe, 2026-11-13: r13-tex stage sb12 on module B60AB0B4 (Q046 sideband bit 12; E383's probe
-  --tri form, sideband 0x1200 | mode, modes 0 to 6, colours 0xc0804020 and 0x13579bdf, one moved
-  triangle; 16 jobs): the mode 0 ...
-- `E1027` texture, 2026-11-13: r13-tex stage t3c on module B60AB0B4 (Q078; T3 bits 11, 12 and 14, 16
-  probe fills): the control passed (E564's an-t3b11, its kept image); on twiddled chains with
-  smp2dreplace, T3 bits 12:11 = 00 read ...
-- `E1026` texture, 2026-11-13: r13-tex stage addr4 on module B60AB0B4 (Q177; T0 u address modes 4 to
-  7 on twiddled textures, 12 probe fills): both controls passed (E1000's 16 x 64 mode 4 and E565's
-  bd-uv5, their kept images); ...
-- `E1025` texture, 2026-11-13: r13-tex stage srgb3 on module B60AB0B4 (Q282; bilinear sRGB, T0 bit
-  27, 9 probe fills): both controls passed (E723's g-bl-st-a and p1132's an-t0b27, their kept
-  images, 2048 of 2048); 'FTZ-OUT ...
-- `E1024` isp, 2026-11-13: r13-isp stage far (8 jobs, last, ascending distance): one far vertex at
-  +2^26 and +2^30 pixels in x, -2^28 in x, -2^26 and -2^30 in y and +2^28 in y on a 64 x 64 target
-  (--tri-unit 0, the near ...
-- `E1023` isp, 2026-11-13: r13-isp stage q261 (16 jobs): every held-out far vertex draws E1012's
-  clip (the far edges clipped to a guard, each new vertex rounded half up to 1/256 pixel, the edges
-  then exact) at some value of ...
-- `E1022` isp, 2026-11-13: r13-isp stage q201 (23 jobs, one 64 x 64 triangle that is not the tool's
-  default): under CR_ISP_MULTISAMPLECTL byte 0 = 0x3c, 0x0f, 0xf0, 0x5a and 0x26 (bytes 1 to 3 at 0)
-  both the position source ...
-- `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
-  (vdm/state-units: 133 jobs of three scripts in run order, E545's two-block stream; c taken as 0 at
-  each script's start, every script ...
-- `E1020` zls, 2026-11-13: Round 12 offline (Q107, Q038; no run): predicting each G = 1 depth dump
-  of the 11.38 batch's overflowed 1024x768 jobs (dpm/partial-model-batch depth-safe.c1 and .c26: z =
-  0.5 at 0x23, 0x28 and 0x30 ...
-- `E1019` dpm, 2026-11-13: Round 12 offline (Q036; no run): over every kept closing-pass job with a
-  DPM register timeline (697 jobs, 285824 timeline lines of closing r1-pixgeo, r2-geo, r3-geo,
-  r3-geo-c, r5, r6 and r7-dpm, r8 ...
-- `E1018` isp, 2026-11-13: Round 12 offline (Q201, on E064's kept sweep; no run): E606/E607's exact
-  coverage test with each pixel (x, y) sampled at (x + lo/16, y + hi/16), lo = bits 3:0 and hi =
-  bits 7:4 of cmd:16 ...
-- `E1017` texture, 2026-11-13: Round 11 offline (Q177; no run): of the 31 kept twiddled jobs with T0
-  u mode 4 to 7 outside E1000's own (p1132 tx-border 16, r8-geo addr 4, r9-geo addr2 11), 27 are
-  squares and 4 are E565's 32 x 8 ...
-- `E1016` texture, 2026-11-13: Round 11 offline (Q282; no run): E982's bilinear sRGB stage rule
-  R10-BF11 with every stage result below 2^-14 flushed to +0 (FTZ-OUT, E1004's post hoc form),
-  frozen by hash before any held-out pixel ...
-- `E1015` zls, 2026-11-13: Round 11 offline (Q120; no run): two of E986's 'store less' layouts
-  decode byte for byte from r10-zls zst2's kept dumps, rules frozen by hash (c7_rule.py,
-  4d87c5ad...): format 7 under a constant ...
-- `E1014` isp, 2026-11-13: Round 11 offline (Q071; no run): under E989's control (0xf8e6a00e: the
-  bits E411 flipped singly to no effect flipped together, so bits 12, 16 and 20 cleared as in E997's
-  linear store), the stencil ...
-- `E1013` dpm, 2026-11-13: Round 11 offline (Q210; no run): over every kept DPM run of r5 to r10
-  with a published replay of E874's 1500-vertex scene (520 jobs read; 53 calibrations and 118
-  partial-render cells of the standard ...
-- `E1012` isp, 2026-11-13: Round 11 offline (Q261, post hoc on E1005's and E979's kept rows; no run,
-  no held-out row): none of 236 declared edge set-up arithmetics (float coefficients of 8 to 24
-  bits, round to nearest or ...
-- `E1011` ta, 2026-11-13: Round 11 offline (Q139; no run): on r7-rp stage q139's 21 poked TA dumps
-  (E907's run on module 41E2F5C7, 10 fit, 10 held-out and 1 replicate row, never read for the flag)
-  and its poked control, ...
-- `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
-  program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
-  with CR_TE_AA 0x60000000, ...
-- `E1009` dpm, 2026-11-13: r10-dpm stage s6rep on module B60AB0B4 (Q210: is E874's step replay low
-  at S6 by noise or by bias; 3 calibration replicates at each of five targets, 17 jobs): the a0
-  premise pair passed ('s6rep: the ...
-- `E1007` ta, 2026-11-13: r10-geo stage q139c (Q139; 6 TA-dump jobs, no fault): the 256 x 256 and
-  640 x 480 baselines draw exactly with one header a target tile (controls); at the y-side macrotile
-  words 0x0200b008 (fy 11) and ...
-- `E1006` isp, 2026-11-13: r10-geo stage bgw (Q066; 18 jobs, the layered 64 x 64 render, no fault):
-  words 12, 14 and 11 of the one-layer background object at 0.25, 0.5, 1.5 and -1.0 and words 9 and
-  13 at 2.0 and -1.0 leave ...
-- `E1005` isp, 2026-11-13: r10-geo stage pivot (Q261; 37 jobs on a 64 x 64 target, no fault): with
-  E979's far-x23p, far-x24p and far-x25n moved by d = 0 to -544 pixels in the far vertex's y, every
-  pixel outside E684's 1e-3 ...
-- `E1004` texture, 2026-11-13: r10-tex stage srgb2 (6 probe fills of E723's bilinear sRGB form, T0
-  bit 27): 'R10-BF11 (heldout) is not supported: 4 held, 1 FAILED, 0 cannot tell of 5': the stage
-  rule fitted offline on r9-x's rows ...
-- `E1003` texture, 2026-11-13: r10-tex stage t3b (15 probe fills on strided named memory: six
-  held-out bit-14 geometries each followed by its bit-clear reference, E566's two controls, E975's
-  b14-u01 replicated): 'R-4096TX ...
-- `E1002` texture, 2026-11-13: r10-tex stage cube3, edges (2 probe fills, bilinear T0 0x07fe1400, 16
-  x 16 faces, the across coordinate 15 + (x + 1/2) / 64 texels, the along coordinate 7.75 on +z/+x
-  and 8.25 on -y/+x, 512 out ...
-- `E1001` texture, 2026-11-13: r10-tex stage cube3, ties (13 probe fills of TEXTYPE 2, 16 x 16
-  faces, point-sampled, 2048 two-axis tie pixels in each of 12 new rows): 'H-HIGHAXIS (heldout) is
-  not supported: 9 held, 3 FAILED, 0 ...
-- `E1000` texture, 2026-11-13: r10-tex stage addr3 (11 probe fills of twiddled 32-bit textures at
-  page 12 of a 32-page named scratch, the swept u over 128 positions at one texel a step, v on texel
-  H / 2, no fault): every frozen ...
-- `E999` pbe, 2026-11-13: r10-x stage sb (18 jobs, E383's 64 x 64 triangle with eot_plain and two
-  colours whose bytes all differ): pack modes 20 and 27 store, at sideband bits 8:6 = 0 to 3 and for
-  both colours, the image ...
-- `E998` isp, 2026-11-13: r10-x stage isp0x (6 jobs, E977's z242-c ramp at 80 x 40 under depth less
-  with writes): ISP word 0 bit 15, 16 or 17 set alone removes the triangle: no pixel drawn (0 of
-  3200, the background colour ...
-- `E997` zls, 2026-11-13: r10-x stage zbits (11 jobs, E977's z242-c ramp at 80 x 40 G 2 and its
-  z243-ctl load): ZLS control bit 0 stores the depth exactly as without it and writes no colour
-  pixel under formats 0, 1 and 2 at G ...
-- `E996` zls, 2026-11-13: r10-x stage zov (11 jobs): with the ZLS pitch G below the tiles across
-  minus one, so that tiles share 512-dword slots, every shared slot holds the 512 dwords of the tile
-  visited last in the region ...
-- `E995` isp, 2026-11-13: r10-x stage dcmp (31 jobs, 64 x 32, a flat triangle over a loaded depth
-  buffer, the drawn count of 2048): ISP word 0's compares 0 to 7 follow the GL order never, less,
-  equal, lequal, greater, ...
-- `E992` isp, 2026-11-13: Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114
-  kept jobs with w other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to
-  8027, 58 distinct snapped ...
-- `E991` zls, 2026-11-13: Round 10 offline (Q242; no run): past the target of r9-x's z242-c (80 x
-  40, G 2, a tile area of 96 x 48, E977 scored only its 3200 in-target pixels), stored format 1 is
-  min(floor(z0 * 2^24), ...
-- `E990` isp, 2026-11-13: Round 10 offline (Q030; no run): on the 48 kept --pixels images of
-  r9-geo's stages seam1 and seam4 (E953, E954: tri-full renders 64 x 96 to 128 x 96 and six single
-  triangles of new slopes, ...
-- `E989` isp, 2026-11-13: r10-st1 rows q071-b0 and q071-l1 (2 jobs): with CR_ISP_ZLSCTL's bits that
-  E411 flipped singly to no effect flipped together under a stencil test (0xf8e6a00e: bits 15, 21 to
-  23 and 27 to 31 set, 12, ...
-- `E988` zls, 2026-11-13: r10-st1 stage st1 (16 jobs of 18, tool t10, `tri --isp2`): against a
-  loaded stencil (CR_ISP_ZLSCTL 0x0017300e) ISP word 2's test reads, for pixel (x, y), byte j of its
-  tile slot's 512 with j the ...
-- `E987` zls, 2026-11-13: r10-zls stages zbgc, zbg and zw (13 jobs, 256 x 128, G 7): render details
-  dword 16 (CR_ISP_BGOBJDEPTH) is the background depth, 1.0 and 0.25 poked stored at all 28279
-  background pixels, and at 0.25 a ...
-- `E986` zls, 2026-11-13: r10-zls stage zst2 (26 jobs, the stencil loaded and stored): E985's
-  layouts held out byte for byte on 13 of 16 rows, formats 3 and 4 on every plane (E978's x ramp
-  with stencil fills 0x00000000, ...
-- `E985` zls, 2026-11-13: Round 10 offline (Q120, Q121; no run): E978's kept dumps (a loaded index
-  stencil, one x depth ramp, 64 x 32 and 96 x 48) decode for stored depth formats 3, 4, 5 and 6,
-  every changed dword at both ...
-- `E984` isp, 2026-11-13: Round 10 offline (Q261, post hoc on E979's kept rows; no run): of the 46
-  pixels of E979's 11 rows whose centre lies within 1e-3 pixel of an edge line (E684's band), the 26
-  that lie on a far edge ...
-- `E983` texture, 2026-11-13: Round 10 offline (Q177; no run): on E565's kept 32 x 8 twiddled jobs
-  bd-hb-ns-uv4, uv6 and uv7 (u and v in mode 4, 6, 7), never read for the offset, every pixel reads
-  the dword the v rule names plus ...
-- `E982` texture, 2026-11-13: Round 10 offline (Q282; no run): one lerp stage of a bilinear sRGB
-  sample (T0 bit 27) on two decoded halves A (weight 64 - k) and B (weight k) returns A unchanged at
-  k = 0 and otherwise floors both ...
-- `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
-  (state-block word 10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at
-  every dword and formats 1 and 2 ...
-- `E980` bif, 2026-11-13: R9-faults stage bif (Q076; debugfs alias_skip on tri -n 2 --keep-going on
-  a new VM, E457's form, 14 jobs, every control passed): with the pairs and the three of buffers 12
-  to 14 left out of the ...
-- `E979` isp, 2026-11-13: r9-x stage far (11 jobs): with one vertex at +2^22, +2^23, +2^24 or -2^25
-  pixels in x, -2^22, +2^23, -2^24 or -2^25 in y (the other coordinate up to 2^23), or two at +-2^23
-  or +-2^24, and the rest ...
-- `E978` zls, 2026-11-13: r9-x stage zst (12 jobs): with E466's x ramp and a stencil buffer of each
-  dword's index loaded (bits 1 and 13) and stored (bit 17), at 64 x 32 (4 tiles) and 96 x 48 (9
-  tiles), format 4 changed 640 ...
-- `E977` zls, 2026-11-13: r9-x stage zls (16 jobs): stored depth format 1 is min(floor(z * 2^24),
-  0xffffff) of the format-0 float at every dword (frozen H-FLOOR held 3 of 3: 32768, 76800 and 3200
-  dwords at 256 x 128 G 7 over ...
-- `E976` texture, 2026-11-13: r9-x stage srgb (8 jobs): with T0 bit 27 (sRGB) and bilinear filtering
-  on injected strided texels, each lerp stage alone (fy = 0 on two jobs, fx = 0 on two, every 1/64
-  weight) and both (two jobs at ...
-- `E975` texture, 2026-11-13: r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on
-  six held-out strided geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and
-  past the texture) each with ...
-- `E974` texture, 2026-11-13: R9-k1 stages s1 and s2, read post hoc at the fold (not frozen): at
-  every background pixel whose layer coordinate lies outside [0, 1) under the plane that held (E971,
-  E972), 1/64 texel off a texel ...
-- `E973` isp, 2026-11-13: R9-k1 stage s3 (Q066 explore; 21 jobs, the layered 64 x 64 render, no
-  fault): words 9 and 11 to 14 at 1.0, word 9 and word 13 at 0xffffffff, the format word 10 at 0,
-  0x202, 0x404, 0x101, 0xffff, ...
-- `E972` isp, 2026-11-13: R9-k1 stage s2 (Q066, and the anchor E971 left open; 20 held-out jobs, the
-  layered 64 x 64 render with kernel pokes of the vertex words 15 to 22: a move of 16 pixels and a
-  bit flip each, four ...
-- `E971` isp, 2026-11-13: R9-k1 stage s1 (Q190; 44 jobs, the layered 64 x 64 render with kernel
-  pokes of the object's words 3 to 8, 1 to 3 words a job at k/8 values, 14 fit and 30 held out drawn
-  with the seed r9-k1 after the ...
-- `E970` isp, 2026-11-13: R9-k1 stages s0t and s0p (Q190; the 64 x 64 one-triangle render with
-  debugfs render_bg_layer on and render_bg_src at a mapped 64 x 64 source, 7 controls, no fault):
-  the render details' background tag ...
-- `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
-  texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
-  read on E566's fit job ...
-- `E965` bif, 2026-11-13: R9-faults stage tri2 (Q108; the 64 x 64 triangle with PTE flags on its
-  colour target or the ZLS buffers of tri --depth --depth-store, 7 renders, the three knob-free
-  controls passed): WRITEONLY and ...
-- `E964` bif, 2026-11-13: R9-faults stage xf2 (Q108; a fill's destination and a copy's read-only
-  source with one PTE flag, 12 jobs, every control passed, E946's nine rows rerun token for token):
-  WRITEONLY on a fill's ...
-- `E963` dpm, 2026-11-13: r9-ldpm stage f9b on module B60AB0B4 (Q211's count of the 1500-vertex
-  scene, Q210's raise at band 4): the three calibrations held as controls (1280x1280, 1792x1792 and
-  2560x2048 never run: steps in ...
-- `E962` dpm, 2026-11-13: r9-ldpm stage w on module B60AB0B4 (Q211, the need of wide scenes of many
-  vertices): held out at four targets wider than 2:1 never run, E874's replay gave the need of the
-  1500-vertex scene at each ...
-- `E961` dpm, 2026-11-13: r9-ldpm stages a0 and m6b on module B60AB0B4 (Q210; band 6 of the tool's
-  1500-vertex triangle): the premise held, r8-ldpm's six a0 controls repeated ('a0: the premise held
-  (E935's a0 controls repeat ...
-- `E960` dpm, 2026-11-13: Round 9 offline steps of r9-ldpm (Q210, Q211; no run), each frozen by hash
-  before its scoring: OD-1, E874's replay gives the need of the 1500-vertex scene at all nine kept
-  calibrations (E915, E935, ...
-- `E959` ta, 2026-11-13: R9-lgeo stage q139b (Q139; 4 TA-dump jobs at 1280 x 720 and 768 x 640, the
-  datasets' own commands, no fault): the unpoked baselines draw exactly and hold one header with a
-  stream for every target ...
-- `E958` texture, 2026-11-13: R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of
-  the scratch 0xD0000000 | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not
-  multiples of 32 keeps ceil(w / 32) whole ...
-- `E957` texture, 2026-11-13: R9-geo stage addr2 (Q177; 11 probe fills of twiddled 32-bit textures
-  at page 12 of a 32-page named scratch, the swept axis over 128 positions at one texel a step, no
-  fault): E932's u reading ...
-- `E956` texture, 2026-11-13: R9-geo stage cube2, ties and edges (Q284; 8 probe fills, no fault): a
-  tie of the two largest coordinates went to the face of the higher axis (z over y over x) on 4 of 4
-  held-out sweeps of x = y and y ...
-- `E955` texture, 2026-11-13: R9-geo stage cube2, sizes (Q284; 8 probe fills of TEXTYPE 2
-  point-sampled by smp3d, E726's cu-xn the control, no fault): with E923's face and (s, t) rule, the
-  face-local index of 32 x 32 and 64 x 64 ...
-- `E954` isp, 2026-11-13: R9-geo stage seam4 (the seam holes, E953's question; the same 24 renders
-  with --aa4 alone, the 4x context's automatic four region-header arrays, never run before in modes
-  0 and 1, and E828's j1r as a ...
-- `E953` isp, 2026-11-13: R9-geo stage seam1 (Q141; 24 tri renders with E504's pokes, each with
-  --aa4 and debugfs render_rgn_arrays 1, a context made for 4x targets whose region headers are
-  forced to one array, E502's, E504's ...
-- `E952` isp, 2026-11-13: Round 9 offline (Q260; no run), on E683's 240 S3 cases (negative
-  coordinates at 1/4096, kept images, never read by E914's or E943's readings): E943's post hoc
-  reading 'a sweep misses half away from ...
-- `E951` texture, 2026-11-13: Round 9 offline (Q284; no run): the face-local index E930 read post
-  hoc on its three 32 x 32 cube jobs (4831 of 4831 predicted pixels: E923's Morton interleave of (s,
-  t) with t in bit 0, and bit 8 = ...
-- `E950` ta, 2026-11-13: Round 9 offline (Q139; no run): with the first macrotile fx tiles wide, a
-  block row of it takes 8 floor(fx / 2) region-header slots (H-EVEN) where R7-BLK (E907) has 16
-  floor(fx / 4); with E944's ...
-- `E946` bif, 2026-11-13: R8-k2 stage xf (Q108; a fill's destination and a copy's read-only source
-  with one PTE flag, 9 jobs): every frozen verdict 'cannot tell: controls: xf-c-end: cannot tell',
-  since the stage's fourth ...
-- `E945` bif, 2026-11-13: R8-k2 stage tri (Q108; the 64 x 64 triangle with one PTE flag on its
-  colour target or its GENERAL page, 7 renders, both knob-free controls exact): WRITEONLY faulted
-  both rows, the colour target after ...
-- `E944` ta, 2026-11-13: R8-lgeo stage q139 (Q139; 20 TA-dump jobs at 256 x 256, 640 x 480 and 1280
-  x 720, one --kpoke-render of the stride or a macrotile word inside the ranges that drew without a
-  fault in the kept data, no ...
-- `E943` isp, 2026-11-13: R8-lgeo stage zs2 (Q260; 160 sweep steps and 5 controls, 512 x 256 and 256
-  x 512, vertices in 1/4096 pixel, no fault): a negative coordinate 1/512 above the grid rounds away
-  from zero at -1/256, ...
-- `E942` texture, 2026-11-13: R8-lgeo stage tx5 (Q178; type 5 on E725's map-texture fill and on
-  stored dwords, 28 jobs, no fault): TEXTYPE 5 with format 12 returns 0x0000ffff for a texel t = (y
-  mod h) w + (x mod w) iff bit 0 of ...
-- `E941` texture, 2026-11-13: R8-lgeo stage tx4 (Q283; E725's map-texture fill moved over type 4
-  textures by window offsets, 20 jobs, no fault): type 4 stores 32 x 32 blocks of 1024 dwords, (y
-  mod 32) 32 + (x mod 32) inside a ...
-- `E940` texture, 2026-11-13: R8-lgeo stages tx3 and tx4 (Q283; E725's 64 x 32 map-texture fill,
-  dword i of the scratch 0xD0000000 | i; 12 jobs and 3 controls, no fault): below 8 texels wide type
-  3 reads rows max(8, w) dwords ...
-- `E939` dpm, 2026-11-13: r8-ldpm stages k and u on module 37EC97AB (Q211, the U clause): HU1's page
-  need of the union of a scene's triangles (a region counted once, 128 bytes a stream, a page per 32
-  streams of a macrotile, ...
-- `E938` dpm, 2026-11-13: r8-ldpm stages f9 and k on module 37EC97AB (Q211, the partial-render count
-  of scenes of many objects and of several kicks): held out, F9's replay of the 1500-vertex scene
-  gave the count at 13 of 15 ...
-- `E937` dpm, 2026-11-13: r8-ldpm stage v on module 37EC97AB (Q210, larger objects): the tool's
-  1500-vertex triangle with --vtx-coords 8 and our vertex program vtx_coord8.s writing o4 to o11
-  (plan P3: the default program ...
-- `E936` dpm, 2026-11-13: r8-ldpm stage m6 on module 37EC97AB (Q210; band 6 of the tool's
-  1500-vertex triangle): held out at seven targets, H-SPAN (the first partial render leaves 2 global
-  pages iff S_6 < thr0 < A_6, cells ...
-- `E935` dpm, 2026-11-13: r8-ldpm stages a0 and sp on module 37EC97AB (Q210; the tool's triangle
-  with 1500 vertices): the premise held, R7-dpm's six s-a0 controls repeated on this module ('a0:
-  the premise held (R7's s-a0 ...
-- `E934` isp, 2026-11-13: R8-geo stage seam (Q141; 24 tri renders with E504's pokes, CR_TE_AA in
-  cmd:1): every job whose CR_TE_AA had bit 31 or 30 set (0x60000000, 0xa0000000, 0xe0000000: 23 of
-  24) was rejected at submission ...
-- `E933` vdm, 2026-11-13: R8-geo stage vdm (Q271; 8 renders of E703's capacity form, probe --tri
-  pixpds:12 with 126 vertices, VDM word 7 SET by --vdm 7=V rather than xored, no fault or hang):
-  word 7 set to its natural value ...
-- `E932` texture, 2026-11-13: R8-geo stage addr (Q177; 9 probe fills of E565's 16 x 16 twiddled
-  texture at page 12 of a 24-page scratch whose every dword is named, the swept axis over 128
-  positions at one texel a step, no fault): ...
-- `E931` texture, 2026-11-13: R8-geo stage cube, ties and edges (Q284; 8 probe fills of TEXTYPE 2 by
-  smp3d, no fault, readings of the frozen plan with no rule frozen but the edge rivals): at a face
-  tie |w| = |u| (column 32 of two ...
-- `E930` texture, 2026-11-13: R8-geo stage cube (Q284; 13 probe fills of TEXTYPE 2 point-sampled by
-  smp3d, E726's cu-xn as the control, no fault): the cube-face (s, t) rule frozen offline (E923,
-  q284_rule.json 52162471...) held ...
-- `E923` texture, 2026-11-13: Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces
-  under smp3d is the public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w;
-  -y s = +u, t = -w; +z s = +u, t ...
-- `E922` isp, 2026-11-13: Round 8 offline (Q141; no run, in sample): the landed region model
-  (resgx545-data texture/p1141/recompute/msaa_model.py, sha256 1c0e8205..., E727's freeze,
-  unchanged) with its two-halves rule gives ...
 
 ## Closing sessions
 
-78 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+79 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r20-own`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r19-own1b`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t18b
@@ -874,9 +585,9 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 7 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 6 sessions
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
@@ -937,4 +648,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-46 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+48 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

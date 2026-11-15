@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E458", "E462", "E591", "E631", "E1079", "E1080", "E1084", "E1085", "E1087"]
+evidence = ["E310", "E458", "E462", "E591", "E631", "E1079", "E1080", "E1084", "E1085", "E1087", "E1091", "E1092"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_STATE_BASE0", "CR_DPM_CONTROL_BASE", "ta3d_ctl"]
 +++
 
@@ -63,3 +63,14 @@ owner's gone context, and the kept owner's slot step, is this question's now, wi
 job stores its second set of lists (the TA's end, the final render's start or an abort). A closing
 render that does not overflow reads none of the lists a partial render stored (E1079), and their
 counts sum to the last run's peak less 1 when raised and to thr0 less 1 when not (E1080).
+
+Narrowed in round 20 (E1091, E1092, r20-own). Whose scene is decided: the owner's. With the
+owner's triangle moved and the second context's not, the kept state page after the second render
+lists the owner's moved cover (2 of 2 at -112,-80, 1 of 1 at 64,64), counts summing to the owner's
+peak less 1; at P 0x30 a moved owner's lists are inside its own cover and not the unmoved run's
+(E1092). The kick is not decided: regtimeline on 0x062c, 0x0634, 0x0694 and 0x0698 saw no task
+write (0x0694 and 0x0698 read 0 in every sample of 11 jobs), the owner's TA running under state
+base 0x20006000 and the second context's under 0x20406000, with 0x062c never back on the owner's
+base during the second run. Open: which event of the second context's run writes the owner's lists
+(its TA kick or its render's end), why they show only after that run, and (c) a load reading them
+back.

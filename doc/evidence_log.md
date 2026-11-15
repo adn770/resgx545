@@ -9170,6 +9170,35 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *dpm; HW, infer; data: `render-closing-r19-own1b:out/20261114-230658/own1/`,
   `render-closing-r19-own1b:fold/`.*
 
+### 2026-11-15
+
+- `E1091` r20-own stages ow and owt (6 jobs, t18b under regtimeline, render_keep armed, a 1024x768
+  owner at P 0x422 closed early, the second context drawing the library's default triangle): with
+  the owner's triangle moved, the lists in the kept owner's state page after the second context's
+  render are the owner's moved cover, not the second context's scene: macrotiles 0, 1, 2, 3, 4, 5,
+  6, 8, 9 and 12 at the move -112,-80 (2 of 2) and 0, 1, 4, 5, 6, 7, 9, 10, 11, 13 and 14 at 64,64
+  (1 of 1), exactly gen/cover.py's covers, counts summing to the owner's own peak less 1 (20 and 21;
+  regtimeline 0x0724 under the owner's state base 0x20006000 peaks at 0x15 and 0x16, the second
+  context's at 0x13); frozen 'ow: H-SECOND ... is not supported: 0 held, 3 FAILED' with the rival
+  H-OWNER fitting 3 of 3; the unmoved control repeated E1087's pages 4 to 6 dword for dword; which
+  kick stores is not decided ('owt: cannot tell: no row decided'): 0x0694 and 0x0698 read 0 in every
+  sample of every row, and the state base the scorer took for the owner's (words.101 rtds:11,
+  0x20406000) is the one 0x062c holds during the second context's run.
+  *dpm; HW, infer; data: `render-closing-r20-own:out/20261115-080117/ow/`,
+  `render-closing-r20-own:out/20261115-080117/owt/`, `render-closing-r20-own:fold/`.*
+- `E1092` r20-own stage owp (5 jobs, t18b under regtimeline, render_keep armed, a 1024x768 owner
+  closed early after its overflowing render, the second context drawing the default triangle): the
+  kept owner's state page after the second context's render is zero when the owner's kick is raised
+  and holds E627 lists when it is not, by the regime read per row (TA3DCtl dword 38): raised at P
+  0x2c zero; not raised at 0x30 E1084's ten dwords exactly (3 of 3 with the control), at 0x34 one
+  list (macrotile 7) and the global list; frozen 'owp: H-REGIME ... (5 of 5 rows decided)'; with the
+  owner moved -112,-80 at 0x30 the lists are 1, 2, 3, 5, 6 and 9, within the owner's moved cover and
+  not E1084's (frozen 'owpw: H-SECOND ... is not supported: 0 held, 1 FAILED', H-OWNER fitting), so
+  they are the owner's; post hoc, not raised, the lists of the copy made right after the close and
+  those after the second render together make the owner's cover in each of the 4 not-raised rows.
+  *dpm; HW, infer; data: `render-closing-r20-own:out/20261115-080117/owp/`,
+  `render-closing-r20-own:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9185,7 +9214,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087.
+E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087, E1091, E1092.
 
 ### edm
 
