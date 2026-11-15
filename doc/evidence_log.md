@@ -9349,7 +9349,8 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   ty0-3d-w0, -w15 and the repeat read its kept image (2b49c848...), TEXTYPE 2's rt2-3d-w5 and -w15
   its two different kept images (79970597..., 480213ab...).
   *texture; HW, infer; data: `render-closing-r26-vol:out/20261115-225136/vc/`,
-  `render-closing-r26-vol:out/20261115-225136/vb/`, `render-closing-r26-vol:fold/`.*
+  `render-closing-r26-vol:out/20261115-225136/vb/`, `render-closing-r26-vol:fold/`,
+  `vectors-closing-r26-vol-pixels`.*
 
 ## By unit
 
