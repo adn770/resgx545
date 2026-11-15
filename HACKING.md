@@ -682,17 +682,17 @@ stays with what a session must do around it.
   earlier controls keep their layouts (R22-7 a). The margin covers the pad of every target up to
   16 pages of pad dwords; a wider pad (e.g. 31 pad columns at 4095 rows) is not covered: such a
   session passes `--depth-pages` of the tile extent or more.
-- no `tri` job could make a final render that does not overflow itself after an overflowing
-  `--geometry` kick (Q045's load-readback, Q038's reload without overflow): the fork reads debugfs
-  `render_pb_pages` once, when a render context is created (round 18's T-pbfinal was dropped for
-  it). The kernel change is on the fork's branch `r18-kernel` (456404fcffe5: debugfs
-  `render_final_pb_pages`, taken once by the next render context; the final job after a geometry
-  job sets that PB's thresholds through its TA command), and the tool has `tri --final-pb-pages
-  N` (round 18, branch `r18-kernel-tool`). It stays listed until the fork lands it and a session
-  runs on its module (srcversion E0CC40275493F8AEAD8180B): such a session declares the knob in
-  session.toml `[knobs]` at default 0 (the guard refuses the option otherwise), so the preflight
-  refuses a module without the file. Whether the EDM applies the update before the final kick's
-  TA (`0x0624` of the final job reading N - 0x22) is that session's first control.
+- `probe --poke` in every laptop tool before t22 (t10 to t20, since ac5b888): the probe handed
+  its fill's or copy's job hook the address of a compound literal that ended before the hook ran
+  (a dangling pointer; fill, copy and tri kept theirs alive and are not affected). gcc reuses the
+  slot: the laptop's i686 `make check` died of SIGSEGV in `test_cli_poke.py`'s two probe poke
+  tests, which t20's recipe accepted as known failures. Fixed in 72a28dc (the set in the probe's
+  scope, a static test against the pattern), and t22 echoes each poke it applied as `probe NAME:
+  poked SPACE:N 0xOLD -> 0xNEW`; t22's recipe requires 0 failures. Pokes that visibly landed
+  (E078, E292/E293) stand; the negatives of E125, E391 (Q019) and E568 (Q181) are unverified
+  until a row of each is repeated on t22 with the echo (R22-4 a, r23-pk), and get a correction
+  only if the repeat differs. No session uses t10 to t20 for `probe --poke` again. The entry
+  stays until r23-pk has run.
 - sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
   refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
   path before E902's seeds. A session that needs the sim as an oracle checks first that its
