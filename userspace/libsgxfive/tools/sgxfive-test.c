@@ -179,8 +179,16 @@
  *                                 sent; none for a job not submitted; before round 22's
  *                                 t22 the poke set was a dangling pointer, see HACKING);
  *                                 --place OFFSET=FILE --place-form cbase|exe18: the
- *                                 USE program FILE mapped at the USSE pixel heap's base
- *                                 + OFFSET (a multiple of 8, below the heap's 5 MiB), its
+ *                                 USE program FILE (1 to 8192 words, 64 KiB) mapped at the
+ *                                 USSE pixel heap's base + OFFSET (a multiple of 8, past
+ *                                 the heap's first page, which holds the probe's own
+ *                                 program, and ending within the heap's 5 MiB), every page
+ *                                 it spans mapped and printed as `program placed at A..B
+ *                                 (N pages)` (B the byte after it), with `, crosses code
+ *                                 step S at word K` for a 0x80000-byte step it crosses;
+ *                                 after the job `placed words read back: K of N as built,
+ *                                 hash H` (the words in the pages against the words as
+ *                                 built, and their FNV-1a); its every word's
  *                                 scratch immediates patched, and started in place of the
  *                                 fill shader (the probe's own program, at the heap's
  *                                 base, stays unstarted) by a primary DOUTU whose EXE and
@@ -1366,10 +1374,12 @@ struct probe_source {
 	uint32_t placed_u0;	/* with these EXE and CBASE bits (21:0) */
 	const uint64_t *place_words;	/* --place: its words, patched again when the programs are */
 	uint32_t place_n;	/* built (the PDS references need the programs' addresses) */
-	uint32_t *place_dst;	/* ... and where they are in the code heap page */
+	uint32_t *place_dst;	/* ... and where they are in the code heap pages */
 	uint64_t pds_sec;	/* where the PDS secondary was placed (set when built) */
 	uint64_t pds_base;	/* and the pixel PDS heap's base */
 	bool pds_ref;		/* a PDS reference immediate was patched */
+	uint64_t *place_built;	/* --place: the words as built, for the read-back */
+	bool place_done;	/* the placed words were built */
 };
 
 /*
@@ -1475,6 +1485,8 @@ static int probe_build(struct sgxfive_prog_source *src, uint32_t id,
 
 		p->place_dst[2 * i] = (uint32_t)w;
 		p->place_dst[2 * i + 1] = (uint32_t)(w >> 32);
+		p->place_built[i] = w;
+		p->place_done = true;
 	}
 	if (!ret && id == SGXFIVE_PROG_PDS_PRIM && p->place_prim) {
 		uint32_t u0;
@@ -1509,7 +1521,7 @@ static int run_probe(struct tool *t, const char *name, const uint64_t *words, ui
 {
 	struct probe_source src = {
 		{ &probe_ops, name }, t->progs, words, n, cbase15, SGXFIVE_PROG_USE_FILL, 0, 0,
-		NULL, 0, 0, false, 0, NULL, 0, NULL, 0, 0, false,
+		NULL, 0, 0, false, 0, NULL, 0, NULL, 0, 0, false, NULL, false,
 	};
 	struct sgxfive_prog_source *saved = t->progs;
 	const struct sgxfive_rect r = { 0, 0, 64, 32 };
@@ -1582,6 +1594,9 @@ static int cmd_regaccess(struct tool *t)
 /* ---- probe: our own programs as the fill shader --------------------------------------- */
 
 #define PROBE_MAX_WORDS	256
+#define PLACE_MAX_WORDS	8192	/* --place: 64 KiB, 16 pages */
+#define PLACE_HEAP_END	0x500000u	/* the USSE pixel heap's size */
+#define CODE_STEP	0x80000u	/* a DOUTU's code window: 512 KiB */
 
 struct probe_file {
 	const char *name;	/* the file's base name without .bin */
@@ -1590,39 +1605,61 @@ struct probe_file {
 	uint32_t n;
 };
 
+/* --place's program: up to PLACE_MAX_WORDS USSE words. */
+struct probe_place {
+	char label[64];
+	uint64_t words[PLACE_MAX_WORDS];
+	uint32_t n;
+};
+
 /*
- * Read a raw little-endian program (tools/usse-asm -o) into f: USSE words (width 8) or
- * PDS words (width 4, one per slot of f->words).
+ * Read a raw little-endian program (tools/usse-asm -o) of 1 to max words into words: USSE
+ * words (width 8) or PDS words (width 4, one per slot of words); label its base name.
  */
-static int probe_read(const char *path, struct probe_file *f, unsigned int width)
+static int probe_read_words(const char *path, unsigned int width, uint32_t max, uint64_t *words,
+			    uint32_t *n, char *label, size_t label_size)
 {
 	const char *base = strrchr(path, '/');
-	uint8_t buf[PROBE_MAX_WORDS * 8 + 1];
+	uint8_t *buf = malloc((size_t)max * 8 + 1);
 	size_t len, dot;
-	FILE *fp = fopen(path, "rb");
+	FILE *fp;
 
+	if (!buf)
+		return -1;
+	fp = fopen(path, "rb");
 	if (!fp) {
 		fprintf(stderr, "sgxfive-test: %s: %s\n", path, strerror(errno));
+		free(buf);
 		return -1;
 	}
-	len = fread(buf, 1, sizeof(buf), fp);
+	len = fread(buf, 1, (size_t)max * 8 + 1, fp);
 	fclose(fp);
-	if (!len || len % width || len > PROBE_MAX_WORDS * width) {
+	if (!len || len % width || len > (size_t)max * width) {
 		fprintf(stderr, "sgxfive-test: %s: not 1 to %u %s words\n", path,
-			PROBE_MAX_WORDS, width == 8 ? "USSE" : "PDS");
+			max, width == 8 ? "USSE" : "PDS");
+		free(buf);
 		return -1;
 	}
-	f->n = (uint32_t)(len / width);
-	for (uint32_t i = 0; i < f->n; i++) {
-		f->words[i] = 0;
+	*n = (uint32_t)(len / width);
+	for (uint32_t i = 0; i < *n; i++) {
+		words[i] = 0;
 		for (unsigned int b = 0; b < width; b++)
-			f->words[i] |= (uint64_t)buf[i * width + b] << (8 * b);
+			words[i] |= (uint64_t)buf[i * width + b] << (8 * b);
 	}
+	free(buf);
 	base = base ? base + 1 : path;
 	dot = strcspn(base, ".");
-	snprintf(f->label, sizeof(f->label), "%.*s", (int)dot, base);
-	f->name = f->label;
+	snprintf(label, label_size, "%.*s", (int)dot, base);
 	return 0;
+}
+
+static int probe_read(const char *path, struct probe_file *f, unsigned int width)
+{
+	int ret = probe_read_words(path, width, PROBE_MAX_WORDS, f->words, &f->n, f->label,
+				   sizeof(f->label));
+
+	f->name = f->label;
+	return ret;
 }
 
 static bool pixels_all(const uint32_t *p, uint32_t n, uint32_t v)
@@ -1640,7 +1677,7 @@ struct probe_opts {
 	uint32_t pds_data;	/* 0, or the files are PDS programs with this many data dwords */
 	struct probe_file use;	/* with pds_data: the fill's shader (stores sa0-sa15) */
 	bool scratch_texture;	/* --scratch-heap texture: the scratch buffer in the texture heap */
-	struct probe_file place;	/* --place OFFSET=FILE: a USE program in the code heap */
+	struct probe_place place;	/* --place OFFSET=FILE: a USE program in the code heap */
 	uint32_t place_off;	/* ... at the heap base + this */
 	int place_form;		/* --place-form: 0 CBASE, 1 an 18-bit EXE; -1 not given */
 	struct sgxfive_poke pokes[SGXFIVE_POKE_MAX];	/* --poke: words of the fill's command */
@@ -1891,7 +1928,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	struct probe_source src = {
 		{ &probe_ops, f->name }, t->progs, f->words, f->n, false,
 		po->coords ? SGXFIVE_PROG_USE_COPY : SGXFIVE_PROG_USE_FILL, po->temps, 0,
-		NULL, 0, 0, false, 0, NULL, 0, NULL, 0, 0, false,
+		NULL, 0, 0, false, 0, NULL, 0, NULL, 0, 0, false, NULL, false,
 	};
 
 	if (po->pds_data) {
@@ -1912,6 +1949,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	struct probe_pokes pokes = { .pk = { po->pokes, po->npokes } };	/* alive through the job */
 	struct sgxfive_bo *bo = NULL, *sbo = NULL, *cbo = NULL, *pbo = NULL;
 	uint32_t *p = NULL, *sp = NULL, *cp = NULL, *pp = NULL;
+	uint64_t *placed = NULL;	/* --place: the words as built */
 	uint64_t addr = 0, saddr = 0, caddr = 0;
 	long long t0 = 0;
 	struct side s;
@@ -1931,11 +1969,23 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		ret = surface(t, s.vm, SCRATCH_PAGES, 0, &saddr, &sbo, &sp);
 	if (!ret && po->place.n) {
 		const uint64_t base = sgxfive_dev_info(t->dev)->heaps[DRM_SGXFIVE_HEAP_USSE_PIXEL].base;
-		uint64_t paddr = base + (po->place_off & ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1));
-		const uint32_t at = (po->place_off & (SGXFIVE_PAGE_SIZE - 1)) / 4;	/* dword in its page */
+		const uint32_t first = po->place_off & ~(SGXFIVE_PAGE_SIZE - 1);
+		const uint32_t end = po->place_off + po->place.n * 8;	/* the byte after it */
+		const uint32_t npages = (end - 1 - first) / SGXFIVE_PAGE_SIZE + 1;
+		uint64_t paddr = base + first;
+		const uint32_t at = (po->place_off - first) / 4;	/* dword in its first page */
 
-		ret = (po->place_off & (SGXFIVE_PAGE_SIZE - 1)) + po->place.n * 8 > SGXFIVE_PAGE_SIZE ?
-		      -EINVAL : surface(t, s.vm, 1, 0, &paddr, &pbo, &pp);
+		placed = calloc(po->place.n, sizeof(*placed));
+		ret = placed ? surface(t, s.vm, npages, 0, &paddr, &pbo, &pp) : -ENOMEM;
+		if (!ret) {
+			printf("probe %s: program placed at 0x%08llx..0x%08llx (%u page%s)", f->name,
+			       (unsigned long long)base + po->place_off, (unsigned long long)base + end,
+			       npages, npages == 1 ? "" : "s");
+			for (uint32_t k = po->place_off / CODE_STEP + 1; k * CODE_STEP < end; k++)
+				printf(", crosses code step 0x%x at word %u", k * CODE_STEP,
+				       (k * CODE_STEP - po->place_off) / 8);
+			printf("\n");
+		}
 		for (uint32_t i = 0; !ret && i < po->place.n; i++) {
 			uint64_t w = po->place.words[i];
 			const uint32_t imm = sgxfive_limm_get(w);
@@ -1948,6 +1998,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		src.place_words = po->place.words;
 		src.place_n = po->place.n;
 		src.place_dst = pp + at;
+		src.place_built = placed;
 		if (!ret)
 			printf("probe %s: program placed at 0x%08llx (code heap base + 0x%x), "
 			       "started as %s: DOUTU bits 21:0 0x%06x\n", f->name,
@@ -2013,7 +2064,19 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	} else {
 		probe_report(f->name, p, 64, 32, po->pixels, sp, 32);
 	}
+	if (src.place_done) {
+		/* the placed words read back from their pages after the job */
+		const uint32_t *w = src.place_dst;
+		uint32_t same = 0;
+
+		for (uint32_t i = 0; i < src.place_n; i++)
+			same += (w[2 * i] | (uint64_t)w[2 * i + 1] << 32) == placed[i];
+		printf("probe %s: placed words read back: %u of %u as built, hash 0x%016llx\n",
+		       f->name, same, src.place_n,
+		       (unsigned long long)sgxfive_hash_dwords(w, 2ull * src.place_n));
+	}
 out:
+	free(placed);
 	sgxfive_bo_destroy(pbo);
 	sgxfive_bo_destroy(cbo);
 	sgxfive_bo_destroy(sbo);
@@ -4615,8 +4678,13 @@ int main(int argc, char **argv)
 				const char *arg = argv[++i];
 
 				v = strtoul(arg, &end, 0);
-				if (*end != '=' || end == arg || v % 8 || v + SGXFIVE_PAGE_SIZE > 0x500000 ||
-				    popts.place.n || probe_read(end + 1, &popts.place, 8))
+				if (*end != '=' || end == arg || v % 8 || popts.place.n ||
+				    probe_read_words(end + 1, 8, PLACE_MAX_WORDS, popts.place.words,
+						     &popts.place.n, popts.place.label,
+						     sizeof(popts.place.label)))
+					return usage();
+				/* off the probe's own program (the heap's first page), in the heap */
+				if (v < SGXFIVE_PAGE_SIZE || v + popts.place.n * 8ull > PLACE_HEAP_END)
 					return usage();
 				popts.place_off = (uint32_t)v;
 				continue;

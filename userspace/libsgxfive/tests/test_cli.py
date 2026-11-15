@@ -791,6 +791,101 @@ def test_probe_places_a_program_in_the_code_heap(tmp_path):
         assert r.returncode == 2, (args, r.stdout + r.stderr)
 
 
+def _fnv1a64(b: bytes) -> int:
+    h = 0xcbf29ce484222325
+    for c in b:
+        h = ((h ^ c) * 0x100000001b3) & 0xffffffffffffffff
+    return h
+
+
+def _long_program(tmp_path, name: str, words: int, last: bytes | None = None) -> pathlib.Path:
+    """A placed program of `words` USSE words: phas, mov o0 #0x61 (what the mock runs), then
+    copies of the mov; `last` replaces the last word."""
+    two = assemble(tmp_path, f"{name}2", PHAS + "mov.skipinv.end o0, #0x61\n").read_bytes()
+    assert len(two) == 16
+    body = two + two[8:] * (words - 2)
+    if last is not None:
+        body = body[:-8] + last
+    out = tmp_path / f"{name}.bin"
+    out.write_bytes(body)
+    return out
+
+
+PLACED = re.compile(r"^probe base: program placed at (0x[0-9a-f]{8})\.\.(0x[0-9a-f]{8}) "
+                    r"\((\d+) pages?\)((?:, crosses code step 0x[0-9a-f]+ at word \d+)*)$", re.M)
+READBACK = re.compile(r"^probe base: placed words read back: (\d+) of (\d+) as built, "
+                      r"hash (0x[0-9a-f]{16})$", re.M)
+
+
+def test_probe_places_a_program_across_pages_and_a_code_step(tmp_path):
+    # --place takes a program of up to 8192 words (64 KiB): every page it spans is mapped, the
+    # probe prints its range, its pages and each 0x80000-byte code step it crosses (the word at
+    # the step), and after the job reads every word back from the mapped pages
+    base = assemble(tmp_path, "base", PHAS + "mov.skipinv.end o0, #0x0000BA5E\n")
+    use = _long_program(tmp_path, "long", 600)
+    r = run("--mock", "probe", "--place", f"0x7fe00={use}", "--place-form", "cbase", str(base))
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = PLACED.search(r.stdout)
+    assert m and m.groups() == ("0x3707fe00", "0x370810c0", "3",
+                                ", crosses code step 0x80000 at word 64"), r.stdout
+    assert ("probe base: program placed at 0x3707fe00 (code heap base + 0x7fe00), started as "
+            "EXE and CBASE: DOUTU bits 21:0 0x0ffc00") in r.stdout, r.stdout
+    rb = READBACK.search(r.stdout)
+    assert rb and rb.group(1) == rb.group(2) == "600", r.stdout
+    assert int(rb.group(3), 16) == _fnv1a64(use.read_bytes()), r.stdout
+    assert re.search(r"^probe base: o0 0x00000061 ", r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("form,bits", [("cbase", 0x0ffff0), ("exe18", 0x0ffff0)])
+def test_probe_place_doutu_at_a_code_step(tmp_path, form, bits):
+    # at 0x7fff8 the program's second word is the first of the next step's page: the mock
+    # reads the program's mov there (o0 0x61), so that page is mapped with the program in it
+    base = assemble(tmp_path, "base", PHAS + "mov.skipinv.end o0, #0x0000BA5E\n")
+    use = _long_program(tmp_path, "step", 2)
+    r = run("--mock", "probe", "--place", f"0x7fff8={use}", "--place-form", form, str(base))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert f"started as {'EXE and CBASE' if form == 'cbase' else 'an 18-bit EXE'}: DOUTU " \
+           f"bits 21:0 0x{bits:06x}" in r.stdout, r.stdout
+    assert PLACED.search(r.stdout).groups() == ("0x3707fff8", "0x37080008", "2",
+                                                ", crosses code step 0x80000 at word 1")
+    assert re.search(r"^probe base: o0 0x00000061 ", r.stdout, re.M), r.stdout
+
+
+def test_probe_place_patches_every_placed_word(tmp_path):
+    # a scratch immediate in the last of 8192 words (16 pages) is patched too: the words read
+    # back are not the file's
+    base = assemble(tmp_path, "base", PHAS + "mov.skipinv.end o0, #0x0000BA5E\n")
+    scr = assemble(tmp_path, "scr", "mov.skipinv.end o0, #0x5CAF0010\n").read_bytes()
+    plain = _long_program(tmp_path, "plain", 8192)
+    patched = _long_program(tmp_path, "patched", 8192, last=scr)
+    for f, same in ((plain, True), (patched, False)):
+        r = run("--mock", "probe", "--place", f"0x10000={f}", "--place-form", "cbase", str(base))
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert PLACED.search(r.stdout).groups() == ("0x37010000", "0x37020000", "16", ""), \
+            r.stdout
+        rb = READBACK.search(r.stdout)
+        assert rb and rb.group(1) == rb.group(2) == "8192", r.stdout
+        assert (int(rb.group(3), 16) == _fnv1a64(f.read_bytes())) == same, r.stdout
+
+
+def test_probe_place_stays_off_the_probe_page_and_in_the_heap(tmp_path):
+    # the probe's own program is in the heap's first page; the heap is 5 MiB; a placed program
+    # is at most 8192 words and a probe's own at most 256
+    base = assemble(tmp_path, "base", PHAS + "mov.skipinv.end o0, #0x0000BA5E\n")
+    two = _long_program(tmp_path, "two", 2)
+    big = _long_program(tmp_path, "big", 8193)
+    ok = (("0x1000", two), ("0x4ffff0", two))
+    bad = (("0", two), ("0xff8", two), ("0x4ffff8", two), ("0x10000", big))
+    for off, f in ok:
+        r = run("--mock", "probe", "--place", f"{off}={f}", "--place-form", "cbase", str(base))
+        assert r.returncode == 0, (off, r.stdout + r.stderr)
+    for off, f in bad:
+        r = run("--mock", "probe", "--place", f"{off}={f}", "--place-form", "cbase", str(base))
+        assert r.returncode == 2, (off, r.stdout + r.stderr)
+    r = run("--mock", "probe", str(_long_program(tmp_path, "fill257", 257)))
+    assert r.returncode != 0 and "o0" not in r.stdout, r.stdout + r.stderr
+
+
 def test_probe_scratch_in_the_texture_heap(tmp_path):
     # --scratch-heap texture: the scratch buffer is allocated in the texture heap (0xf0000000 and
     # up on the mock), the program's scratch immediates pointing there; only texture is a heap
