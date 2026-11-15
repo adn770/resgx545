@@ -172,6 +172,12 @@
  *                                 --scratch-heap texture: the scratch buffer in the
  *                                 texture heap, so that a texture in it is in the
  *                                 texture region (its address 0xf0000000 and up);
+ *                                 --poke xfer:N=V|bg:N=V: words of the fill's (or copy's)
+ *                                 job, listed as `probe NAME: pokes ...`; once the job is
+ *                                 submitted each applied poke is echoed as `probe NAME:
+ *                                 poked SPACE:N 0xOLD -> 0xNEW` (the word as built, and as
+ *                                 sent; none for a job not submitted; before round 22's
+ *                                 t22 the poke set was a dangling pointer, see HACKING);
  *                                 --place OFFSET=FILE --place-form cbase|exe18: the
  *                                 USE program FILE mapped at the USSE pixel heap's base
  *                                 + OFFSET (a multiple of 8, below the heap's 5 MiB), its
@@ -1830,6 +1836,56 @@ static uint32_t placed_doutu(uint32_t off, int form)
 	return form == 0 ? ((off << 1) & 0xffff0) | ((off >> 19) & 0xf) : (off << 1) & 0x3ffff0;
 }
 
+/*
+ * probe --poke: the pokes as the fill's or copy's job hook, each word read before and after its
+ * poke so the probe can echo what reached the command. The set lives as long as the job: the
+ * hook runs inside the fill or copy call, after sgxfive_xfer_set_hook returned.
+ */
+struct probe_pokes {
+	struct sgxfive_poke_set pk;
+	uint32_t old[SGXFIVE_POKE_MAX], new[SGXFIVE_POKE_MAX];
+	bool applied;		/* the hook applied every poke */
+};
+
+static int probe_poke_hook(void *priv, const struct sgxfive_poke_view *v, unsigned int n)
+{
+	struct probe_pokes *pp = priv;
+	const struct sgxfive_poke_view *got;
+	int ret = 0;
+
+	pp->applied = false;
+	/* every poke checked before any is written, as sgxfive_poke_apply */
+	for (unsigned int i = 0; !ret && i < pp->pk.n; i++) {
+		ret = sgxfive_poke_find(v, n, &pp->pk.pk[i], &got);
+		if (!ret && !got->words)
+			ret = -EINVAL;
+	}
+	for (unsigned int i = 0; !ret && i < pp->pk.n; i++) {
+		const struct sgxfive_poke *k = &pp->pk.pk[i];
+		const uint32_t *w;
+
+		sgxfive_poke_find(v, n, k, &got);
+		w = &got->words[got->map ? got->map[k->index] : k->index];
+		pp->old[i] = *w;
+		ret = sgxfive_poke_apply(v, n, k, 1, NULL);
+		pp->new[i] = *w;
+	}
+	pp->applied = !ret;
+	return ret;
+}
+
+/* The echo of every poke the hook applied: `probe NAME: poked SPACE:N 0xOLD -> 0xNEW`. */
+static void probe_poke_echo(const char *name, const struct probe_pokes *pp)
+{
+	for (unsigned int i = 0; pp->applied && i < pp->pk.n; i++) {
+		const struct sgxfive_poke *k = &pp->pk.pk[i];
+
+		printf("probe %s: poked %s:%s%s%u 0x%08x -> 0x%08x\n", name,
+		       sgxfive_poke_space_name(k->space), k->slot, k->slot[0] ? ":" : "", k->index,
+		       pp->old[i], pp->new[i]);
+	}
+}
+
 static void probe_one(struct tool *t, const struct probe_file *f, const struct probe_opts *po)
 {
 	struct probe_source src = {
@@ -1853,6 +1909,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	struct sgxfive_prog_source *saved = t->progs;
 	const struct sgxfive_rect r = { 0, 0, 64, 32 };
 	struct sgxfive_surface dst = { 0, 64, 32, 256 };
+	struct probe_pokes pokes = { .pk = { po->pokes, po->npokes } };	/* alive through the job */
 	struct sgxfive_bo *bo = NULL, *sbo = NULL, *cbo = NULL, *pbo = NULL;
 	uint32_t *p = NULL, *sp = NULL, *cp = NULL, *pp = NULL;
 	uint64_t addr = 0, saddr = 0, caddr = 0;
@@ -1925,8 +1982,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 			for (unsigned int k = 0; k < po->npokes; k++)
 				printf(" %s", po->poke_args[k]);
 			printf("\n");
-			sgxfive_xfer_set_hook(s.x, sgxfive_poke_hook,
-					      &(struct sgxfive_poke_set){ po->pokes, po->npokes });
+			sgxfive_xfer_set_hook(s.x, probe_poke_hook, &pokes);
 		}
 		t0 = now_ns();
 		if (po->coords) {
@@ -1936,6 +1992,8 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		} else {
 			ret = sgxfive_xfer_fill(s.x, &dst, &r, 0, 0);
 		}
+		if (!ret)
+			probe_poke_echo(f->name, &pokes);	/* submitted: what the GPU got */
 	}
 	if (src.pds_ref)
 		printf("probe %s: PDS secondary at 0x%08llx (pixel PDS heap base + 0x%llx)\n",

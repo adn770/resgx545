@@ -364,3 +364,61 @@ def test_tri_keep_going():
     assert re.search(r"^tri 64x64 #1: ", r.stdout, re.M) and \
         re.search(r"^tri 64x64 #2: ", r.stdout, re.M), r.stdout
     assert "tri: 0 of 2 renders ok" in r.stdout
+
+
+def test_job_hooks_get_no_compound_literal():
+    """A job hook runs when the job is built, after the call that set it: its argument must
+    outlive that call. A compound literal made in a block ends with the block, and gcc reuses
+    its slot (probe --poke died of SIGSEGV in the laptop's i686 build, round 22), so no
+    `sgxfive_*_set_hook(..., &(struct ...){ ... })` in the tool."""
+    src = (HERE.parent / "tools" / "sgxfive-test.c").read_text()
+    calls = re.findall(r"sgxfive_\w+_set_hook\([^;]*;", src, re.S)
+    assert calls, "no set_hook call found"
+    bad = [c for c in calls if re.search(r"&\s*\(\s*(const\s+)?struct\b", c)]
+    assert not bad, bad
+
+
+POKED = re.compile(r"^probe (\w+): poked ([a-z]+(?::\w+)?:\d+) (0x[0-9a-f]{8}) -> "
+                   r"(0x[0-9a-f]{8})$", re.M)
+
+
+@pytest.mark.parametrize("coords", [[], ["--coords"]])
+def test_probe_poke_echo(tmp_path, coords):
+    """probe --poke echoes every poke the hook applied to the built job, once the job was
+    submitted: `probe NAME: poked SPACE:N 0xOLD -> 0xNEW`, OLD the word the job was built
+    with and NEW what went to the kernel. (The mock runs no program of ours as a copy shader:
+    the copy faults there, after its submit, so --coords ends in rc 3 with its echo.)"""
+    f = _probe_file(tmp_path)
+    rc = 3 if coords else 0
+    r = run("--mock", "probe", *coords, "--poke", "bg:1^=0", "--poke", "xfer:17^=0", str(f))
+    assert r.returncode == rc, r.stdout + r.stderr
+    built = {s: (o, n) for _, s, o, n in POKED.findall(r.stdout)}
+    assert set(built) == {"bg:1", "xfer:17"}, r.stdout
+    assert all(o == n for o, n in built.values()), built
+    r = run("--mock", "probe", *coords, "--poke", "bg:1=0x130000", "--poke", "xfer:17^=0x4",
+            str(f))
+    assert r.returncode == rc, r.stdout + r.stderr
+    got = POKED.findall(r.stdout)
+    assert [(n, s) for n, s, _, _ in got] == [("pk", "bg:1"), ("pk", "xfer:17")], r.stdout
+    assert got[0][2:] == (built["bg:1"][0], "0x00130000"), got
+    old = int(built["xfer:17"][0], 16)
+    assert got[1][2:] == (f"0x{old:08x}", f"0x{old ^ 4:08x}"), got
+    assert r.stdout.index("poked bg:1") > r.stdout.index("pokes bg:1"), r.stdout
+
+
+def test_probe_poke_echo_in_order_on_one_word(tmp_path):
+    """Two pokes of one word: each echo shows the word as the poke before it left it."""
+    f = _probe_file(tmp_path)
+    r = run("--mock", "probe", "--poke", "xfer:33=0x10", "--poke", "xfer:33^=0x3", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    got = POKED.findall(r.stdout)
+    assert [g[1:] for g in got][1] == ("xfer:33", "0x00000010", "0x00000013"), got
+    assert got[0][3] == "0x00000010", got
+
+
+def test_probe_poke_echo_not_for_a_job_not_run(tmp_path):
+    """No echo for a job the kernel rejected: its words never reached the GPU."""
+    f = _probe_file(tmp_path)
+    r = run("--mock", "probe", "--poke", "xfer:4^=0x1", str(f))
+    assert re.search(r"^probe pk: failed", r.stdout, re.M), r.stdout
+    assert "poked" not in r.stdout, r.stdout
