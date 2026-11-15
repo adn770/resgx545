@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 10
-evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629", "E996", "E1020", "E1081", "E1082"]
+evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629", "E996", "E1020", "E1081", "E1082", "E1088", "E1089"]
 terms = ["Parameter Buffer (PB)", "Dynamic Parameter Management (DPM)"]
 +++
 What the missing pixels are is answered (E311): with `CR_ISP_CTL.PROCESS_EMPTY_TILES` clear every
@@ -104,3 +104,12 @@ The layered background loses 44191 triangle pixels of an overflowing -n 1 job (H
 tool's geometry final draws the whole one-triangle image (diff 0, E1079). Open: where a raised
 kick's final render stores, whether dzo's kept depth is a load, and the colour reload of a final
 that does not overflow (`--bg-layer` refuses `--geometry`).
+
+Narrowed 2026-11-15 (r20-zls, E1088 and E1089). Where a raised kick's final stores: to the store
+buffer, the load buffer's depth with its own test, outside a zero region of tile rows 0-11 (post
+hoc, no frozen form held, E1088); dzo's kept depth is a load (the same final loads the load base).
+A moved final without a depth buffer paints every target pixel after a raised kick (H-REPAINT 2 of
+2, no sentinel left: H-HOLES 0 of 3); after one that was not raised it also draws the part of render
+1's triangle the partial render left (18582 pixels, post hoc). The colour clause stays open (R20-3
+b): the library's sentinel fill before the final's kick hides any kept colour, so it waits for a
+tool change that runs E442's reload in a geometry final.

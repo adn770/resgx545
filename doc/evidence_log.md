@@ -9108,9 +9108,10 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   own PB (no abort), the G 1 store fails E996's header-order overlay against its G 33 twin as the
   overflowed stores do (frozen E1020 2 of 2: 51968 of 61440 scored dwords at 0x28 and at 0x30;
   H-E996 0 of 2) while the -n 1 0x422 control pair holds it (61440 of 61440); the final store keeps
-  the zero row (195584 zero dwords below tile row 12) and 35840 signed dwords (frozen H-PRSIGN 0 of
-  3, H-FINALSIGN 2 of 3); the ramp's kick was raised at 0x30 too (post hoc, need 49 pages), against
-  the frozen premise that it was not; controls passed.
+  the zero row (195584 zero dwords below tile row 12) and holds no signed dword in the store window,
+  the frozen 35840 being the buffer's marker fill (frozen H-PRSIGN 0 of 3, H-FINALSIGN 2 of 3 on
+  that fill); the ramp's kick was raised at 0x30 too (post hoc, need 49 pages), against the frozen
+  premise that it was not; controls passed [corrected 2026-11-15, see Correction].
   *zls; HW; data: `render-closing-r19-dpm:out/20261114-224724/zsc/`,
   `render-closing-r19-dpm:out/20261114-224724/zs/`, `render-closing-r19-dpm:fold/`.*
 - `E1083` r19-dpm stage rd (Q088, 6 jobs, t18b): the partial render of a geometry kick stores the
@@ -9170,6 +9171,37 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *dpm; HW, infer; data: `render-closing-r19-own1b:out/20261114-230658/own1/`,
   `render-closing-r19-own1b:fold/`.*
 
+### 2026-11-15
+
+- `E1088` r20-zls stages zc and zr (Q088, Q038, 11 jobs): after a host refill of the load buffer
+  with 0.25 between an overflowing geometry kick and a moved final on its own PB, no frozen form of
+  the separate store after the final held (H-LOADBASE, H-STOREBASE, H-NOSTORE, H-HOSTBITS 0 of 7
+  each); post hoc, after a raised kick (0x28, 0x2c) and with load bits at 0x30 the final stores the
+  refilled load buffer's 0.25 at every window dword but 65536 in tile rows 0-11 (65246 zeros), the
+  moved triangle failing its test everywhere, and without load bits at 0x30 it stores T2 at 0.5 over
+  1.0 plus 18190 inside and 392 edge dwords of render 1's triangle; the raised partial render's
+  store holds the loaded 1.0 and zeros in tile rows 0-11, not its triangle; the frozen zregs control
+  failed (0x0484 and 0x0488 read the render details' offsets rd:12 and rd:13, not the buffers'
+  addresses), so the register readings are void as frozen; post hoc 0x0480 reads rd:11 with bits 14
+  and 19 set during the partial renders, raised or not; the store controls passed.
+  *zls; HW; data: `render-closing-r20-zls:out/20261115-080705/zc/`,
+  `render-closing-r20-zls:out/20261115-080705/zr/`, `render-closing-r20-zls:fold/`.*
+- `E1089` r20-zls stage zm (Q038, 3 jobs): a final render on its own PB without a depth buffer, its
+  triangle moved 96 px right, painted every target pixel after a raised kick (H-REPAINT 2 of 2 at
+  0x28 and 0x2c: wrong 0) and left no pixel at the library's sentinel on any row (H-HOLES 0 of 3);
+  after a kick that was not raised (0x30) it also drew 18582 pixels outside its triangle (H-REPAINT
+  failed), read post hoc as the part of render 1's triangle the partial render had not drawn; the
+  library writes its sentinel into the target before every kick, so the partial render's colour
+  never reaches the final's check; premises passed.
+  *dpm; HW; data: `render-closing-r20-zls:out/20261115-080705/zm/`, `render-closing-r20-zls:fold/`.*
+- `E1090` r20-zls stage zq (Q107, 4 jobs): on E629's ramp at P 0x44 and 0x4c the kick overflows once
+  without a raise (TA3DCtl dword 38 0, E625 with U 49) and the final render on its own PB still
+  keeps the zero row (118784 zero window dwords in tile rows 0-11 of the G 33 store, no sign) and
+  fails E996's tile order (q107_rule's RULE 54784 of 61440 on both G 1 rows): H-AFTERPR 4 of 4,
+  H-NR-PLAIN 0 of 4; post hoc the store after the partial render is signed (636928 window dwords)
+  without a raise; premises passed.
+  *zls; HW; data: `render-closing-r20-zls:out/20261115-080705/zq/`, `render-closing-r20-zls:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9185,7 +9217,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087.
+E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087, E1089.
 
 ### edm
 
@@ -9292,4 +9324,4 @@ E1035, E1075, E1076.
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
-E1054, E1059, E1063, E1064, E1068, E1069, E1070, E1081, E1082, E1083.
+E1054, E1059, E1063, E1064, E1068, E1069, E1070, E1081, E1082, E1083, E1088, E1090.
