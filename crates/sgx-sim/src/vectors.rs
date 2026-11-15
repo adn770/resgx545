@@ -303,7 +303,9 @@ pub fn job_coeffs(v: &Json) -> Option<crate::usse::FilterBlock> {
 
 /// Whether the job a vector ran in left the colour-space set unloaded: its recorded pokes of the
 /// transfer command (init.job.pokes) do not set the load flag, xfer:17 bit 0 (transfer.md 3.2).
-/// False where the vector does not carry its job: the YUV formats are then not modelled.
+/// False where the vector does not carry its job: the YUV formats are then not modelled. A job
+/// without the flag reads the set the last load left (E1103), so this holds only for a vector
+/// with no load before it since boot (p1132's, E568, [infer]).
 pub fn job_csc_unloaded(v: &Json) -> bool {
     let Json::Arr(pokes) = v.get("init").get("job").get("pokes") else { return false };
     let mut word17 = 0u32;

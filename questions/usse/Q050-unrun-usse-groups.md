@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E083", "E091", "E123", "E147", "E292", "E293", "E294", "E298", "E563", "E565", "E568"]
+evidence = ["E083", "E091", "E123", "E147", "E292", "E293", "E294", "E298", "E563", "E565", "E568", "E1097", "E1103"]
 terms = []
 +++
 
@@ -48,5 +48,11 @@ along v; along u modes 4 to 7 read other texels, some past the texture, that no 
 (E565, Q177). Compressed formats: the names maps and the block jobs of formats 23 to 27 give block
 layouts only in part (E568, Q179). YUV: formats 28 and 29 read opaque black in a fill whether or not
 the transfer command's colour-space words were poked, so the conversion of E037 was not reached
-(E568, Q181). The visibility group, fdpc, and firh's sets 6 and 7 and the exact taps of banks 1 and
+(E568). The visibility group, fdpc, and firh's sets 6 and 7 and the exact taps of banks 1 and
 2 are untouched.
+
+Narrowed 2026-11-15 (E1097, E1103): the YUV clause above is corrected. E568's pokes went through a
+dangling poke set; on t22 a fill reads E037's conversion of its texel for formats 28 and 29 when
+colour-space set 0 holds the BT.601 words, and black when it holds zeros. A fill's transfer
+command loads the set when its load flag is set, and a fill without the flag reads the last
+loaded set (E1103, held out).

@@ -9308,6 +9308,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   off, T2's inside); control passed (zn-c, the same final without load bits at 0x2e: 0.5 inside T2,
   0.5 or 1.0 in T1 \ T2, 1.0 elsewhere, E1093's zl-2e-nl).
   *zls; HW; data: `render-closing-r23-dpm:out/20261115-202532/zn/`, `render-closing-r23-dpm:fold/`.*
+- `E1103` r25-csc stage csc (16 jobs): a fill's transfer command loads colour-space set 0 when its
+  load flag is set (xfer:17 bit 0, the set's words xfer:18 to 22), and a fill without the flag keeps
+  the set the last load left: per format 28 and 29, after E037's UYVY copy loaded set 0 with zeros
+  (hash 0xd3522437a14b6325, black) the unpoked fill read opaque black, the fill poked with the
+  BT.601 words read E037's conversion of its texel and the next unpoked fill the conversion again
+  (H-FILLLOAD fit 4 of 4); after the copy loaded BT.601 (0xb6067a95fa98de2d) the unpoked fill read
+  the conversion, the fill poked with zeros read opaque black and the next unpoked fill black again
+  (H-FILLLOAD held out 4 of 4); H-FILLIGNORE (the fills read the copy's set) 0 of 4 and 0 of 4;
+  every control passed and every poke was echoed as sent.
+  *texture; HW, infer; data: `render-closing-r25-csc:out/20261115-213805/csc/`,
+  `render-closing-r25-csc:fold/`.*
 
 ## By unit
 
@@ -9397,7 +9408,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
 E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
-E1067, E1097.
+E1067, E1097, E1103.
 
 ### transfer
 

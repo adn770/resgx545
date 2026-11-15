@@ -197,8 +197,8 @@ sub-phase did.
 `doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to the partial
 owner's page question (answered by E1092), 155
 open (the two ids between Q132 and the test-field question, answered since by E1062, are reserved,
-unused, and so is the one between Q181 and
-Q183, and the six between Q183 and the layered-object question, answered by E971 on 2026-11-13;
+unused, and so is the one between the colour-space load question (answered since by E1103)
+and Q183, and the six between Q183 and the layered-object question, answered by E971 on 2026-11-13;
 the six ids after Q168 belong to phases not in this
 tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
 so the 139 `hw` questions are the work queue, each with a value (high 13, medium 68, low 58); the 10
@@ -732,10 +732,12 @@ bits
 question (answered since by E1067), Q050, Q115, the cube-map question (answered since by E844), Q114
 and the four-component question
 (folded since into Q180) are narrowed or carry their evidence and none is retired; Q168,
-Q177 to Q181 and two more (the gradient footprint, answered later by E721; the T3 address bits,
+Q177 to Q180, the colour-space load question (answered later by E1103) and two more (the gradient
+footprint, answered later by E721; the T3 address bits,
 folded later into the T3 bits question, answered by E1067) are new (hw, low). The roadmap counts the
 questions from the built
-`doc/open_questions.md`: 151 open (Q001 to Q181), 135 hw (high 13, medium 64, low 58), 10 fw and 6
+`doc/open_questions.md`: 151 open (Q001 to the colour-space load question, answered later by E1103),
+135 hw (high 13, medium 64, low 58), 10 fw and 6
 kernel; edm 13, texture 14. The replay of the tree's data, with the 17 new vector files in the data
 repository: 30864 pass, 1112 fitted, 1102 unsupported, 175 skipped, 1937 left out, 82 and 48 hung, 0
 mismatches.

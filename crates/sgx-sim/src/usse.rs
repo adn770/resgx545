@@ -5421,8 +5421,9 @@ mod tests {
     #[test]
     fn the_yuv_formats_stop_unless_the_set_is_known_to_be_unloaded() {
         // E037 measures the BT.601 conversion when a copy loads the set; the fills of p1132
-        // read black (E568) whether or not the poke that should load it was given, and Q181
-        // asks why. A vector that does not say the set is unloaded is not modelled.
+        // read black (E568) through a dangling poke set; a fill's transfer command loads the set
+        // too, and a job without the load reads the last loaded set (E1103). A vector that does
+        // not say the set is unloaded is not modelled.
         let go = |unloaded: bool| {
             let words = [
                 "mov r20, #0x000e0e00".to_string(),
