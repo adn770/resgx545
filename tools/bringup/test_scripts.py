@@ -39,11 +39,58 @@ def push(*args: str, **extra: str) -> str:
 def test_push_defaults_to_ssh_aliases():
     out = push()
     assert "ssh sgx-build " in out
-    assert "sgx-target:/tmp/" in out
+    assert "sgx-target:scratch/push-gma500/" in out
     assert "cd src/linux-sgx" in out
-    assert "vermagic=7.3.0-sgx " in out
-    assert "./install-module.sh /tmp/gma500_gfx.ko 7.3.0-sgx linux-sgx" in out
+    assert "vermagic=7.3.0-resgx545 " in out
+    assert ("./install-module.sh scratch/push-gma500/gma500_gfx.ko 7.3.0-resgx545 "
+            "linux-resgx545") in out
     assert "-j\\$(nproc)" in out or "-j$(nproc)" in out
+
+
+def laptop_lines(out: str) -> list[str]:
+    return [l for l in out.splitlines() if "sgx-target" in l]
+
+
+def test_push_defaults_fit_the_resgx545_laptop():
+    """The laptop's test kernel is 7.3.0-resgx545 (package linux-resgx545), its host key is
+    cedar's (it dual-boots, one address), and its files live under ~/scratch/<prefix>/ only
+    (/tmp is a tmpfs in RAM): every ssh and scp to it names the alias, nothing goes to /tmp."""
+    out = push()
+    lines = laptop_lines(out)
+    assert lines
+    for l in lines:
+        assert l.startswith(("ssh -o HostKeyAlias=cedar sgx-target",
+                             "scp -q -o HostKeyAlias=cedar ")), l
+        if l.startswith("ssh"):
+            assert "/tmp" not in l, l
+        else:                                   # the workstation's own temp dir is its own
+            dest = l.rsplit(" ", 1)[1]
+            assert dest == "sgx-target:" or dest.startswith("sgx-target:scratch/"), l
+    assert "7.3.0-resgx545 linux-resgx545" in out
+    assert "boot-test-kernel.sh 1 linux-resgx545" in out
+    mk = next(i for i, l in enumerate(lines) if "mkdir -p scratch/push-gma500" in l)
+    put = next(i for i, l in enumerate(lines) if "sgx-target:scratch/push-gma500/" in l)
+    assert mk < put
+
+
+def test_push_takes_the_host_key_alias_and_the_laptop_stage():
+    out = push(SGX_TARGET_HOST_KEY_ALIAS="box", SGX_TARGET_STAGE="scratch/r21p")
+    for l in laptop_lines(out):
+        assert "-o HostKeyAlias=box " in l and "HostKeyAlias=cedar" not in l, l
+    assert "sgx-target:scratch/r21p/" in out
+    assert "./install-module.sh scratch/r21p/gma500_gfx.ko " in out
+    # an alias in SGX_TARGET_SSH_OPTS is the one used, not doubled
+    out = push(SGX_TARGET_SSH_OPTS="-o HostKeyAlias=other")
+    for l in laptop_lines(out):
+        assert l.count("HostKeyAlias") == 1 and "HostKeyAlias=other" in l, l
+
+
+def test_push_refuses_a_laptop_stage_outside_scratch():
+    for stage in ("/tmp/x", "tmp", "scratch", "scratch/../x", "/home/u/scratch/x"):
+        r = subprocess.run(["bash", str(PUSH)], env=clean_env(SGX_DRY_RUN="1",
+                                                               SGX_TARGET_STAGE=stage),
+                           capture_output=True, text=True, timeout=30)
+        assert r.returncode != 0 and "SGX_TARGET_STAGE" in r.stderr, stage
 
 
 def test_push_takes_hosts_and_paths_from_the_environment():
@@ -55,12 +102,12 @@ def test_push_takes_hosts_and_paths_from_the_environment():
     assert "ssh builder " in out
     assert "builder:work/linux/drivers/gpu/drm/gma500/gma500_gfx.ko" in out
     assert "-o HostKeyAlias=box me@laptop" in out
-    assert "me@laptop:/tmp/" in out
+    assert "me@laptop:scratch/push-gma500/" in out
     assert "cd work/linux" in out
     assert "-j8 " in out
     assert "PATH=~/.local/bin:" in out
     assert "vermagic=7.4.0-sgx " in out
-    assert "./install-module.sh /tmp/gma500_gfx.ko 7.4.0-sgx linux-sgx" in out
+    assert "./install-module.sh scratch/push-gma500/gma500_gfx.ko 7.4.0-sgx linux-resgx545" in out
     assert "test-session.sh 10.1.2.3 7777" in out
     assert "sgx-build" not in out and "sgx-target" not in out
 
@@ -76,7 +123,7 @@ def test_push_reads_local_env(tmp_path):
                         "SGX_TARGET_HOST=${SGX_TARGET_HOST:-laptop-from-file}\n")
     out = push(SGX_LOCAL_ENV=str(env_file))
     assert "ssh from-file " in out
-    assert "laptop-from-file:/tmp/" in out
+    assert "laptop-from-file:scratch/push-gma500/" in out
     # the environment still wins over the file
     out = push(SGX_LOCAL_ENV=str(env_file), SGX_BUILD_HOST="override")
     assert "ssh override " in out
@@ -84,7 +131,9 @@ def test_push_reads_local_env(tmp_path):
 
 def test_push_reads_the_example_settings():
     out = push(SGX_LOCAL_ENV=str(HERE / "local.env.example"))
-    assert "-o HostKeyAlias=sgx-target user@sgx-target" in out
+    assert "-o HostKeyAlias=cedar user@sgx-target" in out
+    assert "user@sgx-target:scratch/push-gma500/" in out
+    assert "7.3.0-resgx545 linux-resgx545" in out
     assert "export PATH=~/.local/bin:$PATH;" in out     # ~ left for the build host
     assert "-j8 " in out
     assert "test-session.sh 192.0.2.10 6666" in out
@@ -92,8 +141,8 @@ def test_push_reads_the_example_settings():
 
 def test_push_no_reboot_stops_after_install():
     out = push("--no-reboot")
-    assert "install-module.sh /tmp" in out
-    assert "boot-test-kernel.sh" not in out.split("install-module.sh /tmp", 1)[1]
+    assert "install-module.sh scratch/" in out
+    assert "boot-test-kernel.sh" not in out.split("install-module.sh scratch/", 1)[1]
 
 
 def test_push_passes_the_render_gate():
@@ -189,12 +238,13 @@ def test_push_builds_on_the_laptop_when_the_build_host_is_the_target():
                SGX_KERNEL_TREE="src/linux-resgx545", SGX_NETCONSOLE_HOST="10.42.0.1",
                SGX_BUILD_JOBS="4")
     build = next(l for l in out.splitlines() if "make" in l)
-    assert build.startswith("ssh me@laptop ") and "sgx-build kernel" in build
+    assert build.startswith("ssh -o HostKeyAlias=cedar me@laptop ") and "sgx-build kernel" in build
     assert "SGX_KERNEL_TREE=src/linux-resgx545" in build and "-j4 " in build
     assert "M=drivers/gpu/drm/gma500" in build
     assert ("./install-module.sh src/linux-resgx545/drivers/gpu/drm/gma500/gma500_gfx.ko "
-            "7.3.0-sgx linux-sgx") in out
-    assert "scp -q target:" not in out and "/tmp/gma500_gfx.ko" not in out
+            "7.3.0-resgx545 linux-resgx545") in out
+    assert "scp -q target:" not in out and "/gma500_gfx.ko " not in out.replace(
+        "drivers/gpu/drm/gma500/gma500_gfx.ko ", "")
     assert "test-session.sh 10.42.0.1 6666" in out
 
 
@@ -206,10 +256,10 @@ def test_push_on_the_laptop_needs_a_netconsole_host():
 
 
 def test_push_takes_the_kernel_package_base():
-    out = push(SGX_KERNEL_PKGBASE="linux-resgx545", SGX_KERNEL_RELEASE="7.3.0-resgx545")
-    assert "./install-module.sh /tmp/gma500_gfx.ko 7.3.0-resgx545 linux-resgx545" in out
-    assert "boot-test-kernel.sh 1 linux-resgx545" in out
-    assert "7.3.0-sgx linux-sgx" in push()                    # the default stays
+    out = push(SGX_KERNEL_PKGBASE="linux-sgx", SGX_KERNEL_RELEASE="7.3.0-sgx")
+    assert "./install-module.sh scratch/push-gma500/gma500_gfx.ko 7.3.0-sgx linux-sgx" in out
+    assert "boot-test-kernel.sh 1 linux-sgx" in out
+    assert "7.3.0-resgx545 linux-resgx545" in push()          # the default stays
 
 
 # ---- the install step is install-module.sh; --ko installs a delivered module ------------
@@ -228,8 +278,8 @@ def test_push_ko_installs_a_delivered_module_without_building(tmp_path):
     out = push("--ko", str(ko), "--no-reboot", SGX_KERNEL_RELEASE="7.3.0-resgx545",
                SGX_KERNEL_PKGBASE="linux-resgx545")
     assert "make" not in out and "ssh sgx-build" not in out
-    assert f"scp -q {ko} sgx-target:/tmp/gma500_gfx.ko" in out
-    assert ("./install-module.sh /tmp/gma500_gfx.ko 7.3.0-resgx545 linux-resgx545 "
+    assert f"scp -q -o HostKeyAlias=cedar {ko} sgx-target:scratch/push-gma500/gma500_gfx.ko" in out
+    assert ("./install-module.sh scratch/push-gma500/gma500_gfx.ko 7.3.0-resgx545 linux-resgx545 "
             + "ab" * 32) in out
     assert "boot-test-kernel.sh 1" not in out
 
@@ -238,12 +288,13 @@ def test_push_ko_without_a_manifest_installs_without_a_sha256(tmp_path):
     ko = tmp_path / "gma500_gfx.ko"
     ko.write_bytes(b"module")
     out = push("--no-reboot", "--ko", str(ko))
-    assert out.rstrip().endswith("./install-module.sh /tmp/gma500_gfx.ko 7.3.0-sgx linux-sgx")
+    assert out.rstrip().endswith(
+        "./install-module.sh scratch/push-gma500/gma500_gfx.ko 7.3.0-resgx545 linux-resgx545")
 
 
 def test_push_ko_then_boots():
     out = push("--ko", "/nowhere/gma500_gfx.ko")
-    assert "boot-test-kernel.sh 1 linux-sgx" in out
+    assert "boot-test-kernel.sh 1 linux-resgx545" in out
 
 
 def test_push_refuses_an_unknown_option():

@@ -14,17 +14,23 @@
 # stops there.
 # The test kernel boots with gma500_gfx.sgx_render=1 (the render node the tests use) unless
 # SGX_RENDER=0 asks for the gate-off boot (no render node, card0 answers only DEV_QUERY).
-# The installed kernel is 7.3.0-sgx with LOCALVERSION_AUTO off, so a module built with an
-# empty LOCALVERSION keeps matching it. gma500 loads from the initramfs, hence mkinitcpio.
+# The installed kernel is 7.3.0-resgx545 (package linux-resgx545) with LOCALVERSION_AUTO off,
+# so a module built with an empty LOCALVERSION keeps matching it. The laptop's files go under
+# ~/SGX_TARGET_STAGE (a ~/scratch/ directory; never /tmp, a tmpfs in RAM), and every ssh and
+# scp to it names its host key alias (it dual-boots behind one address). gma500 loads from the initramfs, hence mkinitcpio.
 # SGX_DRY_RUN=1 prints the commands instead of running them.
 #
 # Settings (environment, or tools/bringup/local.env; see local.env.example):
 #   SGX_BUILD_HOST       ssh destination of the build host, or target (sgx-build)
 #   SGX_TARGET_HOST      ssh destination of the test laptop           (sgx-target)
 #   SGX_TARGET_SSH_OPTS  extra ssh/scp options for the laptop         (none)
+#   SGX_TARGET_HOST_KEY_ALIAS  the laptop's HostKeyAlias, unless SGX_TARGET_SSH_OPTS
+#                        names one                                    (cedar)
+#   SGX_TARGET_STAGE     the laptop's staging directory, from its $HOME, under scratch/
+#                                                                     (scratch/push-gma500)
 #   SGX_KERNEL_TREE      kernel tree on the build host, from $HOME    (src/linux-sgx)
-#   SGX_KERNEL_RELEASE   release of the installed test kernel         (7.3.0-sgx)
-#   SGX_KERNEL_PKGBASE   package of the installed test kernel         (linux-sgx)
+#   SGX_KERNEL_RELEASE   release of the installed test kernel         (7.3.0-resgx545)
+#   SGX_KERNEL_PKGBASE   package of the installed test kernel         (linux-resgx545)
 #   SGX_BUILD_JOBS       make -j on the build host                    ($(nproc) there)
 #   SGX_BUILD_PATH       directories prepended to PATH on the build host (none)
 #   SGX_NETCONSOLE_HOST  where the laptop sends its kernel log        (the build host;
@@ -39,9 +45,21 @@ LOCAL_ENV=${SGX_LOCAL_ENV:-$SCRIPTS/local.env}
 BUILD=${SGX_BUILD_HOST:-sgx-build}
 TARGET=${SGX_TARGET_HOST:-sgx-target}
 read -ra TOPTS <<< "${SGX_TARGET_SSH_OPTS:-}"
+case " ${SGX_TARGET_SSH_OPTS:-} " in
+*HostKeyAlias*) ;;
+*) TOPTS=(-o "HostKeyAlias=${SGX_TARGET_HOST_KEY_ALIAS:-cedar}" ${TOPTS[@]+"${TOPTS[@]}"}) ;;
+esac
+STAGE=${SGX_TARGET_STAGE:-scratch/push-gma500}
+case $STAGE in
+scratch/*/* | scratch/*..* | scratch/.*) ok= ;;
+scratch/?*) ok=1 ;;
+*) ok= ;;
+esac
+[ -n "$ok" ] || { echo "push-gma500.sh: SGX_TARGET_STAGE must be one directory under the" \
+	"laptop's ~/scratch/ (scratch/NAME), not $STAGE" >&2; exit 1; }
 KTREE=${SGX_KERNEL_TREE:-src/linux-sgx}
-KREL=${SGX_KERNEL_RELEASE:-7.3.0-sgx}
-KPKG=${SGX_KERNEL_PKGBASE:-linux-sgx}
+KREL=${SGX_KERNEL_RELEASE:-7.3.0-resgx545}
+KPKG=${SGX_KERNEL_PKGBASE:-linux-resgx545}
 JOBS=${SGX_BUILD_JOBS:-'$(nproc)'}
 BPATH=${SGX_BUILD_PATH:+export PATH=$SGX_BUILD_PATH:\$PATH; }
 if [ "$BUILD" = target ]; then
@@ -79,8 +97,9 @@ SHA=
 if [ -n "$KO_FILE" ]; then
 	manifest=$(dirname "$KO_FILE")/manifest
 	[ -f "$manifest" ] && SHA=$(sed -n 's/^sha256=//p' "$manifest")
-	run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$KO_FILE" "$TARGET:/tmp/gma500_gfx.ko"
-	KO=/tmp/gma500_gfx.ko
+	on_target "mkdir -p $STAGE"
+	run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$KO_FILE" "$TARGET:$STAGE/gma500_gfx.ko"
+	KO=$STAGE/gma500_gfx.ko
 elif [ "$BUILD" = target ]; then
 	on_target "SGX_KERNEL_TREE=$KTREE sgx-build kernel make ARCH=i386 -j$JOBS \
 		M=drivers/gpu/drm/gma500 >/dev/null &&
@@ -91,8 +110,9 @@ else
 		LOCALVERSION= make ARCH=i386 -j$JOBS M=drivers/gpu/drm/gma500 >/dev/null &&
 		strings $MOD | grep -q \"^vermagic=$KREL \"'"
 	run scp -q "$BUILD:$KTREE/$MOD" "$tmp/"
-	run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$tmp/gma500_gfx.ko" "$TARGET:/tmp/"
-	KO=/tmp/gma500_gfx.ko
+	on_target "mkdir -p $STAGE"
+	run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$tmp/gma500_gfx.ko" "$TARGET:$STAGE/"
+	KO=$STAGE/gma500_gfx.ko
 fi
 run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$SCRIPTS/boot-test-kernel.sh" "$SCRIPTS/test-session.sh" \
 	"$SCRIPTS/install-module.sh" "$TARGET:"
