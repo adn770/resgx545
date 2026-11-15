@@ -10,13 +10,11 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-142 open: 132 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+141 open: 131 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
   EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
-- `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
-  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1082, E1088, E1089)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E1091, E1092, E1100)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the

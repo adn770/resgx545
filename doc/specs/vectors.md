@@ -469,7 +469,7 @@ must say which fitted rules it used.
 - `expect.image` and `expect.buffers` have inline forms only; a `file` plus `sha256` form comes
   with the first scene whose image does not fit inline (12.4 or 12.7).
 - A scene is one job. Multi-kick jobs (TA then 3D, partial renders, parameter-buffer overflow:
-  Q038, Q107) need an ordered list of kicks and the memory between them; out of scope until 12.7.
+  E1099, Q107) need an ordered list of kicks and the memory between them; out of scope until 12.7.
 - `vm` is refused by the loader (a scene with one would run as flat memory); its shape (lists,
   banks, tables) is specified in 12.5. Unknown keys of a scene or its target are errors.
 - Memory segments carry no role (program, pds, state, vdm, pb, tadata, zls, target, texture) yet;

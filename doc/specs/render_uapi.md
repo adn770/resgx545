@@ -608,7 +608,7 @@ closes a scene a geometry job opened carries this PB's thresholds in its TA comm
 scene's first job carries the context's own back. A context on a sibling's PB
 (`render_share_pb`) takes the knob and ignores it. The tool's `tri --geometry K
 --final-pb-pages N` writes it before its render context is created, so a final render after an
-overflowing geometry kick can have room of its own (Q038, E1079) [infer: that the EDM
+overflowing geometry kick can have room of its own (E1079, E1099) [infer: that the EDM
 applies the update before the final kick's TA, as edm_dataflow.md reads it, is not yet measured].
 
 Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not

@@ -59,7 +59,7 @@ RULES = [
          "Q094 Q163", "12.2", "vertices per task"),
     Rule(r"mte/", "mte", "unit-blocked", "E061 E063 E194 E287", "Q069 Q162", "12.2",
          "viewport, clip, 1/w, OUTSEL"),
-    Rule(r"dpm/", "dpm", "unit-blocked", "E200 E456 E464", "Q038 Q191", "12.7",
+    Rule(r"dpm/", "dpm", "unit-blocked", "E200 E456 E464", "Q191", "12.7",
          "state page, free list, partial renders"),
     Rule(r"bif/", "bif-walk", "unit-blocked", "E457 E573 E592", "Q076 Q108", "12.5",
          "client and render directories"),
