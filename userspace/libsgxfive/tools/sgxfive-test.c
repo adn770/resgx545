@@ -73,7 +73,9 @@
  *                                 the parameter buffer and goes on; --dump-each: the
  *                                 --dump-render files after every render N (DIR/tri.N.*);
  *                                 --depth: a depth buffer the ZLS pokes point at, its
- *                                 changed dwords and frequent values reported per render;
+ *                                 changed dwords and frequent values reported per render
+ *                                 (W x H dwords and 16 pages over; --depth-pages N at least
+ *                                 the tile extent, W and H rounded up to 32 x 16 tiles);
  *                                 a fill F is a value, index, bit:K or bytes[:S] (byte j holds (j + S) & 255); --depth-store,
  *                                 --stencil, --stencil-store: further buffers (the store base
  *                                 on its own, the stencil bases); --tri-full: the triangle
@@ -2864,6 +2866,18 @@ static uint32_t depth_min_pages(const struct opts *o)
 			  SGXFIVE_PAGE_SIZE);
 }
 
+/*
+ * The floor of --depth-pages: the store's tile extent, the target rounded up to whole tiles of
+ * 32 x 16 dwords. The default size stays depth_min_pages + DEPTH_MARGIN_PAGES, so the buffers of
+ * earlier controls keep their addresses (round 22, R22-7).
+ */
+static uint32_t depth_tile_pages(const struct opts *o)
+{
+	const uint64_t w = (o->width + 31ull) / 32 * 32, h = (o->height + 15ull) / 16 * 16;
+
+	return (uint32_t)((w * h * 4 + SGXFIVE_PAGE_SIZE - 1) / SGXFIVE_PAGE_SIZE);
+}
+
 /* The ZLS buffers of tri --depth: the depth buffer, optional store, stencil and stencil store. */
 struct zbufs {
 	struct scratch depth, depth_store, stencil, stencil_store;
@@ -4808,10 +4822,11 @@ int main(int argc, char **argv)
 		return 2;
 	}
 	if (o.depth && (o.ctx2 || (o.depth_ctl_next && o.n < 2) ||
-			(o.depth_pages != UINT32_MAX && (o.depth_pages < depth_min_pages(&o) ||
+			(o.depth_pages != UINT32_MAX && (o.depth_pages < depth_tile_pages(&o) ||
 							 o.depth_pages > 0x100000)))) {
 		fprintf(stderr, "sgxfive-test: --depth does not take --ctx2; --depth-ctl-next needs -n 2 "
-			"or more; --depth-pages N must hold the target (width x height dwords)\n");
+			"or more; --depth-pages N must hold the target's tile extent (width and height "
+			"rounded up to tiles of 32 x 16, in dwords)\n");
 		return 2;
 	}
 	if (o.dump_dir && strcmp(cmd, "tri")) {

@@ -626,10 +626,12 @@ Weaknesses of our tools that a session or a fold has found and that are not fixe
 round reviews this list: an entry leaves it with the commit that fixes it (and its test), or
 stays with what a session must do around it.
 
-- `tri --depth` (`userspace/libsgxfive/tools/sgxfive-test.c`): `depth_min_pages` sizes the
-  depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
-  extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
-  than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
+- `tri --depth`'s default size (`userspace/libsgxfive/tools/sgxfive-test.c`): since round 22
+  the floor of `--depth-pages` is the depth store's tile extent (W and H rounded up to tiles of 32
+  x 16), but the default size stays W x H dwords and `DEPTH_MARGIN_PAGES` (16) over, so that
+  earlier controls keep their layouts (R22-7 a). The margin covers the pad of every target up to
+  16 pages of pad dwords; a wider pad (e.g. 31 pad columns at 4095 rows) is not covered: such a
+  session passes `--depth-pages` of the tile extent or more.
 - no `tri` job could make a final render that does not overflow itself after an overflowing
   `--geometry` kick (Q045's load-readback, Q038's reload without overflow): the fork reads debugfs
   `render_pb_pages` once, when a render context is created (round 18's T-pbfinal was dropped for

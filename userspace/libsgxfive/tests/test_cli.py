@@ -1287,6 +1287,26 @@ def test_tri_depth_options_set_the_words(tmp_path, monkeypatch):
     assert "depth #2: 6144 dwords, 0 changed, 1 distinct; 0x12345678 x 6144" in r.stdout
 
 
+def test_tri_depth_pages_floor_is_the_tile_extent(tmp_path, monkeypatch):
+    # the depth store writes whole tiles of 32 x 16: --depth-pages N must hold the target's
+    # tile extent (161 x 49, r17-zls's target: 192 x 64 dwords, 12 pages), not only its
+    # W x H dwords (8 pages); the default stays W x H dwords and sixteen pages over (24)
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    size = ("--width", "161", "--height", "49")
+    for pages in ("8", "11"):
+        r = run(*depth_args(*size, "--depth-pages", pages))
+        assert r.returncode == 2, (pages, r.stdout + r.stderr)
+        assert "tile extent" in r.stderr, r.stderr
+    r = run(*depth_args(*size, "--depth-pages", "12"))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^depth: 0x[0-9a-f]{8} 12 pages, ", r.stdout, re.M), r.stdout
+    r = run(*depth_args(*size))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^depth: 0x[0-9a-f]{8} 24 pages, ", r.stdout, re.M), r.stdout
+
+
 def test_tri_depth_fill_value_is_counted(tmp_path, monkeypatch):
     # the report's most frequent value is the fill when nothing was stored
     kp = tmp_path / "kpoke"
