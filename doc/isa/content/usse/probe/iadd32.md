@@ -39,6 +39,10 @@ seven that a sign extension writes otherwise, such as (0x8000, 0x8000) giving 0x
 repeats the test as on the other forms (E1061, held out). The combined conditions of the test
 field and the `o` join read on these adds as on the bitwise group (E1062, held out).
 
+With one writer quad alone writing `sa0` (a branch on `pa0`, E513's), the value read back is the
+same
+zero-extended sum, 8 of 8 dwords in 6 of 6 rows (E1106, held out; E1061's sa0 row, every instance
+writing, mixed other pairs' values).
+
 **Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
-that would tell it are nonzero under both readings, so no test of those pairs settles it; the value
-written into `sa0`, which the fill's instances share (E1061) (Q126).
+that would tell it are nonzero under both readings, so no test of those pairs settles it (Q126).

@@ -9340,6 +9340,22 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   read their records with the print at 64 lines (controls passed).
   *pds; HW; data: `render-closing-r25-sa64:out/20261115-220241/pk64/`,
   `render-closing-r25-sa64:out/20261115-220241/q019/`, `render-closing-r25-sa64:fold/`.*
+- `E1106` r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module E0CC4027: a single
+  writer alone writes iaddu32's value into sa0 and it is the zero-extended one: eight (r1, source 2)
+  pairs a program, `iaddu32.testtaz.chan0 sa0, p0, r1, r2`, `mov r3, sa0` and a store of r3 to the
+  pair's own dword, run by one 2x2 quad selected as E513 selects it (`xor.testtaz` of pa0 and `!p0
+  br` over the body), read (r1 & 0xffff) + source 2 on 8 of 8 dwords in all six held-out rows
+  (E1061's pairs at quad (0, 0) twice and at quad (62, 30), eight new pairs of seed 26126 at both
+  quads and once more at (0, 0): 'H-ZX (heldout) (6 of 6 rows decided)'; H-SX, the sign extension, 1
+  of 8 dwords on E1061's pairs (the 0x7fff pair, where both agree) and 0 of 8 on the new ones, 'not
+  supported: 0 held, 6 FAILED'; H-MIX, E1061's mixture, 0 of 6, 'not supported: 0 held, 6 FAILED');
+  both gate controls passed (c-e521, E1061's u-ctl-e521 program byte for byte, H-E521 8 of 8;
+  c-one-r10, the branch form into r10, H-ZX 8 of 8 with `o0 mixed 0xc0de0001 x2044 0x0001ffff x4`:
+  exactly the four lanes of one quad wrote r10) [HW]; so the mixture of E1061's sa0 row was other
+  instances writing the shared sa0 (post hoc [infer] confirmed by its absence with one writer quad);
+  E1061's frozen verdict stays as printed.
+  *usse; HW; data: `render-closing-r26-sa0:out/20261115-224747/uc/`,
+  `render-closing-r26-sa0:out/20261115-224747/us/`, `render-closing-r26-sa0:fold/`.*
 
 ## By unit
 
@@ -9451,7 +9467,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062, E1098, E1102.
+E1061, E1062, E1098, E1102, E1106.
 
 ### vdm
 

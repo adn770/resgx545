@@ -49,9 +49,12 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   0x10000), and so it does with source 2 `#1`, `#127` and `c56` (0xffffffff) and into `i0` (E1061:
   eight pairs each, seven with bit 15 of r1 set, 8 of 8 each); a write mask `.xy` or `.xyzw` on the
   test repeats it as on the other forms, component k writing d + k from r1 + k and r5 + k (E1061,
-  16 of 16; the predicate it leaves was not read). Into `sa0`, read back by `mov`, two of eight
-  dwords held another pair's value and the pixels mixed four values (E1061: one register shared by
-  the fill's instances **[infer]**), so that destination is **[open]** (Q126); which extension its
+  16 of 16; the predicate it leaves was not read). Into `sa0`, read back by `mov`, with every
+  instance of the fill writing, two of eight dwords held another pair's value and the pixels mixed
+  four values (E1061: one register shared by the fill's instances **[infer]**); with one writer
+  quad alone (a branch on `pa0` as E513's) it writes the same zero-extended value as into `r10`, 8
+  of 8 dwords in 6 of 6 rows over two sets of eight pairs and two quads, the sign extension and the
+  mixture 0 of 6 (E1106 **[HW]**); which extension its
   test reads is **[open]** (Q126): no test of the 16 pairs of E498 tells it. With source 1 = `#0`
   the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values each) (*The
   32-bit adds `iadd32` and `iaddu32`*).

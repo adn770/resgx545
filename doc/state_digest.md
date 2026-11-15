@@ -249,7 +249,7 @@ list.
 - `Q125` usse, low: which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3
   of the instances that do not read the last job's value, ... (E477, E484, E500)
 - `Q126` usse, low: which extension of a source 1 above 0x7fff does the test of iaddu32 read (no
-  test tells it, E498), and what value does iaddu32 write into ... (E498, E521, E1061)
+  test tells it, E498: every test gives the same flag under both ... (E521, E1061, E1106)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
 - `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
@@ -293,9 +293,12 @@ list.
 
 ## Recent records
 
-69 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+70 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1106` usse, 2026-11-15: r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module
+  E0CC4027: a single writer alone writes iaddu32's value into sa0 and it is the zero-extended one:
+  eight (r1, source 2) pairs a ...
 - `E1104` pds, 2026-11-15: r25-sa64 stages pk64 and q019 (58 jobs) on t24, whose probe
   --scratch-show 64 prints all 64 scratch dwords sa64_dump.s stores: E391's 40 jobs and 16 held-out
   jobs at 3 and 6 rows read the markers of ...
@@ -506,9 +509,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-86 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+87 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r26-sa0`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t24
 - `render/closing-r25-sa64`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t24
 - `render/closing-r25-q123`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -636,7 +641,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 14 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 15 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions

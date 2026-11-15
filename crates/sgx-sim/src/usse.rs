@@ -8777,6 +8777,23 @@ mod after_11_27 {
     }
 
     #[test]
+    fn iaddu32_into_sa0_from_one_writer_zero_extends_and_the_quad_branch_is_refused() {
+        // E1106 (r26-sa0): one writer quad alone writing sa0 reads (r1 & 0xffff) + source 2, 8 of 8
+        // dwords in 6 of 6 rows (E1061's every-instance row mixed: the shared register); the sim runs
+        // one instance, so it is that single writer; the program that selects the quad (a read of
+        // pa0 and a branch on it, E513) is refused: pa0 is not written by the program
+        let a = [0x8000u32, 0x8001, 0xabcd, 0xffff, 0x7fff, 0xffff_8000, 0x1234_fedc, 0xffff_ffff];
+        let b = [0x8000u32, 0x7fff_0000, 1, 0xffff_ffff, 0x8001, 0x1234_5678, 0x8000_0000, 0x1_0000];
+        for k in 0..8 {
+            let init = [format!("mov r1, #0x{:08x}", a[k]), format!("mov r2, #0x{:08x}", b[k])];
+            let (m, r) = with(&init, &["iaddu32.testtaz.chan0 sa0, p0, r1, r2", "mov r10, sa0"]);
+            assert_eq!(r, Ok(()), "pair {k}");
+            assert_eq!(m.r[10], (a[k] & 0xffff).wrapping_add(b[k]), "pair {k}");
+        }
+        assert!(refused(&with(&[], &["mov r7, pa0"]).1));
+    }
+
+    #[test]
     fn a_placed_program_counts_from_its_code_base() {
         // E476, E492: the link of a br.savelink in a program placed at heap offset X reads
         // (X mod 0x80000) / 8 + the index after the call (the vectors have a phas first: one more); a ba counts from the code base too

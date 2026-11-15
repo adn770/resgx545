@@ -56,8 +56,7 @@ open driver:
    what the task left, E809, E810); what leaves
    0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
    of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
-   a source 1 above 0x7fff, which no test tells, and the value it writes into `sa0`, which the
-   fill's instances share (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
    the extra operand, its selector 3 and what bit 46 does, and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
    (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost

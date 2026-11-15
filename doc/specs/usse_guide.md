@@ -1814,9 +1814,12 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   0x10000), and so it does with source 2 `#1`, `#127` and `c56` (0xffffffff) and into `i0` (E1061:
   eight pairs each, seven with bit 15 of r1 set, 8 of 8 each); a write mask `.xy` or `.xyzw` on the
   test repeats it as on the other forms, component k writing d + k from r1 + k and r5 + k (E1061,
-  16 of 16; the predicate it leaves was not read). Into `sa0`, read back by `mov`, two of eight
-  dwords held another pair's value and the pixels mixed four values (E1061: one register shared by
-  the fill's instances **[infer]**), so that destination is **[open]** (Q126); which extension its
+  16 of 16; the predicate it leaves was not read). Into `sa0`, read back by `mov`, with every
+  instance of the fill writing, two of eight dwords held another pair's value and the pixels mixed
+  four values (E1061: one register shared by the fill's instances **[infer]**); with one writer
+  quad alone (a branch on `pa0` as E513's) it writes the same zero-extended value as into `r10`, 8
+  of 8 dwords in 6 of 6 rows over two sets of eight pairs and two quads, the sign extension and the
+  mixture 0 of 6 (E1106 **[HW]**); which extension its
   test reads is **[open]** (Q126): no test of the 16 pairs of E498 tells it. With source 1 = `#0`
   the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values each) (*The
   32-bit adds `iadd32` and `iaddu32`*).
@@ -4056,9 +4059,13 @@ seven that a sign extension writes otherwise, such as (0x8000, 0x8000) giving 0x
 repeats the test as on the other forms (E1061, held out). The combined conditions of the test
 field and the `o` join read on these adds as on the bitwise group (E1062, held out).
 
+With one writer quad alone writing `sa0` (a branch on `pa0`, E513's), the value read back is the
+same
+zero-extended sum, 8 of 8 dwords in 6 of 6 rows (E1106, held out; E1061's sa0 row, every instance
+writing, mixed other pairs' values).
+
 **Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
-that would tell it are nonzero under both readings, so no test of those pairs settles it; the value
-written into `sa0`, which the fill's instances share (E1061) (Q126).
+that would tell it are nonzero under both readings, so no test of those pairs settles it (Q126).
 
 ### 8.4 Test channels
 
@@ -5280,8 +5287,7 @@ open driver:
    what the task left, E809, E810); what leaves
    0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
    of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
-   a source 1 above 0x7fff, which no test tells, and the value it writes into `sa0`, which the
-   fill's instances share (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
    the extra operand, its selector 3 and what bit 46 does, and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
    (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost
