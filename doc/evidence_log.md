@@ -9319,6 +9319,15 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   every control passed and every poke was echoed as sent.
   *texture; HW, infer; data: `render-closing-r25-csc:out/20261115-213805/csc/`,
   `render-closing-r25-csc:fold/`.*
+- `E1104` r25-sa64 stages pk64 and q019 (58 jobs) on t24, whose probe --scratch-show 64 prints all
+  64 scratch dwords sa64_dump.s stores: E391's 40 jobs and 16 held-out jobs at 3 and 6 rows read the
+  markers of attributes 0-15, 16-31, 32-47 and 48-63 each at their own sa (sa0-sa63) at 0, 1, 2, 3,
+  4, 6 and 8 rows in both runs, none elsewhere (H-ALL64 56 of 56, H-NONE 28 of 56); sa0-sa31 read as
+  E1096 (H-E391 56 of 56); the fit table of H-ROWS is flat at 16 for every set at 0, 1 and 4 rows
+  and the held-out rows read the same (H-ROWS 32 of 32); the repeats of E1096's pk-e391 and pk-e125
+  read their records with the print at 64 lines (controls passed).
+  *pds; HW; data: `render-closing-r25-sa64:out/20261115-220241/pk64/`,
+  `render-closing-r25-sa64:out/20261115-220241/q019/`, `render-closing-r25-sa64:fold/`.*
 
 ## By unit
 
@@ -9378,7 +9387,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880, E905, E1096.
+E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104.
 
 ### platform
 
