@@ -194,7 +194,8 @@ sub-phase did.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q192, 155
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to the partial
+owner's page question (answered by E1092), 155
 open (the two ids between Q132 and the test-field question, answered since by E1062, are reserved,
 unused, and so is the one between Q181 and
 Q183, and the six between Q183 and the layered-object question, answered by E971 on 2026-11-13;
@@ -775,8 +776,9 @@ retired, the kernel question on the module
 load is narrowed (the amended module's load failed three cases on an order-5 allocation failure, the
 first kernel line for the allocation reading; no load was on a fresh boot), and three questions are
 new
-(hw: the object with texture layers, answered by E971 on 2026-11-13; Q191, the stored words; Q192,
-the partial owner's page). The kernel switch
+(hw: the object with texture layers, answered by E971 on 2026-11-13; Q191, the stored words; the
+partial
+owner's page, answered by E1092 on 2026-11-15). The kernel switch
 that would fill the second context's state page between two contexts' renders stays open
 (`tadata_fill` is taken by the first kick after it is armed). The roadmap counts the questions from
 the built `doc/open_questions.md`: 155 open, 139 hw (high 13, medium 68, low 58), 10 fw and 6
@@ -847,8 +849,10 @@ zero in the first row of macrotiles, the zero rows are not one rule across sizes
 test runs across the partial render (E628); the stored depth's sign follows the raise, a
 correlation with P and the scene (E629). Two of E438's three hang cases log the kernel's hung line
 with the recovery held and end as overflows (E630, the watchdog reading an inference), and a kept
-partial owner's state page is zero after the second context's run, cause not separated (E631, Q192
-narrowed, not retired). The simulator is unchanged. The roadmap counts the questions from the
+partial owner's state page is zero after the second context's run, cause not separated (E631; the
+partial
+owner's page question, narrowed then, answered by E1092). The simulator is unchanged. The roadmap
+counts the questions from the
 built `doc/open_questions.md`: 167 open (Q001 to Q211), 149 hw (high 17, medium 69, low 63), 12 fw
 and 6 kernel; usse 38, edm 17, isp 15, dpm 9.
 

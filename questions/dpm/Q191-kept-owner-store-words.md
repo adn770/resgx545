@@ -33,7 +33,8 @@ head) and tail of the owner's 2 pages in 8 of 8 jobs, all with 2 pages, so not s
 constant. A partial-render owner (1024x768, 0x28 pages) leaves no owner word in its control, OTPM
 or state pages with either flag (flag 0xc: nothing in pages 1 to 4; flag 0x4: only 5 words in page
 4, 0x00200057, 0x002000ad, 0x0020007e, 0x002000c0 and 0x00200087, a family with 0x00200047), and
-its state page is zero after the second context's run (2 runs each, Q192). Not separated: the TA
+its state page is zero after the second context's run (2 runs each; the partial owner's page
+question, answered by E1092). Not separated: the TA
 kick against the render's end (the optional kernel switch K1), a load task reading the words back,
 why a partial owner leaves no owner words, what the 5 words of page 4 are, and whether anything
 holds for another size or P (the partial owner was run at one size and one P).

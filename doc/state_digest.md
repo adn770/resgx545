@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-143 open: 133 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+142 open: 132 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -49,8 +49,6 @@ list.
   do on the hardware, which of the bus interface's requestors do ... (E965, E1046, E1071)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
-- `Q192` dpm, medium: does the store that follows the next context's render replace the state page a
-  partial-render owner left (18 non-zero dwords after its ... (E591, E631, E1084)
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it

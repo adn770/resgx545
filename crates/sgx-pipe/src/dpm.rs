@@ -6,7 +6,7 @@ use crate::Outcome;
 use std::collections::BTreeMap;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q036", "Q038", "Q081", "Q191", "Q192", "Q210", "Q211"];
+pub const OPEN: &[&str] = &["Q036", "Q038", "Q081", "Q191", "Q210", "Q211"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses.
 pub fn refuse() -> Outcome {
