@@ -203,7 +203,8 @@ the six ids after Q168 belong to phases not in this
 tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
 so the 139 `hw` questions are the work queue, each with a value (high 13, medium 68, low 58); the 10
 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
-Q088, Q118, Q119, the one on the state between EDM tasks, answered later by E809, and the one on
+Q118, Q119, the one on the render details' ZLS word, answered later by E1101, the one on the state
+between EDM tasks, answered later by E809, and the one on
 two EDM tasks, answered by E752) and the 6 `kernel` ones (the
 design
 of our kernel driver: the firmware-identity one, answered later by E402, the one on the hung
@@ -301,7 +302,7 @@ what the captures leave open is a question:
   sizes (E331; Q086).
 - **pbe:** the end-of-tile words (E333).
 - **zls:** depth kept across frames (E335); the update list (E336); the control values (E337;
-  Q088).
+  what reads them: E1094, E1101).
 - **usse:** of the 46 open instruction forms the closed compilers use 14 (E350,
   `harness/ukernel-extract/opscan3d.py`); every vertex program opens with a load predicated
   never to run and a wait on it (E351, `opscan3d.py --guard`).
@@ -413,8 +414,9 @@ ramp makes every stored dword name its pixel, fills that encode the dword's inde
 `--stencil`, `--stencil-store`). The store window of E461 is the arithmetic of the tile pitch,
 control bits 11:3 (E465); bits 26:24 are the stored format (E466); bits 1, 13 and 14 load, the
 stencil and the depth (E467); and what an overflowed job stores is the first row of macrotiles as
-zeros and the rest negated (E468). Q088 stays open as a firmware question (its hardware half is
-answered); Q071, the bit-19 question (folded into Q069 since) and Q107 are narrowed; Q120 and the
+zeros and the rest negated (E468). The question of what reads the render details' word stays
+open as a firmware question (its hardware half is answered; the rest answered later by E1101);
+Q071, the bit-19 question (folded into Q069 since) and Q107 are narrowed; Q120 and the
 stencil order's question (answered since by E988) are new, and so was the question of
 the pixels past the target, answered since by E831.
 

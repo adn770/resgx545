@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E989", "E997", "E1014", "E1030", "E1042", "E1053", "E1063", "E1069"]
+            "E989", "E997", "E1014", "E1030", "E1042", "E1053", "E1063", "E1069", "E1088", "E1093"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -108,3 +108,8 @@ from dword 2048 at 96 x 48 G 2 and 128 x 64 G 3 too, the twin's records in addre
 3 of 4 held out, the fourth by a record gathering the frozen rule got wrong; the end of the last
 slot and an offset scaling with the pitch failed 4 of 4). Open: where bit 23's bytes come from, bit
 20 in formats 3 to 5 and with an overlapping pitch, and the ISP's use of the control.
+
+Joined 2026-11-15 from Q088 (retired, answered by E1101): bit 15 as the firmware sets it. After
+the partial renders of a geometry kick `CR_ISP_ZLSCTL` (0x0480) reads the render details' word with
+bit 15 set (0x0017d10c), and during a raised kick's final with bits 14, 15 and 19 (E1088, E1093,
+post hoc); what bit 15 does there is open, with the host's bit 15 above.

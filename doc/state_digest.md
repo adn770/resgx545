@@ -54,7 +54,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E1053, E1063, E1069)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E1069, E1088, E1093)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -284,14 +284,14 @@ list.
   the render context, which the EDM dataflow reaches on no path? (E165, E361, E448)
 - `Q084` dpm, fw (parked): how does the closed driver turn its PBSize app hint into the parameter
   buffer's page count and thresholds, given 1 MiB and 8 MiB both give ... (E327)
-- `Q088` zls, fw (parked): what reads the render details' unpatched ZLS control word that the closed
-  driver writes between frames (0x0011700a), now that bit 14 is ... (E1088, E1093, E1094)
 - `Q118` render, fw (parked): how does the firmware's kick tell that its context's page directory is
   in none of the bus interface's directory lists (a compare against ... (E360, E592)
 - `Q119` render, fw (parked): does one TA command carrying both FIRST_KICK and LAST_KICK act as two
   commands in the firmware (a kick and a closing kick)? (E156, E165)
 - `Q277` dpm, fw (parked): what sets the fields of register 0x0740 that the TA kick turns into DPM
   store and load tasks (a host write reads back 0: E456; 0 in every ... (E312, E456, E574)
+- `Q301` zls, fw (parked): what does the closed driver write the unpatched ZLS control word
+  0x0011700a into the render details for between frames, and why does a ... (E1093, E1094, E1101)
 - `Q095` platform, kernel (parked): does giving the EDM a page directory of its own, rather than
   gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
 
