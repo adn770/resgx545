@@ -395,6 +395,10 @@ Readings a scorer or a hook takes from the kept files, and the slips they have c
   ...` says it took N, `tri: render_kept still empty after 10 reads ...: the copy is empty` that it
   stayed empty (the file is written empty, the run goes on). A session counts an empty copy, it
   does not stop on it; tools before t20 (t18b) copy once.
+- The colour-space set survives the runner's debugfs reset and later jobs (E1097: a UYVY copy
+  without the load read the loaded copy's hash after an earlier load), so a YUV row's reading
+  depends on the last job that loaded a set: score it against the set copy right before it, and
+  call it "cannot tell" when that copy's hash is not E037's (black or 0xb6067a95fa98de2d).
 
 ## Firmware tasks of our own
 
@@ -682,17 +686,13 @@ stays with what a session must do around it.
   earlier controls keep their layouts (R22-7 a). The margin covers the pad of every target up to
   16 pages of pad dwords; a wider pad (e.g. 31 pad columns at 4095 rows) is not covered: such a
   session passes `--depth-pages` of the tile extent or more.
-- `probe --poke` in every laptop tool before t22 (t10 to t20, since ac5b888): the probe handed
-  its fill's or copy's job hook the address of a compound literal that ended before the hook ran
-  (a dangling pointer; fill, copy and tri kept theirs alive and are not affected). gcc reuses the
-  slot: the laptop's i686 `make check` died of SIGSEGV in `test_cli_poke.py`'s two probe poke
-  tests, which t20's recipe accepted as known failures. Fixed in 72a28dc (the set in the probe's
-  scope, a static test against the pattern), and t22 echoes each poke it applied as `probe NAME:
-  poked SPACE:N 0xOLD -> 0xNEW`; t22's recipe requires 0 failures. Pokes that visibly landed
-  (E078, E292/E293) stand; the negatives of E125, E391 (Q019) and E568 (Q181) are unverified
-  until a row of each is repeated on t22 with the echo (R22-4 a, r23-pk), and get a correction
-  only if the repeat differs. No session uses t10 to t20 for `probe --poke` again. The entry
-  stays until r23-pk has run.
+- `probe` prints the first 32 changed scratch dwords (t22 and every tool before t24): E391's and
+  E1096's `sa64_dump.bin` rows stored sa0-sa63 to scratch dwords 0-63 and every row counted
+  `scratch 32 more changed`, so sa32-sa63 were never read (E391 and E1096 say so under what they
+  do not show; Q019). t24's `probe --scratch-show N` (1 to 64, default 32 with the earlier output
+  byte for byte; fill and copy probes, refused with `--tri`, which prints every dword) prints up to
+  N. The entry stays until r25-sa64 has read them; no session before t24 reads sa32-sa63 from a
+  probe's print.
 - sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
   refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
   path before E902's seeds. A session that needs the sim as an oracle checks first that its
