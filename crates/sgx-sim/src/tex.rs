@@ -83,6 +83,11 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
         tex.csc = s.csc;
     }
     let (levels, bilinear) = tex.pick(t0, &s.lod, s.one_d)?;
+    if tex.t3_addr && (bilinear || levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None || s.one_d) {
+        return open(
+            "E722's T3 address chain filtered, off level 0, with .pcf, an SRD mode or 1D (not run; Q300)",
+        );
+    }
     let (u, v) = (s.u as f64, if s.one_d { 0.0 } else { s.v as f64 });
     if t3 >> 14 & 1 != 0 && tex.row.is_none() {
         // T3 bit 14 on a twiddled texture (E1047: E566's 32 x 32 32-bit texture, three fills
@@ -431,19 +436,24 @@ fn half_to_f32(h: u32) -> f32 {
 /// compare mode 31:29 (for .pcf) and the data size 26:23 change nothing seen;
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
-/// texture only those are measured, and bit 14 at W 16 to 128 by 32 and the sizes of E1058 (see sample); bits 10, 13,
-/// 27 and 28 act in ways not modelled here; bits 11 and 12 change nothing on a strided texture again in E975, and on a
+/// texture only those are measured, and bit 14 at W 16 to 128 by 32 and the sizes of E1058 (see sample); bit 13
+/// acts in ways not modelled here; bits 28:27 (a level), 10 (one texel) and, twiddled, 19:18 are
+/// E722's address chain, admitted only in the words its jobs ran (`addr`, MEASURED_T3_ADDR,
+/// Texture::t3_address); bits 11 and 12 change nothing on a strided texture again in E975, and on a
 /// twiddled chain select the level (E1027, Texture::pick). Bit 14 on
 /// a stride texture moves the texel by floor(4096 clamp(u, 0, 1)) texels (E968's S * S rule
 /// failed; E975 post hoc; E1003: texels, not dwords, on a 16-bit texture; held out on six
 /// geometries), see sample.
-fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
-    let not_measured = if stride { 0x1800_2400 } else { 0x187c_27ff };
+fn t3_fields(t3: u32, stride: bool, addr: bool) -> Result<([i64; 2], u32), Fail> {
+    let mut not_measured = if stride { 0x1800_2400 } else { 0x187c_27ff };
+    if addr {
+        not_measured &= !(3 << 27 | 1 << 10 | 3 << 18);
+    }
     if t3 & not_measured != 0 {
         return open(format!("T3 bits 0x{:08x}", t3 & not_measured));
     }
     let shift = t3 >> 18 & 3;
-    if shift == 3 {
+    if shift == 3 && !addr {
         return open("T3 bits 19:18 = 3");
     }
     let s4 = |v: u32| ((v as i64) << 60) >> 60;
@@ -596,6 +606,63 @@ const TYPE3_F5_SIZES_E958: [(u32, u32); 2] = [(4, 8), (8, 8)];
 /// 32 (ceil(w / 32) blocks a block row).
 const TYPE4_SIZES: [(u32, u32); 10] =
     [(4, 16), (64, 8), (64, 32), (64, 64), (128, 64), (128, 128), (256, 32), (48, 64), (80, 64), (96, 32)];
+/// E722's T3 address jobs as they ran (tex-c-addr, 13 of 16 held out exact; the three that
+/// faulted with a 16-page scratch, L2e2 and L3e3 at 64 x 64 and the strided L3e2, exact at 64 and
+/// 21 pages, E743, E760): (strided, W, H, T3), format 12, point filters, level 0 and repeat
+/// (twiddled, T0 0x07fe0000) or a stride of the width. T3 bits 28:27 are the level L, 19:18 the
+/// scale e, 10 one texel (Texture::t3_address).
+const MEASURED_T3_ADDR: [(bool, u32, u32, u32); 16] = [
+    (false, 64, 64, 0x0880_0800),  // L1e0
+    (false, 64, 64, 0x1080_0800),  // L2e0
+    (false, 64, 64, 0x1880_0800),  // L3e0
+    (false, 64, 64, 0x0884_0800),  // L1e1
+    (false, 64, 64, 0x1088_0800),  // L2e2
+    (false, 64, 64, 0x188c_0800),  // L3e3
+    (false, 64, 64, 0x0080_0c00),  // bit 10
+    (false, 32, 64, 0x0880_0800),  // L1e0
+    (false, 32, 64, 0x1084_0800),  // L2e1
+    (false, 128, 32, 0x0880_0800), // L1e0
+    (false, 128, 32, 0x0088_0800), // L0e2
+    (true, 128, 32, 0xa880_0000),  // L1e0
+    (true, 128, 32, 0xb084_0000),  // L2e1
+    (true, 128, 32, 0xb888_0000),  // L3e2
+    (true, 128, 32, 0xa080_0400),  // bit 10
+    (true, 32, 64, 0xa880_0000),   // L1e0
+];
+
+/// T3's address chain (bits 28:27, 10 and, twiddled, 19:18) only in E722's words and sizes.
+fn measured_t3_addr(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
+    let (ty, fmt) = (t1 >> 29, t1 >> 24 & 31);
+    let (w, h) = ((t1 >> 12 & 0xfff) + 1, (t1 & 0xfff) + 1);
+    let s = w - 1;
+    let t0_ran = match ty {
+        0 => t0 == T0_REP,
+        6 => t0 == ((s & 7) << 9 | (s >> 3) << 17),
+        _ => false,
+    };
+    if fmt == 12 && t0_ran && MEASURED_T3_ADDR.contains(&(ty == 6, w, h, t3)) {
+        return Ok(());
+    }
+    open(format!(
+        "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: T3 bits 28:27, 19:18 (twiddled) and 10, E722's \
+         address chain, ran only at its jobs' sizes and words (MEASURED_T3_ADDR: format 12, point, \
+         level 0, repeat or a stride of the width; Q300)"
+    ))
+}
+
+/// A texture read that the bus faults, under E722's address chain: past the probe's scratch.
+fn past_scratch(e: crate::Error) -> Fail {
+    match e {
+        crate::Error::Fault(a) => Fail::Open(format!(
+            "the sampler read past the probe's scratch (0x{a:08x}): what lies there is the probe's own \
+             layout, its coords surface, its 0xdeadbeef sentinel page and then an unmapped page that \
+             faults (E743, E760, E787; E760's 18-page 'no pixel written' is that sentinel image, \
+             E787), not modelled"
+        )),
+        e => Fail::Load(e),
+    }
+}
+
 /// Type 5 (format 12, point filters) at E911's and E942's sizes.
 const TYPE5_SIZES: [(u32, u32); 7] = [(8, 8), (16, 16), (32, 32), (64, 64), (32, 8), (8, 32), (16, 8)];
 
@@ -697,6 +764,12 @@ struct Texture {
     blocks: bool,
     /// Type 5: one bit per 8 texels, bit 0 of dword floor(t / 8), t = y w + x (E942).
     bits: bool,
+    /// E722's address chain (T3 bits 28:27, 10, twiddled 19:18): Texture::t3_address.
+    t3_addr: bool,
+    /// T3 bits 28:27, the level of E722's chain.
+    t3_level: u32,
+    /// T3 bit 10: the base dword (E722).
+    t3_single: bool,
     /// T0 bit 27: the sRGB decode (E723).
     srgb: bool,
     /// T3 bits 12:11 on a twiddled texture (E1027): 1 the LOD's level, 0 level 0, 2 and 3 the
@@ -742,7 +815,11 @@ impl Texture {
             0 => return open("a twiddled texture of a size other than a power of two"),
             t => return open(format!("texture type {t}")),
         };
-        let (offset, shift) = t3_fields(t3, stride)?;
+        let addr = t3 >> 27 & 3 != 0 || t3 >> 10 & 1 != 0 || !stride && t3 >> 18 & 3 != 0;
+        if addr {
+            measured_t3_addr(t0, t1, t3)?;
+        }
+        let (offset, shift) = t3_fields(t3, stride, addr)?;
         let mut tex = Texture {
             w,
             h,
@@ -756,6 +833,9 @@ impl Texture {
             raster,
             blocks: t1 >> 29 == 4,
             bits: t1 >> 29 == 5,
+            t3_addr: addr,
+            t3_level: t3 >> 27 & 3,
+            t3_single: t3 >> 10 & 1 != 0,
             srgb,
             lodsel: if stride { 1 } else { t3 >> 11 & 3 },
             csc: None,
@@ -1103,6 +1183,9 @@ impl Texture {
     /// held out every region at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and 256 x 32, the
     /// corner base E1026's post hoc 4 log2 M against five rivals).
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
+        if self.t3_addr {
+            return self.t3_address(x, y, load);
+        }
         if self.raster && self.address[0] == 4 && self.offset == [0, 0] && self.shift == 0 {
             // E1039 (fitted), E1055 (the form held out on ten rows, the 16 x 16 map's wrap on a
             // held-out u range, 32 x 32 post hoc): types 1, 3 and 4 with u mode 4 read the dword
@@ -1204,6 +1287,35 @@ impl Texture {
             }
             _ => dw >> (8 * (a & 3)) & ((1 << (8 * bytes)) - 1),
         })
+    }
+
+    /// Texel (x, y) under E722's address chain (A4; 13 of 13 held-out jobs that completed exact,
+    /// fitted on E566's 12; the rival "A4 stride chain" missed one, "A4 shift idx only" three):
+    /// the dword base + ((off + idx) << e), off = the sum over k < L of max(1, W >> k) max(1, H >>
+    /// k) (the level sizes, not the stride), idx E561's tile index of (X >> L, Y >> L) at the
+    /// level's size or, strided, X >> L + stride (Y >> L), X and Y level 0's texel repeated
+    /// (twiddled) or clamped (strided); bit 10 reads the base dword. A read the bus faults is past
+    /// the probe's scratch (past_scratch).
+    fn t3_address(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
+        let l = self.t3_level;
+        let side = |n: u32, k: u32| (n >> k).max(1);
+        let dword = if self.t3_single {
+            0
+        } else {
+            let off: u32 = (0..l).map(|k| side(self.w, k) * side(self.h, k)).sum();
+            let idx = match self.row {
+                Some(row) => {
+                    let (x, y) = (x.clamp(0, self.w as i64 - 1) as u32, y.clamp(0, self.h as i64 - 1) as u32);
+                    (x >> l) + row / 4 * (y >> l)
+                }
+                None => {
+                    let (x, y) = (x.rem_euclid(self.w as i64) as u32, y.rem_euclid(self.h as i64) as u32);
+                    morton(x >> l, y >> l, side(self.w, l), side(self.h, l))
+                }
+            };
+            (off + idx) << self.shift
+        };
+        load(self.base.wrapping_add(4 * dword)).map_err(past_scratch)
     }
 
     /// A texel of a colour format as B8G8R8A8: the 16-bit ones expand each
@@ -2447,6 +2559,72 @@ mod tests {
         assert_eq!(probe(12, 0, 0xa088_0000, 3, 5), Ok(vec![0xd000_054c]));
         assert!(probe(12, 0, 0xa08c_0000, 3, 5).is_err(), "3 is not measured");
         assert!(probe(5, 0, 0xa084_0000, 3, 5).is_err(), "a 16-bit format");
+    }
+
+    #[test]
+    fn e722_t3_levels_and_scale_address_the_sum_of_offset_and_index() {
+        // E722's A4: the dword base + ((off + idx) << e), off the level sizes below L, idx E561's
+        // index of (X >> L, Y >> L) at the level's size. ad-tw64x64-L1e1 (T3 0x0884_0800): texel
+        // (2, 0) is (1, 0) of level 1's 32 x 32, index 2, so (4096 + 2) << 1; the rival "A4 shift
+        // idx only" (E722: 0 of 2048 there) would read 4096 + (2 << 1)
+        let tw = |w: u32, h: u32, t3: u32| [T0_REP, t1(0, 12, w, h), 0x1000, t3];
+        let count = |a: u32| 0x100 + (a - 0x1000) / 4;
+        let l1e1 = tw(64, 64, 0x0884_0800);
+        assert_eq!(texel(l1e1, 64, 64, 2, 0, &count), Ok(vec![0x100 + (4096 + 2) * 2]));
+        assert_ne!(texel(l1e1, 64, 64, 2, 0, &count), Ok(vec![0x100 + 4096 + 2 * 2]), "index-only rival");
+        // L3 at 64 x 64: off 4096 + 1024 + 256, level 3's 8 x 8 plain interleave
+        assert_eq!(texel(tw(64, 64, 0x1880_0800), 64, 64, 8, 0, &count), Ok(vec![0x100 + 5376 + 2]));
+        // bit 10 reads the base dword whatever the texel
+        assert_eq!(texel(tw(64, 64, 0x0080_0c00), 64, 64, 37, 21, &count), Ok(vec![0x100]));
+        // strided 128 x 32 L2e1 (stride 128 dwords): off 4096 + 1024, idx X >> 2 + 128 (Y >> 2)
+        let st = [0x001e_0e00, t1(6, 12, 128, 32), 0x1000, 0xb084_0000];
+        assert_eq!(texel(st, 128, 32, 9, 5, &count), Ok(vec![0x100 + (5120 + 2 + 128) * 2]));
+    }
+
+    #[test]
+    fn e722_t3_address_fields_off_what_ran_stay_refused() {
+        let tw = |w: u32, h: u32, t3: u32| [T0_REP, t1(0, 12, w, h), 0x1000, t3];
+        let mem = |a: u32| a;
+        let refused = |st: [u32; 4], w: u32, h: u32| match texel(st, w, h, 1, 1, &mem) {
+            Err(Fail::Open(why)) => why.contains("Q300") && why.contains("E722"),
+            _ => false,
+        };
+        // (L, e) pairs E722 did not run at a size it ran: 64 x 64 L1e2, L3e1; 32 x 64 L1e1
+        assert!(refused(tw(64, 64, 0x0888_0800), 64, 64), "64x64 L1e2");
+        assert!(refused(tw(64, 64, 0x1884_0800), 64, 64), "64x64 L3e1");
+        assert!(refused(tw(32, 64, 0x0884_0800), 32, 64), "32x64 L1e1");
+        // a size it did not run, a 16-bit format, a bilinear filter
+        assert!(refused(tw(32, 32, 0x0880_0800), 32, 32), "32x32 L1");
+        let mut f9 = tw(64, 64, 0x0880_0800);
+        f9[1] = t1(0, 9, 64, 64);
+        assert!(texel(f9, 64, 64, 1, 1, &mem).is_err(), "format 9");
+        let mut bl = tw(64, 64, 0x0880_0800);
+        bl[0] |= 1 << 12;
+        assert!(texel(bl, 64, 64, 1, 1, &mem).is_err(), "bilinear");
+        // T3's texel offset with a level, and bit 10 on a twiddled 32 x 64 (not run)
+        assert!(texel(tw(64, 64, 0x0880_0811), 64, 64, 1, 1, &mem).is_err(), "offset");
+        assert!(refused(tw(32, 64, 0x0080_0c00), 32, 64), "bit 10 at 32x64");
+    }
+
+    #[test]
+    fn e722_a_t3_address_read_that_faults_is_the_probe_s_layout() {
+        // E743, E760, E787: past the probe's scratch the hardware reads its other surfaces or faults
+        let st = [T0_REP, t1(0, 12, 64, 64), 0x1000, 0x1088_0800];
+        let s = Sample {
+            csc: None,
+            state: st,
+            u: 0.5,
+            v: 0.5,
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Flat,
+        };
+        let r = sample(&s, &mut |a| Err(crate::Error::Fault(a)));
+        assert!(
+            matches!(&r, Err(Fail::Open(w)) if w.contains("past the probe's scratch") && w.contains("E787")),
+            "{r:?}"
+        );
     }
 
     #[test]
