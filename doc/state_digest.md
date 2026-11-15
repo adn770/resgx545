@@ -76,7 +76,7 @@ list.
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
-  background object) limit, given that all sixteen douta words reach sa0 ... (E391, E973, E1096)
+  background object) limit, given that a fill's douta reaches attributes ... (E391, E1096, E1104)
 - `Q020` pds, medium: what does a douta in the triangle's primary pixel program do, when its markers
   never reach the USE task and the readback is the memory ... (E381, E440, E545)
 - `Q025` pds, medium: what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a
@@ -293,9 +293,12 @@ list.
 
 ## Recent records
 
-68 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+69 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1104` pds, 2026-11-15: r25-sa64 stages pk64 and q019 (58 jobs) on t24, whose probe
+  --scratch-show 64 prints all 64 scratch dwords sa64_dump.s stores: E391's 40 jobs and 16 held-out
+  jobs at 3 and 6 rows read the markers of ...
 - `E1103` texture, 2026-11-15: r25-csc stage csc (16 jobs): a fill's transfer command loads
   colour-space set 0 when its load flag is set (xfer:17 bit 0, the set's words xfer:18 to 22), and a
   fill without the flag keeps the set the ...
@@ -503,9 +506,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-85 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+86 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r25-sa64`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t24
 - `render/closing-r25-q123`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t22
 - `render/closing-r25-csc`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -631,7 +636,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 13 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 14 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions

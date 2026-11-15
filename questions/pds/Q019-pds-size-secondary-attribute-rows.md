@@ -1,11 +1,11 @@
 +++
 id = "Q019"
-question = "what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere?"
+question = "what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that a fill's douta reaches attributes 0-63 at their own sa at 0 to 8 rows, or does the task take its size from elsewhere?"
 unit = "pds"
 kind = "hw"
 value = "medium"
 phase = 7
-evidence = ["E125", "E391", "E973", "E1096"]
+evidence = ["E125", "E391", "E1096", "E1104"]
 terms = []
 +++
 
@@ -47,15 +47,6 @@ every pixel (exploration rows, Q066's word 1): whether the texel arrives at ever
 the size against a layered background's attribute, not the 32 or 64 attributes this question's
 experiment names, which stays to be run.
 
-Note 2026-11-13 (round 10 offline, decision R10-1 a (O10-5); no claim settled). E973 is the first
-record in which the secondary attribute size changes a result: in r9-k1's layered background object,
-bgobj_words[1] at 0 rows (0x30000) gave each background pixel a texel of the source but its own at
-only 74 of 3034 (143 distinct texels, mostly within 8 columns and 4 rows of its own; no texel at
-all, H-NOTEX, refuted), while at 1 and 4 rows every pixel had its own texel. So at 0 rows the field
-limits what reaches the background layer's task [infer], unlike E125's and E391's fill, where 0 rows
-passed all of the attributes tried. Which attributes go missing is not read (the texels are a
-symptom, not a register dump), and the 32 or 64 attribute experiment above stays to be run.
-
 Narrowed 2026-11-15 (E1096, round 23's r23-pk on t22, whose probe echoes each poke as sent): the
 size word reached the fill's job as poked in all 44 poked jobs (the library builds 0x00130000, 4
 rows, so E125's 4-row cases ran on the built size), and E391's 40 jobs read as E391 did: attributes
@@ -65,3 +56,14 @@ open: what the field limits (E973's layered background at 0 rows) and whether at
 arrive in sa32-sa63. The probe prints the first 32 changed scratch dwords only (every job counts
 `scratch 32 more changed`), so the 32 or 64 attribute experiment above needs a probe that prints
 sa32-sa63 (a tool change) before it can be read.
+
+Narrowed 2026-11-15 (E1104, round 25's r25-sa64 on t24, whose probe prints all 64 scratch dwords):
+E391's 40 jobs again, with 16 held out at 3 and 6 rows: the markers of attributes 0-63 arrive at
+their own sa (sa0-sa63) at 0, 1, 2, 3, 4, 6 and 8 rows in both runs (H-ALL64 56 of 56, H-NONE 28
+of 56). E391's "nowhere in sa0-sa63" above read only sa0-sa31 and is corrected; the 32 or 64
+attribute experiment has run, and no size tried limits any of the 64 attributes. H-ROWS held on
+all 32 held-out rows but its fit table is flat (16 for every set at 0, 1 and 4 rows), so no limit
+was read off a fill. E973's layered-background reading at 0 rows (round 10's note) moved to Q066
+(R24-3 a), where that scene's other words are. Still open: what the field limits, or whether the
+task takes its size from another word (the task's own state, the DOUTU words); a fill's task takes
+no limit from it up to 64 attributes.

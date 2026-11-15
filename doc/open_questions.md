@@ -68,7 +68,7 @@
 ### pds
 
 - `Q013` (phase 6, hw, low): what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle? (E043, E046, E388)
-- `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125, E391, E973, E1096)
+- `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that a fill's douta reaches attributes 0-63 at their own sa at 0 to 8 rows, or does the task take its size from elsewhere? (E125, E391, E1096, E1104)
 - `Q020` (phase 7, hw, medium): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125, E381, E440, E545)
 - `Q023` (phase 7, hw, high): how many output dwords does a pixel task get per setup, and what do the data rows limit (E406) (E139, E081, E406, E570, E709, E742, E759, E880)
 - `Q024` (phase 7, hw, low): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396)

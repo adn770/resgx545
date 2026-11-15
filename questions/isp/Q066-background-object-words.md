@@ -77,3 +77,15 @@ the finite values run change no texel and only a NaN does. sgx-pipe's `bglayer::
 values that ran. Still open: what words 11 to 14 hold (terms that are zero in this scene
 [infer]), word 13's and 9's role, the three PDS words beyond word 0 (E410), and other scenes.
 Status: narrowed, not answered.
+
+Moved 2026-11-15 from Q019 (R24-3 a, with E1104: a fill's douta reaches attributes 0-63 at every
+size from 0 to 8 rows, so the size field's effect seen here belongs to this scene). Round 10's note
+there (decision R10-1 a (O10-5); no claim settled): E973 is the first
+record in which the secondary attribute size changes a result: in r9-k1's layered background object,
+bgobj_words[1] at 0 rows (0x30000) gave each background pixel a texel of the source but its own at
+only 74 of 3034 (143 distinct texels, mostly within 8 columns and 4 rows of its own; no texel at
+all, H-NOTEX, refuted), while at 1 and 4 rows every pixel had its own texel. So at 0 rows the field
+limits what reaches the background layer's task [infer], unlike E125's and E391's fill, where 0 rows
+passed all of the attributes tried. Which attributes go missing is not read (the texels are a
+symptom, not a register dump), and the 32 or 64 attribute experiment of Q019 has since run (E1104:
+no limit up to 64 in a fill).

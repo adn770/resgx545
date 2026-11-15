@@ -11,3 +11,12 @@ terms = []
 **Results.** At every size the 16 markers of attributes 0-15 and of 16-31 are in sa0-sa15 and
 sa16-sa31; those of 32-47 and 48-63 are in no register of sa0-sa63 (40 jobs). Registers a job does
 not write keep earlier jobs' markers.
+
+**Correction 2026-11-15:** "Never sa32-sa63" and "those of 32-47 and 48-63 are in no register of
+sa0-sa63" were read from sa0-sa31 only: the probe of this run printed the first 32 changed scratch
+dwords, and every one of its 40 jobs ends `scratch 32 more changed` (raw.txt), so sa32-sa63 were
+stored and not read (E1096's "What it does not show"). E1104 repeated the 40 jobs with the same
+programs and pokes on t24, whose probe prints all 64 (`--scratch-show 64`): the markers of
+attributes 32-47 and 48-63 are at their own sa in sa32-sa63 at every size, 0 to 8 rows, both runs,
+as those of 0-31 are in sa0-sa31. The fill's douta reaches attributes 0-63, not 0-31; the readings
+of sa0-sa31 stand.
