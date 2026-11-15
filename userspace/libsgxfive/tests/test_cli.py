@@ -713,7 +713,8 @@ def test_probe_prints_32_changed_scratch_dwords_by_default(tmp_path):
     assert len(scratch_lines(r)) == 32
     assert re.search(r"^probe g: scratch 32 more changed$", r.stdout, re.M), r.stdout
     same = run("--mock", "--mock-dirty=64", "probe", "--scratch-show", "32", str(f))
-    assert same.stdout == r.stdout and same.returncode == 0
+    times = lambda out: re.sub(r"\d+ us", "N us", out)     # the job's own timing differs
+    assert times(same.stdout) == times(r.stdout) and same.returncode == 0
 
 
 @pytest.mark.parametrize("n,shown,more", [("64", 64, 0), ("40", 40, 24), ("1", 1, 63)])
