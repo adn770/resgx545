@@ -14,6 +14,11 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           run and read every key it declares (scorekit.premise_stops)
   controls(kp, stage)     {name: (keys, row)} of the table's control rows, for
                           scorekit.refuse_unreadable
+  param_hash(b)           a param buffer dump's stream-bounded sha256 (hex; None for None): the
+                          dwords as "%08x\n" lines, a terminate word 0xc0000000 that follows
+                          another written 00000000, so each stream ends at its first terminate
+                          word and the words past it (stale, r19-k0) are not compared;
+                          lib_kit.sh param_hash FILE is its twin (r19-k0b's pmask, E1077)
   completed(row)          a kept row whose job ran to its end: class ok, with rc 0, rc 1 of an
                           `expectdiff` row (the runner took it as a reading only with `job: ok`
                           and a diff line) or the rc of an expected outcome its knobs declare
@@ -25,6 +30,7 @@ failure (kit/run_stage.sh classifies it ok the same way). rc3-overflow: a `probe
 normal end, "scene overflowed the parameter buffer" (R7-dpm's runner took it the same way).
 """
 import gzip
+import hashlib
 import os
 
 import scorekit
@@ -42,6 +48,22 @@ def _read(path):
         with open(path, "rb") as f:
             return f.read()
     return None
+
+
+TERMINATE = 0xC0000000
+
+
+def param_hash(b):
+    """A param buffer dump's sha256 bounded by its streams: lib_kit.sh param_hash's twin."""
+    if b is None:
+        return None
+    h, prev = hashlib.sha256(), False
+    for i in range(0, len(b) - len(b) % 4, 4):
+        w = int.from_bytes(b[i:i + 4], "little")
+        t = w == TERMINATE
+        h.update(b"00000000\n" if t and prev else b"%08x\n" % w)
+        prev = t
+    return h.hexdigest()
 
 
 def text(d, name):

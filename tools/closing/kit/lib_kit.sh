@@ -54,6 +54,14 @@ RUN=$(date +%s)-$$
 W=$WROOT
 JW=$WROOT
 sha() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$@"; else shasum -a 256 "$@"; fi; }
+# param_hash FILE: a param buffer dump's sha256 bounded by its streams (hex only): FILE's dwords
+# as "%08x\n" lines (od -tx4, the host's little-endian order), a terminate word 0xc0000000 right
+# after another written 00000000, so each stream ends at its first terminate word and what follows
+# it in the run (words its job did not write: r19-k0's 4 stale ones) is not compared; never hash a
+# whole param buffer as a control. kitscore.param_hash is its twin (r19-k0b's pmask, E1077).
+param_hash() {
+	od -An -v -tx4 "$1" | tr -s ' ' '\n' | awk 'NF { if ($1 == "c0000000" && p) print "00000000"; else print $1; p = ($1 == "c0000000") }' | sha | awk '{ print $1 }'
+}
 
 # ---- tools ------------------------------------------------------------------------------------
 tool_path() { local v="TOOL_$1_PATH"; printf '%s/%s\n' "$HOME" "${!v}"; }

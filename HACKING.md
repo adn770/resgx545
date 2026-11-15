@@ -378,6 +378,24 @@ session.toml (regtimeline, args `TOTAL LEAD REGS -- "$HOME/TOOL" ...`) must run 
 after `--` (the guard refuses any `$HOME/PATH` that is not one: the preflight pins only those),
 and the mock runs the wrapped tool's fake and prints a timeline after it, with its status.
 
+Readings a scorer or a hook takes from the kept files, and the slips they have cost:
+
+- A param buffer dump is compared bounded by its streams, never whole: `kitscore.param_hash(b)`
+  and its shell twin `param_hash FILE` in `kit/lib_kit.sh` hash the dwords as `%08x` lines with a
+  terminate word 0xc0000000 that follows another written 00000000, so each stream ends at its
+  first terminate word and the words its job did not write are not compared. r19-k0 stopped at a
+  whole-buffer control that differed in 4 such dwords; r19-k0b's `pmask` is the same hash
+  (ed097a08... on E1077's kept dumps, tested in `tools/closing/test_kit.py`).
+- A kept owner's GPU state base is the value register 0x062c holds while the owner's own run
+  climbs (regtimeline), not the words snapshot's: `words.101`'s `rtds:11` (0x20406000 in r20-own)
+  is the base 0x062c holds during the second context's run, and the owner's was 0x20006000
+  (E1091; r20-own's owt rule looked for the wrong base).
+- `tri --kept-copy` reads the copy right after a close again while `render_kept` reads empty (the
+  park race of E1085), up to 10 reads 10 ms apart, from t20 on: `tri: render_kept read N times
+  ...` says it took N, `tri: render_kept still empty after 10 reads ...: the copy is empty` that it
+  stayed empty (the file is written empty, the run goes on). A session counts an empty copy, it
+  does not stop on it; tools before t20 (t18b) copy once.
+
 ## Firmware tasks of our own
 
 Phases 11.29, 11.30 and 11.32 run tasks of ours as firmware (EDM) tasks. The rules below are what

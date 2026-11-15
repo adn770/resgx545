@@ -1547,3 +1547,76 @@ def test_verify_takes_a_published_session_with_its_logs_at_the_top(repos):
         (kp / d / "run.log").write_text("x\n")
     v = kit(kp, repos, "verify")
     assert "tables/run.log: not frozen" in v.stdout, v.stdout
+
+
+# ---- stream-bounded param hash (round 21) ----------------------------------------------------
+#
+# r19-k0 stopped at a whole-buffer param hash that differed in 4 dwords past a stream's end only
+# (stale terminate words, E1077's session r19-k0b); kitscore.param_hash and lib_kit.sh's
+# param_hash hash each stream up to its terminate word.
+
+DATA = pathlib.Path(os.environ.get("RESGX545_DATA", str(pathlib.Path.home() / "src/resgx545-data")))
+E1077_PMASK = "ed097a084afcb70a2220ba82f4a8f085a6be53c18d19308b088501b6bafc27e3"
+E1077_DUMPS = (
+    "render/closing-r10-dpm/out/20261113-102513/s6rep/a0-cal-2048.p1139-green.param.bin.gz",
+    "render/closing-r19-k0/out/20261114-223342/k0/k0-a0.p1139-green.param.bin.gz",
+    "render/closing-r19-k0b/out/20261114-224248/k0/k0-a0.p1139-green.param.bin.gz",
+)
+
+
+def dwords(*ws):
+    return b"".join(w.to_bytes(4, "little") for w in ws)
+
+
+def shell_param_hash(path):
+    lib = (KIT / "lib_kit.sh").read_text()
+    fns = re.search(r"^sha\(\) \{.*?\}\n", lib, re.M).group(0)
+    fns += re.search(r"^param_hash\(\) \{\n.*?^\}\n", lib, re.M | re.S).group(0)
+    r = subprocess.run(["bash", "-c", fns + 'param_hash "$1"', "x", str(path)],
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    return r.stdout.strip()
+
+
+def test_param_hash_ignores_what_follows_a_stream_s_terminate_word(tmp_path):
+    import kitscore
+    T = 0xC0000000
+    a = dwords(1, 2, T, T, T, 7, T, T)
+    b = dwords(1, 2, T, 0, 0, 7, T, 0)
+    assert kitscore.param_hash(a) == kitscore.param_hash(b)
+    # what precedes a terminate word still counts, as does a stream's own terminate word
+    assert kitscore.param_hash(a) != kitscore.param_hash(dwords(1, 3, T, T, T, 7, T, T))
+    assert kitscore.param_hash(a) != kitscore.param_hash(dwords(1, 2, 0, T, T, 7, T, T))
+    assert kitscore.param_hash(a) != kitscore.param_hash(dwords(1, 2, T, T, T, 8, T, T))
+    # the hash is the sha256 of the masked dwords as "%08x\n" lines
+    want = hashlib.sha256(b"".join(b"%08x\n" % w for w in (1, 2, T, 0, 0, 7, T, 0)))
+    assert kitscore.param_hash(a) == want.hexdigest()
+    assert kitscore.param_hash(None) is None
+    for name, buf in (("a", a), ("b", b)):
+        (tmp_path / name).write_bytes(buf)
+        assert shell_param_hash(tmp_path / name) == kitscore.param_hash(buf)
+
+
+@pytest.mark.parametrize("rel", E1077_DUMPS)
+def test_param_hash_holds_on_e1077_s_kept_dumps(rel, tmp_path):
+    """r10-dpm's kept a0-cal-2048, r19-k0's stopped k0-a0 and r19-k0b's k0-a0 (E1077): one
+    stream-bounded hash, ed097a08..., where r19-k0's whole-buffer sha256 differed."""
+    import gzip
+    import kitscore
+    p = DATA / rel
+    if not p.exists():
+        pytest.skip(f"{p} is not here (RESGX545_DATA)")
+    b = gzip.decompress(p.read_bytes())
+    assert kitscore.param_hash(b) == E1077_PMASK
+    raw = tmp_path / "param.bin"
+    raw.write_bytes(b)
+    assert shell_param_hash(raw) == E1077_PMASK
+
+
+def test_whole_buffer_sha256_differs_on_r19_k0_s_dump():
+    import gzip
+    old, new = (DATA / E1077_DUMPS[0], DATA / E1077_DUMPS[1])
+    if not (old.exists() and new.exists()):
+        pytest.skip("E1077's kept dumps are not here (RESGX545_DATA)")
+    a, b = gzip.decompress(old.read_bytes()), gzip.decompress(new.read_bytes())
+    assert hashlib.sha256(a).hexdigest() != hashlib.sha256(b).hexdigest()
