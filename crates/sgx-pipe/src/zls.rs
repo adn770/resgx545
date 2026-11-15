@@ -753,7 +753,8 @@ pub fn store(
 /// paints every target pixel. E1093: after a raised kick the final writes the refilled load buffer
 /// back without the triangle's depth, load bits or not; E1094: the partial renders run with the
 /// word's bits 14, 18 and 19 set; E1095: the zero region of the ramp's store is 184320 window
-/// dwords after a raised kick and 118784 after one that was not. All refused here.
+/// dwords after a raised kick and 118784 after one that was not; E1101: after a kick that was not
+/// raised a final with load bits writes the load back and draws no triangle. All refused here.
 pub fn final_store(
     ctl: &Ctl,
     w: u32,

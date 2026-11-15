@@ -18,7 +18,7 @@ list.
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
   stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1082, E1088, E1089)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
-  page (0x04000417) and state page (0x00020001, 2) after the ... (E1087, E1091, E1092)
+  page (0x04000417) and state page (0x00020001, 2) after the ... (E1091, E1092, E1100)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
   straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E963, E1009, E1013)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
@@ -299,9 +299,18 @@ list.
 
 ## Recent records
 
-60 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+63 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1101` zls, 2026-11-15: r23-dpm stage zn (Q088, 5 jobs): after a geometry kick that overflowed
+  without a raised abort (P 0x2e, 0x30, 0x32, 0x34), a moved final with the load bits (0x0017510e)
+  and the host's 0.75 refill of ...
+- `E1100` dpm, 2026-11-15: r23-dpm stage og (Q191, 6 jobs): with the second context's render 1 split
+  into a geometry kick and a closing render (t22b --ctx2-geometry 1), the kept 64x64 owner's words
+  0x00200047, 0x04000417, ...
+- `E1099` dpm, 2026-11-15: r23-dpm stage rl (Q038, 10 jobs): with E442's reload background (a pixel
+  shader fetching the target at the pixel) in every render of a geometry kick and a moved final on
+  its own PB, and the target ...
 - `E1095` zls, 2026-11-15: r21-zls stage zz (Q107, 4 jobs): on E629's ramp with the final on its own
   PB the final's G 33 store (depth.2) holds 184320 zero window dwords in tile rows 0-11 after a
   raised kick (0x24, 0x38) and ...
@@ -485,9 +494,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-81 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+82 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r23-dpm`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t22b
 - `render/closing-r21-zls`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t18b
 - `render/closing-r20-zls`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -605,7 +616,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 9 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 10 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
@@ -670,4 +681,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-48 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+50 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

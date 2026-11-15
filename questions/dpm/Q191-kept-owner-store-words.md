@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E458", "E462", "E591", "E631", "E1079", "E1080", "E1084", "E1085", "E1087", "E1091", "E1092"]
+evidence = ["E310", "E458", "E462", "E591", "E631", "E1079", "E1080", "E1084", "E1085", "E1087", "E1091", "E1092", "E1100"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_STATE_BASE0", "CR_DPM_CONTROL_BASE", "ta3d_ctl"]
 +++
 
@@ -75,3 +75,11 @@ base 0x20006000 and the second context's under 0x20406000, with 0x062c never bac
 base during the second run. Open: which event of the second context's run writes the owner's lists
 (its TA kick or its render's end), why they show only after that run, and (c) a load reading them
 back.
+
+Narrowed 2026-11-15 (r23-dpm, E1100). The kick is decided: with the second context's render split
+into a geometry kick and a closing render (t22b `--ctx2-geometry 1`), the 64x64 owner's four words
+were already in a copy of render_kept made after the kick and before the closing render, in 5 of 5
+rows (P 0x422 and 0x200; H-TAKICK held out 3 of 3, H-RENDEREND 0 of 5), none with flag 0x4 and none
+right after the close, so the second context's TA kick stores them. Open: which part of the kick
+writes them (the firmware's kick setup or the TA), why only another context's kick does, and (c) a
+load reading them back (R22-3 a: E591's unchanged renders are not taken as its answer).

@@ -9250,6 +9250,34 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   0x38) and 118784 after one that was not (0x3c, 0x50), and no signed window dword: H-ZCOUNT 4 of 4
   held out (frozen from E1082's and E1090's kept rows), H-ZP 0 of 4; premises passed.
   *zls; HW; data: `render-closing-r21-zls:out/20261115-140052/zz/`, `render-closing-r21-zls:fold/`.*
+- `E1099` r23-dpm stage rl (Q038, 10 jobs): with E442's reload background (a pixel shader fetching
+  the target at the pixel) in every render of a geometry kick and a moved final on its own PB, and
+  the target kept from render 1 to render 2 (no sentinel before the final), every pixel the final
+  changed became its triangle's red and render 1's colour stayed everywhere else, raised (0x28,
+  0x2c) or not (0x30, 0x34): H-RELOAD 8 of 8 (2 fit, 6 held out), H-REPAINT 0 of 8; red 207456 after
+  a raised kick and 226205 and 213917 after one that was not (render 1's rest drawn in the final),
+  red plus render 1's green 259079 on every row, the sentinel 527353; with the reload, render 1 of a
+  raised kick holds the whole triangle (207456) where the library background leaves 162544; controls
+  passed (E442's -n 1 reload cell 207456 triangle and 578976 sentinel; without the reload the final
+  repainted all 786432 pixels).
+  *dpm; HW; data: `render-closing-r23-dpm:out/20261115-202532/rl/`, `render-closing-r23-dpm:fold/`.*
+- `E1100` r23-dpm stage og (Q191, 6 jobs): with the second context's render 1 split into a geometry
+  kick and a closing render (t22b --ctx2-geometry 1), the kept 64x64 owner's words 0x00200047,
+  0x04000417, 0x00020001 and 2 (control, OTPM and state pages, pages 1 to 3, flag 0xc) were already
+  in the copy of render_kept made after the geometry kick and before the closing render, and in the
+  copy after it, in 5 of 5 rows (P 0x422 four times, 0x200 once; none in the copy right after the
+  first context's close): H-TAKICK 5 of 5 (2 fit, 3 held out), H-RENDEREND 0 of 5, so the second
+  context's TA kick, not its render's end, stores them; control passed (flag 0x4: no owner word in
+  any copy).
+  *dpm; HW; data: `render-closing-r23-dpm:out/20261115-202532/og/`, `render-closing-r23-dpm:fold/`.*
+- `E1101` r23-dpm stage zn (Q088, 5 jobs): after a geometry kick that overflowed without a raised
+  abort (P 0x2e, 0x30, 0x32, 0x34), a moved final with the load bits (0x0017510e) and the host's
+  0.75 refill of the load buffer stores the loaded 0.75 at every window dword of tile rows 12 and
+  below and draws no triangle (its check 0 triangle, wrong inside 205206): H-LOADNODRAW 4 of 4 (fit
+  0x2e, three held out; frozen from E1093's post hoc zl-2e-ld), H-HOSTBITS 0 of 4 (182786 dwords
+  off, T2's inside); control passed (zn-c, the same final without load bits at 0x2e: 0.5 inside T2,
+  0.5 or 1.0 in T1 \ T2, 1.0 elsewhere, E1093's zl-2e-nl).
+  *zls; HW; data: `render-closing-r23-dpm:out/20261115-202532/zn/`, `render-closing-r23-dpm:fold/`.*
 
 ## By unit
 
@@ -9267,7 +9295,7 @@ E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E8
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
 E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087, E1089, E1091,
-E1092.
+E1092, E1099, E1100.
 
 ### edm
 
@@ -9375,4 +9403,4 @@ Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
 E1054, E1059, E1063, E1064, E1068, E1069, E1070, E1081, E1082, E1083, E1088, E1090, E1093, E1094,
-E1095.
+E1095, E1101.
