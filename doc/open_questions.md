@@ -17,7 +17,7 @@
 
 ### dpm
 
-- `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E160, E202, E204, E310, E311, E312, E442, E461, E465, E467, E468, E625, E628, E629, E996, E1020, E1081, E1082)
+- `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E160, E202, E204, E310, E311, E312, E442, E461, E465, E467, E468, E625, E628, E629, E996, E1020, E1081, E1082, E1088, E1089)
 - `Q081` (phase 11, hw, medium): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
 - `Q191` (phase 11, hw, high): what are the words that land in a kept owner's control page (0x00200047), OTPM page (0x04000417) and state page (0x00020001, 2) after the next context's render, what stores them and at which kick of that context, and does any task read them back? (E310, E458, E462, E591, E631, E1079, E1080, E1084, E1085, E1087, E1091, E1092)
 - `Q210` (phase 11, hw, high): why does band 6's margin end at the page count once the object after the straddling block (b_6 + 1) is tiled (E960, E961: held out at four targets, 20 of 20, where A_6, E900's end, gave 14) and do other bands end there too, what sets the per-target class of E874's step replay at S6 (E1013, held out: the sampled lower end is the replay plus 1 at every run of 4096x1024, 4096x1536, 3584x1024, 2048x512, 2048x2304, 2048x3072, 2560x3072 and 3072x2560, and the replay at every run of fourteen other targets; the aspect rule, biased iff w/h > 2 or w < h, fails at three targets and no rule of w and h is found) and its offsets at S3 (2048x2304, 4096x1536, 3072x2560; 2048x4096, E935), why the threshold is not raised after a first partial render at band 4 that leaves 2 global pages (E918, E938, E963: 7 of 7 cells against R-5's guard as formalized), what sets the global steps of objects larger than 67 dwords (E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from E874's replay? (E310, E312, E464, E625, E627, E629, E704, E734, E753, E774, E779, E785, E786, E799, E800, E801, E802, E852, E853, E860, E861, E862, E863, E864, E873, E874, E881, E882, E900, E915, E917, E918, E935, E936, E937, E938, E960, E961, E962, E963, E1009, E1013)
@@ -182,7 +182,7 @@
 
 ### zls
 
-- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020, E1082)
+- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020, E1082, E1088, E1090)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490, E978, E985, E986, E1015, E1031, E1043, E1054)
 
 ## Parked: not hardware knowledge
@@ -211,7 +211,7 @@
 
 #### zls
 
-- `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467, E665, E997, E989, E1014, E1081, E1083)
+- `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467, E665, E997, E989, E1014, E1081, E1083, E1088)
 
 ### kernel
 

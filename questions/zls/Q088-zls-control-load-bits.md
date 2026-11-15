@@ -4,7 +4,7 @@ question = "what reads the render details' unpatched ZLS control word that the c
 unit = "zls"
 kind = "fw"
 phase = 11
-evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014", "E1081", "E1083"]
+evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014", "E1081", "E1083", "E1088"]
 terms = ["CR_ISP_ZLSCTL", "hw_render_details.isp_zlsctl"]
 +++
 
@@ -39,3 +39,13 @@ ways, at 0x28 and 0x30). The load half is not decided: after a kick that was not
 loads only with its load bits, after a raised one it leaves a separate store untouched (E1081, no
 frozen form held on all rows), so the word stays parked as fw (R19-5's retirement needed both).
 Open: what reads the closed driver's unpatched word between frames.
+
+Narrowed 2026-11-15 (r20-zls, E1088). With the host's 0.25 refill of the load buffer between a
+raised kick and a moved final, no frozen reload form held (H-LOADBASE, H-STOREBASE, H-NOSTORE,
+H-HOSTBITS 0 of 7): post hoc the final stores the load buffer's 0.25 to the store buffer outside a
+65536-dword zero region of tile rows 0-11, raised or not when it has load bits, so E1081's untouched
+store was the loaded indices written back; the raised partial render stores the loaded buffer and
+no triangle depth. The ZLS registers read during each render (post hoc, the frozen zregs control
+failed: 0x0484 and 0x0488 hold the offsets rd:12 and rd:13): 0x0480 = rd:11 with bits 14 and 19 set
+during the partial renders, bits 14 and 15 after them. Not retired (R20-2 a needed a frozen form);
+open: the zero region, bit 15, and what reads the closed driver's unpatched word.

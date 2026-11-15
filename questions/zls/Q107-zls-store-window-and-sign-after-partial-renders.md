@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020", "E1082"]
+evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020", "E1082", "E1088", "E1090"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -74,3 +74,10 @@ pair 61440 of 61440): both belong to a store after partial renders, not to the f
 Its store is mostly unsigned (35840 signed dwords; H-PRSIGN 0 of 3, H-FINALSIGN 2 of 3). The ramp's
 kick was raised at 0x30 too (need 49 pages), so the not-raised clause stays untested. Open: the tile
 order rule, which tiles keep the sign, and the clauses above.
+
+Narrowed 2026-11-15 (r20-zls, E1090 and E1082's correction). At P 0x44 and 0x4c the ramp's kick
+overflows once without a raise and the final still keeps the zero row (118784 window dwords) and
+fails E996's order (RULE 54784 of 61440): H-AFTERPR 4 of 4, so neither belongs to the raise. The
+final's store holds no sign in the store window (E1082's 35840 were the marker fill); the partial
+render's store is signed raised or not (post hoc), with 0x0480 bit 19 set during every partial
+render (E1088). Open: the zero row's rule (118784 here, 195584 raised) and the tile order rule.

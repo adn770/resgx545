@@ -746,7 +746,11 @@ pub fn store(
 /// the overlay too (51968 of 61440 scored dwords); E1081 (post hoc): after a raised kick it leaves a
 /// separate store buffer as the partial render stored it, after one that was not raised it loads
 /// and stores as its control says; E1083: the partial renders store with the control word of
-/// their own kick (its G), not the final's. All refused here.
+/// their own kick (its G), not the final's. E1088 (post hoc): with the load buffer refilled before
+/// the final, the final stores that buffer's depth outside a zero region of tile rows 0-11, raised or
+/// not with load bits, and a raised partial render stores the buffer it loaded without its triangle;
+/// E1090: the zero row and the failed overlay stay when the kick is not raised; E1089: the final
+/// paints every target pixel. All refused here.
 pub fn final_store(
     ctl: &Ctl,
     w: u32,

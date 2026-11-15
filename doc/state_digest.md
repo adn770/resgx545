@@ -16,7 +16,7 @@ list.
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
   EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
-  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1020, E1081, E1082)
+  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1082, E1088, E1089)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E1087, E1091, E1092)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
@@ -169,7 +169,7 @@ list.
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
   bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E1021, E1035, E1076)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
-  row of macrotiles and the depth with its sign bit set for the ... (E997, E1020, E1082)
+  row of macrotiles and the depth with its sign bit set for the ... (E1082, E1088, E1090)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
   how are they laid out, given that they store depth and stencil ... (E1031, E1043, E1054)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
@@ -287,7 +287,7 @@ list.
 - `Q084` dpm, fw (parked): how does the closed driver turn its PBSize app hint into the parameter
   buffer's page count and thresholds, given 1 MiB and 8 MiB both give ... (E327)
 - `Q088` zls, fw (parked): what reads the render details' unpatched ZLS control word that the closed
-  driver writes between frames (0x0011700a), now that bit 14 is ... (E1014, E1081, E1083)
+  driver writes between frames (0x0011700a), now that bit 14 is ... (E1081, E1083, E1088)
 - `Q118` render, fw (parked): how does the firmware's kick tell that its context's page directory is
   in none of the bus interface's directory lists (a compare against ... (E360, E592)
 - `Q119` render, fw (parked): does one TA command carrying both FIRST_KICK and LAST_KICK act as two
@@ -299,7 +299,7 @@ list.
 
 ## Recent records
 
-54 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+57 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1092` dpm, 2026-11-15: r20-own stage owp (5 jobs, t18b under regtimeline, render_keep armed, a
@@ -308,6 +308,15 @@ the claims are cut at 200 characters.
 - `E1091` dpm, 2026-11-15: r20-own stages ow and owt (6 jobs, t18b under regtimeline, render_keep
   armed, a 1024x768 owner at P 0x422 closed early, the second context drawing the library's default
   triangle): with the owner's ...
+- `E1090` zls, 2026-11-15: r20-zls stage zq (Q107, 4 jobs): on E629's ramp at P 0x44 and 0x4c the
+  kick overflows once without a raise (TA3DCtl dword 38 0, E625 with U 49) and the final render on
+  its own PB still keeps the zero ...
+- `E1089` dpm, 2026-11-15: r20-zls stage zm (Q038, 3 jobs): a final render on its own PB without a
+  depth buffer, its triangle moved 96 px right, painted every target pixel after a raised kick
+  (H-REPAINT 2 of 2 at 0x28 and ...
+- `E1088` zls, 2026-11-15: r20-zls stages zc and zr (Q088, Q038, 11 jobs): after a host refill of
+  the load buffer with 0.25 between an overflowing geometry kick and a moved final on its own PB, no
+  frozen form of the separate ...
 - `E1087` dpm, 2026-11-14: r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context
   closed early; t18b copied the kept TA data right after the close and after the second context's
   render, every copy made): the ...
@@ -467,9 +476,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-79 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+80 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r20-zls`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
 - `render/closing-r20-own`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t18b
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -583,7 +594,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 7 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 8 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
