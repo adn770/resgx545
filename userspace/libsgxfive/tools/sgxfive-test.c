@@ -25,13 +25,14 @@
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--final-pb-pages N] [--keep-going] [--keep-overflow]
  *         [--dump-render DIR [--dump-each]]
- *         [--refill K:BUF=V]...
+ *         [--refill K:BUF=V]... [--bg-pds FILE:N] [--bg-pixel FILE] [--keep-target K]
  *         [--tri-full] [--tri-z A,B,C] [--isp2 V]
  *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
  *                [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
  *                [--stencil [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]
  *         [--words DIR]
- *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap] [--close-first-early] [--words-between]]
+ *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap] [--close-first-early] [--words-between]
+ *                                 [--ctx2-geometry N]]
  *         [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
  *                                 every pixel against the CPU reference; the context
@@ -142,7 +143,32 @@
  *                                 took, and if it is still empty says so and leaves the
  *                                 copy empty; in the mock --mock-park-ms=N (0 to 60000,
  *                                 with SGXFIVE_DEBUGFS) parks a closed render context N ms
- *                                 after its close
+ *                                 after its close;
+ *                                 --ctx2-geometry N (with --ctx2, N up to -n, without
+ *                                 --overlap and --final-pb-pages): the second context's
+ *                                 render N is a geometry kick (`tri2 WxH #N: geometry
+ *                                 only, the scene left open`), then its closing render
+ *                                 in the same iteration (`tri2 WxH #N: closing render`,
+ *                                 checked as ever); with --kept-copy, render_kept to
+ *                                 DIR/kept.geo.N.bin between the two, read again while
+ *                                 empty as the copy after a close is (Q191);
+ *                                 --bg-pds FILE:N, --bg-pixel FILE: the background
+ *                                 object's primary PDS program (N data dwords) and
+ *                                 pixel shader (32 temporaries) in every render's scene,
+ *                                 put in and patched as probe --tri's bgpds and bgpixel
+ *                                 slots are (scratch immediates to --scratch's buffer,
+ *                                 target immediates to the render's target), checked
+ *                                 against their places before any device call; a render
+ *                                 with them is checked on its triangle only (`; background
+ *                                 ours, not checked`); not with --bg-layer (E442's reload
+ *                                 in a geometry final, Q038);
+ *                                 --keep-target K (2 to -n, not with --ctx2 or --refill
+ *                                 K:fb): no sentinel before render K, which starts on the
+ *                                 target as render K - 1 left it, and is counted against
+ *                                 render K - 1's readback, not checked: its diff line
+ *                                 names `(render K-1's)`, and `tri WxH #K: target kept, X
+ *                                 pixels changed, colours C N, ... (+M more); guard G`
+ *                                 (render K's colours, most pixels first, at most 8)
  *   contexts [--width W --height H -n N]  N render contexts for targets up to W x H
  *                                 in one VM, and the memory they take (MemFree and
  *                                 LowFree of /proc/meminfo, before and after)
@@ -384,6 +410,8 @@ static void fill_print(const struct fill *f)
 enum { REFILL_DEPTH, REFILL_STENCIL, REFILL_FB, REFILL_COUNT };
 static const char *const refill_bufs[REFILL_COUNT] = { "depth", "stencil", "fb" };
 
+struct tri_bg;
+
 struct opts {
 	uint32_t width, height, x, y, stride, colour;
 	uint32_t sx, sy, src_stride, dst_stride;
@@ -438,6 +466,12 @@ struct opts {
 	bool aa4;			/* tri: its render contexts made for 4x targets */
 	bool bg_layer;			/* tri --bg-layer: Q190's layered background (see bgl_*) */
 	uint64_t bg_src;		/* ... the knob render_bg_src, read by main */
+	/* tri --bg-pds FILE:N, --bg-pixel FILE: the background object's programs (tri_bg_*) */
+	const char *bg_pds_path, *bg_pixel_path;
+	uint32_t bg_pds_data;
+	const struct tri_bg *bg;	/* ... loaded and checked by main */
+	uint32_t keep_target;		/* tri --keep-target K: no sentinel before render K; 0 */
+	uint32_t ctx2_geometry;		/* tri --ctx2-geometry N: the second context's kick; 0 */
 	bool close_first;		/* tri --ctx2: close the first context before the second */
 	bool close_early;		/* tri --ctx2: ... in the last iteration, between the renders */
 	bool words_between;		/* tri --ctx2 --words: a snapshot before each second render */
@@ -492,6 +526,7 @@ static int usage(void)
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --final-pb-pages N\n"
 		"                      --refill K:depth|stencil|fb=V\n"
+		"                      --bg-pds FILE:N --bg-pixel FILE --keep-target K\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
 		"                      --words DIR\n"
 		"                      [--tri-full] [--tri-z A,B,C] [--isp2 V] [--bg-layer]\n"
@@ -505,7 +540,7 @@ static int usage(void)
 		"                      [--kreg-render2 N:OFFSET=VALUE]\n"
 		"                      [--close-trace] [--wait-second] [--kept-copy DIR]\n"
 		"                      [--tadata-fill-render N:PAGE:VALUE[:ramp]]\n"
-		"                      [--kpoke-render2 N:SPEC]],\n"
+		"                      [--kpoke-render2 N:SPEC] [--ctx2-geometry N]],\n"
 		"                 fill, copy and tri also take [--poke SPACE:INDEX=VALUE]...\n"
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
 		"                 contexts [--width W --height H -n N],\n"
@@ -593,6 +628,7 @@ struct target {
 	/* Whether v is right at (x, y); *want the expected value. */
 	bool (*ok)(const void *ctx, uint32_t x, uint32_t y, uint32_t v, uint32_t *want);
 	const void *ctx;
+	const char *ref;	/* not NULL: what the reference is, said after the first diff */
 };
 
 /*
@@ -625,8 +661,9 @@ static void print_target(const struct target *g, uint32_t outside, bool pixels)
 	printf("target: %ux%u hash 0x%016llx\n", g->width, g->height,
 	       (unsigned long long)sgxfive_hash_dwords(buf, n));
 	if (bad)
-		printf("diff: %u of %llu pixels, first (%u, %u) 0x%08x expected 0x%08x\n", bad,
-		       (unsigned long long)n, fx, fy, fv, fw);
+		printf("diff: %u of %llu pixels, first (%u, %u) 0x%08x expected 0x%08x%s%s%s\n", bad,
+		       (unsigned long long)n, fx, fy, fv, fw, g->ref ? " (" : "", g->ref ? g->ref : "",
+		       g->ref ? ")" : "");
 	else
 		printf("diff: 0 of %llu pixels\n", (unsigned long long)n);
 	printf("outside: %u dwords\n", outside);
@@ -1010,7 +1047,7 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 		print_regs(t, o);
 		print_target(&(struct target){ o->width, o->height, o->stride / 4,
 					       p + (uint64_t)o->y * (o->stride / 4) + o->x,
-					       fill_ok, &o->colour },
+					       fill_ok, &o->colour, NULL },
 			     outside_rect(p, pages * 1024, o->stride / 4, &r), o->pixels);
 	}
 	for (uint32_t i = 0; !ret && i < pages * 1024; i++) {
@@ -1117,7 +1154,7 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 		ret = xfer_job(&sd, sgxfive_xfer_copy(sd.x, &src, o->sx, o->sy, &dst, &r, 0), t0);
 		print_regs(t, o);
 		print_target(&(struct target){ o->width, o->height, dw,
-					       d + (uint64_t)o->y * dw + o->x, copy_ok, o },
+					       d + (uint64_t)o->y * dw + o->x, copy_ok, o, NULL },
 			     outside_rect(d, dpages * 1024, dw, &r), o->pixels);
 	}
 	for (uint32_t i = 0; !ret && i < dpages * 1024; i++) {
@@ -2145,6 +2182,96 @@ static int probe_tri_fixed(const char *arg, struct probe_tri *pt)
 	}
 	pt->fixed_data[slot] = data;
 	return 0;
+}
+
+/* ---- tri --bg-pds/--bg-pixel: our own background object in every render ------------- */
+
+#define TRI_BG_TEMPS	32	/* the background shader's temporaries: probe's default (E442's) */
+
+/*
+ * The background object's programs of tri --bg-pds FILE:N and --bg-pixel FILE, as probe --tri's
+ * bgpds and bgpixel slots: put into every render's scene by the render's scene hook
+ * (sgxfive_tri_probe_apply, the slot programs patched as the probe's are: scratch immediates to
+ * tri's --scratch buffer, target immediates to the render's own target).
+ */
+struct tri_bg {
+	struct probe_file pds, pixel;
+	struct sgxfive_tri_probe pr;
+};
+
+/*
+ * Load the files and check that the programs fit their places as sgxfive_tri_probe_apply puts
+ * them, on a scene of the target's size at made-up addresses: 0, 1 (a file) or 2 (usage), said.
+ */
+static int tri_bg_load(const struct opts *o, struct tri_bg *b)
+{
+	static const char *const what[] = { "--bg-pds", "--bg-pixel" };
+	struct sgxfive_tri_layout l = {
+		.pdsv = 0x30400000, .usev = 0x3c000000, .pdsp = 0x2e000000, .usep = 0x37000000,
+		.gen = 0x3e000000, .fb = 0x3e001000, .pds_exec_base = 0x2e000000,
+		.usep_base = 0x37000000, .usev_base = 0x3c000000,
+	};
+	struct drm_sgxfive_render_cmd cmd;
+	struct sgxfive_tri_params p;
+	struct sgxfive_tri_cpu c;
+	uint32_t *mem;
+	const char *ba;
+	int ret;
+
+	if (o->bg_pds_path) {
+		if (probe_read(o->bg_pds_path, &b->pds, 4))
+			return 1;
+		if (b->pds.n <= o->bg_pds_data) {
+			fprintf(stderr, "sgxfive-test: %s: no code after %u data dwords\n",
+				o->bg_pds_path, o->bg_pds_data);
+			return 1;
+		}
+		b->pr.slot[SGXFIVE_TRI_SLOT_BGPDS] = (struct sgxfive_tri_prog){
+			b->pds.words, b->pds.n, o->bg_pds_data, 0 };
+	}
+	if (o->bg_pixel_path) {
+		if (probe_read(o->bg_pixel_path, &b->pixel, 8))
+			return 1;
+		b->pr.slot[SGXFIVE_TRI_SLOT_BGPIXEL] = (struct sgxfive_tri_prog){
+			b->pixel.words, b->pixel.n, 0, TRI_BG_TEMPS };
+	}
+	ba = sgxfive_tri_probe_ba(&b->pr);
+	if (ba) {
+		fprintf(stderr, "usage: sgxfive-test %s: the program holds a ba, which counts from "
+			"the code base (use br)\n", what[1]);
+		return 2;
+	}
+	mem = calloc(5, SGXFIVE_PAGE_SIZE);
+	if (!mem)
+		return 1;
+	c = (struct sgxfive_tri_cpu){ mem, mem + SGXFIVE_PAGE_SIZE / 4, mem + 2 * SGXFIVE_PAGE_SIZE / 4,
+				      mem + 3 * SGXFIVE_PAGE_SIZE / 4,
+				      mem + 4 * SGXFIVE_PAGE_SIZE / 4, 0 };
+	sgxfive_tri_default(&p, o->width, o->height);
+	ret = sgxfive_tri_scene(&c, &l, &p, &cmd);
+	for (unsigned int k = 0; !ret && k < 2; k++) {
+		struct sgxfive_tri_probe one = { 0 };
+		const int slot = k ? SGXFIVE_TRI_SLOT_BGPIXEL : SGXFIVE_TRI_SLOT_BGPDS;
+
+		one.slot[slot] = b->pr.slot[slot];
+		if (one.slot[slot].n && sgxfive_tri_probe_apply(&c, &l, &p, &one, &cmd)) {
+			fprintf(stderr, "usage: sgxfive-test %s: the program does not fit its place "
+				"(the probe's %s slot: its page's end, whole rows of data, at most "
+				"128 data dwords and code after them)\n", what[k],
+				sgxfive_tri_slot_name(slot));
+			ret = 2;
+		}
+	}
+	free(mem);
+	return ret < 0 ? 2 : ret;
+}
+
+/* The render's scene hook: the background programs put in (priv: the struct tri_bg's probe). */
+static int tri_bg_hook(void *priv, const struct sgxfive_tri_cpu *c,
+		       const struct sgxfive_tri_layout *l, const struct sgxfive_tri_params *p,
+		       struct drm_sgxfive_render_cmd *cmd)
+{
+	return sgxfive_tri_probe_apply(c, l, p, priv, cmd);
 }
 
 /* --width/--height/--max-width/--max-height V: true if opt is one (V parsed or not). */
@@ -3188,7 +3315,7 @@ static int save_words(const struct tool *t, const struct opts *o, const char *di
  */
 /* The second context's render i: the first's scene in the other pair of colours. */
 static int tri2_submit(struct sgxfive_render *r2, const struct opts *o, uint32_t i,
-		       struct sgxfive_tri_params *p2)
+		       struct sgxfive_tri_params *p2, uint32_t flags)
 {
 	int ret;
 
@@ -3214,7 +3341,7 @@ static int tri2_submit(struct sgxfive_render *r2, const struct opts *o, uint32_t
 	sgxfive_tri_default(p2, o->width, o->height);
 	p2->colour = colours[(i + 1) % 2][0];
 	p2->bg_colour = colours[(i + 1) % 2][1];
-	return sgxfive_render_tri_flags(r2, p2, 0, 0, 0);
+	return sgxfive_render_tri_flags(r2, p2, 0, 0, flags);
 }
 
 /* "tri.N": the name of render N's --dump-each files */
@@ -3224,6 +3351,88 @@ static const char *tri_name(uint32_t n)
 
 	snprintf(name, sizeof(name), "tri.%u", n);
 	return name;
+}
+
+/* --keep-target: render K's pixels against render K - 1's readback (rows stride apart) */
+struct kept_ref {
+	const uint32_t *px;
+	uint32_t stride;
+};
+
+static bool kept_ok(const void *ctx, uint32_t x, uint32_t y, uint32_t v, uint32_t *want)
+{
+	const struct kept_ref *k = ctx;
+
+	*want = k->px[(uint64_t)y * k->stride + x];
+	return v == *want;
+}
+
+static int u32_cmp(const void *a, const void *b)
+{
+	const uint32_t x = *(const uint32_t *)a, y = *(const uint32_t *)b;
+
+	return x < y ? -1 : x > y;
+}
+
+#define KEPT_COLOURS	8	/* the colours a kept render's report names, most first */
+
+/*
+ * The report of a kept render K: `tri WxH #K: target kept, X pixels changed, colours C N, ...
+ * (+M more); guard G`, X the pixels unlike render K - 1's readback, the colours render K's,
+ * most pixels first (ties by value). 0, or -ENOMEM.
+ */
+static int kept_report(const struct sgxfive_tri_params *p, const uint32_t *fb,
+		       const uint32_t *prev, uint32_t k, bool over, uint32_t guard)
+{
+	const uint32_t stride = sgxfive_tri_stride_px(p->width);
+	const uint64_t n = (uint64_t)p->width * p->height;
+	uint32_t *v = malloc(n * 4), (*run)[2] = calloc(KEPT_COLOURS + 1, sizeof(*run));
+	uint64_t changed = 0, runs = 0;
+
+	if (!v || !run) {
+		free(v);
+		free(run);
+		return -ENOMEM;
+	}
+	for (uint32_t y = 0; y < p->height; y++)
+		for (uint32_t x = 0; x < p->width; x++) {
+			const uint64_t at = (uint64_t)y * stride + x;
+
+			v[(uint64_t)y * p->width + x] = fb[at];
+			changed += fb[at] != prev[at];
+		}
+	qsort(v, n, 4, u32_cmp);
+	/* the KEPT_COLOURS largest runs, kept sorted in run[] (count desc, value asc) */
+	for (uint64_t i = 0; i < n;) {
+		uint64_t j = i;
+		int at;
+
+		while (j < n && v[j] == v[i])
+			j++;
+		runs++;
+		at = runs <= KEPT_COLOURS ? (int)runs - 1 : KEPT_COLOURS;
+		run[at][0] = v[i];
+		run[at][1] = (uint32_t)(j - i);
+		for (; at > 0 && run[at][1] > run[at - 1][1]; at--) {
+			const uint32_t c0 = run[at][0], c1 = run[at][1];
+
+			run[at][0] = run[at - 1][0];
+			run[at][1] = run[at - 1][1];
+			run[at - 1][0] = c0;
+			run[at - 1][1] = c1;
+		}
+		i = j;
+	}
+	printf("tri %ux%u #%u: %starget kept, %llu pixels changed, colours", p->width, p->height, k,
+	       over ? "overflowed, " : "", (unsigned long long)changed);
+	for (uint64_t i = 0; i < runs && i < KEPT_COLOURS; i++)
+		printf("%s 0x%08x %u", i ? "," : "", run[i][0], run[i][1]);
+	if (runs > KEPT_COLOURS)
+		printf(" (+%llu more)", (unsigned long long)(runs - KEPT_COLOURS));
+	printf("; guard %u\n", guard);
+	free(v);
+	free(run);
+	return 0;
 }
 
 static int cmd_tri(struct tool *t, const struct opts *o)
@@ -3246,6 +3455,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	struct scratch sc = { 0 };
 	struct bgl_src bgs = { 0 };
 	struct zbufs z = { .depth = { 0 } };
+	struct sgxfive_tri_probe bgpr;	/* --bg-pds/--bg-pixel, the scene hook's */
+	uint32_t *prev = NULL;		/* --keep-target K: render K - 1's readback */
 	/* what the host wrote last to each ZLS buffer (its fill, or a --refill's value) */
 	struct fill zref[4] = { o->depth_fill, o->depth_store_fill, o->stencil_fill,
 				o->stencil_store_fill };
@@ -3340,6 +3551,21 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 	}
 	sgxfive_render_set_hook(r, sgxfive_poke_hook, &pokes);	/* none: no change */
+	if (o->bg) {
+		bgpr = o->bg->pr;
+		bgpr.scratch = sc.bo ? (uint32_t)sc.addr : 0;
+		sgxfive_render_set_scene_hook(r, tri_bg_hook, &bgpr);
+		printf("tri: background object's programs: primary ");
+		if (o->bg->pds.n)
+			printf("%s (%u data dwords)", o->bg->pds.name, o->bg_pds_data);
+		else
+			printf("the library's");
+		printf(", pixel shader ");
+		if (o->bg->pixel.n)
+			printf("%s (%u temporaries)\n", o->bg->pixel.name, TRI_BG_TEMPS);
+		else
+			printf("the library's\n");
+	}
 	if (o->ctx2) {
 		if (o->share_pb) {
 			ret = debugfs_set("render_share_pb", "Y");
@@ -3483,11 +3709,15 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 		if (sc.bo)
 			scratch_fill(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
+		p.fb_keep = o->keep_target == i + 1;
+		if (p.fb_keep)
+			printf("tri: render %u on the target as render %u left it (--keep-target)\n",
+			       i + 1, i);
 		geometry = o->geometry >> i & 1;
 		ret = sgxfive_render_tri_flags(r, &p, 0, 0,
 					       geometry ? DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY : 0);
 		if (r2 && !ret && o->overlap)
-			ret2 = tri2_submit(r2, o, i, &p2);
+			ret2 = tri2_submit(r2, o, i, &p2, 0);
 		early2 = r2 && !ret && !ret2 && o->overlap && o->wait_second;
 		if (early2) {		/* the second's job first: the first's may never end */
 			printf("tri: waiting for the second context's job first\n");
@@ -3497,6 +3727,15 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (!ret)
 			wait_err = sgxfive_render_wait(r, wait_ns);
 		print_job(ret, wait_err);
+		/* --keep-target K: render K - 1's readback, what render K is counted against */
+		if (o->keep_target == i + 2 && !ret && (!wait_err || wait_err == -ENOSPC)) {
+			const size_t nb = (size_t)sgxfive_tri_stride_px(p.width) * p.height * 4;
+
+			free(prev);
+			prev = malloc(nb);
+			if (prev)
+				memcpy(prev, sgxfive_render_fb(r), nb);
+		}
 		/* --keep-overflow: an overflowed render is not a failure, the second context goes on */
 		ovf_ok = o->keep_overflow && wait_err == -ENOSPC;
 		if (r2 && !ret && (!wait_err || ovf_ok) && (o->words_between ||
@@ -3524,9 +3763,28 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			}
 		}
 		if (r2 && !ret && (!wait_err || ovf_ok)) {
+			const bool geo2 = o->ctx2_geometry == i + 1;
+
 			if (!o->overlap)
-				ret2 = tri2_submit(r2, o, i, &p2);
+				ret2 = tri2_submit(r2, o, i, &p2, geo2 ?
+						   DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY : 0);
 			if (!early2) {
+				wait2 = ret2 ? 0 : sgxfive_render_wait(r2, wait_ns);
+				print_job(ret2, wait2);
+			}
+			/*
+			 * --ctx2-geometry: the kick left the second context's scene open; its
+			 * closing render follows, --kept-copy between the two (Q191)
+			 */
+			if (geo2 && !ret2 && !wait2) {
+				printf("tri2 %ux%u #%u: geometry only, the scene left open\n",
+				       p2.width, p2.height, i + 1);
+				if (o->kept_dir)
+					kept_copy(o->kept_dir, "geo.", i + 1, "after the second "
+						  "context's geometry kick, before its closing render",
+						  true);
+				printf("tri2 %ux%u #%u: closing render\n", p2.width, p2.height, i + 1);
+				ret2 = sgxfive_render_tri_flags(r2, &p2, 0, 0, 0);
 				wait2 = ret2 ? 0 : sgxfive_render_wait(r2, wait_ns);
 				print_job(ret2, wait2);
 			}
@@ -3599,9 +3857,15 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (sgxfive_render_fb(r)) {	/* none before the first scene is built */
 			struct sgxfive_tri_layout l;
 
-			print_target(&(struct target){ p.width, p.height,
-						       sgxfive_tri_stride_px(p.width),
-						       sgxfive_render_fb(r), tri_ok, &p },
+			const struct kept_ref kr = { prev, sgxfive_tri_stride_px(p.width) };
+			char ref[32];
+
+			snprintf(ref, sizeof(ref), "render %u's", i);
+			print_target(p.fb_keep && prev ?
+				     &(struct target){ p.width, p.height, kr.stride,
+						       sgxfive_render_fb(r), kept_ok, &kr, ref } :
+				     &(struct target){ p.width, p.height, kr.stride,
+						       sgxfive_render_fb(r), tri_ok, &p, NULL },
 				     sgxfive_render_guard_dirty(r, &p), o->pixels);
 			sgxfive_render_get_layout(r, &l);
 			printf("layout: fb 0x%08x\n", l.fb);
@@ -3621,16 +3885,30 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			fail_job("render", ret);
 			break;
 		}
-		ret = sgxfive_tri_check(&p, sgxfive_render_fb(r), &n);
 		guard = sgxfive_render_guard_dirty(r, &p);
-		printf("tri %ux%u #%u: %s%u triangle, %u background, %u other; wrong %u inside, "
-		       "%u outside, %u at edges; %u if flipped; guard %u", p.width, p.height,
-		       i + 1, over ? "overflowed, " : "", n.tri, n.bg, n.other, n.wrong_in,
-		       n.wrong_out, n.wrong_edge, n.flipped, guard);
-		if (p.bg_src)
-			printf("; %u layer texels in place, %u elsewhere, %u not a texel",
-			       n.layer_in_place, n.layer_elsewhere, n.layer_other);
-		putchar('\n');
+		if (p.fb_keep) {	/* against render K - 1's readback: counted, not checked */
+			ret = prev ? kept_report(&p, sgxfive_render_fb(r), prev, i + 1, over, guard) :
+				     -ENOMEM;
+			if (ret) {
+				fail("--keep-target", ret);
+				break;
+			}
+		} else {
+			ret = sgxfive_tri_check(&p, sgxfive_render_fb(r), &n);
+			/* our background (--bg-pds/--bg-pixel): only the triangle is checked */
+			if (o->bg && ret == -EIO && !n.wrong_in)
+				ret = 0;
+			printf("tri %ux%u #%u: %s%u triangle, %u background, %u other; wrong %u "
+			       "inside, %u outside, %u at edges; %u if flipped; guard %u", p.width,
+			       p.height, i + 1, over ? "overflowed, " : "", n.tri, n.bg, n.other,
+			       n.wrong_in, n.wrong_out, n.wrong_edge, n.flipped, guard);
+			if (p.bg_src)
+				printf("; %u layer texels in place, %u elsewhere, %u not a texel",
+				       n.layer_in_place, n.layer_elsewhere, n.layer_other);
+			if (o->bg)
+				printf("; background ours, not checked");
+			putchar('\n');
+		}
 		if (over) {		/* counted, not checked: the partial renders drew it */
 			overflowed++;
 			ret = 0;
@@ -3679,6 +3957,7 @@ out:
 	 * closed in that order (ctx, ctx2); the render objects only unmap the client's pages.
 	 */
 	first_first = o->close_first || early_closed;
+	free(prev);
 	sgxfive_render_destroy(r2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
@@ -4180,6 +4459,52 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		}
 		if (!strcmp(argv[i], "--kept-copy") && i + 1 < argc) {
 			o->kept_dir = argv[i + 1];
+			continue;
+		}
+		if (!strcmp(argv[i], "--bg-pds") && i + 1 < argc) {
+			/* FILE:N, N the program's data dwords (whole rows of four, 4 to 128) */
+			const char *colon = strrchr(argv[i + 1], ':');
+			char spec[32];
+			int slot;
+
+			snprintf(spec, sizeof(spec), "bgpds%.24s", colon ? colon : "");
+			if (o->bg_pds_path || !colon || colon == argv[i + 1] ||
+			    probe_tri_slot(spec, &slot, &o->bg_pds_data)) {
+				fprintf(stderr, "sgxfive-test: bad --bg-pds %s (once, FILE:N, N data "
+					"dwords: 4 to 128, whole rows of four)\n", argv[i + 1]);
+				return -1;
+			}
+			o->bg_pds_path = strndup(argv[i + 1], (size_t)(colon - argv[i + 1]));
+			continue;
+		}
+		if (!strcmp(argv[i], "--bg-pixel") && i + 1 < argc) {
+			if (o->bg_pixel_path) {
+				fprintf(stderr, "sgxfive-test: --bg-pixel is given once\n");
+				return -1;
+			}
+			o->bg_pixel_path = argv[i + 1];
+			continue;
+		}
+		if (!strcmp(argv[i], "--keep-target") && i + 1 < argc) {
+			uint32_t k;
+
+			if (o->keep_target || !parse_u32(argv[i + 1], &k) || k < 2 || k > 32) {
+				fprintf(stderr, "sgxfive-test: bad --keep-target %s (once, a render 2 to "
+					"-n)\n", argv[i + 1]);
+				return -1;
+			}
+			o->keep_target = k;
+			continue;
+		}
+		if (!strcmp(argv[i], "--ctx2-geometry") && i + 1 < argc) {
+			uint32_t k;
+
+			if (o->ctx2_geometry || !parse_u32(argv[i + 1], &k) || !k || k > 32) {
+				fprintf(stderr, "sgxfive-test: bad --ctx2-geometry %s (once, a render 1 to "
+					"-n)\n", argv[i + 1]);
+				return -1;
+			}
+			o->ctx2_geometry = k;
 			continue;
 		}
 		if (!strcmp(argv[i], "--wait-ms") && i + 1 < argc) {
@@ -4921,6 +5246,43 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --ramp, --ramp-base, --print-addrs and --page-before "
 			"are for copy\n");
 		return 2;
+	}
+	if ((o.bg_pds_path || o.bg_pixel_path || o.keep_target || o.ctx2_geometry) &&
+	    strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --bg-pds, --bg-pixel, --keep-target and "
+			"--ctx2-geometry are for tri\n");
+		return 2;
+	}
+	if (o.keep_target && (o.keep_target > o.n || o.ctx2)) {
+		fprintf(stderr, "sgxfive-test: --keep-target K is for renders 2 to -n (%u), without "
+			"--ctx2\n", o.n);
+		return 2;
+	}
+	for (unsigned int k = 0; k < o.nrefills; k++) {
+		if (o.keep_target && o.refills[k].n == o.keep_target &&
+		    o.refills[k].buf == REFILL_FB) {
+			fprintf(stderr, "sgxfive-test: --keep-target %u keeps the target --refill "
+				"%u:fb would write\n", o.keep_target, o.keep_target);
+			return 2;
+		}
+	}
+	if (o.ctx2_geometry && (!o.ctx2 || o.ctx2_geometry > o.n || o.final_pb || o.overlap)) {
+		fprintf(stderr, "sgxfive-test: --ctx2-geometry N is for tri --ctx2, renders 1 to -n "
+			"(%u), without --final-pb-pages and --overlap\n", o.n);
+		return 2;
+	}
+	if ((o.bg_pds_path || o.bg_pixel_path) && o.bg_layer) {
+		fprintf(stderr, "usage: sgxfive-test --bg-pds and --bg-pixel do not take --bg-layer "
+			"(the layer's primary replaces the background's)\n");
+		return 2;
+	}
+	if (o.bg_pds_path || o.bg_pixel_path) {
+		static struct tri_bg tbg;
+
+		ret = tri_bg_load(&o, &tbg);
+		if (ret)
+			return ret;
+		o.bg = &tbg;
 	}
 	if (o.emit_scene && strcmp(cmd, "fill") && strcmp(cmd, "copy")) {
 		fprintf(stderr, "sgxfive-test: --emit-scene is for fill and copy\n");
