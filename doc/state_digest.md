@@ -289,9 +289,12 @@ list.
 
 ## Recent records
 
-71 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+72 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1107` pds, 2026-11-15: sgx-sim replays the kept vectors of two published sessions exactly:
+  r25-sa64's 58 jobs (E1104; stages pk64 and q019, one vector a job) replay 58 of 58 with each set's
+  sixteen markers read exactly at ...
 - `E1106` usse, 2026-11-15: r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module
   E0CC4027: a single writer alone writes iaddu32's value into sa0 and it is the zero-extended one:
   eight (r1, source 2) pairs a ...

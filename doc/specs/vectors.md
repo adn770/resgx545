@@ -47,7 +47,8 @@ batch left (`init.job.csc`, below) converts through it instead.
 The probe jobs of a closing session (round 26: `vectors/closing/r25-sa64/pds/` from E1104's
 r25-sa64, `vectors/closing/r25-csc/texture/` from E1103's r25-csc) are converted by
 `tools/usse-asm/closing_vectors.py --probes` from the session's kept jobs and `bins/`, one file a
-stage, in run order (`crates/sgx-sim/tests/session_vectors.rs` replays them: 58 PDS jobs, 12 fills).
+stage, in run order (`crates/sgx-sim/tests/session_vectors.rs` replays them: 58 PDS jobs, 12 fills;
+E1107).
 The 8 vectors of the 11.39 bilinear jobs (`datasets/vectors-texture-p1141.toml`, one file in
 `vectors/nokernel/usse/texture-p1141/`, converted by `vectors.py convert` from
 `texture/p1141-recomp/raw/p1141-bilin/raw.txt`, which `texture/p1141-recomp/make_raw.py` makes from

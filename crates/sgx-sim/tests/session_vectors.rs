@@ -51,7 +51,7 @@ fn with(v: &Json, off: Option<(&str, &str)>, init: Option<(&str, Json)>) -> Json
     v
 }
 
-/// E1104: every job of pk64 and q019 replays, each set's sixteen markers checked exactly at their own
+/// E1104, E1107: every job of pk64 and q019 replays, each set's sixteen markers checked exactly at their own
 /// sa (sa0-sa63; the other attributes hold what earlier jobs left, AnyValue); a marker changed in the
 /// readback fails (the control), and the vector cut back to 16 attributes stops at sa16.
 #[test]
@@ -79,7 +79,7 @@ fn r25_sa64_jobs_replay_with_64_attributes() {
     assert_eq!(n, 58, "pk64's 2 and q019's 56");
 }
 
-/// E1103: the twelve fills of r25-csc replay exactly (2048 pixels each) with the colour-space set the
+/// E1103, E1107: the twelve fills of r25-csc replay exactly (2048 pixels each) with the colour-space set the
 /// batch left (init.job.csc): E037's conversion after a BT.601 load, opaque black after a zeros load.
 /// Without the batch's set (the field taken out) a fill with a load of its own stops, as before, and
 /// an unpoked fill falls back on the old reading (no pokes: unloaded, black), which E1103's c and d

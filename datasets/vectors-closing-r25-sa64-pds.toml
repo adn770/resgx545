@@ -1,0 +1,9 @@
+title = "r25-sa64: the replay vectors of stages pk64 and q019 (58 jobs, one vector a job: the PDS secondary program and data size, the USE program as sent, attrs 64 from --scratch-show 64, sa_kept, the job's pokes and the scratch dwords and o0 it printed)"
+repo = "data"
+paths = ["vectors/closing/r25-sa64/pds/"]
+method = "tools/usse-asm/closing_vectors.py --probes of the published render/closing-r25-sa64 session (its one attempt, out/20261115-220241) in the sgx545-vectors format of tools/usse-asm/vectors.py, one file a stage (round 26 P1); replayed by sgx-sim's tests/session_vectors.rs: 58 of 58, each set's markers exact at their own sa (sa0-sa63), the attributes a job does not write as earlier jobs left them (E1104)"
+date = "2026-11-15"
+files = 2
+size = 349773
+sha256 = "05766830f03d3d2a71b4f0f430ae9286357d42dbe85b78c82c211d737e24ddf0"
+recipe = "tools/usse-asm/closing_vectors.py"

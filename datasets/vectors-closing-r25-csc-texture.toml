@@ -1,0 +1,9 @@
+title = "r25-csc: the replay vectors of stage csc (12 fills of 16 jobs, one vector a fill: the program, its pokes, the colour-space set its batch left in init.job.csc and the 2048 pixels it printed; the 4 copies listed as skipped)"
+repo = "data"
+paths = ["vectors/closing/r25-csc/texture/"]
+method = "tools/usse-asm/closing_vectors.py --probes of the published render/closing-r25-csc session (its one attempt, out/20261115-213805) in the sgx545-vectors format of tools/usse-asm/vectors.py, the set carried from job to job in run order (a job with xfer:17 bit 0 loads xfer:18-22, E1097, E1103; round 26 P1); replayed by sgx-sim's tests/session_vectors.rs: 12 of 12 exact over 2048 pixels (E037's BT.601 conversion, zeros black)"
+date = "2026-11-15"
+files = 1
+size = 497989
+sha256 = "53d86ef8905ea523de1cfda6d91d732cef4d662196fb32f8335a8aa7b190398b"
+recipe = "tools/usse-asm/closing_vectors.py"

@@ -9367,6 +9367,15 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   E1061's frozen verdict stays as printed.
   *usse; HW; data: `render-closing-r26-sa0:out/20261115-224747/uc/`,
   `render-closing-r26-sa0:out/20261115-224747/us/`, `render-closing-r26-sa0:fold/`.*
+- `E1107` sgx-sim replays the kept vectors of two published sessions exactly: r25-sa64's 58 jobs
+  (E1104; stages pk64 and q019, one vector a job) replay 58 of 58 with each set's sixteen markers
+  read exactly at their own sa (sa0-sa63) and the attributes a job does not write as earlier jobs
+  left them, and r25-csc's 12 fills (E1103; 2048 pixels each) replay 12 of 12 exactly with the
+  colour-space set the batch left in run order (E037's BT.601 conversion after a BT.601 load, opaque
+  black after a zeros load); r25-csc's 4 copies are listed as skipped, not replayed [HW]; the
+  vectors are the sessions' own printed outputs in the sgx545-vectors format, so a replay that
+  agrees says the sim models what the hardware printed, not more [infer].
+  *pds; HW, infer; data: `vectors-closing-r25-sa64-pds`, `vectors-closing-r25-csc-texture`.*
 
 ## By unit
 
@@ -9426,7 +9435,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104.
+E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107.
 
 ### platform
 
