@@ -402,6 +402,12 @@ Readings a scorer or a hook takes from the kept files, and the slips they have c
   sgx-sim models it (round 26): `closing_vectors.py --probes` carries the set from job to job
   in run order (`init.job.csc`), and formats 28 and 29 convert through E037's BT.601 words
   (zeros: black) on type 3 textures; other words and other types stop (Q050).
+- A T3 address job reads past the probe's scratch when its extent does (E722's three 16-page
+  faults): what lies there is the probe's own layout (coords surface, sentinel page, then an
+  unmapped page; E743, E760, E787), so a row's scratch pages are part of its prediction.
+  sgx-sim models E722's chain (round 27, `tex.rs` `MEASURED_T3_ADDR`: T3 bits 28:27, 19:18 and
+  10 in the words and sizes its jobs ran, format 12, point) and refuses a read the bus faults as
+  past the scratch, naming those records; other words stop (Q300).
 
 ## Firmware tasks of our own
 

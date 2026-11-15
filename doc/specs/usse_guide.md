@@ -5330,6 +5330,6 @@ guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 - reads saN before the program writes it (36)
 - reads R(N) before its DRC result lands (wdf) (35)
 - reads paN before the program writes it (35)
-- TN bits NxN (30)
 - four texels fix no decoder (30)
 - the firh latch, which a later firh may reach first (read in rN) (24)
+- a LOD from the quad's derivatives (23)
