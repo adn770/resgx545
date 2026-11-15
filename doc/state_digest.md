@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-141 open: 131 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+140 open: 130 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -142,8 +142,6 @@ list.
   cache-control operands do? (E110, E117, E375)
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
-- `Q123` usse, medium: does lapc reach instruction indices past the first 65536 words of a code base
-  and the 18th bit of the program counter, and every index from ... (E492, E1098, E1102)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
   the s0, s1 and s2 operands of the started PDS program become ... (E488, E513, E520)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
