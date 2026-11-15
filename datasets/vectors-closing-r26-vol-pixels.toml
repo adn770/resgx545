@@ -1,0 +1,9 @@
+title = "r26-vol: the --pixels words of each job of stages vc and vb (Q114: smp3d at w 0 and 1.5 with each of 19 T0 and T3 bits flipped on a twiddled 16 x 16 texture, H-NOVOL 19 of 19 held out, 45 jobs)"
+repo = "data"
+paths = ["vectors/closing/r26-vol/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r26-vol session (its one attempt, out/20261115-225136), two files; rows are measurements; refused: sgx-sim reads smp3d as smp2d only at E567's sampler words (crates/sgx-sim/src/tex.rs smp3d_as_2d), the flipped words and TEXTYPE 2 stay outside that rule"
+date = "2026-11-15"
+files = 2
+size = 60632
+sha256 = "4fb80f2face2458c25c51359bf3570d2fb0b08fb3d6745ce798ad5004e90505e"
+recipe = "tools/usse-asm/closing_tables.py"

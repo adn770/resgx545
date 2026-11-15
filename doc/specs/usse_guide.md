@@ -3046,8 +3046,11 @@ source-1 operand; the LOD value as source 2 when a LOD mode is set; a data fence
   sampled, a 16x16 twiddled texture and a 64x32 stride one, the third coordinate is not read and
   the texel is the `smp2d` one (8 of 8 jobs, 3 sweeps, `rt7` at two values); on TEXTYPE 2 it
   changes the image (three images for `smp2d`, 0.5 and 1.5): type 2 is the cube layout, its face
-  chosen by the dominant coordinate (E725, E726, E844). The
-  simulator reads `smp3d` as `smp2d` on the first and stops on every other state.
+  chosen by the dominant coordinate (E725, E726, E844). With any one of 19 sampler-word bits
+  flipped on the twiddled texture (T0 14 to 16 and 27 to 30, T3 8 to 12, 15, 18, 20 to 22, 27
+  and 28: every bit that ran there without a fault), the third coordinate at 0 and at 1.5 still
+  gives one image at all 2048 pixels (19 of 19 held out, E1105): no single bit of those names a
+  volume. The simulator reads `smp3d` as `smp2d` on the first and stops on every other state.
 - **In the firmware:** not used.
 - **The sampler cache [HW]** (E114). The sampler keeps what it fetched, in lines that hold at
   least two neighbouring texels: once a texel is sampled, a USSE store to it or beside it is

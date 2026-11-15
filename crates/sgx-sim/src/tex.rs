@@ -1301,7 +1301,10 @@ fn etc1_texel(hi: u32, lo: u32, x: u32, y: u32) -> [u32; 3] {
 /// words: it ran (p1132 tx-types, tx-types-risky; E567) on TEXTYPE 0, 6 and 7 only, format 12,
 /// point filters and one level, a 16x16 twiddled texture and a 64x32 stride one, with the T0 and T3
 /// words of those jobs (T2 varied nowhere). Its third coordinate acts on TEXTYPE 2 (E567), which
-/// the rule refuses with the rest. With .pcf or an SRD mode it did not run.
+/// the rule refuses with the rest. With .pcf or an SRD mode it did not run. E1105 (r26-vol)
+/// flipped 19 T0 and T3 bits one at a time on the twiddled texture and w still did not act, but
+/// the rule is not widened to those words: they stay refused here, their 2D reads Q300's where
+/// tex::sample refuses them.
 pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
     let [t0, t1, _, t3] = state;
     let ty = t1 >> 29;
