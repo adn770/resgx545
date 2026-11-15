@@ -4,7 +4,7 @@ question = "what reads the render details' unpatched ZLS control word that the c
 unit = "zls"
 kind = "fw"
 phase = 11
-evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014", "E1081", "E1083", "E1088"]
+evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014", "E1081", "E1083", "E1088", "E1093", "E1094"]
 terms = ["CR_ISP_ZLSCTL", "hw_render_details.isp_zlsctl"]
 +++
 
@@ -49,3 +49,16 @@ no triangle depth. The ZLS registers read during each render (post hoc, the froz
 failed: 0x0484 and 0x0488 hold the offsets rd:12 and rd:13): 0x0480 = rd:11 with bits 14 and 19 set
 during the partial renders, bits 14 and 15 after them. Not retired (R20-2 a needed a frozen form);
 open: the zero region, bit 15, and what reads the closed driver's unpatched word.
+
+Narrowed 2026-11-15 (r21-zls, E1093 and E1094). What reads the word: for every render of a kick
+the firmware loads CR_ISP_ZLSCTL from the render details' word and ORs bits 14, 18 and 19 into it
+for each partial render (rd:11 | 0x000c4000, H-PRMASK 10 of 10 held out, E336's 0x0011700a read as
+0x001d700a raised or not; E1094). The reload half after a raised kick: with the load buffer
+refilled at 0.75 the final writes the load buffer back to the store and draws no triangle depth,
+load bits or not (H-LOADNOTEST 4 of 4, H-LOADTEST 0 of 4; E1093). After a kick that was not
+raised the final follows its word without load bits (H-HOSTBITS 2 of 2), but with load bits
+H-HOSTBITS failed (0x2e: the loaded 0.75 written back, T2 not drawn, as after a raised kick; post
+hoc). Not retired (R21-2 a needed every clause decided by held-out rows): open, the not-raised
+load clause as a frozen form (whenever the final loads, it draws no triangle at z 0.5 against a
+0.75 load [infer]) and why; the zero region (Q107); bit 15 after the partial renders; what the
+closed driver means the unpatched word for between frames.

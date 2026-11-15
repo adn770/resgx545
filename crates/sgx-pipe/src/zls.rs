@@ -750,7 +750,10 @@ pub fn store(
 /// the final, the final stores that buffer's depth outside a zero region of tile rows 0-11, raised or
 /// not with load bits, and a raised partial render stores the buffer it loaded without its triangle;
 /// E1090: the zero row and the failed overlay stay when the kick is not raised; E1089: the final
-/// paints every target pixel. All refused here.
+/// paints every target pixel. E1093: after a raised kick the final writes the refilled load buffer
+/// back without the triangle's depth, load bits or not; E1094: the partial renders run with the
+/// word's bits 14, 18 and 19 set; E1095: the zero region of the ramp's store is 184320 window
+/// dwords after a raised kick and 118784 after one that was not. All refused here.
 pub fn final_store(
     ctl: &Ctl,
     w: u32,

@@ -9227,6 +9227,29 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   those after the second render together make the owner's cover in each of the 4 not-raised rows.
   *dpm; HW, infer; data: `render-closing-r20-own:out/20261115-080117/owp/`,
   `render-closing-r20-own:fold/`.*
+- `E1093` r21-zls stages zc and zl (Q088, 9 jobs): with the host's 0.75 refill of the load buffer
+  between an overflowing geometry kick and a moved final on its own PB, after a raised kick (0x24,
+  0x28, 0x2c without load bits, 0x2a with them) the final's separate store holds the refilled 0.75
+  at every window dword of tile rows 12 and below and the moved triangle at z 0.5 is drawn nowhere:
+  H-LOADNOTEST 4 of 4 (fit 0x28, three held out), H-LOADTEST 0 of 4; after a kick that was not
+  raised H-HOSTBITS held 2 of 3 without load bits (0x2e, 0x34: T2 at 0.5, render 1's leftover at
+  0.5, 1.0 elsewhere) and FAILED at 0x2e with load bits, whose store held 0.75 everywhere like the
+  raised rows (182786 dwords off, T2 not drawn); H-PRMASK 7 of 7; controls passed (zc-r25 repeated
+  E1088's 0.25 at 589824 of 589824 dwords, zregs2 passed).
+  *zls; HW; data: `render-closing-r21-zls:out/20261115-140052/zc/`,
+  `render-closing-r21-zls:out/20261115-140052/zl/`, `render-closing-r21-zls:fold/`.*
+- `E1094` r21-zls stage zw (Q088, 3 jobs): during the partial renders CR_ISP_ZLSCTL (0x0480) reads
+  the render details' word rd:11 with bits 14, 18 and 19 ORed in (rd:11 | 0x000c4000) in every
+  sample, on E336's word 0x0011700a after a raised (0x2c) and a not-raised (0x2e) kick (0x001d700a)
+  and on E1082's G 1 word 0x0017100c at 0x28 (0x001f500c): H-PRMASK 3 of 3 held out, H-PR1419 1 of 3
+  (it fails on E336's word), H-OTHER 0 of 3; with E1093's seven rows H-PRMASK 10 of 10; zregs2
+  (0x0484 = rd:12, 0x0488 = rd:13) passed; premises passed.
+  *zls; HW; data: `render-closing-r21-zls:out/20261115-140052/zw/`, `render-closing-r21-zls:fold/`.*
+- `E1095` r21-zls stage zz (Q107, 4 jobs): on E629's ramp with the final on its own PB the final's G
+  33 store (depth.2) holds 184320 zero window dwords in tile rows 0-11 after a raised kick (0x24,
+  0x38) and 118784 after one that was not (0x3c, 0x50), and no signed window dword: H-ZCOUNT 4 of 4
+  held out (frozen from E1082's and E1090's kept rows), H-ZP 0 of 4; premises passed.
+  *zls; HW; data: `render-closing-r21-zls:out/20261115-140052/zz/`, `render-closing-r21-zls:fold/`.*
 
 ## By unit
 
@@ -9351,4 +9374,5 @@ E1035, E1075, E1076.
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
-E1054, E1059, E1063, E1064, E1068, E1069, E1070, E1081, E1082, E1083, E1088, E1090.
+E1054, E1059, E1063, E1064, E1068, E1069, E1070, E1081, E1082, E1083, E1088, E1090, E1093, E1094,
+E1095.

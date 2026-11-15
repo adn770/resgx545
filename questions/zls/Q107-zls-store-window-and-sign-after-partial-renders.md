@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020", "E1082", "E1088", "E1090"]
+evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020", "E1082", "E1088", "E1090", "E1095"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -81,3 +81,12 @@ fails E996's order (RULE 54784 of 61440): H-AFTERPR 4 of 4, so neither belongs t
 final's store holds no sign in the store window (E1082's 35840 were the marker fill); the partial
 render's store is signed raised or not (post hoc), with 0x0480 bit 19 set during every partial
 render (E1088). Open: the zero row's rule (118784 here, 195584 raised) and the tile order rule.
+Corrected 2026-11-15 (E1090's correction): "signed raised or not" holds for the ramp's single
+buffer (E1082, E1090), not for E1088's raised separate store, which held the loaded 1.0 unsigned;
+and E1082's 195584 counts the pad tile columns too: 184320 in the store window.
+
+Narrowed 2026-11-15 (r21-zls, E1095). The zero region of the final's store after partial renders
+of the ramp follows the raise, not P: 184320 window dwords of tile rows 0-11 after a raised kick
+(0x24, 0x38) and 118784 after one that was not (0x3c, 0x50), none signed (H-ZCOUNT 4 of 4 held
+out, frozen from E1082 and E1090). Open: why 360 against 232 tiles' worth and which tiles (the
+zero row's rule), and the tile order rule.

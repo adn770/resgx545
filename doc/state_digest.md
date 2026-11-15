@@ -169,7 +169,7 @@ list.
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
   bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E1021, E1035, E1076)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
-  row of macrotiles and the depth with its sign bit set for the ... (E1082, E1088, E1090)
+  row of macrotiles and the depth with its sign bit set for the ... (E1088, E1090, E1095)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
   how are they laid out, given that they store depth and stencil ... (E1031, E1043, E1054)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
@@ -287,7 +287,7 @@ list.
 - `Q084` dpm, fw (parked): how does the closed driver turn its PBSize app hint into the parameter
   buffer's page count and thresholds, given 1 MiB and 8 MiB both give ... (E327)
 - `Q088` zls, fw (parked): what reads the render details' unpatched ZLS control word that the closed
-  driver writes between frames (0x0011700a), now that bit 14 is ... (E1081, E1083, E1088)
+  driver writes between frames (0x0011700a), now that bit 14 is ... (E1088, E1093, E1094)
 - `Q118` render, fw (parked): how does the firmware's kick tell that its context's page directory is
   in none of the bus interface's directory lists (a compare against ... (E360, E592)
 - `Q119` render, fw (parked): does one TA command carrying both FIRST_KICK and LAST_KICK act as two
@@ -299,9 +299,18 @@ list.
 
 ## Recent records
 
-57 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+60 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1095` zls, 2026-11-15: r21-zls stage zz (Q107, 4 jobs): on E629's ramp with the final on its own
+  PB the final's G 33 store (depth.2) holds 184320 zero window dwords in tile rows 0-11 after a
+  raised kick (0x24, 0x38) and ...
+- `E1094` zls, 2026-11-15: r21-zls stage zw (Q088, 3 jobs): during the partial renders CR_ISP_ZLSCTL
+  (0x0480) reads the render details' word rd:11 with bits 14, 18 and 19 ORed in (rd:11 | 0x000c4000)
+  in every sample, on E336's ...
+- `E1093` zls, 2026-11-15: r21-zls stages zc and zl (Q088, 9 jobs): with the host's 0.75 refill of
+  the load buffer between an overflowing geometry kick and a moved final on its own PB, after a
+  raised kick (0x24, 0x28, 0x2c ...
 - `E1092` dpm, 2026-11-15: r20-own stage owp (5 jobs, t18b under regtimeline, render_keep armed, a
   1024x768 owner closed early after its overflowing render, the second context drawing the default
   triangle): the kept owner's ...
@@ -476,9 +485,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-80 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+81 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r21-zls`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
 - `render/closing-r20-zls`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t18b
 - `render/closing-r20-own`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -594,7 +605,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 8 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 9 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions

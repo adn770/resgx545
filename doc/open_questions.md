@@ -182,7 +182,7 @@
 
 ### zls
 
-- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020, E1082, E1088, E1090)
+- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020, E1082, E1088, E1090, E1095)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490, E978, E985, E986, E1015, E1031, E1043, E1054)
 
 ## Parked: not hardware knowledge
@@ -211,7 +211,7 @@
 
 #### zls
 
-- `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467, E665, E997, E989, E1014, E1081, E1083, E1088)
+- `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467, E665, E997, E989, E1014, E1081, E1083, E1088, E1093, E1094)
 
 ### kernel
 
