@@ -108,6 +108,7 @@ pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Out
         uniform: true,
         coeffs: job_coeffs(v),
         csc_unloaded: job_csc_unloaded(v),
+        csc: job_csc(v),
         code_index,
         ..Machine::default()
     };
@@ -324,6 +325,23 @@ pub fn job_csc_unloaded(v: &Json) -> bool {
         word17 = if flip { word17 ^ val } else { val };
     }
     word17 & 1 == 0
+}
+
+/// The words colour-space set 0 holds for the vector's job, where its batch says (init.job.csc,
+/// written by closing_vectors.py --probes: the last load before the job in its session, E1097,
+/// E1103); None where the vector does not carry it.
+pub fn job_csc(v: &Json) -> Option<[u32; 5]> {
+    let w: Vec<u32> = v
+        .get("init")
+        .get("job")
+        .get("csc")
+        .get("words")
+        .arr()
+        .iter()
+        .filter_map(|w| w.hex())
+        .map(|w| w as u32)
+        .collect();
+    w.try_into().ok()
 }
 
 /// A vector file, each vector given its job (init.job) from the file's sidecar where it does
@@ -565,6 +583,7 @@ fn run_pds_tile(v: &Json, mut pds: Pds) -> Result<Outcome, String> {
         sa: bus.sa,
         coeffs: job_coeffs(v),
         csc_unloaded: job_csc_unloaded(v),
+        csc: job_csc(v),
         ..Machine::default()
     };
     m.written.sa = bus.written;
@@ -576,6 +595,17 @@ fn run_pds_tile(v: &Json, mut pds: Pds) -> Result<Outcome, String> {
     for (n, b) in sa_near {
         if let Some(b) = b {
             m.bounds.insert(("sa", n), b);
+        }
+    }
+    // init.sa_kept (a session's jobs run as one batch): an attribute below attrs this job's PDS
+    // did not write holds what an earlier job left (E1104: "registers a job does not write keep
+    // earlier jobs' values"; E391), any value to this vector (Bound::Bits(32), AnyValue)
+    if matches!(init.get("sa_kept"), Json::Bool(true)) {
+        for n in 0..bus.attrs.min(128) {
+            if bus.written >> n & 1 == 0 {
+                m.written.sa |= 1 << n;
+                m.bounds.insert(("sa", n), Bound::Bits(32));
+            }
         }
     }
     match m.run(&prog, &mut mem, 10_000) {
@@ -673,6 +703,7 @@ pub fn run_pixels(v: &Json) -> Result<Outcome, String> {
                 m.temps = temps;
                 m.coeffs = job_coeffs(v);
                 m.csc_unloaded = job_csc_unloaded(v);
+                m.csc = job_csc(v);
                 m.pa[0] = (y as u32) << 16 | x as u32;
                 m.pixel = Some((x as u32, y as u32));
                 m.written.pa |= 1;
@@ -1124,6 +1155,80 @@ mod tests {
         ))
     }
 
+    /// A fill vector whose PDS program writes `value` to attribute `attr` (ds1[0] = attr << 8) and
+    /// whose shader stores sa`read` to scratch dword 0, read back as `got`; `init` adds fields
+    /// (attrs, sa_kept).
+    fn attr_vector(attr: u32, read: u32, got: u32, init: &str) -> crate::json::Json {
+        let enc = |t: &str| format!("\"0x{:08x}\"", pds_isa::encode(t).unwrap());
+        let code = [
+            "movs douta, ds0[0], ds1[0], ds0[0], ds0[0]",
+            "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]",
+            "halt",
+        ];
+        let data = [
+            format!("\"0x{:08x}\"", 0xa100_0000 | attr),
+            "\"0x0\"".into(),
+            format!("\"0x{:08x}\"", attr << 8),
+            "\"0x0\"".into(),
+        ];
+        let words: Vec<String> = data.into_iter().chain(code.iter().map(|t| enc(t))).collect();
+        let use_enc =
+            |t: &str| format!("\"0x{:016x}\"", usse_isa::encode(t, usse_isa::Core::Sgx545).unwrap());
+        let usew: Vec<String> = [
+            "phas #0, #0, pixel, end, parallel".to_string(),
+            "mov.skipinv r29, #0x5CAF0000".to_string(),
+            format!("stad [r29,+#0], sa{read}"),
+            "idf drc0, bif".to_string(),
+            "wdf drc0".to_string(),
+            "mov.skipinv.end o0, #0x0DA7A000".to_string(),
+        ]
+        .iter()
+        .map(|t| use_enc(t))
+        .collect();
+        crate::json::parse(&format!(
+            r#"{{"program": {{"isa": "pds", "data": 4, "words": [{}]}},
+                "init": {{"task": "pds-secondary", "instances": 2048, "temps": 32{init},
+                          "use": {{"words": [{}]}}}},
+                "readback": {{"failed": null, "o0": null,
+                              "scratch": {{"0x000": "0x{got:08x}"}}}},
+                "provenance": {{"options": ["--pds", "4"]}}}}"#,
+            words.join(", "),
+            usew.join(", ")
+        ))
+    }
+
+    #[test]
+    fn a_douta_reaches_the_attributes_the_vector_gives_up_to_64() {
+        use super::{Outcome, run_pds};
+        // E1104: sa32-sa63 at their own sa with attrs 64 (--scratch-show 64)
+        for a in [0, 15, 16, 40, 63] {
+            let v = attr_vector(a, a, 0xa100_0000 | a, r#", "attrs": 64"#);
+            assert_eq!(run_pds(&v), Ok(Outcome::Exact), "sa{a}");
+        }
+        // the vector's attrs bound it: 16 stops sa40, 64 stops sa64
+        let e = run_pds(&attr_vector(40, 40, 0xa100_0028, r#", "attrs": 16"#)).unwrap_err();
+        assert!(e.contains("douta to sa40"), "{e}");
+        let e = run_pds(&attr_vector(64, 0, 0xa100_0040, r#", "attrs": 64"#)).unwrap_err();
+        assert!(e.contains("douta to sa64"), "{e}");
+    }
+
+    #[test]
+    fn attributes_a_job_does_not_write_hold_what_earlier_jobs_left_where_the_vector_says_so() {
+        use super::{Outcome, run_pds};
+        // without sa_kept a read of an attribute the PDS did not write stops (a program's own
+        // fault); with it (E1104: "registers a job does not write keep earlier jobs' values")
+        // it is any value, the vector counted apart (AnyValue), and the written ones stay exact
+        let e = run_pds(&attr_vector(40, 3, 0x1234_5678, r#", "attrs": 64"#)).unwrap_err();
+        assert!(e.contains("reads sa3 before"), "{e}");
+        let kept = r#", "attrs": 64, "sa_kept": true"#;
+        assert_eq!(run_pds(&attr_vector(40, 3, 0x1234_5678, kept)), Ok(Outcome::AnyValue));
+        assert_eq!(run_pds(&attr_vector(40, 40, 0xa100_0028, kept)), Ok(Outcome::Exact));
+        assert!(run_pds(&attr_vector(40, 40, 0xa100_0029, kept)).is_err(), "a written one is exact");
+        // and only below attrs: sa_kept does not open the attributes past them
+        let e = run_pds(&attr_vector(3, 20, 0, r#", "attrs": 16, "sa_kept": true"#)).unwrap_err();
+        assert!(e.contains("reads sa20 before"), "{e}");
+    }
+
     #[test]
     fn a_vector_s_job_gives_the_coefficients() {
         use crate::usse::FilterBlock;
@@ -1141,6 +1246,16 @@ mod tests {
         assert_eq!(super::job_coeffs(&v(none)), Some(FilterBlock::default()));
         // a vector without its job: not known
         assert_eq!(super::job_coeffs(&crate::json::parse(r#"{"init": {}}"#)), None);
+    }
+
+    #[test]
+    fn a_vector_s_job_gives_the_set_its_batch_left() {
+        let v = |job: &str| crate::json::parse(&format!(r#"{{"init": {{"job": {job}}}}}"#));
+        let w = r#"{"pokes": [], "csc": {"set": 0, "loaded_by": "y28-b", "words":
+                   ["0x00950095", "0x00000095", "0x010203ce", "0x039800cc", "0x00000000"]}}"#;
+        assert_eq!(super::job_csc(&v(w)), Some(crate::tex::CSC_BT601));
+        assert_eq!(super::job_csc(&v(r#"{"pokes": []}"#)), None);
+        assert_eq!(super::job_csc(&v(r#"{"csc": {"words": ["0x0"]}}"#)), None, "five words or none");
     }
 
     #[test]

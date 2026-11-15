@@ -10,7 +10,8 @@
 //! recorded are not established and stop with Err(why).
 
 /// One sample: the state words, the normalized coordinates, whether the
-/// texture is read as 1D (row 0), .pcf's reference and the level of detail.
+/// texture is read as 1D (row 0), .pcf's reference, the level of detail and the
+/// colour-space set 0 words the job's set holds (None: not loaded).
 #[derive(Clone, Copy, Debug)]
 pub struct Sample {
     pub state: [u32; 4],
@@ -20,6 +21,10 @@ pub struct Sample {
     pub srd: Srd,
     pub pcf: Option<f32>,
     pub lod: Lod,
+    /// The words of colour-space set 0 (xfer:18 to 22 of the load that left it) the YUV formats
+    /// 28 and 29 convert through; None: the set is not loaded (opaque black, E037, E568). Whether
+    /// a job's set is known is the caller's (Machine::csc).
+    pub csc: Option<[u32; 5]>,
 }
 
 /// smp's SRD mode (E042): what the sample returns in place of the filtered
@@ -67,6 +72,16 @@ fn open<T>(s: impl Into<String>) -> Result<T, Fail> {
 pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     let [t0, t1, t2, t3] = s.state;
     let mut tex = Texture::new(t0, t1, t2, t3)?;
+    if matches!(tex.format, 28 | 29) && s.csc.is_some() {
+        // E037, E040, E1097, E1103 converted type 3 textures only (a copy's 64 x 32, a fill's 16 x 1)
+        if t1 >> 29 != 3 {
+            return open(format!(
+                "a loaded colour-space set on texture type {} (the conversion ran on type 3 only: E037, E1103)",
+                t1 >> 29
+            ));
+        }
+        tex.csc = s.csc;
+    }
     let (levels, bilinear) = tex.pick(t0, &s.lod, s.one_d)?;
     let (u, v) = (s.u as f64, if s.one_d { 0.0 } else { s.v as f64 });
     if t3 >> 14 & 1 != 0 && tex.row.is_none() {
@@ -622,6 +637,13 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         };
         // E958: type 3 of format 5 at its two held-out sizes
         let f5 = ty == 3 && fmt == 5 && TYPE3_F5_SIZES_E958.contains(&(w, h));
+        // E568's 16 x 1 YUV texture of formats 28 and 29 (texel x mod 16 at all 2048 pixels:
+        // black with the set not loaded, E568; E037's conversion through a loaded set, E1097,
+        // E1103 held out)
+        let yuv = ty == 3 && matches!(fmt, 28 | 29) && (w, h) == (16, 1) && t0 == T0_REP && t3 == T3_TW;
+        if yuv {
+            return Ok(());
+        }
         // E1055: types 1, 3 and 4 at 16 x 16 (E567's images, replicated by E1039's references)
         // and 32 x 32 (held out: type 4 its block, 32 t + s), in mode 0 and with u mode 4
         let e1055 = matches!(ty, 1 | 3 | 4) && matches!((w, h), (16, 16) | (32, 32)) && fmt == 12;
@@ -680,6 +702,8 @@ struct Texture {
     /// T3 bits 12:11 on a twiddled texture (E1027): 1 the LOD's level, 0 level 0, 2 and 3 the
     /// last level T0's max level allows (pick).
     lodsel: u32,
+    /// Colour-space set 0's words for formats 28 and 29 (Sample::csc).
+    csc: Option<[u32; 5]>,
 }
 
 impl Texture {
@@ -734,6 +758,7 @@ impl Texture {
             bits: t1 >> 29 == 5,
             srgb,
             lodsel: if stride { 1 } else { t3 >> 11 & 3 },
+            csc: None,
         };
         if t1 >> 29 == 3 {
             // E940, E958: max(8, w) texels a row, 8 dwords at format 12, 8 16-bit words at format 5
@@ -1021,10 +1046,10 @@ impl Texture {
                 return open(format!("texture format {f}, compressed: four texels fix no decoder"));
             }
             // 28 and 29 (YUV): opaque black with the colour-space set not loaded (E037, E040,
-            // E568); with it loaded (E037; a fill's transfer command loads it too, E1103) the
-            // conversion is not modelled, nor the set a job without the load flag keeps from the
-            // last load (E1097, E1103: it survives later jobs and the reset). Machine::smp lets
-            // them through only where the vector says the set is unloaded (init.job.pokes).
+            // E568); with it loaded (E037; a fill's transfer command loads it too, E1103) E037's
+            // conversion through set 0 (plain_texel, yuv_texel), on type 3 only. The set a job
+            // without the load flag reads is the last load's (E1097, E1103: it survives later
+            // jobs and the reset): the caller's to know (Sample::csc, Machine::csc).
             28 | 29 => 2,
             f => return open(format!("texture format {f}")),
         })
@@ -1169,7 +1194,14 @@ impl Texture {
         Ok(match bytes {
             4 => dw,
             // format 20: the pair's dword, the texel's own byte (0 or 2) first
-            _ if self.format == 20 => dw >> (8 * (a & 2)) & 0xff | (dw >> 8 & 0xff) << 8 | (dw >> 24) << 16,
+            // and format 28 (Y0 U Y1 V): the texel's Y, then the pair's U and V; 29 (U Y0 V Y1)
+            // likewise (E040, E1097: Y0 for an even texel, Y1 for an odd one)
+            _ if matches!(self.format, 20 | 28) => {
+                dw >> (8 * (a & 2)) & 0xff | (dw >> 8 & 0xff) << 8 | (dw >> 24) << 16
+            }
+            _ if self.format == 29 => {
+                dw >> (8 * (a & 2) + 8) & 0xff | (dw & 0xff) << 8 | (dw >> 16 & 0xff) << 16
+            }
             _ => dw >> (8 * (a & 3)) & ((1 << (8 * bytes)) - 1),
         })
     }
@@ -1261,10 +1293,41 @@ impl Texture {
             20 => 0xff00_0000 | (t & 0xff) << 16 | (t >> 8 & 0xff) << 8 | t >> 16,
             21 => t & 0x00ff_ffff,
             30 => t | 0xff00_0000,
-            28 | 29 => 0xff00_0000,
+            28 | 29 => match self.csc {
+                None => 0xff00_0000,
+                Some(w) => yuv_texel(t, csc_coefficients(w)?),
+            },
             _ => t,
         })
     }
+}
+
+/// E037's limited-range BT.601 words for colour-space set 0 (xfer:18 to 22).
+pub const CSC_BT601: [u32; 5] = [0x0095_0095, 0x0000_0095, 0x0102_03ce, 0x0398_00cc, 0];
+
+/// Set 0's coefficients (Y, R from V, G from U, G from V, B from U) in 128ths for the words it
+/// holds: E037's BT.601 words read as (149, 204, -50, -104, 258), the fit that gave all 2048
+/// pixels of E037's copies and of E1097's and E1103's fills; zeros as zeros (black, E037,
+/// E1103). Any other words are refused: their fields were never read one by one (E037 "a
+/// reading the fit confirms"; set 1's are not selected by this read, E040; Q050).
+fn csc_coefficients(w: [u32; 5]) -> Result<[i32; 5], Fail> {
+    match w {
+        CSC_BT601 => Ok([149, 204, -50, -104, 258]),
+        [0, 0, 0, 0, 0] => Ok([0; 5]),
+        _ => open(format!(
+            "colour-space set 0 words {w:08x?}: only E037's BT.601 words and zeros were read (Q050)"
+        )),
+    }
+}
+
+/// A YUV texel (Y | U << 8 | V << 16, fetch) through set 0's coefficients `c` (E037):
+/// sat_u8((cY (Y - 16) + cU (U - 128) + cV (V - 128)) >> 7) per channel, the shift arithmetic
+/// (truncating toward minus infinity), alpha 0xff, as B8G8R8A8.
+fn yuv_texel(t: u32, c: [i32; 5]) -> u32 {
+    let (y, u, v) = ((t & 0xff) as i32 - 16, (t >> 8 & 0xff) as i32 - 128, (t >> 16 & 0xff) as i32 - 128);
+    let sat = |x: i32| (x >> 7).clamp(0, 255) as u32;
+    let (r, g, b) = (sat(c[0] * y + c[1] * v), sat(c[0] * y + c[2] * u + c[3] * v), sat(c[0] * y + c[4] * u));
+    0xff00_0000 | r << 16 | g << 8 | b
 }
 
 /// Texel (x, y) of an ETC1 block (the Khronos ETC1 decode; E724): R, G and B.
@@ -1420,7 +1483,7 @@ mod tests {
 
     fn at(st: [u32; 4], u: f32, v: f32) -> Result<Vec<u32>, Fail> {
         sample(
-            &Sample { state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
+            &Sample { csc: None, state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
             &mut counting,
         )
     }
@@ -1434,7 +1497,16 @@ mod tests {
         assert_eq!(at(st, 1.5, -0.2), Ok(vec![0x103]));
         assert_eq!(
             sample(
-                &Sample { state: st, u: 0.6, v: 0.9, one_d: true, srd: Srd::None, pcf: None, lod: Lod::Flat },
+                &Sample {
+                    csc: None,
+                    state: st,
+                    u: 0.6,
+                    v: 0.9,
+                    one_d: true,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat
+                },
                 &mut counting
             ),
             Ok(vec![0x102])
@@ -1598,6 +1670,7 @@ mod tests {
             };
             let st = [T0_SRGB_TRI, (w - 1) << 12 | (w - 1) | 12 << 24, 0x1000, T3_TW];
             let s = Sample {
+                csc: None,
                 state: st,
                 u: (x as f32 + 0.5) / 64.0,
                 v: (y as f32 + 0.5) / 32.0,
@@ -1635,6 +1708,7 @@ mod tests {
         let mut y = |k: f32| {
             sample(
                 &Sample {
+                    csc: None,
                     state: st,
                     u: 0.25,
                     v: 0.25 + k / 256.0,
@@ -1660,6 +1734,7 @@ mod tests {
         let mut mem = |a: u32| Ok(texel[((a - 0x1000) / 4) as usize]);
         sample(
             &Sample {
+                csc: None,
                 state: st,
                 u: 0.25 + fx / 128.0,
                 v: 0.25 + fy / 128.0,
@@ -1703,6 +1778,7 @@ mod tests {
         let one = |fmt: u32, t3: u32, texel: u32| {
             sample(
                 &Sample {
+                    csc: None,
                     state: st(fmt, t3),
                     u: 0.0,
                     v: 0.0,
@@ -1737,6 +1813,7 @@ mod tests {
             let st = state(6, 5, 2, 2, 1, 0, t3);
             sample(
                 &Sample {
+                    csc: None,
                     state: st,
                     u: 0.0,
                     v: 0.0,
@@ -1760,6 +1837,7 @@ mod tests {
             let st = state(6, fmt, 2, 2, 1, 0, t3);
             sample(
                 &Sample {
+                    csc: None,
                     state: st,
                     u: 0.0,
                     v: 0.0,
@@ -1793,8 +1871,16 @@ mod tests {
         let pcf = |fmt: u32, mode: u32, t0: u32, r: f32, texels: [u32; 2], u: f32| {
             let st = state(6, fmt, 4, 4, 4, t0, mode << 29);
             // v = 1/8: y = 0, fy = 0
-            let s =
-                Sample { state: st, u, v: 0.125, one_d: false, srd: Srd::None, pcf: Some(r), lod: Lod::Flat };
+            let s = Sample {
+                csc: None,
+                state: st,
+                u,
+                v: 0.125,
+                one_d: false,
+                srd: Srd::None,
+                pcf: Some(r),
+                lod: Lod::Flat,
+            };
             sample(&s, &mut |a| Ok(if a & 4 == 0 { texels[0] } else { texels[1] }))
         };
         let f = |x: f32| [x.to_bits(); 2];
@@ -1843,7 +1929,7 @@ mod tests {
     /// A sample of the chain with T0 and T1's format, the probe's T3.
     fn mip(t0: u32, fmt: u32, u: f32, v: f32, lod: Lod) -> Result<Vec<u32>, Fail> {
         let state = [t0, fmt << 24 | 15 << 12 | 15, 0x2000, 0x0080_0800];
-        sample(&Sample { state, u, v, one_d: false, srd: Srd::None, pcf: None, lod }, &mut chain)
+        sample(&Sample { csc: None, state, u, v, one_d: false, srd: Srd::None, pcf: None, lod }, &mut chain)
     }
 
     /// texture-mipmaps-mip-level and texture-mipmaps-mip-mipfilter's coordinates: level 0 texel (3, 10).
@@ -1857,6 +1943,7 @@ mod tests {
         // 1x the last level T0's max level allows, whatever the LOD; 01 is the LOD's level
         let at = |t0: u32, t3: u32, l: f32| {
             let s = Sample {
+                csc: None,
                 state: [t0, 0x0c00_f00f, 0x2000, t3],
                 u: 0.21875,
                 v: 0.65625,
@@ -1885,6 +1972,7 @@ mod tests {
         let host = |l: f32| {
             let state = [0x07fa_0000, 0x0c00_f00f, 0x2000, 0x0080_0800];
             let s = Sample {
+                csc: None,
                 state,
                 u: 0.21875,
                 v: 0.65625,
@@ -2140,6 +2228,7 @@ mod tests {
         // a non-square chain is measured since p1132 (tx-shapes); a 1D one is not
         let rect = [0x07fa_0000, 12 << 24 | 15 << 12 | 7, 0x2000, 0];
         let s = Sample {
+            csc: None,
             state: rect,
             u: 0.0,
             v: 0.0,
@@ -2154,7 +2243,7 @@ mod tests {
     /// texture-sampler-smp-srd's sample of the chain (E042): level 0 texel (3, 10).
     fn srd(t0: u32, lod: Lod, srd: Srd) -> Result<Vec<u32>, Fail> {
         let state = [t0, 12 << 24 | 15 << 12 | 15, 0x2000, 0x0080_0800];
-        let s = Sample { state, u: 0.21875, v: 0.65625, one_d: false, srd, pcf: None, lod };
+        let s = Sample { csc: None, state, u: 0.21875, v: 0.65625, one_d: false, srd, pcf: None, lod };
         sample(&s, &mut chain)
     }
 
@@ -2224,7 +2313,7 @@ mod tests {
         let st = state(6, fmt, 16, 16, 16, t0, t3);
         let (u, v) = ((x as f32 + 0.5) / 16.0, (y as f32 + 0.5) / 16.0);
         sample(
-            &Sample { state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
+            &Sample { csc: None, state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
             &mut probe_texel,
         )
     }
@@ -2263,6 +2352,7 @@ mod tests {
         assert_eq!(other(20), Vec::from(want.map(|w| Ok(vec![w]))));
         let twiddled = [0, 20 << 24 | 15 << 12 | 15, 0x1000, 0];
         let s = Sample {
+            csc: None,
             state: twiddled,
             u: 0.0,
             v: 0.0,
@@ -2292,6 +2382,7 @@ mod tests {
         // values the saturation does not reach are not measured
         let one = |fmt: u32, t3: u32, texel: u32| {
             let s = Sample {
+                csc: None,
                 state: state(6, fmt, 2, 2, 1, 0, t3),
                 u: 0.0,
                 v: 0.0,
@@ -2332,6 +2423,7 @@ mod tests {
         assert!(probe(12, 1 << 12, 0xa080_0001, 3, 5).is_err(), "bilinear");
         let twiddled = [0x001e_0000, 12 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0001];
         let s = Sample {
+            csc: None,
             state: twiddled,
             u: 0.0,
             v: 0.0,
@@ -2375,6 +2467,7 @@ mod tests {
         // on a twiddled texture they are not measured
         let twiddled = [0x001e_4000, 12 << 24 | 15 << 12 | 15, 0x1000, 0];
         let s = Sample {
+            csc: None,
             state: twiddled,
             u: 0.0,
             v: 0.0,
@@ -2400,6 +2493,7 @@ mod tests {
             let mode = 5;
             let st = [0x001e_0000 | mode << 6, 9 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0000];
             let s = Sample {
+                csc: None,
                 state: st,
                 u: 1.09375,
                 v: 0.03125,
@@ -2420,6 +2514,76 @@ mod tests {
         for fmt in [28, 29] {
             assert!(other(fmt).iter().all(|r| r == &Ok(vec![0xff00_0000])), "format {fmt}");
         }
+    }
+
+    /// E037's limited-range BT.601 words for colour-space set 0 (xfer:18 to 22).
+    const BT601: [u32; 5] = [0x0095_0095, 0x0000_0095, 0x0102_03ce, 0x0398_00cc, 0];
+
+    /// E568's fy-F-p0 texture (16 x 1, type 3, format F; the program stores these 8 dwords) read
+    /// at texel x as its program does (u = 1 + (x + 0.5) / 16, v = 1/128), through set 0 = `csc`.
+    fn fy(fmt: u32, csc: Option<[u32; 5]>, x: u32) -> Result<Vec<u32>, Fail> {
+        const TEX: [u32; 8] = [
+            0x9040_7020,
+            0x975c_7b38,
+            0x9e78_8650,
+            0xa594_9168,
+            0xacb0_9c80,
+            0xb3cc_a798,
+            0xbae8_b2b0,
+            0xc104_bdc8,
+        ];
+        let st = [T0_REP, 3 << 29 | fmt << 24 | 15 << 12, 0x1000, T3_TW];
+        let u = f32::from_bits(((x & 15) << 1 | 1) << 18 | 0x3f80_0000);
+        let s = Sample {
+            state: st,
+            u,
+            v: f32::from_bits(0x3c00_0000),
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Flat,
+            csc,
+        };
+        sample(&s, &mut |a| TEX.get(((a - 0x1000) / 4) as usize).copied().ok_or(crate::Error::Fault(a)))
+    }
+
+    #[test]
+    fn the_yuv_formats_convert_through_e037_s_set_0() {
+        // E1103 y28-b and y29-b (row 0, texels 0-15; every row and E1097's fills alike): E037's
+        // sat_u8((149 (Y - 16) + cU (U - 128) + cV (V - 128)) >> 7), format 28 Y0 U Y1 V, 29 U Y0 V Y1
+        let y28 = [
+            0xff2c0b00, 0xff513117, 0xff531d24, 0xff7d474e, 0xff7a2f56, 0xffa85e85, 0xffa14188, 0xffd474bb,
+            0xffc853ba, 0xffff8bf2, 0xffef65ec, 0xffffa2ff, 0xffff77ff, 0xffffb8ff, 0xffff89ff, 0xff59006c,
+        ];
+        let y29 = [
+            0xff09c900, 0xff2fee00, 0xff43b500, 0xff63d60c, 0xff7ca228, 0xff98be44, 0xffb68f65, 0xffcda67d,
+            0xffef7ba2, 0xffff8eb5, 0xffff68e0, 0xffff76ee, 0xffff55ff, 0xffff5eff, 0xff03ffff, 0xff08ffff,
+        ];
+        for x in 0..16 {
+            assert_eq!(fy(28, Some(BT601), x), Ok(vec![y28[x as usize]]), "28 texel {x}");
+            assert_eq!(fy(29, Some(BT601), x), Ok(vec![y29[x as usize]]), "29 texel {x}");
+            // a set loaded with zeros and an unloaded one: opaque black (E037, E1103 y28-e)
+            assert_eq!(fy(28, Some([0; 5]), x), Ok(vec![0xff00_0000]));
+            assert_eq!(fy(29, None, x), Ok(vec![0xff00_0000]));
+        }
+        // other words were never loaded with a reading of their fields (E037: "a reading the fit
+        // confirms" for this set only; E040: set 1 is not selected): refused
+        let mut other = BT601;
+        other[0] += 1;
+        assert!(matches!(fy(28, Some(other), 0), Err(Fail::Open(m)) if m.contains("colour-space set")));
+        // the conversion of a twiddled texture's pairs is not measured
+        let tw = [T0_REP, 28 << 24 | 15 << 12 | 15, 0x1000, T3_TW];
+        let s = Sample {
+            state: tw,
+            u: 0.0,
+            v: 0.0,
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Flat,
+            csc: Some(BT601),
+        };
+        assert!(sample(&s, &mut probe_texel).is_err());
     }
 
     #[test]
@@ -2618,7 +2782,7 @@ mod tests {
     ) -> Result<Vec<u32>, Fail> {
         let (u, v) = ((x as f32 + 0.5) / w as f32, (y as f32 + 0.5) / h as f32);
         sample(
-            &Sample { state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
+            &Sample { csc: None, state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
             &mut |a| Ok(mem(a)),
         )
     }
@@ -2800,6 +2964,7 @@ mod tests {
                 // repeat: one texture past the right edge reads column 0
                 let past = sample(
                     &Sample {
+                        csc: None,
                         state: st,
                         u: 1.0 + 0.5 / w as f32,
                         v: 0.5 / h as f32,
@@ -3146,6 +3311,7 @@ mod tests {
             let (u, v) = (if w == 1 { 0.5 } else { c }, if h == 1 || one_d { 0.5 } else { c });
             let got = sample(
                 &Sample {
+                    csc: None,
                     state: [t0, t1(0, fmt, w, h), 0x1000, T3_TW],
                     u,
                     v,
@@ -3166,7 +3332,16 @@ mod tests {
             (st(0x07fc_0200, 0, 32, 16), false),
         ] {
             let r = sample(
-                &Sample { state: s, u: 0.3, v: 0.3, one_d, srd: Srd::None, pcf: None, lod: Lod::Value(1.5) },
+                &Sample {
+                    csc: None,
+                    state: s,
+                    u: 0.3,
+                    v: 0.3,
+                    one_d,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Value(1.5),
+                },
                 &mut |a| Ok(mem(a)),
             );
             assert!(is_open(r), "{s:08x?}");
@@ -3236,6 +3411,7 @@ mod tests {
             for v in [0.1f32, 0.7] {
                 let got = sample(
                     &Sample {
+                        csc: None,
                         state: [T0_REP | 4 << 6, t1(ty, 12, w, w), 0x1000, T3_TW],
                         u,
                         v,

@@ -399,6 +399,9 @@ Readings a scorer or a hook takes from the kept files, and the slips they have c
   without the load read the loaded copy's hash after an earlier load), so a YUV row's reading
   depends on the last job that loaded a set: score it against the set copy right before it, and
   call it "cannot tell" when that copy's hash is not E037's (black or 0xb6067a95fa98de2d).
+  sgx-sim models it (round 26): `closing_vectors.py --probes` carries the set from job to job
+  in run order (`init.job.csc`), and formats 28 and 29 convert through E037's BT.601 words
+  (zeros: black) on type 3 textures; other words and other types stop (Q050).
 
 ## Firmware tasks of our own
 

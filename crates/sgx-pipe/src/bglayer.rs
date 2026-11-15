@@ -81,7 +81,8 @@ pub fn coords(bg: &[u32], x: u32, y: u32) -> R<(f32, f32)> {
 /// The texel word background pixel (x, y) samples from the copy's texture `state` (T0-T3).
 pub fn sample(bg: &[u32], state: [u32; 4], x: u32, y: u32, load: &mut tex::Load) -> R<u32> {
     let (u, v) = coords(bg, x, y)?;
-    let s = tex::Sample { state, u, v, one_d: false, srd: tex::Srd::None, pcf: None, lod: lod_of(bg) };
+    let s =
+        tex::Sample { csc: None, state, u, v, one_d: false, srd: tex::Srd::None, pcf: None, lod: lod_of(bg) };
     let r = tex::sample(&s, load).map_err(|f| match f {
         tex::Fail::Open(w) => open(format!("texture sample: {w}"), &["Q300"]),
         tex::Fail::Load(e) => open(format!("texture read: {e:?}"), &["Q300"]),

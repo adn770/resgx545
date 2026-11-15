@@ -23,9 +23,19 @@ other than the idle and tick ones, tile_time_us = (burst - 60.2) / 4 is meaningf
 fill only, ta_run_us is the longest run of 0x0008 = 0x000ccff8.
 
     closing_vectors.py --session DIR --out OUT [STAGE...]
+    closing_vectors.py --session DIR --out OUT --probes STAGE...
 
 DIR is render/closing-r3-pixel of the data repository; OUT is its vectors/closing/r3-pixel (loop
 vectors in loops/<stage>.vec.json, timings in timings/<stage>.timing.json).
+
+--probes (round 26): every `probe` job of the stages as an instruction vector of the probe corpus
+(OUT/<stage>.vec.json, the layout of vectors.py): a PDS secondary (`--pds`, attrs from its
+--scratch-show, vectors.pds_attrs; init.sa_kept: the attributes the job's PDS does not write hold
+what earlier jobs left, E1104) or a fill. The jobs run in table order as one batch, so a
+transfer command that sets xfer:17 bit 0 (a copy's or a fill's) loads colour-space set 0 from
+xfer:18-22 and the jobs after it read that set until the next load (E1097, E1103): a fill's
+init.job.csc names the words and the job that loaded them; before any load it is left out (not
+known). Copies and triangle jobs are listed as skipped.
 """
 from __future__ import annotations
 
@@ -36,12 +46,15 @@ import hashlib
 import json
 import pathlib
 import re
+import shlex
 import struct
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import pbdump  # noqa: E402
+import probe  # noqa: E402
+import vectors  # noqa: E402
 
 FORMAT = "sgx545-vectors"
 TIMINGS = "sgx545-timings"
@@ -405,6 +418,89 @@ def timings(stage_dir: pathlib.Path, session: str) -> dict:
             "not_run": not_run, "jobs": rows}
 
 
+def _poke_words(pokes: list) -> dict:
+    """The transfer command words a job's pokes set ({index: value}), as vectors.use_coeffs
+    reads them: the command starts zeroed, = sets and ^= flips."""
+    xfer: dict = {}
+    for k in pokes:
+        m = vectors._POKE.match(k)
+        if m and m.group(1) == "xfer":
+            i, v = int(m.group(2)), int(m.group(4), 0)
+            xfer[i] = xfer.get(i, 0) ^ v if m.group(3) else v
+    return xfer
+
+
+def _opt(args: list, name: str) -> str | None:
+    return args[args.index(name) + 1] if name in args else None
+
+
+def _bin(bins: pathlib.Path, arg: str) -> bytes:
+    return (bins / pathlib.PurePosixPath(arg).name).read_bytes()
+
+
+def probe_vector(case: dict, args: list, text: str, bins: pathlib.Path, rel: str, csc) -> dict:
+    """One `probe` job of a session as a vector (vectors.py's layout); csc: the colour-space set
+    the batch holds when the job reads (None: not known)."""
+    name = case["name"]
+    obs = probe.parse(text).get(name)
+    if obs is None:
+        raise KeyError("no readback")
+    pokes = vectors._printed_pokes(text).get(name, [])
+    at = re.search(rf"^probe {re.escape(name)}: scratch at (0x[0-9a-f]+)", text, re.M)
+    temps = _opt(args, "--temps")
+    init = {"task": "pixel", "instances": vectors.INSTANCES, "temps": int(temps, 0) if temps else None,
+            "pa0": "coords" if "--coords" in args else "fill",
+            "scratch": {"base": at.group(1) if at else "0x3e003000", "bytes": vectors.SCRATCH_BYTES,
+                        "fill": "0xd0000000|i"},
+            "regs": {}, "job": vectors.job(pokes)}
+    if csc is not None:
+        init["job"]["csc"] = csc
+    prog = _bin(bins, args[-1])
+    if "--pds" in args:
+        program = {"isa": "pds", "entry": 0, "source": "recorded",
+                   "words": [_h32(w) for w in vectors._words(prog, "pds")],
+                   "data": int(_opt(args, "--pds"), 0)}
+        use = _opt(args, "--use")
+        init.update(task="pds-secondary", attrs=vectors.pds_attrs(int(_opt(args, "--scratch-show") or 0)),
+                    sa_kept=True, regs={},
+                    use={"source": pathlib.PurePosixPath(use).name, "recorded": True,
+                         "words": _words(_bin(bins, use))})
+    else:
+        program = {"isa": "usse", "entry": 0, "source": "recorded", "words": _words(prog)}
+    return {"id": name, "program": program, "init": init, "readback": vectors._readback(obs),
+            "provenance": {"probe": name, "case": 0, "table": rel, "template": "", "inputs": {},
+                           "params": {}, "options": args[1:-1], "question": ""}}
+
+
+def probe_vectors(stage_dir: pathlib.Path, bins: pathlib.Path, rel: str = "") -> tuple[list, dict]:
+    """(vectors, {job: why not}) of a stage's `probe` jobs in run order, the colour-space set
+    carried from job to job (see the module's --probes)."""
+    vs, skipped, csc = [], {}, None
+    for c in cases(stage_dir):
+        args = shlex.split(c["args"])
+        kept = stage_dir / f"{c['name']}.txt.gz"
+        text = gzip.open(kept, "rt", errors="replace").read() if kept.exists() else ""
+        xfer = _poke_words([a for i, a in enumerate(args) if i and args[i - 1] == "--poke"])
+        if xfer.get(17, 0) & 1:
+            # a probe's load counts only where the run echoed it (pokes before t22 dangled, E568)
+            echoed = args[0] != "probe" or re.search(
+                rf"^probe {re.escape(c['name'])}: poked xfer:17 0x[0-9a-f]+ -> 0x[0-9a-f]*[13579bdf]$",
+                text, re.M)
+            csc = {"set": 0, "words": [_h32(xfer.get(i, 0)) for i in range(18, 23)],
+                   "loaded_by": c["name"]} if echoed else None
+        if args[0] != "probe":
+            skipped[c["name"]] = f"a {args[0]} (the transfer path), not a probe fill"
+            continue
+        if "--tri" in args:
+            skipped[c["name"]] = "a triangle job"
+            continue
+        try:
+            vs.append(probe_vector(c, args, text, bins, rel or str(stage_dir), csc))
+        except KeyError as e:
+            skipped[c["name"]] = str(e)
+    return vs, skipped
+
+
 def vector_doc(stage_dir: pathlib.Path, vs: list, skipped: dict, session: str) -> dict:
     names = [v["id"] for v in vs]
     raws = [f"{session}/out/{stage_dir.parent.name}/{stage_dir.name}/{n}.txt.gz" for n in names]
@@ -446,10 +542,20 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--session", required=True, type=pathlib.Path)
     ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--probes", action="store_true",
+                    help="every probe job of the stages as a vector (OUT/<stage>.vec.json)")
     ap.add_argument("stages", nargs="*", default=TIMING_STAGES)
     a = ap.parse_args(argv)
     att = sorted((a.session / "out").glob("2026*"))[-1]
     rel = "/".join(a.session.parts[-2:])
+    if a.probes:
+        a.out.mkdir(parents=True, exist_ok=True)
+        for s in a.stages:
+            vs, skipped = probe_vectors(att / s, a.session / "bins", f"{rel}/out/{att.name}/{s}")
+            (a.out / f"{s}.vec.json").write_text(
+                json.dumps(vector_doc(att / s, vs, skipped, rel), indent=1) + "\n")
+            print(f"{s}: {len(vs)} probe vectors, {len(skipped)} skipped")
+        return 0
     for s in a.stages:
         n, t = convert(att / s, a.session / "bins", a.out, rel)
         print(f"{s}: {n} loop vectors, {t} timing rows")

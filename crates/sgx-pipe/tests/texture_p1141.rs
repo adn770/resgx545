@@ -86,6 +86,7 @@ fn sample_at(spec: &Json, inject: &BTreeMap<u32, u32>, x: u32, y: u32) -> Result
     let state =
         [u32_of(spec.get("t0")), u32_of(spec.get("t1")), u32_of(spec.get("base")), u32_of(spec.get("t3"))];
     let s = Sample {
+        csc: None,
         state,
         u: coord(spec.get("u"), x, y),
         v: coord(spec.get("v"), x, y),

@@ -384,7 +384,16 @@ impl Job {
                 if let Some(state) = self.prim.tex {
                     let lod = lod_of(&self.bg);
                     let (u, v) = uv(&self.bg, x, y)?;
-                    let s = tex::Sample { state, u, v, one_d: false, srd: tex::Srd::None, pcf: None, lod };
+                    let s = tex::Sample {
+                        csc: None,
+                        state,
+                        u,
+                        v,
+                        one_d: false,
+                        srd: tex::Srd::None,
+                        pcf: None,
+                        lod,
+                    };
                     let (mem, segs) = (&self.mem, &self.segments);
                     let r = tex::sample(&s, &mut |a| {
                         // the target's pages hold the sentinel the harness wrote and whatever the

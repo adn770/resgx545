@@ -113,6 +113,7 @@ fn image(path: &Path) -> Vec<u32> {
 
 fn sample(p: &Prog, x: u32, y: u32) -> Result<u32, String> {
     let s = Sample {
+        csc: None,
         state: p.state,
         u: coord(p.uv[0], x, y),
         v: coord(p.uv[1], x, y),
@@ -209,6 +210,7 @@ fn r14_flag_f1_bit_14_twiddled_reads_a_tile_row_of_w_plus_4096_texels() {
             for x in 0..64 {
                 let (u, v) = r14_uv(name, x, y);
                 let s = Sample {
+                    csc: None,
                     state: [0x07fe_0000, 0x0c01_f01f, SCRATCH, t3],
                     u,
                     v,
@@ -261,6 +263,7 @@ fn r15_tw_tw14_bit_14_twiddled_reads_a_tile_row_of_w_plus_4096_texels_at_every_w
                 // the bilinear rows sample W u - 1/2 on 1/64 texel steps: v = (y + 3/4) / 32
                 let v = if bilinear { (4 * y + 3) as f64 / 128.0 } else { (2 * y + 1) as f64 / 64.0 };
                 let s = Sample {
+                    csc: None,
                     state: [t0, fmt << 24 | (w - 1) << 12 | 31, SCRATCH, 0x0080_0800 | u32::from(b14) << 14],
                     u: (a + (x as f64 + c) / d) as f32,
                     v: v as f32,
@@ -317,6 +320,7 @@ fn r16_tw_tw16_bit_14_twiddled_keeps_e561s_tile_height_at_h_8_16_64() {
         for y in 0..32 {
             for x in 0..64 {
                 let s = Sample {
+                    csc: None,
                     state: [
                         t0,
                         12 << 24 | (w - 1) << 12 | (h - 1),
@@ -375,6 +379,7 @@ fn r17_tw_tw17_bit_14_samples_a_texture_w_plus_4096_texels_wide_at_frac_u() {
         for y in 0..32 {
             for x in 0..64 {
                 let s = Sample {
+                    csc: None,
                     state: [
                         t0,
                         12 << 24 | (w - 1) << 12 | (h - 1),
