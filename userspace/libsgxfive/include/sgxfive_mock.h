@@ -44,6 +44,15 @@ struct sgxfive_mock_config {
 	 */
 	bool bg_layer;
 	uint32_t bg_src;
+	/*
+	 * The park race of E1085: the kernel parks a closed render context when its last
+	 * reference goes, which can be after the close ioctl returns, and debugfs render_kept
+	 * reads 0 bytes until then. With both set, a render context's close leaves
+	 * debugfs_dir/render_kept empty for kept_park_ms, then puts its bytes back (a child
+	 * process sleeps and renames render_kept.parking back); 0 or NULL: no park.
+	 */
+	const char *debugfs_dir;
+	uint32_t kept_park_ms;
 };
 
 struct sgxfive_mock_stats {

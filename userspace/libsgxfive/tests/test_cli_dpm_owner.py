@@ -140,6 +140,85 @@ def test_kept_copy_without_the_early_close_makes_no_closed_copy(tmp_path):
     assert "after closing the first context" not in r.stdout
 
 
+CLOSED_LINE = ("tri: render_kept after closing the first context, before the second context's "
+               "render 1: ")
+
+
+def test_kept_copy_after_the_close_reads_again_while_render_kept_is_empty(tmp_path):
+    """E1085: render_kept read 0 bytes right after the early close (the context parked later,
+    a race [infer]). The copy after the close reads again while it is empty, up to 10 reads 10 ms
+    apart, and says how many it took; --mock-park-ms=N is the mock's park N ms after the close."""
+    (tmp_path / "render_kept").write_bytes(kept_pages(7))
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run(PARTIAL[0], "--mock-park-ms=35", *PARTIAL[1:], "--kept-copy", str(out), dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (out / "kept.closed.1.bin").read_bytes() == kept_pages(7)
+    lines = r.stdout.splitlines()
+    tries = [ln for ln in lines if ln.startswith("tri: render_kept read ")]
+    assert len(tries) == 1, r.stdout
+    n = int(tries[0].split()[3])
+    assert 2 <= n <= 10, tries[0]
+    assert tries[0] == (f"tri: render_kept read {n} times after closing the first context, "
+                        f"before the second context's render 1 (empty {n - 1}, 10 ms apart): "
+                        "28672 bytes")
+    copy = next(ln for ln in lines if ln.startswith(CLOSED_LINE))
+    assert copy.endswith(f"{out}/kept.closed.1.bin (28672 bytes)"), copy
+
+
+def test_kept_copy_after_the_close_still_empty_after_10_reads(tmp_path):
+    """Still empty after the bound: a clear line, and an empty file as before (the run goes on)."""
+    (tmp_path / "render_kept").write_bytes(kept_pages(7))
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run(PARTIAL[0], "--mock-park-ms=1500", *PARTIAL[1:], "--kept-copy", str(out),
+            dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (out / "kept.closed.1.bin").read_bytes() == b""
+    lines = r.stdout.splitlines()
+    assert ("tri: render_kept still empty after 10 reads after closing the first context, "
+            "before the second context's render 1 (10 ms apart): the copy is empty") in lines, \
+        r.stdout
+    copy = next(ln for ln in lines if ln.startswith(CLOSED_LINE))
+    assert copy.endswith(f"{out}/kept.closed.1.bin (0 bytes)"), copy
+
+
+def test_kept_copy_read_at_once_says_no_tries(tmp_path):
+    """A first read with bytes is said as before, with no read-again line."""
+    (tmp_path / "render_kept").write_bytes(kept_pages(7))
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run(*PARTIAL, "--kept-copy", str(out), dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not [ln for ln in r.stdout.splitlines() if ln.startswith("tri: render_kept read ")]
+    assert "still empty" not in r.stdout
+
+
+def test_kept_copy_after_the_second_render_is_not_read_again(tmp_path):
+    """Only the copy right after a close reads again: an empty render_kept after the second
+    render (no context kept) is copied once, as before."""
+    (tmp_path / "render_kept").write_bytes(b"")
+    out = tmp_path / "out"
+    out.mkdir()
+    r = run("--mock", "tri", "--width", "64", "--height", "64", "--ctx2", "--kept-copy", str(out),
+            dbg=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (out / "kept.1.bin").read_bytes() == b""
+    assert "tri: render_kept read " not in r.stdout, r.stdout
+    assert "still empty" not in r.stdout, r.stdout
+
+
+@pytest.mark.parametrize("arg", ["--mock-park-ms=", "--mock-park-ms=x", "--mock-park-ms=-1",
+                                 "--mock-park-ms=60001"])
+def test_mock_park_ms_rejects_a_bad_value(arg):
+    assert run("--mock", arg, "query").returncode != 0
+
+
+def test_mock_park_ms_needs_the_mock():
+    r = run("--mock-park-ms=10", "query")
+    assert r.returncode != 0
+
+
 def kpoke_run(tmp_path, *args):
     k = tmp_path / "kpoke"
     k.write_text("")

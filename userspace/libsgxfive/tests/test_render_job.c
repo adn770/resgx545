@@ -8,7 +8,12 @@
  * interleaved in one VM.
  */
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "sgxfive_mock.h"
 #include "sgxfive_render.h"
@@ -705,6 +710,90 @@ static void fb_fill(void)
 	env_fini(&e);
 }
 
+static long long file_size(const char *path)
+{
+	struct stat st;
+
+	return stat(path, &st) ? -1 : (long long)st.st_size;
+}
+
+static void sleep_ms(long ms)
+{
+	struct timespec ts = { ms / 1000, (ms % 1000) * 1000000L };
+
+	nanosleep(&ts, NULL);
+}
+
+/*
+ * The park race of E1085: the kernel parks a closed render context when its last reference
+ * goes, which can be after the close ioctl returns, and debugfs render_kept reads 0 bytes
+ * until then. With debugfs_dir and kept_park_ms the mock's render context close leaves that
+ * directory's render_kept empty for kept_park_ms, then puts its bytes back; a transfer
+ * context's close, or kept_park_ms 0, leaves it alone.
+ */
+static void kept_park(void)
+{
+	const char *tmp = getenv("TMPDIR");
+	char dir[4096], kept[4200], parking[4200];
+	static const char bytes[4096] = { [0] = 0x47, [4095] = 0x02 };
+	struct sgxfive_mock_config cfg = { 0 };
+	char back[4096];
+	uint32_t ctx, xctx;
+	FILE *f;
+	struct env e;
+	int waited = 0;
+
+	snprintf(dir, sizeof(dir), "%s/sgxfive-park.XXXXXX", tmp && *tmp ? tmp : "/tmp");
+	if (!CHECK(mkdtemp(dir)))
+		return;
+	snprintf(kept, sizeof(kept), "%s/render_kept", dir);
+	snprintf(parking, sizeof(parking), "%s/render_kept.parking", dir);
+	f = fopen(kept, "wb");
+	CHECK(f && fwrite(bytes, 1, sizeof(bytes), f) == sizeof(bytes));
+	if (f)
+		fclose(f);
+	cfg.debugfs_dir = dir;
+	cfg.kept_park_ms = 60;
+	memset(&e, 0, sizeof(e));
+	e.mock = sgxfive_mock_create(&cfg);
+	CHECK_EQ(sgxfive_dev_open(sgxfive_mock_backend(e.mock), NULL, &e.dev), 0);
+	CHECK_EQ(sgxfive_vm_create(e.dev, &e.vm), 0);
+	CHECK_EQ(sgxfive_ctx_create(e.vm, &xctx), 0);
+	CHECK_EQ(sgxfive_ctx_destroy(e.dev, xctx), 0);
+	CHECK_EQ(file_size(kept), 4096);		/* a transfer context: no park */
+	CHECK_EQ(sgxfive_render_ctx_create(e.vm, 64, 64, &ctx), 0);
+	CHECK_EQ(sgxfive_ctx_destroy(e.dev, ctx), 0);
+	CHECK_EQ(file_size(kept), 0);			/* closed, not parked yet */
+	while (file_size(kept) != 4096 && waited < 3000) {
+		sleep_ms(5);
+		waited += 5;
+	}
+	CHECK(waited >= 40 && waited < 3000);
+	f = fopen(kept, "rb");
+	CHECK(f && fread(back, 1, sizeof(back), f) == sizeof(back));
+	if (f)
+		fclose(f);
+	CHECK(!memcmp(back, bytes, sizeof(bytes)));
+	CHECK_EQ(file_size(parking), -1);
+	sgxfive_vm_destroy(e.vm);
+	sgxfive_dev_close(e.dev);
+	sgxfive_mock_destroy(e.mock);
+
+	/* kept_park_ms 0: a render context's close leaves render_kept as it is */
+	cfg.kept_park_ms = 0;
+	e.mock = sgxfive_mock_create(&cfg);
+	CHECK_EQ(sgxfive_dev_open(sgxfive_mock_backend(e.mock), NULL, &e.dev), 0);
+	CHECK_EQ(sgxfive_vm_create(e.dev, &e.vm), 0);
+	CHECK_EQ(sgxfive_render_ctx_create(e.vm, 64, 64, &ctx), 0);
+	CHECK_EQ(sgxfive_ctx_destroy(e.dev, ctx), 0);
+	CHECK_EQ(file_size(kept), 4096);
+	sgxfive_vm_destroy(e.vm);
+	sgxfive_dev_close(e.dev);
+	sgxfive_mock_destroy(e.mock);
+	unlink(kept);
+	rmdir(dir);
+}
+
 int main(void)
 {
 	query();
@@ -720,5 +809,6 @@ int main(void)
 	transfers();
 	bg_layer();
 	fb_fill();
+	kept_park();
 	return tap_done();
 }

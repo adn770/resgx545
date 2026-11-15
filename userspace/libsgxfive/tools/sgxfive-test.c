@@ -4,7 +4,7 @@
  * userspace through the sgxfive render node, and the hardware probes.
  *
  *   sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--mock-knob NAME=V]
- *                [--device PATH]
+ *                [--mock-park-ms=N] [--device PATH]
  *                [--programs=asm|fake] <command> [options]
  *
  *   query                         DEV_QUERY: GPU, firmware, job limits, heaps
@@ -132,7 +132,15 @@
  *                                 close, and with --close-first-early also to
  *                                 DIR/kept.closed.N.bin right after the first context's
  *                                 close and before the second context's render N (the
- *                                 1024x768 partial owner's state page is page 6, E591)
+ *                                 1024x768 partial owner's state page is page 6, E591);
+ *                                 the copy right after the close reads render_kept again
+ *                                 while it reads empty (the context parks when its last
+ *                                 reference goes, which can be after the close returns,
+ *                                 E1085), up to 10 reads 10 ms apart, says how many it
+ *                                 took, and if it is still empty says so and leaves the
+ *                                 copy empty; in the mock --mock-park-ms=N (0 to 60000,
+ *                                 with SGXFIVE_DEBUGFS) parks a closed render context N ms
+ *                                 after its close
  *   contexts [--width W --height H -n N]  N render contexts for targets up to W x H
  *                                 in one VM, and the memory they take (MemFree and
  *                                 LowFree of /proc/meminfo, before and after)
@@ -453,7 +461,7 @@ static int usage(void)
 {
 	fprintf(stderr,
 		"usage: sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N]\n"
-		"                    [--mock-knob NAME=V]...\n"
+		"                    [--mock-knob NAME=V]... [--mock-park-ms=N]\n"
 		"                    [--device PATH] [--programs=asm|fake] <command>\n"
 		"       commands: query, dummy [-n N --kpoke-job N:SPEC --wait-ms MS], isolation,\n"
 		"                 regaccess,\n"
@@ -2938,19 +2946,42 @@ static int debugfs_copy(const char *name, const char *path, long long *size)
 	return ret;
 }
 
+#define KEPT_READS	10	/* reads of render_kept right after a close, at most */
+#define KEPT_READ_MS	10	/* apart */
+
 /*
  * --kept-copy DIR: debugfs render_kept (the TA data of the newest context render_keep kept) to
  * DIR/kept.TAGn.bin, said with when (what) and its size or why it failed; a failed copy is said,
- * not a failure of the run.
+ * not a failure of the run. after_close: the copy is made right after a close, when render_kept
+ * reads empty until the closed context is parked (its last reference can go after the close
+ * returns, E1085): an empty read is read again, up to KEPT_READS reads KEPT_READ_MS apart, the
+ * reads said when there was more than one, and still empty after them it is said and the copy
+ * is left empty.
  */
-static void kept_copy(const char *dir, const char *tag, uint32_t n, const char *what)
+static void kept_copy(const char *dir, const char *tag, uint32_t n, const char *what,
+		      bool after_close)
 {
+	const struct timespec gap = { 0, KEPT_READ_MS * 1000000L };
 	char path[4096];
 	long long ks;
-	int kr;
+	int kr, reads = 1;
 
 	snprintf(path, sizeof(path), "%s/kept.%s%u.bin", dir, tag, n);
 	kr = debugfs_copy("render_kept", path, &ks);
+	while (after_close && !kr && !ks && reads < KEPT_READS) {
+		nanosleep(&gap, NULL);
+		kr = debugfs_copy("render_kept", path, &ks);
+		reads++;
+	}
+	if (after_close && !kr && !ks)
+		printf("tri: render_kept still empty after %d reads %s %u (%d ms apart): the copy "
+		       "is empty\n", reads, what, n, KEPT_READ_MS);
+	else if (reads > 1 && kr)
+		printf("tri: render_kept read %d times %s %u (empty %d, %d ms apart): %s\n", reads,
+		       what, n, reads - 1, KEPT_READ_MS, strerror(-kr));
+	else if (reads > 1)
+		printf("tri: render_kept read %d times %s %u (empty %d, %d ms apart): %lld bytes\n",
+		       reads, what, n, reads - 1, KEPT_READ_MS, ks);
 	printf("tri: render_kept %s %u: %s (%lld bytes)\n", what, n, kr ? strerror(-kr) : path,
 	       kr ? 0 : ks);
 }
@@ -3347,7 +3378,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 					close_trace("after closing the first context");
 				if (o->kept_dir)
 					kept_copy(o->kept_dir, "closed.", i + 1, "after closing the first "
-						  "context, before the second context's render");
+						  "context, before the second context's render", true);
 				if (o->words_dir)
 					wr = save_words(t, o, o->words_dir, 200 + i + 1);
 			}
@@ -3383,7 +3414,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 					ret2 = -EIO;
 			}
 			if (!ret2 && !wait2 && o->kept_dir)
-				kept_copy(o->kept_dir, "", i + 1, "after the second context's render");
+				kept_copy(o->kept_dir, "", i + 1, "after the second context's render",
+					  false);
 			if (ret2 || wait2) {
 				if (ret2 && ret2 != -EIO && !wait2)
 					fail("second context render", ret2);
@@ -4146,7 +4178,7 @@ int main(int argc, char **argv)
 	struct sgxfive_mock_config mcfg = { 0 };
 	struct mock_knobs mknobs = { 0 };
 	struct bg_knobs knobs = { 0 };
-	bool mock_knob_used = false, bgl_opt = false;
+	bool mock_knob_used = false, bgl_opt = false, mock_park = false;
 	const char *device = NULL, *cmd;
 	char *pb_end;
 	bool use_mock = false, needs_programs, fake = false;
@@ -4181,13 +4213,23 @@ int main(int argc, char **argv)
 			if (mock_knob_parse(kv, &mknobs))
 				return usage();
 			mock_knob_used = true;
+		} else if (!strncmp(argv[i], "--mock-park-ms=", 15)) {
+			char *park_end;
+			unsigned long ms = strtoul(argv[i] + 15, &park_end, 10);
+
+			if (*park_end || park_end == argv[i] + 15 || argv[i][15] == '-' ||
+			    ms > 60000)
+				return usage();
+			mcfg.kept_park_ms = ms;
+			mcfg.debugfs_dir = getenv("SGXFIVE_DEBUGFS");
+			mock_park = true;
 		} else if (!strcmp(argv[i], "--device") && i + 1 < argc) {
 			device = argv[++i];
 		} else {
 			return usage();
 		}
 	}
-	if (i >= argc || ((mcfg.render_pb_pages || mock_knob_used) && !use_mock))
+	if (i >= argc || ((mcfg.render_pb_pages || mock_knob_used || mock_park) && !use_mock))
 		return usage();
 	cmd = argv[i++];
 	if (strcmp(cmd, "query") && strcmp(cmd, "dummy") && strcmp(cmd, "fill") &&

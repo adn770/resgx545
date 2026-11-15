@@ -10,8 +10,12 @@
  * time.
  */
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <linux/sync_file.h>
 
@@ -99,6 +103,8 @@ struct sgxfive_mock {
 	uint32_t final_pb;		/* debugfs render_final_pb_pages: the next one's, once */
 	bool bg_layer;			/* debugfs render_bg_layer: the one-layer background */
 	uint32_t bg_src;		/* debugfs render_bg_src */
+	char *debugfs_dir;		/* kept_park_ms: render_kept's directory */
+	uint32_t kept_park_ms;		/* a render context's park after its close (E1085) */
 	struct mbo *bos[MAX_OBJS];
 	struct mvm *vms[MAX_OBJS];
 	struct mctx *ctxs[MAX_OBJS];
@@ -568,14 +574,56 @@ static void ctx_free(struct sgxfive_mock *m, struct mctx *c)
 	vm_put(m, vm);
 }
 
+/*
+ * kept_park_ms: render_kept reads empty from the close until the context is parked
+ * kept_park_ms later (E1085's race). The bytes wait in render_kept.parking, which a child
+ * process renames back; a park still pending is left alone.
+ */
+static void park_kept(const struct sgxfive_mock *m)
+{
+	char kept[4096], parking[4200];
+	struct timespec ts = { m->kept_park_ms / 1000, (m->kept_park_ms % 1000) * 1000000L };
+	pid_t pid;
+	int fd;
+
+	snprintf(kept, sizeof(kept), "%s/render_kept", m->debugfs_dir);
+	snprintf(parking, sizeof(parking), "%s.parking", kept);
+	if (!access(parking, F_OK) || rename(kept, parking))
+		return;
+	fd = open(kept, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd >= 0)
+		close(fd);
+	fflush(NULL);
+	pid = fork();
+	if (pid < 0) {
+		rename(parking, kept);
+		return;
+	}
+	if (pid)
+		return;
+	fd = open("/dev/null", O_RDWR);
+	if (fd >= 0) {
+		dup2(fd, 0);
+		dup2(fd, 1);
+		dup2(fd, 2);
+	}
+	nanosleep(&ts, NULL);
+	rename(parking, kept);
+	_exit(0);
+}
+
 static int m_destroy_ctx(struct sgxfive_mock *m, int fd,
 			 struct drm_sgxfive_destroy_context_args *a)
 {
 	struct mctx *c = FIND(m->ctxs, fd, a->handle);
+	bool park;
 
 	if (a->_padding_4 || !c)
 		return -EINVAL;
+	park = c->type == DRM_SGXFIVE_CTX_TYPE_RENDER && m->kept_park_ms && m->debugfs_dir;
 	ctx_free(m, c);
+	if (park)
+		park_kept(m);
 	return 0;
 }
 
@@ -1499,6 +1547,10 @@ struct sgxfive_mock *sgxfive_mock_create(const struct sgxfive_mock_config *cfg)
 		      cfg->render_pb_pages : 0x422;
 	m->final_pb = cfg->render_final_pb_pages >= 0x23 && cfg->render_final_pb_pages <= 0x422 ?
 		      cfg->render_final_pb_pages : 0;
+	if (cfg->debugfs_dir && cfg->kept_park_ms) {
+		m->debugfs_dir = strdup(cfg->debugfs_dir);
+		m->kept_park_ms = m->debugfs_dir ? cfg->kept_park_ms : 0;
+	}
 	return m;
 }
 
@@ -1509,6 +1561,7 @@ void sgxfive_mock_destroy(struct sgxfive_mock *m)
 	for (int fd = 0; fd < 64; fd++)
 		if (m->fd_driver[fd])
 			mock_close(m, fd + FD_BASE);
+	free(m->debugfs_dir);
 	free(m);
 }
 

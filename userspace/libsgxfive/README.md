@@ -254,7 +254,7 @@ them. There is no test double for them: the mock's render interpreter runs these
 
 ```
 sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--mock-knob NAME=V]...
-             [--device PATH]
+             [--mock-park-ms=N] [--device PATH]
              [--programs=asm|fake] <command> [options]
 
 query                          GPU, firmware, job limits and heaps
@@ -401,7 +401,14 @@ render, with the first context open.
 `--keep-overflow` with `--ctx2` goes on to the second context after a first render that overflowed
 the parameter buffer, and counts an overflowed second render. `--kept-copy DIR` (with `--ctx2`)
 copies the kernel's debugfs `render_kept` to `DIR/kept.N.bin` after the second context's render N
-and before any close. `--tadata-fill-render N:PAGE:VALUE[:ramp]` writes the kernel's debugfs
+and before any close, and with `--close-first-early` also to `DIR/kept.closed.N.bin` right after
+the first context's close. That copy reads `render_kept` again while it reads empty (the kernel
+parks a closed context when its last reference goes, which can be after the close returns, E1085),
+up to 10 reads 10 ms apart: `tri: render_kept read N times ...` says how many it took, and `tri:
+render_kept still empty after 10 reads ...: the copy is empty` that the copy stayed empty (the run
+goes on, as before). In the mock, `--mock-park-ms=N` (0 to 60000, with `SGXFIVE_DEBUGFS`) parks a
+closed render context N ms after its close: `render_kept` there reads empty until then.
+`--tadata-fill-render N:PAGE:VALUE[:ramp]` writes the kernel's debugfs
 `tadata_fill` just before render N (page PAGE of the TA data filled with VALUE, or with VALUE + i
 with `ramp`), so that a page changes between a geometry kick and the final render.
 `dummy --kpoke-job N:SPEC` and `fill --kpoke-job 1:SPEC` write a kernel poke (`th:W=V`, a word of
