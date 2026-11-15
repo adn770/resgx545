@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-141 open: 131 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+140 open: 130 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -40,7 +40,7 @@ list.
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
-  LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
+  LOD values, the border address modes, the compressed and YUV ... (E568, E1097, E1103)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
@@ -240,8 +240,6 @@ list.
   modes 4 to 7 at a size other than 16 x 16 and 32 x 32 (E1055's ... (E1039, E1055, E1065)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
-- `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
-  and xfer:18 to 22 made no difference for formats 28 and 29, ... (E568, E1097, E1103)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
