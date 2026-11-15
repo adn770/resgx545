@@ -1797,7 +1797,8 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   quad alone (a branch on `pa0` as E513's) it writes the same zero-extended value as into `r10`, 8
   of 8 dwords in 6 of 6 rows over two sets of eight pairs and two quads, the sign extension and the
   mixture 0 of 6 (E1106 **[HW]**); which extension its
-  test reads is **[open]** (Q126): no test of the 16 pairs of E498 tells it. With source 1 = `#0`
+  test reads is not observable **[infer]**: no test of the 16 pairs of E498 tells it. With source 1
+  = `#0`
   the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values each) (*The
   32-bit adds `iadd32` and `iaddu32`*).
 - **The test field is two parts, ANDed under the `a` join and ORed under the `o` join [HW]** (E499,
@@ -8276,8 +8277,10 @@ same
 zero-extended sum, 8 of 8 dwords in 6 of 6 rows (E1106, held out; E1061's sa0 row, every instance
 writing, mixed other pairs' values).
 
-**Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
-that would tell it are nonzero under both readings, so no test of those pairs settles it (Q126).
+**Not observable [infer]:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff:
+E498's flag rules give the same flag for every pair under both extensions (the sums that would tell
+it are nonzero under both readings, and z is true for (0, 0) only under either), so no test settles
+it.
 
 ### 7.4 Test channels
 
@@ -9498,8 +9501,8 @@ open driver:
    start of a firmware task after a perturbation or a cold boot (Q158; at the next entry they are
    what the task left, E809, E810); what leaves
    0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
-   of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
-   a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   of 40 jobs and quads that repeat in part, E500); `ima32`'s dual-issue form, `cie`, `.neg` and
+   immediates with
    the extra operand, its selector 3 and what bit 46 does, and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
    (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost

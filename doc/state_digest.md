@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-139 open: 129 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+138 open: 128 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -248,8 +248,6 @@ list.
   stores after them, and which write registers? (E297, E368)
 - `Q125` usse, low: which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3
   of the instances that do not read the last job's value, ... (E477, E484, E500)
-- `Q126` usse, low: which extension of a source 1 above 0x7fff does the test of iaddu32 read (no
-  test tells it, E498: every test gives the same flag under both ... (E521, E1061, E1106)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
 - `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and

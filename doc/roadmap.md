@@ -495,7 +495,8 @@ join was not run: E499). Four runs of the `pclink` readers show 64 pixels of 0xe
 and quads that repeat in part (E500). The records state the pairs and values that ran and count
 programs and jobs apart where one program ran twice. E469 to E473, E475 and E476 are carried forward
 with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
-Q098, the lapc index question (answered by E1098 and E1102 since), Q125, Q126 and Q127 are narrowed,
+Q098, the lapc index question (answered by E1098 and E1102 since), Q125, the iaddu32 extension
+question (answered by E1106 since) and Q127 are narrowed,
 none retired; Q136, the ima32 high-word question (folded into Q127 since) and the test-field
 question (answered since by E1062) are new.
 
@@ -581,7 +582,8 @@ in a pixel task, a write to `pa1`-`pa4`, a `.neg` on an immediate, and others). 
 `--task vertex` and `--set pclink=N`, and `examples/replay` lists the outcome of every vector. E522
 records the replay (the simulator against the vectors, offline); E521, found in it, shows that the
 value `iaddu32` writes zero-extends source 1 (16 pairs in two datasets run before, seven of which a
-sign extension writes otherwise): Q126 is narrowed to the extension its test reads and to the forms
+sign extension writes otherwise): the iaddu32 extension question (answered by E1106 since) is
+narrowed to the extension its test reads and to the forms
 not run, none retired; Q132 is new (hw, medium: where a write past a task's allocation goes, which
 E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q132 and the
 test-field

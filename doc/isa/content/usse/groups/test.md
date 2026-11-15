@@ -55,7 +55,8 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   quad alone (a branch on `pa0` as E513's) it writes the same zero-extended value as into `r10`, 8
   of 8 dwords in 6 of 6 rows over two sets of eight pairs and two quads, the sign extension and the
   mixture 0 of 6 (E1106 **[HW]**); which extension its
-  test reads is **[open]** (Q126): no test of the 16 pairs of E498 tells it. With source 1 = `#0`
+  test reads is not observable **[infer]**: no test of the 16 pairs of E498 tells it. With source 1
+  = `#0`
   the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values each) (*The
   32-bit adds `iadd32` and `iaddu32`*).
 - **The test field is two parts, ANDed under the `a` join and ORed under the `o` join [HW]** (E499,

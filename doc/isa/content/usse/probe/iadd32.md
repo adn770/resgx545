@@ -44,5 +44,7 @@ same
 zero-extended sum, 8 of 8 dwords in 6 of 6 rows (E1106, held out; E1061's sa0 row, every instance
 writing, mixed other pairs' values).
 
-**Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
-that would tell it are nonzero under both readings, so no test of those pairs settles it (Q126).
+**Not observable [infer]:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff:
+E498's flag rules give the same flag for every pair under both extensions (the sums that would tell
+it are nonzero under both readings, and z is true for (0, 0) only under either), so no test settles
+it.
