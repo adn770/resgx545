@@ -9340,6 +9340,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   read their records with the print at 64 lines (controls passed).
   *pds; HW; data: `render-closing-r25-sa64:out/20261115-220241/pk64/`,
   `render-closing-r25-sa64:out/20261115-220241/q019/`, `render-closing-r25-sa64:fold/`.*
+- `E1105` r26-vol on module E0CC4027 (Q114): with each of 19 sampler-word bits flipped one at a time
+  on E567's twiddled 16 x 16 format 12 texture (T0 bits 14, 15, 16, 27, 28, 29, 30; T3 bits 8, 9,
+  10, 11, 12, 15, 18, 20, 21, 22, 27, 28: the bits a record ran on a twiddled texture without a
+  fault), smp3d with the third coordinate at 0 and at 1.5 gives the same image at all 2048 pixels
+  for every bit ('H-NOVOL (19 of 19 rows decided)', no cannot tell; the repeats of T0 27 and 30
+  equal their w 0 jobs), so none of them makes the third coordinate act; the controls passed: E567's
+  ty0-3d-w0, -w15 and the repeat read its kept image (2b49c848...), TEXTYPE 2's rt2-3d-w5 and -w15
+  its two different kept images (79970597..., 480213ab...).
+  *texture; HW, infer; data: `render-closing-r26-vol:out/20261115-225136/vc/`,
+  `render-closing-r26-vol:out/20261115-225136/vb/`, `render-closing-r26-vol:fold/`,
+  `vectors-closing-r26-vol-pixels`.*
 - `E1106` r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module E0CC4027: a single
   writer alone writes iaddu32's value into sa0 and it is the zero-extended one: eight (r1, source 2)
   pairs a program, `iaddu32.testtaz.chan0 sa0, p0, r1, r2`, `mov r3, sa0` and a store of r3 to the
@@ -9445,7 +9456,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
 E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
-E1067, E1097, E1103.
+E1067, E1097, E1103, E1105.
 
 ### transfer
 

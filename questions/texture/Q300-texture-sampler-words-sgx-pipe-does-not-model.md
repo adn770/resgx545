@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E274", "E397", "E564", "E566", "E722", "E723", "E1027", "E1047", "E1049", "E1058", "E1067"]
+evidence = ["E274", "E397", "E564", "E566", "E722", "E723", "E1027", "E1047", "E1049", "E1058", "E1067", "E1105"]
 terms = ["T3.BIT14", "T3.BITS7_0", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27"]
 +++
 
@@ -27,3 +27,10 @@ texture, primitive-PDS and background word. Those refusals were never a clause o
 What would settle a clause: the refused words in the probe fills of E566's tx_map form, each held
 out against a frozen reading, the way E1027 and E1067 settled theirs. sgx-pipe refuses each case
 under Q300 until a record models it.
+
+Narrowed in round 26 (E1105): under smp3d on E567's twiddled 16 x 16 texture, none of the 19 bits
+that ran there without a fault (T0 14, 15, 16, 27, 28, 29, 30; T3 8, 9, 10, 11, 12, 15, 18, 20,
+21, 22, 27, 28) makes the third coordinate act (w 0 and 1.5 give one image, 19 of 19 held out);
+13 of them leave the 2D image as it is (post hoc). The bits never run or that fault (T0 0, 2, 31;
+T3 13, 14, 19, 24 to 26; T1's size bits; T2) are still this question's, now also for whether one
+of them names a volume (the volume question's last clause, answered by E1105 for the 19 bits).

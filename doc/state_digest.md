@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-138 open: 128 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+137 open: 127 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -122,7 +122,7 @@ list.
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
   |ma| is not a power of two (E923, E931, E956: up or down by the ... (E956, E1001, E1002)
 - `Q300` texture, medium: what does a texture sample read and return for the sampler words, formats,
-  sizes and modes that sgx-sim's tex::sample refuses, where a ... (E1049, E1058, E1067)
+  sizes and modes that sgx-sim's tex::sample refuses, where a ... (E1058, E1067, E1105)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -230,8 +230,6 @@ list.
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
 - `Q010` texture, low: what clears the colour-space words between jobs, given that a copy that does
   not load set 0 converts with the last loaded words, and the ... (E046, E271, E399)
-- `Q114` texture, low: does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE
-  value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
@@ -291,12 +289,15 @@ list.
 
 ## Recent records
 
-70 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+71 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1106` usse, 2026-11-15: r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module
   E0CC4027: a single writer alone writes iaddu32's value into sa0 and it is the zero-extended one:
   eight (r1, source 2) pairs a ...
+- `E1105` texture, 2026-11-15: r26-vol on module E0CC4027 (Q114): with each of 19 sampler-word bits
+  flipped one at a time on E567's twiddled 16 x 16 format 12 texture (T0 bits 14, 15, 16, 27, 28,
+  29, 30; T3 bits 8, 9, 10, 11, 12, ...
 - `E1104` pds, 2026-11-15: r25-sa64 stages pk64 and q019 (58 jobs) on t24, whose probe
   --scratch-show 64 prints all 64 scratch dwords sa64_dump.s stores: E391's 40 jobs and 16 held-out
   jobs at 3 and 6 rows read the markers of ...
@@ -507,9 +508,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-87 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+88 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r26-vol`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t24
 - `render/closing-r26-sa0`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t24
 - `render/closing-r25-sa64`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -639,7 +642,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 15 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 16 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
