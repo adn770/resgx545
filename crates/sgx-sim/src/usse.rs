@@ -5370,7 +5370,7 @@ mod tests {
 
     #[test]
     fn smp3d_reads_as_smp2d_only_where_it_ran() {
-        // p1132 tx-types, tx-types-risky (cube maps E844, Q114): point sampled, level 0, a 16x16
+        // p1132 tx-types, tx-types-risky (cube maps E844; no volume, E1105): point sampled, level 0, a 16x16
         // twiddled texture (TEXTYPE 0 and 7) and a 64x32 stride one, format 12: smp3d at a third
         // coordinate of -0.5, 0, 0.5, 1, 1.5 and 4 gave the smp2d image (0 of 2048 pixels
         // differ in the 8 fit jobs, the 3 sweeps and rt7 at 0.5 and 1.5)

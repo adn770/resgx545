@@ -33,4 +33,4 @@ that ran there without a fault (T0 14, 15, 16, 27, 28, 29, 30; T3 8, 9, 10, 11, 
 21, 22, 27, 28) makes the third coordinate act (w 0 and 1.5 give one image, 19 of 19 held out);
 13 of them leave the 2D image as it is (post hoc). The bits never run or that fault (T0 0, 2, 31;
 T3 13, 14, 19, 24 to 26; T1's size bits; T2) are still this question's, now also for whether one
-of them names a volume (Q114's last clause, which E1105 decides for the 19 bits).
+of them names a volume (the volume question's last clause, answered by E1105 for the 19 bits).

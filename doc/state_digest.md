@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-139 open: 129 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+138 open: 128 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -230,8 +230,6 @@ list.
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
 - `Q010` texture, low: what clears the colour-space words between jobs, given that a copy that does
   not load set 0 converts with the last loaded words, and the ... (E046, E271, E399)
-- `Q114` texture, low: does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE
-  value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
