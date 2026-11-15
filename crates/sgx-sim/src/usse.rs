@@ -414,6 +414,10 @@ pub struct Machine {
     /// the load flag, xfer:17 bit 0), so the YUV formats read opaque black (E037); where it is
     /// not known the YUV formats stop.
     pub csc_unloaded: bool,
+    /// The words colour-space set 0 holds for this job, where known: the last load before it in
+    /// its batch (init.job.csc; E1097, E1103: a job without the load flag reads the last load's
+    /// set). The YUV formats convert through it (tex::Sample::csc).
+    pub csc: Option<[u32; 5]>,
     /// The registers holding a value the hardware may not have (bank, number), with why:
     /// reading one stops the program.
     pub unknown: BTreeMap<(&'static str, usize), &'static str>,
@@ -792,6 +796,7 @@ impl Default for Machine {
             fitted: false,
             coeffs: None,
             csc_unloaded: false,
+            csc: None,
             unknown: BTreeMap::new(),
             phase: None,
             vertex_task: false,
@@ -3017,9 +3022,11 @@ impl Machine {
             tex::smp3d_as_2d(state, pcf.is_some() || flags.contains(".sinf") || flags.contains(".rsd"))
                 .map_err(why)?;
         }
-        if matches!(state[1] >> 24 & 31, 28 | 29) && !self.csc_unloaded {
+        if matches!(state[1] >> 24 & 31, 28 | 29) && !self.csc_unloaded && self.csc.is_none() {
             return Err(why("YUV through a colour-space set the vector does not record"));
         }
+        // the batch's set where the vector carries it, else unloaded (black) or stopped above
+        let csc = self.csc;
         let (u, v) = (f32::from_bits(u), f32::from_bits(v));
         if !u.is_finite() || !v.is_finite() {
             return Err(why("smp at an infinite or NaN coordinate"));
@@ -3032,7 +3039,7 @@ impl Machine {
         } else {
             tex::Srd::None
         };
-        let texels = bus.sample(&tex::Sample { state, u, v, one_d: d == "1d", srd, pcf, lod })?;
+        let texels = bus.sample(&tex::Sample { csc, state, u, v, one_d: d == "1d", srd, pcf, lod })?;
         let (dst, drc) = (insn.get("dst").unwrap(), insn.get("drc").unwrap());
         let reg = |r: usize| if dst >> 7 != 0 { Reg::Pa(r) } else { Reg::R(r) };
         let n = texels.len();
@@ -5311,6 +5318,7 @@ mod tests {
         let mut mem = Memory { base: 0x1000, words: (0..64).map(|i| 0x100 + i).collect() };
         let want = tex::sample(
             &tex::Sample {
+                csc: None,
                 state: st,
                 u: f32::from_bits(0x3f19999a),
                 v: f32::from_bits(0x3e99999a),
@@ -5445,6 +5453,34 @@ mod tests {
         let why = why_of(go(false));
         assert!(why.contains("colour-space set"), "{why}");
         assert_eq!(go(true), Ok(0xff00_0000));
+    }
+
+    #[test]
+    fn the_yuv_formats_read_the_set_the_machine_holds() {
+        // E1103 y28-b: E568's 16 x 1 type 3 texture of format 28 at texel 0 through set 0 holding
+        // E037's BT.601 words (Machine::csc, the set the batch left); zeros read black
+        let go = |csc: Option<[u32; 5]>| {
+            let words = [
+                "mov r20, #0x07fe0000",
+                "mov r21, #0x7c00f000",
+                "mov r22, #0x00001000",
+                "mov r23, #0x00800800",
+                "mov r24, #0x3f840000",
+                "mov r25, #0x3c000000",
+                "smp2d r10, r24, r20, drc0",
+                "wdf drc0",
+                "mov.end o0, r10",
+            ];
+            let tex = [0x9040_7020u32, 0x975c_7b38];
+            let mut mem =
+                Memory { base: 0x1000, words: (0..4096).map(|i| tex.get(i).copied().unwrap_or(0)).collect() };
+            let mut m = Machine { csc, ..Machine::default() };
+            m.run(&prog(&words), &mut mem, 100).map(|()| m.o[0])
+        };
+        let bt601 = [0x0095_0095, 0x0000_0095, 0x0102_03ce, 0x0398_00cc, 0];
+        assert_eq!(go(Some(bt601)), Ok(0xff2c_0b00));
+        assert_eq!(go(Some([0; 5])), Ok(0xff00_0000));
+        assert!(why_of(go(None)).contains("colour-space set"));
     }
 
     #[test]

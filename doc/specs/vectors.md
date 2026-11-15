@@ -42,7 +42,12 @@ The 425 vectors of the 11.32 texture batch (`datasets/vectors-texture-p1132.toml
 command but whose run printed no pokes carries no `init.job`; the simulator takes the YUV
 formats (28 and 29) as opaque black only where `init.job.pokes` is recorded and leaves the
 colour-space load flag (`xfer:17` bit 0) clear (`Machine::csc_unloaded`), so the colour-space jobs
-of that batch and the landed formats-other vectors stop on them.
+of that batch and the landed formats-other vectors stop on them. A vector that carries the set its
+batch left (`init.job.csc`, below) converts through it instead.
+The probe jobs of a closing session (round 26: `vectors/closing/r25-sa64/pds/` from E1104's
+r25-sa64, `vectors/closing/r25-csc/texture/` from E1103's r25-csc) are converted by
+`tools/usse-asm/closing_vectors.py --probes` from the session's kept jobs and `bins/`, one file a
+stage, in run order (`crates/sgx-sim/tests/session_vectors.rs` replays them: 58 PDS jobs, 12 fills).
 The 8 vectors of the 11.39 bilinear jobs (`datasets/vectors-texture-p1141.toml`, one file in
 `vectors/nokernel/usse/texture-p1141/`, converted by `vectors.py convert` from
 `texture/p1141-recomp/raw/p1141-bilin/raw.txt`, which `texture/p1141-recomp/make_raw.py` makes from
@@ -153,9 +158,10 @@ Each vector:
 | `init.pa0` | `coords` (`(y << 16) \| x`) or `fill` (the fill's own, not specified) |
 | `init.scratch` | `{"base": "0x3e003000", "bytes": 65536, "fill": "0xd0000000\|i"}`; `base` is the device address of the run's mapping (0x3e003000 in most vectors, also 0x3e006000, 0x3e012000, 0x3e082000, 0x3e402000), and 170 vectors add `low`, the address the PDS sees for the scratch; the simulator test uses the constant `SCRATCH_BASE` (0x3e003000), not `base` |
 | `init.regs` | what the program's leading `mov`s preset, `{"r1": "0x..."}`; informative only |
-| `init.attrs` | PDS only: the secondary attributes its `douta` may write (16: `sa0` to `sa15`) |
-| `init.use` | PDS only: the fill shader that reads them and stores them to scratch dwords 0-15 |
-| `init.job` | a fill's job: `pokes`, the transfer-command pokes the run printed, and `use_coeffs`, the USE filter coefficients they load: `{"load": false}`, or `load` true with `mode` (`CR_USE_COEFFS_MODE`) and `words`, the nine coefficient words (E078) |
+| `init.attrs` | PDS only: the secondary attributes its `douta` may write: 16 (`sa0` to `sa15`), or N for a probe printing N scratch dwords (`--scratch-show N`, `vectors.pds_attrs`), at most 64 (E1104) |
+| `init.sa_kept` | PDS only, optional: `true` where the job ran in a batch (a session's stage): an attribute below `attrs` its PDS does not write holds what an earlier job left (E1104), any value to the replay (`AnyValue`) |
+| `init.use` | PDS only: the fill shader that reads them and stores them to scratch dwords 0-15 (0-63 for `sa64_dump.s`) |
+| `init.job` | a fill's job: `pokes`, the transfer-command pokes the run printed, and `use_coeffs`, the USE filter coefficients they load: `{"load": false}`, or `load` true with `mode` (`CR_USE_COEFFS_MODE`) and `words`, the nine coefficient words (E078); optional `csc`, the colour-space set 0 its batch holds when the job reads (`{"set": 0, "words": [five words, xfer:18 to 22], "loaded_by": job}`: the last load before it, its own included, E1097, E1103), left out where not known |
 | `readback.failed` | null, or the failure text |
 | `readback.o0` | the uniform `o0`, or null |
 | `readback.mixed` | `[[value, count], ...]` when the pixels differ |

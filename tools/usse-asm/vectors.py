@@ -39,6 +39,7 @@ import probe  # noqa: E402
 
 FORMAT = "sgx545-vectors"
 PDS_ATTRS = 16             # sa0-sa15: what a PDS probe may write (sgxfive-test PROBE_PDS_ATTRS)
+PDS_ATTRS_MAX = 64         # E1104: a fill's douta reaches sa0-sa63 at their own sa, 0 to 8 rows
 VERSION = 1
 INSTANCES = 2048                # the 64 x 32 fill
 SCRATCH_BYTES = 0x10000
@@ -85,6 +86,17 @@ def use_words(bins: pathlib.Path | None, use: str = probe.USE_DUMP,
                     if (pathlib.Path(x) / use).is_file()),
                    probe.PROBES_DIR)
         return _words(probe.build_use(pathlib.Path(d), use, src).read_bytes(), "usse"), "rebuilt"
+
+
+def pds_attrs(scratch_show: int) -> int:
+    """The secondary attributes a PDS probe's vector lets its douta write: what the run could
+    show. 16 (sa0-sa15, the tool's PROBE_PDS_ATTRS, sa_dump.s) by default; a probe printing N
+    scratch dwords (--scratch-show N, 1 to 64) shows sa0 to sa(N-1), up to the 64 E1104 read at
+    their own sa (the hardware did not hold the douta to the tool's 16). Earlier vector files
+    keep their 16: that is what those runs could show."""
+    if not 0 <= scratch_show <= PDS_ATTRS_MAX:
+        raise ValueError(f"scratch_show {scratch_show}: 0 to {PDS_ATTRS_MAX}")
+    return max(PDS_ATTRS, scratch_show)
 
 
 def presets(text: str) -> dict[str, str]:
@@ -259,11 +271,12 @@ def convert(raw: str, table: list, *, raw_name: str, templates: dict | None = No
             if p.host == "fill" and (label in printed or not cp.pokes):
                 init["job"] = job(printed.get(label, []))
             if p.isa == "pds":
-                # the fill's PDS secondary: douta into sa0-sa15, which the fill's USE program
-                # stores to scratch dwords 0-15; U0-U2 (data dwords 0-2) kick the secondary's
+                # the fill's PDS secondary: douta into sa0-sa15 (sa0-sa63 with --scratch-show 64,
+                # pds_attrs), which the fill's USE program stores to scratch dwords 0-15 (0-63
+                # for sa64_dump.s); U0-U2 (data dwords 0-2) kick the secondary's
                 program["data"] = probe.pds_data(p, template_dir(p, dirs or template_dirs()))
                 uw, usrc = use_words(bins, p.use, dirs)
-                init.update(task="pds-secondary", attrs=PDS_ATTRS, regs={},
+                init.update(task="pds-secondary", attrs=pds_attrs(p.scratch_show), regs={},
                             use={"source": p.use, "recorded": usrc == "recorded",
                                  "words": [f"0x{w:016x}" for w in uw]})
             vecs.append({

@@ -183,6 +183,34 @@ def test_converts_a_pds_probe(tmp_path):
     assert w["init"]["use"]["words"] == use["words"]
 
 
+def test_pds_attrs_follow_the_run_s_print_up_to_64():
+    """A PDS probe's secondary attributes are what its run could show: 16 (sa0-sa15, the
+    tool's PROBE_PDS_ATTRS and sa_dump.s) unless the probe prints more scratch dwords
+    (--scratch-show N), up to the 64 E1104 read at their own sa."""
+    assert vectors.pds_attrs(0) == 16
+    assert vectors.pds_attrs(8) == 16
+    assert vectors.pds_attrs(32) == 32
+    assert vectors.pds_attrs(64) == 64
+    with pytest.raises(ValueError):
+        vectors.pds_attrs(65)
+
+
+def test_a_pds_probe_with_scratch_show_64_gets_64_attributes(tmp_path):
+    """E1104's form: attribute-room's probe printing all 64 dwords gives a vector with attrs 64,
+    so a douta to sa32-sa63 replays instead of stopping at sa16."""
+    text = (PROBES / "pds" / "attribute-room.toml").read_text()
+    assert "\ntemps = 0x20\n" in text
+    (tmp_path / "attribute-room.toml").write_text(
+        text.replace("\ntemps = 0x20\n", "\ntemps = 0x20\nscratch_show = 64\n"))
+    t = probe.load(tmp_path / "attribute-room.toml")
+    raw = "probe pds-attribute-room-rows__3: scratch at 0x3e003000 (64 KiB)\n" \
+          "probe pds-attribute-room-rows__3: o0 0x0da7a000 (2048 of 2048)\n" \
+          "probe pds-attribute-room-rows__3: scratch +0x0c0 0xa1000030\n"
+    v = vectors.convert(raw, t, raw_name="r")["vectors"][0]
+    assert v["init"]["attrs"] == 64 and v["init"]["use"]["source"] == "sa64_dump.s"
+    assert "--scratch-show" in v["provenance"]["options"]
+
+
 def test_run_id():
     root = pathlib.Path("/c")
     assert vectors.run_id(pathlib.Path("/c/data/usse/integer/usse-integer-x/raw.txt"), root) == \

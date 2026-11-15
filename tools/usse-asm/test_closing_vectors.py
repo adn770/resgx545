@@ -308,3 +308,139 @@ def test_published_timings_give_round_4_readings_of_bits_6_and_7():
     assert len(fills) == 106
     assert [r["id"] for r in fills
             if not 118 <= r["tile_time_us"] <= 132 and (r["tile_time_us"] >= 125) != r["bit6"]] == []
+
+
+# ---- probe jobs of a session (round 26 P1): PDS secondaries (E1104) and fills in a batch whose
+# colour-space set is machine state from job to job (E1097, E1103)
+
+BT601 = ["0x00950095", "0x00000095", "0x010203ce", "0x039800cc", "0x00000000"]
+ZEROS = ["0x00000000"] * 5
+CSC_POKES = "--poke xfer:17^=0x1 " + " ".join(f"--poke xfer:{18 + i}={w}" for i, w in enumerate(BT601))
+
+
+def probe_stage(tmp, stage, jobs, bins):
+    """jobs: [(name, args, text)] in run order; bins: {file: bytes}."""
+    d = tmp / "out" / "20261115-000000" / stage
+    d.mkdir(parents=True)
+    head = "name\tstage\tset\trisk\tknobs\ttool\targs\trc\tclass\tfault_int\tfault_word\tfree_kb\n"
+    body = ""
+    for name, args, text in jobs:
+        body += f"{name}\t{stage}\tfit\tsafe\t-\tt24\t{args}\t0\tok\t-\t-\t1\n"
+        if text is not None:
+            with gzip.open(d / f"{name}.txt.gz", "wt") as f:
+                f.write(text)
+    (d / "cases.tsv").write_text(head + body)
+    b = tmp / "bins"
+    b.mkdir(exist_ok=True)
+    for name, blob in bins.items():
+        (b / name).write_bytes(blob)
+    return d
+
+
+def probe_text(name, lines):
+    return "programs asm\n" + "".join(f"probe {name}: {x}\n" for x in
+                                      ["scratch at 0x3e003000 (64 KiB)"] + lines)
+
+
+def test_a_pds_job_becomes_a_pds_secondary_vector_with_its_attrs(tmp_path):
+    """A `probe --pds N --use U --scratch-show 64` job: the PDS words (32-bit) and data size, the
+    USE program as sent, attrs 64 (vectors.pds_attrs), its pokes as init.job, and sa_kept: the
+    attributes this job's PDS does not write hold what earlier jobs left (E1104)."""
+    pds = struct.pack("<4I", 1, 2, 3, 4)
+    use = struct.pack("<2Q", 0xfa44070000000000, 0xfca1705003af0000)
+    args = 'probe --temps 32 --pds 36 --use "$S/bins/sa64_dump.bin" --scratch-show 64 ' \
+           '--poke bg:1=0x30000 "$S/bins/j-a32.bin"'
+    text = probe_text("j-a32", ["pokes bg:1=0x30000", "poked bg:1 0x00130000 -> 0x00030000",
+                                "o0 0x0da7a000 (2048 of 2048)", "scratch +0x080 0xa1000020"])
+    d = probe_stage(tmp_path, "q019", [("j-a32", args, text)],
+                    {"j-a32.bin": pds, "sa64_dump.bin": use})
+    vs, skipped = cv.probe_vectors(d, tmp_path / "bins", "s/out/a/q019")
+    assert skipped == {}
+    (v,) = vs
+    assert v["id"] == "j-a32" and v["program"]["isa"] == "pds" and v["program"]["data"] == 36
+    assert v["program"]["words"] == ["0x00000001", "0x00000002", "0x00000003", "0x00000004"]
+    init = v["init"]
+    assert init["task"] == "pds-secondary" and init["attrs"] == 64 and init["sa_kept"] is True
+    assert init["use"]["words"] == ["0xfa44070000000000", "0xfca1705003af0000"]
+    assert init["job"]["pokes"] == ["bg:1=0x30000"] and "csc" not in init["job"]
+    assert v["readback"]["scratch"] == {"0x080": "0xa1000020"}
+    assert v["readback"]["o0"] == "0x0da7a000"
+
+
+def test_the_colour_space_set_is_kept_from_job_to_job(tmp_path):
+    """E1103: a job whose transfer command sets xfer:17 bit 0 loads set 0 from xfer:18-22 (a copy
+    or a fill), a fill without it reads the last loaded set; before any load the set is not
+    known (no init.job.csc). A fill whose load poke was not echoed leaves the set not known
+    (E568's dangling pokes before t22). Copies are skipped (the transfer path)."""
+    prog = struct.pack("<Q", 0xfa44070000000000)
+    fill = 'probe --temps 32 --coords --pixels'
+    pixel = ["o0 0xff000000 (2048 of 2048)"] + [f"row {y}: " + " ".join(["ff000000"] * 64)
+                                                 for y in range(32)]
+    zc = "copy --every-value --pixels --poke tex:1=0x7d03f01f --poke xfer:17^=0x1 " + \
+        " ".join(f"--poke xfer:{18 + i}=0" for i in range(5))
+    echo = ["pokes xfer:17^=0x1 " + " ".join(f"xfer:{18 + i}={w}" for i, w in enumerate(BT601)),
+            "poked xfer:17 0x00000000 -> 0x00000001"]
+    jobs = [("f0", f'{fill} "$S/bins/f0.bin"', probe_text("f0", pixel)),
+            ("zc", zc, "programs asm\njob: ok\n"),
+            ("fa", f'{fill} "$S/bins/fa.bin"', probe_text("fa", pixel)),
+            ("fb", f'{fill} {CSC_POKES} "$S/bins/fb.bin"', probe_text("fb", echo + pixel)),
+            ("fc", f'{fill} "$S/bins/fc.bin"', probe_text("fc", pixel)),
+            ("fx", f'{fill} {CSC_POKES} "$S/bins/fx.bin"', probe_text("fx", pixel)),
+            ("fy", f'{fill} "$S/bins/fy.bin"', probe_text("fy", pixel))]
+    d = probe_stage(tmp_path, "csc", jobs, {f"{n}.bin": prog for n in ("f0", "fa", "fb", "fc", "fx", "fy")})
+    vs, skipped = cv.probe_vectors(d, tmp_path / "bins", "s/out/a/csc")
+    assert list(skipped) == ["zc"] and "copy" in skipped["zc"]
+    by = {v["id"]: v for v in vs}
+    assert list(by) == ["f0", "fa", "fb", "fc", "fx", "fy"]
+    csc = {k: v["init"]["job"].get("csc") for k, v in by.items()}
+    assert csc["f0"] is None and csc["fx"] is None and csc["fy"] is None
+    assert csc["fa"] == {"set": 0, "words": ZEROS, "loaded_by": "zc"}
+    assert csc["fb"] == {"set": 0, "words": BT601, "loaded_by": "fb"}
+    assert csc["fc"] == {"set": 0, "words": BT601, "loaded_by": "fb"}
+    v = by["fa"]
+    assert v["init"]["task"] == "pixel" and v["init"]["pa0"] == "coords" and v["init"]["temps"] == 32
+    assert v["program"]["words"] == ["0xfa44070000000000"] and len(v["readback"]["pixels"]) == 2048
+    assert "sa_kept" not in v["init"]
+
+
+def test_probe_vectors_cli_writes_one_file_a_stage(tmp_path):
+    prog = struct.pack("<Q", 0xfa44070000000000)
+    text = probe_text("f0", ["o0 0x00000001 (2048 of 2048)"])
+    probe_stage(tmp_path, "s1", [("f0", 'probe --temps 32 "$S/bins/f0.bin"', text)], {"f0.bin": prog})
+    out = tmp_path / "vec"
+    assert cv.main(["--session", str(tmp_path), "--out", str(out), "--probes", "s1"]) == 0
+    doc = json.loads((out / "s1.vec.json").read_text())
+    assert doc["format"] == "sgx545-vectors" and [v["id"] for v in doc["vectors"]] == ["f0"]
+    assert doc["run"]["raw"] == [f"{tmp_path.parent.name}/{tmp_path.name}/out/20261115-000000/s1/f0.txt.gz"]
+
+
+SA64 = DATA / "render" / "closing-r25-sa64"
+CSC = DATA / "render" / "closing-r25-csc"
+
+
+@pytest.mark.skipif(not SA64.is_dir(), reason="no resgx545-data render/closing-r25-sa64")
+def test_published_r25_sa64_jobs_convert_with_64_attributes():
+    """E1104: 2 pk64 and 56 q019 jobs, each a PDS secondary with attrs 64, none skipped."""
+    att = next((SA64 / "out").glob("2026*"))
+    n = {}
+    for stage in ("pk64", "q019"):
+        vs, sk = cv.probe_vectors(att / stage, SA64 / "bins", f"render/closing-r25-sa64/out/{att.name}/{stage}")
+        assert all(v["init"]["attrs"] == 64 and v["init"]["sa_kept"] for v in vs)
+        n[stage] = (len(vs), len(sk))
+    assert n == {"pk64": (2, 0), "q019": (56, 0)}
+
+
+@pytest.mark.skipif(not CSC.is_dir(), reason="no resgx545-data render/closing-r25-csc")
+def test_published_r25_csc_fills_carry_the_set_the_batch_left():
+    """E1103's table: per format, a after zc (zeros), b and c after b's own load (BT.601), d after
+    bc (BT.601), e and f after e's load (zeros); the four copies skipped."""
+    att = next((CSC / "out").glob("2026*"))
+    vs, sk = cv.probe_vectors(att / "csc", CSC / "bins", "c")
+    assert sorted(sk) == ["y28-bc", "y28-zc", "y29-bc", "y29-zc"]
+    got = {v["id"]: (v["init"]["job"]["csc"]["words"] == BT601, v["init"]["job"]["csc"]["loaded_by"])
+           for v in vs}
+    for f in ("y28", "y29"):
+        assert got[f"{f}-a"] == (False, f"{f}-zc") and got[f"{f}-b"] == (True, f"{f}-b")
+        assert got[f"{f}-c"] == (True, f"{f}-b") and got[f"{f}-d"] == (True, f"{f}-bc")
+        assert got[f"{f}-e"] == (False, f"{f}-e") and got[f"{f}-f"] == (False, f"{f}-e")
+    assert all(len(v["readback"]["pixels"]) == 2048 for v in vs)
