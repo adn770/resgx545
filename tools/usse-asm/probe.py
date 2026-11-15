@@ -117,6 +117,8 @@ class Probe:
     blk_add: dict = dataclasses.field(default_factory=dict)  # tri: presence bit -> words
                                                              # added to the block (--blk-add)
     scratch_pages: int = 0      # fill: the scratch buffer's pages, 16 to 64 (--scratch-pages; 0: 16)
+    scratch_show: int = 0       # fill: the changed scratch dwords printed, 1 to 64
+                                #       (--scratch-show; 0: the tool's 32)
     scratch_heap: str = ""      # fill: "texture", the scratch buffer in the texture heap
                                 # (--scratch-heap)
     place: dict = dataclasses.field(default_factory=dict)   # fill: a USE program in the code
@@ -295,6 +297,9 @@ def _probe(d: dict, table: str) -> Probe:
         raise ProbeError(f"{d['name']}: place = {{ offset, source, form }} is a fill probe's "
                          "(its program the fill shader): an offset a multiple of 8 in the 5 MiB "
                          "code heap, source a USE program, form cbase or exe18")
+    scratch_show = d.get("scratch_show", 0)
+    if scratch_show and (d.get("host", "fill") != "fill" or not 1 <= scratch_show <= 64):
+        raise ProbeError(f"{d['name']}: scratch_show = {scratch_show} is a fill probe's, 1 to 64")
     scratch_pages = d.get("scratch_pages", 0)
     if scratch_pages and (d.get("host", "fill") != "fill" or not 16 <= scratch_pages <= 64):
         raise ProbeError(f"{d['name']}: scratch_pages = {scratch_pages} is a fill probe's, "
@@ -320,7 +325,7 @@ def _probe(d: dict, table: str) -> Probe:
               temps=d.get("temps", 32), labels=d.get("labels", []),
               coords=d.get("coords", False), pixels=d.get("pixels", False),
               table=table, pokes=pokes, case_set=case_set, raw=d, low=d.get("low", 0), place=place,
-              scratch_heap=scratch_heap, scratch_pages=scratch_pages,
+              scratch_heap=scratch_heap, scratch_pages=scratch_pages, scratch_show=scratch_show,
               late=late, **{"isa": d.get("isa", "usse"), "use": d.get("use", USE_DUMP),
                             **_tri_fields(d)})
     for i in range(len(case_set)):
@@ -631,6 +636,7 @@ def tool_args(p: Probe, use: str | None = None, src_dir: pathlib.Path | None = N
     low = ["--low", hex(p.low)] if p.low else []
     low += ["--scratch-heap", p.scratch_heap] if p.scratch_heap else []
     low += ["--scratch-pages", str(p.scratch_pages)] if p.scratch_pages else []
+    low += ["--scratch-show", str(p.scratch_show)] if p.scratch_show else []
     low += ["--late", p.late] if p.late else []
     return head + pds + low + [a for k in p.pokes for a in ("--poke", k)]
 

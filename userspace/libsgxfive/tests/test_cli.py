@@ -43,7 +43,7 @@ def test_usage_names_every_command():
                 "probe"):
         assert re.search(rf"\b{cmd}\b", usage), cmd
     for opt in ("--every-value", "--poke", "--pixels", "--regs", "--low", "--late", "--isp2",
-                "--blk-add", "--vtx-coords", "--obj2", "--pbe", "--ramp", "--print-addrs",
+                "--scratch-show", "--blk-add", "--vtx-coords", "--obj2", "--pbe", "--ramp", "--print-addrs",
                 "--page-before", "--place", "bgpixel", "N^=V", "--tri-full", "--tri-z",
                 "--depth-store", "--stencil", "--stencil-store", "--stencil-fill",
                 "--depth-store-fill", "--stencil-store-fill", "--refill"):
@@ -695,6 +695,76 @@ def test_probe_reports_a_failed_job(tmp_path):
     assert re.search(r"^probe hang: scratch unchanged$", r.stdout, re.M), r.stdout
     # The next probe runs in a context of its own.
     assert re.search(r"^probe good: o0 0x0000000a ", r.stdout, re.M), r.stdout
+
+
+GOOD = PHAS + "mov.skipinv.end o0, #0x0000000A\n"
+
+
+def scratch_lines(r):
+    return re.findall(r"^probe \S+: scratch \+0x([0-9a-f]+) 0x([0-9a-f]{8})$", r.stdout, re.M)
+
+
+def test_probe_prints_32_changed_scratch_dwords_by_default(tmp_path):
+    # --mock-dirty N (mock only) stands in for a shader that changes N scratch dwords: the
+    # default is every earlier row's 32 lines and a count of the rest
+    f = assemble(tmp_path, "g", GOOD)
+    r = run("--mock", "--mock-dirty=64", "probe", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert len(scratch_lines(r)) == 32
+    assert re.search(r"^probe g: scratch 32 more changed$", r.stdout, re.M), r.stdout
+    same = run("--mock", "--mock-dirty=64", "probe", "--scratch-show", "32", str(f))
+    assert same.stdout == r.stdout and same.returncode == 0
+
+
+@pytest.mark.parametrize("n,shown,more", [("64", 64, 0), ("40", 40, 24), ("1", 1, 63)])
+def test_probe_scratch_show_prints_n_changed_dwords(tmp_path, n, shown, more):
+    f = assemble(tmp_path, "g", GOOD)
+    r = run("--mock", "--mock-dirty=64", "probe", "--scratch-show", n, str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    lines = scratch_lines(r)
+    assert len(lines) == shown
+    assert lines[-1] == (f"{(shown - 1) * 4:03x}", f"c0de{shown - 1:04x}")
+    tail = re.search(r"^probe g: scratch (\d+) more changed$", r.stdout, re.M)
+    assert (int(tail.group(1)) if tail else 0) == more, r.stdout
+
+
+def test_probe_scratch_show_below_the_limit_prints_what_changed(tmp_path):
+    f = assemble(tmp_path, "g", GOOD)
+    r = run("--mock", "--mock-dirty=5", "probe", "--scratch-show", "64", str(f))
+    assert len(scratch_lines(r)) == 5 and "more changed" not in r.stdout
+
+
+def test_probe_scratch_show_honours_a_failed_job(tmp_path):
+    f = assemble(tmp_path, "hang", PHAS + "nop.end\n")
+    r = run("--mock", "--mock-dirty=64", "probe", "--scratch-show", "64", str(f))
+    assert r.returncode == 3, r.stdout + r.stderr
+    assert len(scratch_lines(r)) == 64 and "more changed" not in r.stdout
+    d = run("--mock", "--mock-dirty=64", "probe", str(f))
+    assert len(scratch_lines(d)) == 32 and "scratch 32 more changed" in d.stdout
+
+
+@pytest.mark.parametrize("v", ["0", "65", "-1", "x", "", "all", "32x", "0x41"])
+def test_probe_scratch_show_is_strict(tmp_path, v):
+    f = assemble(tmp_path, "g", GOOD)
+    r = run("--mock", "probe", "--scratch-show", v, str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+    assert run("--mock", "probe", "--scratch-show", "64", str(f)).returncode == 0
+    assert run("--mock", "probe", "--scratch-show", "0x40", str(f)).returncode == 0
+
+
+def test_probe_scratch_show_needs_a_value_and_refuses_tri(tmp_path):
+    f = assemble(tmp_path, "g", GOOD)
+    assert run("--mock", "probe", str(f), "--scratch-show").returncode == 1   # a file, not option
+    assert run("--mock", "probe", "--scratch-show").returncode == 2
+    r = run("--mock", "probe", "--tri", "pixel", "--scratch-show", "64", str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_mock_dirty_is_mock_only_and_bounded(tmp_path):
+    f = assemble(tmp_path, "g", GOOD)
+    assert run("--mock-dirty=4", "probe", str(f)).returncode == 2
+    assert run("--mock", "--mock-dirty=4097", "probe", str(f)).returncode == 2
+    assert run("--mock", "--mock-dirty=x", "probe", str(f)).returncode == 2
 
 
 def test_regaccess_reports_failed_jobs():

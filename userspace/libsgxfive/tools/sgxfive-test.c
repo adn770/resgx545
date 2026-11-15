@@ -175,14 +175,16 @@
  *   regaccess                     client fill shaders that read and write SGX
  *                                 registers, read temporaries they did not write
  *                                 and kick code base 15
- *   probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
+ *   probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--scratch-show N] [--pds N --use USE]
  *         [--place OFFSET=FILE --place-form cbase|exe18]
  *         [--scratch-heap texture] [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...
  *                                 each FILE (tools/usse-asm output) as the fill
  *                                 shader of its own fill, with N temporaries
  *                                 (default 32) and a 64 KiB scratch buffer (--scratch-pages N: 16
  *                                 to 256 pages); prints
- *                                 o0 and the scratch dwords the program changed;
+ *                                 o0 and the scratch dwords the program changed, the first 32
+ *                                 and a count of the rest (--scratch-show N: the first N, 1 to
+ *                                 64; not with --tri, which prints them all);
  *                                 --coords: as the copy shader of a copy whose
  *                                 source texel (x, y) is (y << 16) | x, so pa0 holds
  *                                 the pixel's coordinates; --pixels: every pixel too;
@@ -547,6 +549,7 @@ static int usage(void)
 		"                 probe [--stamp] [--temps N] [--coords] [--pixels] [--pds N --use USE]\n"
 		"                       [--place OFFSET=FILE --place-form cbase|exe18]\n"
 		"                       [--scratch-heap texture] [--scratch-pages N]\n"
+		"                       [--scratch-show N]\n"
 		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
 		"                 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W\n"
 		"                       --height H --max-width W --max-height H] [--vertices N]\n"
@@ -1446,6 +1449,8 @@ struct probe_source {
 #define PDSREF_REL	0x5CB00000u
 #define PDSREF_ABS	0x5CB10000u
 static uint32_t scratch_pages = 16;		/* probe --scratch-pages: 64 KiB by default */
+static uint32_t scratch_show = 32;		/* probe --scratch-show: changed dwords printed */
+static uint32_t mock_dirty;			/* --mock-dirty N: the mock's job changes N dwords */
 #define SCRATCH_PAGES	scratch_pages
 #define SCRATCH_FILL(i)	(0xD0000000u | (i))	/* dword i of the scratch buffer, before */
 
@@ -2091,17 +2096,19 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		       (unsigned long long)(src.pds_sec - src.pds_base));
 	if (!ret && po->late)
 		probe_late(f->name, sp, po);
+	for (uint32_t i = 0; !ret && i < mock_dirty; i++)
+		sp[i] = 0xC0DE0000u | i;	/* the mock's shader stores nothing: stand-in stores */
 	if (ret) {
 		PROBE_FAILED("probe %s: failed: %s\n", f->name, strerror(-ret));
 	} else if ((ret = probe_wait(s.x, f->name, t0))) {
 		/* faulted or hung: recovered, the job failed and the context is lost */
 		PROBE_FAILED("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
-		probe_report_failed(f->name, sp, 32);
+		probe_report_failed(f->name, sp, scratch_show);
 	} else if (pixels_all(p, 2048, SENTINEL)) {
 		/* the job completed without writing a pixel */
 		PROBE_FAILED("probe %s: failed: no pixel written\n", f->name);
 	} else {
-		probe_report(f->name, p, 64, 32, po->pixels, sp, 32);
+		probe_report(f->name, p, 64, 32, po->pixels, sp, scratch_show);
 	}
 	if (src.place_done) {
 		/* the placed words read back from their pages after the job */
@@ -4638,7 +4645,7 @@ int main(int argc, char **argv)
 	struct sgxfive_mock_config mcfg = { 0 };
 	struct mock_knobs mknobs = { 0 };
 	struct bg_knobs knobs = { 0 };
-	bool mock_knob_used = false, bgl_opt = false, mock_park = false;
+	bool mock_knob_used = false, bgl_opt = false, mock_park = false, show_given = false;
 	const char *device = NULL, *cmd;
 	char *pb_end;
 	bool use_mock = false, needs_programs, fake = false;
@@ -4673,6 +4680,14 @@ int main(int argc, char **argv)
 			if (mock_knob_parse(kv, &mknobs))
 				return usage();
 			mock_knob_used = true;
+		} else if (!strncmp(argv[i], "--mock-dirty=", 13)) {
+			char *dend;
+			unsigned long n = strtoul(argv[i] + 13, &dend, 10);
+
+			if (*dend || dend == argv[i] + 13 || argv[i][13] == '-' || n > 4096)
+				return usage();
+			mock_dirty = (uint32_t)n;
+			mock_park = true;	/* mock only, like the park */
 		} else if (!strncmp(argv[i], "--mock-park-ms=", 15)) {
 			char *park_end;
 			unsigned long ms = strtoul(argv[i] + 15, &park_end, 10);
@@ -4720,6 +4735,15 @@ int main(int argc, char **argv)
 				if (*end || v < 16 || v > 256)
 					return usage();
 				scratch_pages = (uint32_t)v;
+				continue;
+			}
+			if (!strcmp(argv[i], "--scratch-show") && i + 1 < argc) {
+				/* the changed dwords printed: 1 to 64 (a shader that dumps sa0-sa63) */
+				v = strtoul(argv[++i], &end, 0);
+				if (*end || argv[i][0] == '-' || v < 1 || v > 64)
+					return usage();
+				scratch_show = (uint32_t)v;
+				show_given = true;
 				continue;
 			}
 			if (!strcmp(argv[i], "--low") && i + 1 < argc) {
@@ -5050,6 +5074,8 @@ int main(int argc, char **argv)
 		}
 		/* --low and --late address the scratch buffer, whose size --scratch-pages sets, so
 		 * they are checked here, whatever the order of the options */
+		if (show_given && popts.tri.slot >= 0)
+			return usage();	/* the --tri path prints every changed dword */
 		if (popts.low && popts.low + SCRATCH_PAGES * SGXFIVE_PAGE_SIZE > 0x100000)
 			return usage();
 		if (popts.late && (popts.late_ready >= SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4 ||

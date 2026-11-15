@@ -508,6 +508,27 @@ def test_late_becomes_the_late_option(tmp_path):
             probe.load(t)
 
 
+def test_scratch_show_becomes_the_scratch_show_option(tmp_path):
+    """A fill probe's scratch_show (1 to 64 changed scratch dwords printed; 0: the tool's 32)
+    runs as --scratch-show N; it is a fill option only and strictly bounded."""
+    p = probe.Probe(name="x", question="q", source="pred.s", params={}, inputs=[], cases=[[]],
+                    hypotheses={}, scratch_show=64)
+    assert probe.tool_args(p) == ["--temps", "32", "--scratch-show", "64"]
+    p0 = probe.Probe(name="x", question="q", source="pred.s", params={}, inputs=[], cases=[[]],
+                     hypotheses={})
+    assert "--scratch-show" not in probe.tool_args(p0)
+    t = tmp_path / "t.toml"
+    base = '[[probe]]\nname = "p"\nquestion = "q"\nsource = "pred.s"\ncases = [[]]\n'
+    t.write_text(base + "scratch_show = 64\n")
+    (q,) = probe.load(t)
+    assert q.scratch_show == 64
+    for bad in ("scratch_show = 65\n", "scratch_show = -1\n",
+                'scratch_show = 8\nhost = "tri"\nslot = "pixel"\n'):
+        t.write_text(base + bad)
+        with pytest.raises(probe.ProbeError):
+            probe.load(t)
+
+
 def test_pokes_become_poke_options(tmp_path):
     """A fill probe's pokes (words of its transfer command) run as --poke options."""
     p = probe.Probe(name="x", question="q", source="pred.s", params={}, inputs=[], cases=[[]],
