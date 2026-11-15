@@ -288,7 +288,9 @@ flag into `p0` without writing a register and branches on it.
   and a jump across a 65536-word step of the code base were not run, the tool refusing programs of
   over 256 words: **[open]** (Q123). With programs placed across the 0x80000 step (E1098) a
   run of nops, a `ba` and a `lapc` cross index 0xffff to 0x10000 and 0x1ffff to 0x20000 and land
-  on their target word: the index is an 18-bit counter from the code base **[HW]**.
+  on their target word: the index is an 18-bit counter from the code base **[HW]**. A `lapc` and
+  a `ba` in a placed program of 8192 words land on ten words drawn at random from 256 to 8191, both
+  ends included, frozen and held out (E1102: 10 of 10) **[HW]**.
 - **Where indices count from [HW].** The index of a `ba`, `lapc` or `pclink` counts from the code
   base the task was started with (E476). A program placed at heap offset X by `sgxfive-test probe
   --place X=FILE --place-form cbase` runs with the code base X rounded down to a multiple of 0x80000
@@ -297,8 +299,11 @@ flag into `p0` without writing a register and branches on it.
   is 2 (5 placements, 2 runs each). The 0x80000 step rests on ten placements (0x10000, 0x100000,
   0x1ff000, 0x200000 and 0x400000 in E476, 0x2ff000, 0x1a0000, 0x3a8000, 0x4ff000 and 0x300008 in
   E492: links 0xfe02, 0x4002, 0x5002, 0xfe02 and 0x3), seven of them not multiples of the step, and
-  no other power of two from 0x1000 to 0x1000000 fits all ten (E492); a step that is not a power of
-  two was not excluded. A jump to an index counted from the program start, in a program placed at
+  no other power of two from 0x1000 to 0x1000000 fits all ten (E492), nor any multiple of 8 up to
+  16 MiB (E1098, post hoc). Held out at four more placements, 0x0c3010, 0x2ca7f8, 0x3d0100 and
+  0x1c8008, the read and jump programs read 0x8604, 0x9501, 0xa022 and 0x9003 as the step predicts,
+  where 0x20000, 0x40000, 0x100000 and a code base of 0 each predict another link (E1102: 8 of 8).
+  A jump to an index counted from the program start, in a program placed at
   0x10000, faulted the job (5 of 5: 3 `lapc` and 2 `ba #T`) or hung it (2 of 2, a `lapc`); that it
   went to index 129 of the code base instead is **[infer]**. A computed target independent of the
   base is the link read at run time plus a constant (`br.savelink #1; mov rN, pclink; ima32.u rM,

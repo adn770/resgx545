@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E475", "E476", "E492"]
+evidence = ["E475", "E476", "E492", "E1098", "E1102"]
 terms = ["Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -27,3 +27,8 @@ tried). The second non-aligned placement that this question asked for is answere
 it: a program of two code bases' worth of nops across a 65536-word step, built in the code heap by
 the host (not through sgxfive-test's 256-word check), with a lapc at its start to the last words,
 and the same with a straight run across the step.
+
+Narrowed 2026-11-15 by E1098 and E1102: the counter carries into bits 16 and 17 (E1098, held out
+7 of 7) and a run reaches word 8100 of an 8192-word program; the 0x80000 step holds out at four new
+placements where every other candidate step fails (E1102, 8 of 8), and a lapc and a ba land on ten
+words drawn from 256 to 8191 (E1102, 10 of 10).

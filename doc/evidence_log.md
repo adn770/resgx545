@@ -9308,6 +9308,18 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   off, T2's inside); control passed (zn-c, the same final without load bits at 0x2e: 0.5 inside T2,
   0.5 or 1.0 in T1 \ T2, 1.0 elsewhere, E1093's zl-2e-nl).
   *zls; HW; data: `render-closing-r23-dpm:out/20261115-202532/zn/`, `render-closing-r23-dpm:fold/`.*
+- `E1102` r25-q123 stages q123s and q123w (21 jobs), held out and frozen before the run: E492's read
+  and jump programs placed at four new offsets (0x0c3010, 0x2ca7f8, 0x3d0100, 0x1c8008) read the
+  links the 0x80000 code step predicts, 0x8604, 0x9501, 0xa022 and 0x9003, in read and jump alike
+  (H-STEP80000 8 of 8), and every other candidate step got all eight wrong (0x20000, 0x40000 and
+  0x100000, the powers of two fitting five or more of E476's and E492's ten links, and no step: 0 of
+  8 each); in an 8192-word program at 0x40000 a lapc to words 8191, 5712, 3958, 6608, 394 and 6365
+  and a ba to words 5072, 256, 5652 and 3595, drawn by a fixed seed from 256 to 8191, each landed on
+  its target word (H-INDEX 10 of 10; H-WRAP256, the index's low 8 bits, 0 of 10); the controls
+  (E492's 0x300008, link 0x3, and E1098's lapc to word 590) passed and every placed program read
+  back as built.
+  *usse; HW; data: `render-closing-r25-q123:out/20261115-213956/q123s/`,
+  `render-closing-r25-q123:out/20261115-213956/q123w/`, `render-closing-r25-q123:fold/`.*
 
 ## By unit
 
@@ -9419,7 +9431,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062, E1098.
+E1061, E1062, E1098, E1102.
 
 ### vdm
 
