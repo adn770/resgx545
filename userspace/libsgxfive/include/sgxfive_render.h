@@ -67,6 +67,13 @@ struct sgxfive_tri_params {
 	 */
 	bool fb_fill_set;
 	uint32_t fb_fill;
+	/*
+	 * with fb_keep: the colour buffer, target and guard page, is left as the engine's last
+	 * job left it (no sentinel, no fb_fill) when the job is kicked, for a program that reads
+	 * the target back (Q038's reload, tri --keep-target). Not with fb_fill_set, and only on
+	 * an engine whose buffer already holds the target (-EINVAL).
+	 */
+	bool fb_keep;
 };
 
 /*
@@ -209,7 +216,7 @@ void sgxfive_render_destroy(struct sgxfive_render *r);
 
 /*
  * Build the scene, fill the target's pixels (fb_fill with fb_fill_set) and the
- * colour buffer after them with the sentinel, submit (waiting for syncobj wait, signalling signal, if
+ * colour buffer after them with the sentinel (neither with fb_keep), submit (waiting for syncobj wait, signalling signal, if
  * not 0). The previous job must be finished (sgxfive_render_wait).
  */
 int sgxfive_render_tri(struct sgxfive_render *r, const struct sgxfive_tri_params *p,
@@ -252,5 +259,16 @@ unsigned int sgxfive_render_poke_views(struct sgxfive_render *r,
  * fails the render unsubmitted. fn NULL: none.
  */
 void sgxfive_render_set_hook(struct sgxfive_render *r, sgxfive_job_hook fn, void *priv);
+/*
+ * Call fn(priv, c, l, p, cmd) on every later render once its scene is built, with the
+ * engine's CPU view of its pages, its layout, the render's params and its command, before
+ * the poke hook: the caller may change the scene (sgxfive_tri_probe_apply puts a probe's
+ * programs in). Its error fails the render unsubmitted. fn NULL: none.
+ */
+typedef int (*sgxfive_scene_hook)(void *priv, const struct sgxfive_tri_cpu *c,
+				  const struct sgxfive_tri_layout *l,
+				  const struct sgxfive_tri_params *p,
+				  struct drm_sgxfive_render_cmd *cmd);
+void sgxfive_render_set_scene_hook(struct sgxfive_render *r, sgxfive_scene_hook fn, void *priv);
 
 #endif

@@ -17,6 +17,7 @@
 
 #include "sgxfive_mock.h"
 #include "sgxfive_render.h"
+#include "sgxfive_tri_probe.h"
 #include "sgxfive_xfer.h"
 #include "tap.h"
 
@@ -710,6 +711,152 @@ static void fb_fill(void)
 	env_fini(&e);
 }
 
+/*
+ * fb_keep: the colour buffer is left as the engine's last job left it (no sentinel, no
+ * fb_fill) for a reload in the next render (Q038, tri --keep-target). Refused (-EINVAL,
+ * nothing submitted) with fb_fill_set, and with no buffer of the target's size to keep (the
+ * engine's first render, or a larger target). A geometry job draws nothing on the mock, so
+ * what the host or the last job put there survives it.
+ */
+static void fb_keep(void)
+{
+	struct sgxfive_tri_counts n;
+	struct sgxfive_tri_params p;
+	uint32_t *fb;
+	uint32_t other = 0;
+	struct env e;
+
+	env_init(&e);
+	sgxfive_tri_default(&p, 33, 17);
+	p.fb_keep = true;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), -EINVAL);	/* nothing to keep yet */
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	p.fb_keep = false;
+	p.fb_fill_set = true;
+	p.fb_fill = 0x12345678;
+	CHECK_EQ(sgxfive_render_tri_flags(e.r, &p, 0, 0, DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	fb = (uint32_t *)sgxfive_render_fb(e.r);
+	fb[5] = 0xabcdef01;		/* a word the host changed after the job */
+	p.fb_keep = true;
+	CHECK_EQ(sgxfive_render_tri_flags(e.r, &p, 0, 0, DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY),
+		 -EINVAL);		/* fb_keep and fb_fill_set */
+	p.fb_fill_set = false;
+	CHECK_EQ(sgxfive_render_tri_flags(e.r, &p, 0, 0, DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(fb[5], 0xabcdef01);
+	for (uint32_t i = 0; i < sgxfive_tri_stride_px(33) * 17; i++)
+		other += i != 5 && fb[i] != 0x12345678;
+	CHECK_EQ(other, 0);
+	CHECK_EQ(sgxfive_render_guard_dirty(e.r, &p), 0);
+	/* a larger target has no buffer of its size to keep */
+	sgxfive_tri_default(&p, 1024, 768);
+	p.fb_keep = true;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), -EINVAL);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(fb[5], 0xabcdef01);
+	/* a kept render that draws: the mock draws every pixel of the window as ever */
+	sgxfive_tri_default(&p, 33, 17);
+	p.fb_keep = true;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+	CHECK_EQ(sgxfive_render_guard_dirty(e.r, &p), 0);
+	env_fini(&e);
+}
+
+/*
+ * The scene hook: called on every render once its scene is built, with the engine's CPU
+ * view, layout, params and command, before the poke hook; its error fails the render
+ * unsubmitted. With sgxfive_tri_probe_apply it puts a probe's programs into the engine's
+ * scene (tri --bg-pds/--bg-pixel): a background pixel shader that is a limm fill of
+ * 0xff102030 paints the background so on the mock.
+ */
+struct scene_rec {
+	int calls, order, ret;
+	uint32_t fb, width;
+	struct sgxfive_tri_probe *pr;
+};
+
+static int scene_rec_hook(void *priv, const struct sgxfive_tri_cpu *c,
+			  const struct sgxfive_tri_layout *l, const struct sgxfive_tri_params *p,
+			  struct drm_sgxfive_render_cmd *cmd)
+{
+	struct scene_rec *s = priv;
+
+	s->calls++;
+	s->order = s->order ? s->order : 1;
+	s->fb = l->fb;
+	s->width = p->width;
+	if (s->ret)
+		return s->ret;
+	return s->pr ? sgxfive_tri_probe_apply(c, l, p, s->pr, cmd) : 0;
+}
+
+static int poke_rec_hook(void *priv, const struct sgxfive_poke_view *v, unsigned int n)
+{
+	struct scene_rec *s = priv;
+
+	s->order = s->order ? s->order : 2;
+	return 0;
+}
+
+static void scene_hook(void)
+{
+	struct sgxfive_tri_probe pr = { 0 };
+	struct scene_rec s = { 0 };
+	struct sgxfive_tri_layout l;
+	struct sgxfive_tri_params p;
+	struct sgxfive_tri_counts n;
+	const uint32_t *usep;
+	uint64_t w[2];
+	uint32_t bg = 0, tri = 0;
+	struct env e;
+
+	env_init(&e);
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_render_set_scene_hook(e.r, scene_rec_hook, &s);
+	sgxfive_render_set_hook(e.r, poke_rec_hook, &s);
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	sgxfive_render_get_layout(e.r, &l);
+	CHECK_EQ(s.calls, 1);
+	CHECK_EQ(s.order, 1);			/* before the poke hook */
+	CHECK_EQ(s.fb, l.fb);
+	CHECK_EQ(s.width, 64);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+	/* an error: the render is not submitted */
+	s.ret = -E2BIG;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), -E2BIG);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(s.calls, 2);
+	/* a background pixel shader of the probe's: the background fill's words, 0xff102030 */
+	usep = sgxfive_render_page(e.r, DRM_SGXFIVE_HEAP_USSE_PIXEL);
+	w[0] = usep[SGXFIVE_TRI_UP_BGFILL / 4] | (uint64_t)usep[SGXFIVE_TRI_UP_BGFILL / 4 + 1] << 32;
+	w[1] = usep[SGXFIVE_TRI_UP_BGFILL / 4 + 2] |
+	       (uint64_t)usep[SGXFIVE_TRI_UP_BGFILL / 4 + 3] << 32;
+	w[1] = sgxfive_limm_set(w[1], 0xff102030);
+	pr.slot[SGXFIVE_TRI_SLOT_BGPIXEL] = (struct sgxfive_tri_prog){ w, 2, 0, 32 };
+	s.ret = 0;
+	s.pr = &pr;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(s.calls, 3);
+	for (uint32_t i = 0; i < 64 * 64; i++) {
+		bg += sgxfive_render_fb(e.r)[i] == 0xff102030;
+		tri += sgxfive_render_fb(e.r)[i] == p.colour;
+	}
+	CHECK(tri > 0);
+	CHECK_EQ(bg + tri, 64 * 64);
+	/* NULL: no hook */
+	sgxfive_render_set_scene_hook(e.r, NULL, NULL);
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(s.calls, 3);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+	env_fini(&e);
+}
+
 static long long file_size(const char *path)
 {
 	struct stat st;
@@ -809,6 +956,8 @@ int main(void)
 	transfers();
 	bg_layer();
 	fb_fill();
+	fb_keep();
+	scene_hook();
 	kept_park();
 	return tap_done();
 }

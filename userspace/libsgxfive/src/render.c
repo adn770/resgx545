@@ -582,6 +582,8 @@ struct sgxfive_render {
 	struct drm_sgxfive_render_cmd cmd __attribute__((aligned(8)));	/* cmd_stream: 8-aligned */
 	sgxfive_job_hook hook;		/* run on every job before submission */
 	void *hook_priv;
+	sgxfive_scene_hook scene_hook;	/* ... and before it, on the built scene */
+	void *scene_priv;
 };
 
 /* ---- Pokes ------------------------------------------------------------------------- */
@@ -635,6 +637,12 @@ void sgxfive_render_set_hook(struct sgxfive_render *r, sgxfive_job_hook fn, void
 {
 	r->hook = fn;
 	r->hook_priv = priv;
+}
+
+void sgxfive_render_set_scene_hook(struct sgxfive_render *r, sgxfive_scene_hook fn, void *priv)
+{
+	r->scene_hook = fn;
+	r->scene_priv = priv;
 }
 
 const void *sgxfive_render_page(const struct sgxfive_render *r, uint32_t heap)
@@ -779,9 +787,14 @@ int sgxfive_render_tri_flags(struct sgxfive_render *r, const struct sgxfive_tri_
 	if (!p->width || !p->height || p->width > SGXFIVE_TRI_MAX_W ||
 	    p->height > SGXFIVE_TRI_MAX_H)
 		return -EINVAL;
+	/* a kept buffer: one that already holds the target, and no fill over it */
+	if (p->fb_keep && (p->fb_fill_set || fb_size(p->width, p->height) > r->fb_size))
+		return -EINVAL;
 	ret = fb_reserve(r, p->width, p->height);
 	if (!ret)
 		ret = sgxfive_tri_scene(&c, &r->layout, p, &r->cmd);
+	if (!ret && r->scene_hook)
+		ret = r->scene_hook(r->scene_priv, &c, &r->layout, p, &r->cmd);
 	if (!ret && r->hook) {
 		struct sgxfive_poke_view v[SGXFIVE_POKE_VIEWS_MAX];
 
@@ -789,7 +802,7 @@ int sgxfive_render_tri_flags(struct sgxfive_render *r, const struct sgxfive_tri_
 	}
 	if (ret)
 		return ret;
-	for (uint64_t i = 0; i < fb_size(p->width, p->height) / 4; i++)
+	for (uint64_t i = 0; !p->fb_keep && i < fb_size(p->width, p->height) / 4; i++)
 		r->fb[i] = p->fb_fill_set && i < (uint64_t)sgxfive_tri_stride_px(p->width) * p->height ?
 			   p->fb_fill : SGXFIVE_TRI_SENTINEL;
 	if (signal)
