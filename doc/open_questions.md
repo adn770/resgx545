@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-140 open: 130 hw (high 15, medium 64, low 51, unrated 0), 9 fw, 1 kernel.
+139 open: 129 hw (high 15, medium 63, low 51, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -149,7 +149,6 @@
 - `Q055` (phase 11, hw, medium): what do idf's modes other than bif, lock and release, setm and the cache-control operands do? (E088, E098, E099, E103, E107, E110, E117, E375)
 - `Q080` (phase 11, hw, low): what do the USSE words no form decodes (classes 2, 22 and 26) do: which stop the stores after them, and which write registers? (E297, E368)
 - `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380, E484, E496, E748, E820)
-- `Q123` (phase 11, hw, medium): does lapc reach instruction indices past the first 65536 words of a code base and the 18th bit of the program counter, and every index from 256 to 8191 in a fill? (E475, E476, E492)
 - `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484, E500)
 - `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read (no test tells it, E498), and what value does iaddu32 write into sa0 for one instance (the fill's instances share sa0: E1061's sa0 row read other pairs' values, post hoc) (E472, E498, E521, E1061)
 - `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result, and (folded from Q135) what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates and constants other than c56, with cie on the same instruction, with .neg, in the dual-issue form and with the selector 3, and what does bit 46 of an ima32 word do to r14? (E469, E470, E471, E493, E494, E495, E496, E501, E525, E526, E527, E528, E595, E597)

@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-140 open: 130 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+139 open: 129 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -142,8 +142,6 @@ list.
   cache-control operands do? (E110, E117, E375)
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
-- `Q123` usse, medium: does lapc reach instruction indices past the first 65536 words of a code base
-  and the 18th bit of the program counter, and every index from ... (E475, E476, E492)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
   the s0, s1 and s2 operands of the started PDS program become ... (E488, E513, E520)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
@@ -295,12 +293,15 @@ list.
 
 ## Recent records
 
-67 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+68 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1103` texture, 2026-11-15: r25-csc stage csc (16 jobs): a fill's transfer command loads
   colour-space set 0 when its load flag is set (xfer:17 bit 0, the set's words xfer:18 to 22), and a
   fill without the flag keeps the set the ...
+- `E1102` usse, 2026-11-15: r25-q123 stages q123s and q123w (21 jobs), held out and frozen before
+  the run: E492's read and jump programs placed at four new offsets (0x0c3010, 0x2ca7f8, 0x3d0100,
+  0x1c8008) read the links the ...
 - `E1101` zls, 2026-11-15: r23-dpm stage zn (Q088, 5 jobs): after a geometry kick that overflowed
   without a raised abort (P 0x2e, 0x30, 0x32, 0x34), a moved final with the load bits (0x0017510e)
   and the host's 0.75 refill of ...
@@ -502,9 +503,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-84 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+85 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r25-q123`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t22
 - `render/closing-r25-csc`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t22
 - `render/closing-r23-pk`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -628,7 +631,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 12 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 13 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions

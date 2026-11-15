@@ -425,7 +425,8 @@ pub struct Machine {
     pub vertex_task: bool,
     /// The instruction index of the program's first word inside its code base, for a program
     /// placed in the code heap: the code base is the placement rounded down to 0x80000 bytes, so
-    /// this is (offset mod 0x80000) / 8 (E476, E492: 10 of 10 placements fit; [infer] as a rule).
+    /// this is (offset mod 0x80000) / 8 (E476, E492: 10 of 10 placements fit; E1102: held out at
+    /// four more, where 0x20000, 0x40000, 0x100000 and no step all fail).
     /// pclink and the absolute `ba` count from the code base, `br` from the instruction.
     pub code_index: u32,
     /// Whether the task is one of the firmware's EDM tasks (Sgx::run_task) and not a fill's: its
@@ -8840,6 +8841,88 @@ mod after_11_27 {
             let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
             let ran = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 20000);
             assert_eq!((ran, m.o[0]), (Ok(()), 0xB000_0000 | t as u32), "{kind} at {idx0:#x}");
+        }
+    }
+
+    #[test]
+    fn a_placed_program_holds_the_step_and_lands_on_drawn_indices() {
+        // E1102 (r25-q123 q123s, q123w), held out: E492's read and jump programs (pads to 32
+        // words) at four new placements read the link (X mod 0x80000) / 8 + 2, and a lapc or ba
+        // in an 8192-word program at 0x40000 (index 0x8000) lands on each of ten drawn words
+        let pad = |k: usize| format!("mov.skipinv.end o0, #0x{:08X}", 0xB000_0000u32 | k as u32);
+        let placed = |code: &[&str], n: usize| -> Vec<u64> {
+            let mut t: Vec<String> = code.iter().map(|w| w.to_string()).collect();
+            let k0 = t.len();
+            t.extend((k0..n).map(pad));
+            t.iter().map(|w| usse_isa::encode(w, Core::Sgx545).unwrap()).collect()
+        };
+        let read = [
+            "phas #0, #0, pixel, end, parallel",
+            "br.savelink #1",
+            "mov r10, pclink",
+            "mov.skipinv.end o0, r10",
+        ];
+        let jump = [
+            "phas #0, #0, pixel, end, parallel",
+            "br.savelink #1",
+            "mov r10, pclink",
+            "mov r6, #8",
+            "ima32.u r5, r10, #1, r6",
+            "mov pclink, r5",
+            "nop",
+            "lapc",
+            "mov.skipinv.end o0, #0xFA11",
+            "nop",
+            "mov.skipinv.end o0, r10",
+        ];
+        for (off, link) in [
+            (0x300008u32, 0x3u32),
+            (0x0c3010, 0x8604),
+            (0x2ca7f8, 0x9501),
+            (0x3d0100, 0xa022),
+            (0x1c8008, 0x9003),
+        ] {
+            for prog in [&read[..], &jump[..]] {
+                let words = placed(prog, 32);
+                let mut m = Machine { code_index: off % 0x80000 / 8, ..Machine::default() };
+                let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+                let ran = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+                assert_eq!((ran, m.o[0]), (Ok(()), link), "{} words at {off:#x}", prog.len());
+            }
+        }
+        let idx0 = 0x8000u32;
+        for (kind, t) in [
+            ("lapc", 8191usize),
+            ("lapc", 5712),
+            ("lapc", 3958),
+            ("lapc", 6608),
+            ("lapc", 394),
+            ("lapc", 6365),
+            ("ba", 5072),
+            ("ba", 256),
+            ("ba", 5652),
+            ("ba", 3595),
+        ] {
+            let tgt = idx0 + t as u32;
+            let (a, b) = (format!("mov.skipinv r5, #0x{tgt:05X}"), format!("ba #0x{tgt:05X}"));
+            let code: Vec<&str> = if kind == "lapc" {
+                vec![
+                    "phas #0, #0, pixel, end, parallel",
+                    "nop",
+                    &a,
+                    "mov pclink, r5",
+                    "nop",
+                    "lapc",
+                    "mov.skipinv.end o0, #0xFA11",
+                ]
+            } else {
+                vec!["phas #0, #0, pixel, end, parallel", &b, "mov.skipinv.end o0, #0xFA11"]
+            };
+            let words = placed(&code, 8192);
+            let mut m = Machine { code_index: idx0, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+            let ran = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+            assert_eq!((ran, m.o[0]), (Ok(()), 0xB000_0000 | t as u32), "{kind} to word {t}");
         }
     }
 }

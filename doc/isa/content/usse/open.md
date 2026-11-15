@@ -51,10 +51,9 @@ open driver:
    and `idiv`'s enc[47] is its repeat count's high bit (E367). Words of classes 2, 22 and 26
    that no form decodes end the program when enc[50] is set (E368); what the others do to
    registers is open (Q080).
-9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
-   and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
-   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task after a perturbation
-   or a cold boot (Q158; at the next entry they are what the task left, E809, E810); what leaves
+9. **Calls, the program counter, the integer forms and the tests**: `p0`-`p3` and `pclink` at the
+   start of a firmware task after a perturbation or a cold boot (Q158; at the next entry they are
+   what the task left, E809, E810); what leaves
    0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
    of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
    a source 1 above 0x7fff, which no test tells, and the value it writes into `sa0`, which the

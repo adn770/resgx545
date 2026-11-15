@@ -437,7 +437,8 @@ run, which count from the code base the task started with (E476); no branch chan
 and `pclink` are not reset between jobs (E475, E477). Planned cases that the tool refuses, programs
 of over 256 words, were dropped (12), and the failed first runs of the placed tables are kept in the
 data (`usse-place`, `usse-place-ctl`; the manifest of the first was written by hand with the
-runner's digest function). Records E469-E477; Q052 is narrowed, none retired; Q123, Q125 to Q127 and
+runner's digest function). Records E469-E477; Q052 is narrowed, none retired; the lapc index
+question (answered by E1098 and E1102 since), Q125 to Q127 and
 one for the firmware (`fw`, the state between EDM tasks, answered later by E809) are new.
 
 Sub-phase 11.24 ran 14 probe tables on the laptop (355 cases, one campaign run each) and repeated
@@ -494,8 +495,9 @@ join was not run: E499). Four runs of the `pclink` readers show 64 pixels of 0xe
 and quads that repeat in part (E500). The records state the pairs and values that ran and count
 programs and jobs apart where one program ran twice. E469 to E473, E475 and E476 are carried forward
 with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
-Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q136, the ima32 high-word question
-(folded into Q127 since) and the test-field question (answered since by E1062) are new.
+Q098, the lapc index question (answered by E1098 and E1102 since), Q125, Q126 and Q127 are narrowed,
+none retired; Q136, the ima32 high-word question (folded into Q127 since) and the test-field
+question (answered since by E1062) are new.
 
 Sub-phase 11.26 ran seven script tables on the laptop (the identity maps of multisampling, the TA
 output under the TE anti-aliasing bits, the macrotile words at six sizes, the 4x render of our stack
