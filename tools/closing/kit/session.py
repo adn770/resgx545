@@ -883,23 +883,28 @@ def libmock_build(kp, c, t):
 MOCK_LIMM_MASK, MOCK_LIMM_MOV = 0xff << 56 | 3 << 52, 0xfc << 56 | 1 << 53
 MOCK_COPY = 0x28851001 << 32 | 0xa0000000
 UNKNOWN_END = re.compile(r"probe (\S+): failed: job faulted, context lost \(Input/output error\)")
-# probe forms whose program is not the fill's or copy's own (a triangle, a slot, a PDS, a place)
-NOT_A_FILL_PROBE = ("--tri", "--slot", "--pds", "--use", "--place", "--place-form")
+# probe forms whose program is not the fill's or copy's own (a triangle, a slot, a PDS)
+NOT_A_FILL_PROBE = ("--tri", "--slot", "--pds", "--use")
 
 
 def _not_simulated(argv, r, cwd):
     """Whether a replay ended as the library mock's unknown program: a `probe` fill or copy (no
-    --tri, --slot, --pds, --use, --place) of program files the mock would not run (qword 1 not its
-    copy instruction with --coords, not a limm mov without), ending rc 3 with no other failure
-    than `probe NAME: failed: job faulted, context lost (Input/output error)`, each after NAME's
-    scratch line (the argv accepted, the job submitted) and NAME one of the program files."""
+    --tri, --slot, --pds, --use) of program files the mock would not run (qword 1 not its copy
+    instruction with --coords, not a limm mov without), ending rc 3 with no other failure than
+    `probe NAME: failed: job faulted, context lost (Input/output error)`, each after NAME's
+    scratch line (the argv accepted, the job submitted) and NAME one of the program files. With
+    `--place OFFSET=FILE` the program the mock runs is FILE, started in place of the fill shader
+    (of any length: P1's --place takes up to 8192 words, its place and read-back lines are not
+    failures); NAME is still a positional program file's."""
     if not argv or argv[0] != "probe" or any(a.split("=")[0] in NOT_A_FILL_PROBE for a in argv):
         return False
     progs = [p for p in (pathlib.Path(cwd) / a for a in argv[1:] if not a.startswith("-"))
              if p.is_file()]
-    if not progs or r.returncode != 3:
+    placed = [pathlib.Path(cwd) / argv[i + 1].partition("=")[2]
+              for i, a in enumerate(argv[:-1]) if a == "--place"]
+    if not progs or r.returncode != 3 or not all(p.is_file() for p in placed):
         return False
-    for p in progs:
+    for p in placed or progs:
         b = p.read_bytes()
         q1 = int.from_bytes(b[8:16], "little") if len(b) >= 16 else None
         if q1 is None or (q1 == MOCK_COPY if "--coords" in argv

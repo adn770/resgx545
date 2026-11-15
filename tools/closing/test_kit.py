@@ -970,6 +970,74 @@ def test_the_replay_runs_a_probe_of_our_program_as_not_simulated_and_stays_stric
             and word in bad[0] and "not simulated" not in m.stdout, (row, bad, m.stdout)
 
 
+PLACE_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+[ "$1" = probe ] || { echo "job: ok"; echo "diff: 0 of 2048 pixels"; exit 0; }
+place=; prev=; q=
+for a; do [ "$prev" = --place ] && place=${a#*=}; prev=$a; last=$a; done
+n=$(basename "$last" .bin)
+case "$*" in *--usage*) echo "usage: sgxfive-test probe: --usage" >&2; exit 2 ;; esac
+echo "programs asm"
+if [ -n "$place" ]; then
+	q=$(od -An -v -t x8 -j 8 -N 8 "$place" | tr -d ' ')
+	echo "probe $n: program placed at 0x3707fe00..0x370810c0 (3 pages), crosses code step 0x80000 at word 64"
+	echo "probe $n: program placed at 0x3707fe00 (code heap base + 0x7fe00), started as EXE and CBASE: DOUTU bits 21:0 0x0ffc00"
+fi
+echo "probe $n: scratch at 0x3e003000 (64 KiB)"
+case "$*" in *--hung*)
+	echo "probe $n: failed: job hung, context lost (Timer expired)"
+	exit 3 ;;
+esac
+case "$q" in fc[26ae]*)
+	echo "probe $n: o0 0x00001234 (2048 of 2048)"
+	echo "probe $n: placed words read back: 600 of 600 as built, hash 0xfe5a956d5e27d72e"
+	exit 0 ;;
+esac
+echo "probe $n: failed: job faulted, context lost (Input/output error)"
+echo "probe $n: scratch unchanged"
+[ -n "$place" ] && echo "probe $n: placed words read back: 600 of 600 as built, hash 0x0a53a52fcf43f0a1"
+exit 3
+"""
+
+
+def test_the_replay_runs_a_placed_program_of_ours_as_not_simulated(repos):
+    """r23-pk's q123 rows: `probe --place OFFSET=FILE --place-form F BASE`, FILE a program of
+    ours of more than 256 words (P1's --place takes up to 8192, across pages and code steps).
+    The library mock starts the placed program in place of the fill shader, so it is FILE, not
+    BASE, that the mock runs or not: a FILE the mock would not run (qword 1 not a limm mov) ends
+    as its unknown program after the place lines and the scratch line, and is "program not
+    simulated", the read-back line after the fault included; a FILE it runs ends ok. A usage
+    refusal, another failure, or the fault of a FILE the mock would run still fail."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=PLACE_SRC)
+    program_bins(kp)
+    (kp / "bins" / "long.bin").write_bytes((0x5).to_bytes(8, "little") +
+                                           (0x1).to_bytes(8, "little") * 599)
+    (kp / "bins" / "longmov.bin").write_bytes((0x5).to_bytes(8, "little") +
+                                              LIMM_MOV_Q.to_bytes(8, "little") * 599)
+    base = (kp / "tables/s0.txt").read_text()
+    pl = 'probe --place 0x7fe00="$S/bins/{}.bin" --place-form cbase {}"$S/bins/{}.bin"'
+    ok_rows = (f'p1|fit|safe|-|t4|{pl.format("long", "", "own")}\n'
+               f'p2|fit|safe|-|t4|{pl.format("long", "--temps 32 ", "own0")}\n'
+               f'p3|fit|safe|-|t4|{pl.format("longmov", "", "own")}\n')
+    m, bad = replay_findings(repos, kp, base, ok_rows)
+    assert not bad, (bad, m.stdout)
+    assert re.search(r"^ok +libmock: 5 rows of t4 replayed on \S+, none refused; 2 of them "
+                     r"program not simulated", m.stdout, re.M), m.stdout
+    assert re.search(r"^note libmock: program not simulated .*: tables/s0.txt p1, "
+                     r"tables/s0.txt p2$", m.stdout, re.M), m.stdout
+    for row, word in [
+            ('x1|fit|safe|-|t4|' + pl.format("long", "--usage ", "own"), "usage"),
+            ('x1|fit|safe|-|t4|' + pl.format("long", "--hung ", "own"), "status 3"),
+            ('x1|fit|safe|-|t4|' + pl.format("longmov", "--hung ", "own"), "status 3"),
+            ('x1|fit|safe|-|t4|probe --tri pixel --place 0x7fe00="$S/bins/long.bin" '
+             '--place-form cbase "$S/bins/own.bin"', "status 3")]:
+        m, bad = replay_findings(repos, kp, base, row + "\n")
+        assert m.returncode != 0 and len(bad) == 1 and "tables/s0.txt x1" in bad[0] \
+            and word in bad[0] and "not simulated" not in m.stdout, (row, bad, m.stdout)
+
+
 def test_a_library_mock_without_mock_knob_replays_as_before(repos):
     kp = knob_session(repos, FAKE_SRC)
     t = kp / "tables/s0.txt"
