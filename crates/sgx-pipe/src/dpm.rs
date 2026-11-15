@@ -177,7 +177,9 @@ pub enum Ending4x {
     /// The scene overflows the parameter buffer: -ENOSPC with no BIF fault, as at 1x (E866).
     Enospc,
     /// The job faults on the 3D side at the request base (`BIF_INT_STAT` 0x90100, `BIF_FAULT`
-    /// 0x10000011), no pixel right below 4096 wide (E845, E868).
+    /// 0x10000011), no pixel right below 4096 wide (E845, E868). Under poked macrotile words short
+    /// of the target (`poked_4x_ending`) the fault is of the same class (BIF requestor 256, word
+    /// 0x10000011) and the covered tiles were read drawn (E886, post hoc).
     Fault,
 }
 
@@ -267,6 +269,39 @@ pub fn four_array_4x_ending_on(w: u32, h: u32, mw: u32, mh: u32, p: u32, room: T
     } else {
         None
     }
+}
+
+/// How the job ends with poked `CR_TE_MTILE1`, `CR_TE_MTILE2` and `CR_TE_MACROTILE_STRIDE` words
+/// (`--kpoke-render 1:ta:143/144/146`) over the kernel's, by H-COV: where the unpoked job completes
+/// (`four_array_4x_ending_on`), it completes iff the grid the words describe covers the target's
+/// 1x tile grid on both axes (`ta::macrotile_cover`, B3 + B1 tiles per axis), else it faults on
+/// the 3D side (E886: 9 of 9 held out on the rgn4 module; E908: 4 of 4 rows short on one axis
+/// only, H-X, H-Y and H-AREA refuted, on the r6-kernel module; 13 of 13). `None` outside what ran:
+/// a context made for another size than the target, a P other than 0x422, a stride other than the
+/// words' own B1 x B1 (every row's), or a cell whose unpoked job does not complete.
+#[allow(clippy::too_many_arguments)]
+pub fn poked_4x_ending(
+    w: u32,
+    h: u32,
+    mw: u32,
+    mh: u32,
+    p: u32,
+    room: TailRoom,
+    mtile1: u32,
+    mtile2: u32,
+    stride: u32,
+) -> Option<Ending4x> {
+    if (w, h) != (mw, mh) || p != PB_PAGES_DEFAULT {
+        return None;
+    }
+    if (mtile1 >> 22 & 0xff) * (mtile2 >> 22 & 0x1ff) != stride {
+        return None;
+    }
+    if four_array_4x_ending_on(w, h, mw, mh, p, room)? != Ending4x::Complete {
+        return None;
+    }
+    let (cx, cy) = crate::ta::macrotile_cover(mtile1, mtile2);
+    Some(if w.div_ceil(32) <= cx && h.div_ceil(16) <= cy { Ending4x::Complete } else { Ending4x::Fault })
 }
 
 /// The tool's default triangle moved by (dx, dy) pixels (`tri -n 1 --move 1:DX,DY`).
@@ -1006,6 +1041,63 @@ mod tests {
                 "{w}x{h} at {room:#x}"
             );
         }
+    }
+
+    #[test]
+    fn poked_4x_macrotile_words_complete_iff_their_grid_covers_the_target_h_cov_e886_e908() {
+        use Ending4x::*;
+        // (target, CR_TE_MTILE1, CR_TE_MTILE2 (None: the rule's), stride, room, ending)
+        let (u2, fx, hs) = (0x0180_6006, 0x0080_2002, 0x0100_4004);
+        let rows = [
+            // E886 (rgn4 module): U2 and U2Q cover, FX and HS fall short on both axes
+            ((320, 160), u2, Some(u2), 0x24, TailRoom::Rgn4, Complete),
+            ((384, 192), u2, Some(u2), 0x24, TailRoom::Rgn4, Complete),
+            ((448, 224), 0x8100_800c, Some(0x0100_800c), 0x10, TailRoom::Rgn4, Complete),
+            ((512, 256), 0x8100_800c, Some(0x0100_800c), 0x10, TailRoom::Rgn4, Complete),
+            ((512, 384), 0x8100_800c, Some(0x0180_c012), 0x18, TailRoom::Rgn4, Complete),
+            ((640, 480), 0x8180_c012, None, 0x30, TailRoom::Rgn4, Complete),
+            ((320, 160), fx, Some(fx), 0x4, TailRoom::Rgn4, Fault),
+            ((320, 160), hs, Some(hs), 0x10, TailRoom::Rgn4, Fault),
+            ((384, 192), hs, Some(hs), 0x10, TailRoom::Rgn4, Fault),
+            // E908 (r6-kernel module): U2's 12 x 12 grid one tile short on one axis faults
+            ((320, 160), u2, Some(u2), 0x24, TailRoom::Quad, Complete),
+            ((320, 160), fx, Some(fx), 0x4, TailRoom::Quad, Fault),
+            ((448, 160), u2, Some(u2), 0x24, TailRoom::Quad, Fault),
+            ((320, 224), u2, Some(u2), 0x24, TailRoom::Quad, Fault),
+            ((416, 192), u2, Some(u2), 0x24, TailRoom::Quad, Fault),
+            ((384, 208), u2, Some(u2), 0x24, TailRoom::Quad, Fault),
+        ];
+        for ((w, h), m1, m2, stride, room, end) in rows {
+            let m2 = m2.unwrap_or(crate::ta::tiling(w, h).mtile2);
+            assert_eq!(
+                poked_4x_ending(w, h, w, h, PB_PAGES_DEFAULT, room, m1, m2, stride),
+                Some(end),
+                "{w}x{h} {m1:#x} {m2:#x}"
+            );
+        }
+        // the rule's own words are the unpoked ending (E886's and E908's R controls)
+        for (w, h) in [(1024, 768), (448, 160), (320, 224), (416, 192), (384, 208)] {
+            let t = crate::ta::tiling(w, h);
+            assert_eq!(
+                poked_4x_ending(w, h, w, h, PB_PAGES_DEFAULT, TailRoom::Quad, t.mtile1, t.mtile2, t.stride),
+                Some(Complete),
+                "{w}x{h}"
+            );
+        }
+    }
+
+    #[test]
+    fn poked_4x_words_outside_what_h_cov_measured_are_refused() {
+        let u2 = 0x0180_6006;
+        // a stride other than B1 x B1 (every row ran its words' own), a context larger than the
+        // target, another P, and a cell whose unpoked ending is not a completion
+        assert_eq!(poked_4x_ending(320, 160, 320, 160, PB_PAGES_DEFAULT, TailRoom::Rgn4, u2, u2, 0x10), None);
+        assert_eq!(poked_4x_ending(320, 160, 640, 480, PB_PAGES_DEFAULT, TailRoom::Rgn4, u2, u2, 0x24), None);
+        assert_eq!(poked_4x_ending(320, 160, 320, 160, 0x100, TailRoom::Rgn4, u2, u2, 0x24), None);
+        assert_eq!(
+            poked_4x_ending(1280, 1024, 1280, 1024, PB_PAGES_DEFAULT, TailRoom::Set(0x4000), u2, u2, 0x24),
+            None
+        );
     }
 
     #[test]

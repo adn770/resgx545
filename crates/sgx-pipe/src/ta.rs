@@ -785,6 +785,140 @@ fn slots(t: &Tiling, mtile1: u32, mtile2: u32, stride: u32) -> (BTreeMap<(u32, u
     (out, flag)
 }
 
+/// The tiles (across, down) a pair of macrotile words covers: the last bound plus one more
+/// macrotile of the first's size, B3 + B1 per axis (H-COV's extent, E886; `CR_TE_MTILE1`'s fields
+/// 29:22 and 7:0, `CR_TE_MTILE2`'s 30:22 and 8:0).
+pub fn macrotile_cover(mtile1: u32, mtile2: u32) -> (u32, u32) {
+    ((mtile1 >> 22 & 0xff) + (mtile1 & 0xff), (mtile2 >> 22 & 0x1ff) + (mtile2 & 0x1ff))
+}
+
+/// The region-header arrays the TA writes for a `CR_TE_AA` word, each the size of the target's
+/// own 1x array (`rgn_size`): one at the library's grid (E763 and E788's a4 at 0x20000000: one
+/// array of the target's layout from 0x4000 and nothing past it, in a context made for a larger
+/// target), four at 0xe0000000 (E788: four written and the fifth slot empty at 256 x 160 and 320 x
+/// 128, four written and enough at 320 x 400; E729 alone bounded the count at 4 or 5, its
+/// correction and E824 hold 4). The arrays are the halved grid's headers (`Grid`, E893): four
+/// times the regions. One halved axis (0x60000000, 0xa0000000) was never dumped for its arrays nor
+/// run against the layout's end: refused (Q140), as are the words `Grid::from_te_aa` refuses.
+pub fn header_arrays(te_aa: u32) -> Result<u32, Outcome> {
+    match Grid::from_te_aa(te_aa)? {
+        Grid::LIBRARY => Ok(1),
+        Grid { half_width: true, half_height: true } => Ok(4),
+        _ => Err(refuse_ids(
+            format!(
+                "CR_TE_AA {te_aa:#x}: one halved axis; the arrays the TA writes were dumped and run against the TA data's end at 0x20000000 and 0xe0000000 only (E763, E729, E788)"
+            ),
+            &["Q140"],
+        )),
+    }
+}
+
+/// The size of one region-header array of a `w` x `h` target: 12 bytes a region of its 1x grid,
+/// the library's macrotiles (`sgx_render_layout`'s `rgn_size`; E763: 0x1800 at 320 x 400).
+pub fn rgn_size(w: u32, h: u32) -> u32 {
+    let t = tiling(w, h);
+    12 * t.n * t.n * t.mx * t.my
+}
+
+/// Non-zero dwords in each region-header array a full-screen triangle (`--tri-full`, every target
+/// region with a stream) leaves at `CR_TE_AA` `te_aa`, the arrays read as slots of the target's
+/// `rgn_size` from the first header: every header's word 0 and the stream word of each target
+/// region (E788: 256, 160, 256, 160 at 256 x 160; 256, 256, 160, 160 at 320 x 128; 1024, 800,
+/// 640 and 584 at 320 x 400; E763 and E788's a4: 762 in one array at 0x20000000). At 0xe0000000
+/// the arrays were dumped on two macrotiles a side only: four refuses (Q139).
+pub fn array_dwords(w: u32, h: u32, te_aa: u32) -> Result<Vec<u32>, Outcome> {
+    let f = header_arrays(te_aa)?;
+    let grid = Grid::from_te_aa(te_aa)?;
+    let t = tiling(w, h);
+    if f > 1 && t.n != 2 {
+        return Err(refuse_ids(
+            format!("{w} x {h}: four macrotiles a side; E788 read the four arrays at two macrotiles a side"),
+            &["Q139"],
+        ));
+    }
+    let per = (rgn_size(w, h) / 12) as usize;
+    let hs = headers(&t, w, h, grid, &|_, _| true);
+    Ok(hs
+        .chunks(per)
+        .map(|c| c.iter().map(|&(w0, stream)| u32::from(w0 != 0) + u32::from(stream)).sum())
+        .collect())
+}
+
+/// Where our kernel puts the TA data of a context made for `mw` x `mh` with `arrays`
+/// region-header arrays (fork `sgx_render_tadata_layout`): the tail pointers (4 side^2 bytes) to
+/// a page, the control, OTPM and state pages, then `rgn`, the arrays (`arrays` x the maximum's
+/// `rgn_size`, to a page) and a ZLS area of one array (to a page). One array is module B21FDA82's
+/// layout (E763 and E788: 0xa000 at 544 x 400, 0x6000 at 256 x 160 and 320 x 128), four is E824's
+/// `render_rgn_arrays` 4 (the eight sizes it read, 0x8000 to 0x1e000, and 0x6000 at 64 x 64 under
+/// both); other counts were never laid out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TaDataLayout {
+    pub rgn: u32,
+    pub size: u32,
+}
+
+/// The kernel's TA data of a context made for `mw` x `mh` with `arrays` arrays (above).
+pub fn tadata_layout(mw: u32, mh: u32, arrays: u32) -> Result<TaDataLayout, Outcome> {
+    if ![1, 4].contains(&arrays) || mw == 0 || mh == 0 || mw > 4096 || mh > 4096 {
+        return Err(refuse_ids(
+            format!("{mw} x {mh} with {arrays} arrays: the kernel laid out one or four (E763, E788, E824)"),
+            &["Q140"],
+        ));
+    }
+    let rgn = crate::dpm::region_headers_4x(mw, mh, crate::dpm::TailRoom::Rgn4);
+    let r = rgn_size(mw, mh);
+    Ok(TaDataLayout { rgn, size: rgn + (arrays * r).next_multiple_of(PAGE) + r.next_multiple_of(PAGE) })
+}
+
+/// How the TA's header writes of a `w` x `h` job at `CR_TE_AA` `te_aa` end in the TA data of a
+/// context made for `mw` x `mh` with `arrays` arrays.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HeaderEnding {
+    /// The arrays fit (the image is the other units' to say).
+    Complete,
+    /// The job faults on the TA side (`BIF_INT_STAT` 0x90004) at TA-data page `page`, its end:
+    /// E729's 0x20006, 0x20006 and 0x20008 (TA data at 0x20000000), E788's a6 at 0x20008.
+    Fault { page: u32 },
+}
+
+/// Contexts where a target's four arrays fit and a fifth would not, run and completed: E788's a5
+/// (320 x 400 in a context made for 544 x 400, four arrays ending at 0xa000, 0 wrong pixels).
+pub const MEASURED_FOUR_EXACT: [(u32, u32, u32, u32, u32); 1] = [(320, 400, 544, 400, 1)];
+
+/// The header arrays against the layout's end (E729's rule, rgn + f rgn_size <= size completes,
+/// else a fault at page size >> 12, with f from `header_arrays` and the target's own `rgn_size`,
+/// E763): E729's five sizes, E788's a4, a5 and a6 and E824's eight four-array sizes and its
+/// one-array control. Where room for four arrays is not room for five, only f = 4 against 5
+/// decides, which E729 left open: the ending is held only where it was run
+/// (`MEASURED_FOUR_EXACT`), else refused (Q140).
+pub fn header_layout_ending(
+    w: u32,
+    h: u32,
+    mw: u32,
+    mh: u32,
+    te_aa: u32,
+    arrays: u32,
+) -> Result<HeaderEnding, Outcome> {
+    if w == 0 || h == 0 || w > mw || h > mh {
+        return Err(refuse_ids(format!("{w} x {h} in a context made for {mw} x {mh}"), &["Q140"]));
+    }
+    let f = header_arrays(te_aa)?;
+    let td = tadata_layout(mw, mh, arrays)?;
+    let r = rgn_size(w, h);
+    if td.rgn + f * r > td.size {
+        return Ok(HeaderEnding::Fault { page: td.size >> 12 });
+    }
+    if f == 4 && td.rgn + 5 * r > td.size && !MEASURED_FOUR_EXACT.contains(&(w, h, mw, mh, arrays)) {
+        return Err(refuse_ids(
+            format!(
+                "{w} x {h} in {mw} x {mh} with {arrays} arrays: room for four arrays and not five, where E729 left f at 4 or 5 and E788 completed 320 x 400 in 544 x 400 only"
+            ),
+            &["Q140"],
+        ));
+    }
+    Ok(HeaderEnding::Complete)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1432,6 +1566,108 @@ mod tests {
         for c in [8.0 + 2.0 / 1024.0, 8.0 + 1.0 / 2048.0, 8.001, 61440.0, -4097.0] {
             assert_eq!(pack_coordinate(c), None, "{c}");
         }
+    }
+
+    #[test]
+    fn the_ta_writes_one_header_array_at_te_0x20_and_four_at_te_0xe0_e763_e788() {
+        // E763 (and E788's a4): one array of the target's own layout at 0x20000000; E788: four at
+        // 0xe0000000 (E729 alone left 4 or 5, its correction: E788 and E824 hold 4)
+        assert_eq!(header_arrays(0x2000_0000), Ok(1));
+        assert_eq!(header_arrays(0), Ok(1));
+        assert_eq!(header_arrays(0xe000_0000), Ok(4));
+        // one halved axis: no record dumped or faulted its layout of arrays
+        for te_aa in [0x6000_0000, 0xa000_0000, 0x4000_0000] {
+            assert!(matches!(header_arrays(te_aa), Err(Outcome::Unsupported { .. })), "{te_aa:#x}");
+        }
+        // the target's own array size: 12 bytes a region of its 1x grid
+        assert_eq!(rgn_size(256, 160), 0x600);
+        assert_eq!(rgn_size(320, 400), 0x1800);
+        assert_eq!(rgn_size(544, 400), 0x2400);
+    }
+
+    #[test]
+    fn a_full_triangle_fills_each_array_as_e788_counted_and_nothing_past_the_fourth() {
+        // E788: non-zero dwords per slot of the target's rgn_size from 0x4000 (a1, a2, a5); E763's
+        // a4 at TE 0x20: 512 headers and 250 streams in one array
+        let te = 0xe000_0000;
+        assert_eq!(array_dwords(256, 160, te), Ok(vec![256, 160, 256, 160]));
+        assert_eq!(array_dwords(320, 128, te), Ok(vec![256, 256, 160, 160]));
+        assert_eq!(array_dwords(320, 400, te), Ok(vec![1024, 800, 640, 584]));
+        assert_eq!(array_dwords(320, 400, 0x2000_0000), Ok(vec![762]));
+        // four macrotiles a side at TE 0xe0: no dump read its arrays
+        assert!(matches!(array_dwords(640, 480, te), Err(Outcome::Unsupported { .. })));
+    }
+
+    #[test]
+    fn the_kernels_ta_data_layout_is_e763_e788_and_e824s_sizes() {
+        // one array (module B21FDA82): E763's and E788's 0xa000 for 544 x 400, E788's dumps of
+        // 0x6000 at 256 x 160 and 320 x 128
+        let one = |w, h| tadata_layout(w, h, 1).unwrap();
+        assert_eq!((one(544, 400).rgn, one(544, 400).size), (0x4000, 0xa000));
+        assert_eq!(one(256, 160).size, 0x6000);
+        assert_eq!(one(320, 128).size, 0x6000);
+        // four arrays (E824, render_rgn_arrays 4): the TA data sizes it read, and 64 x 64 at both
+        for ((w, h), size) in [
+            ((288, 144), 0x8000),
+            ((256, 288), 0x8000),
+            ((384, 384), 0xb000),
+            ((320, 160), 0x8000),
+            ((512, 384), 0xb000),
+            ((640, 480), 0x13000),
+            ((320, 400), 0xc000),
+            ((1024, 768), 0x1e000),
+            ((64, 64), 0x6000),
+        ] {
+            assert_eq!(tadata_layout(w, h, 4).unwrap().size, size, "{w}x{h}");
+        }
+        assert_eq!(one(64, 64).size, 0x6000);
+        assert!(tadata_layout(64, 64, 2).is_err());
+    }
+
+    #[test]
+    fn a_4x_layout_faults_at_the_end_of_the_ta_data_when_four_arrays_pass_it_e729_e788() {
+        use HeaderEnding::*;
+        let te = 0xe000_0000;
+        // E729 (own contexts, one array): two complete, three fault at pages 6, 6 and 8
+        for ((w, h), end) in [
+            ((256, 160), Complete),
+            ((320, 128), Complete),
+            ((288, 144), Fault { page: 6 }),
+            ((256, 288), Fault { page: 6 }),
+            ((384, 384), Fault { page: 8 }),
+        ] {
+            assert_eq!(header_layout_ending(w, h, w, h, te, 1), Ok(end), "{w}x{h}");
+        }
+        // E788: a4 (TE 0x20 in 544 x 400) and a5 (TE 0xe0, room for exactly four arrays)
+        // complete, a6 (its own 320 x 400 context) faults at page 8
+        assert_eq!(header_layout_ending(320, 400, 544, 400, 0x2000_0000, 1), Ok(Complete));
+        assert_eq!(header_layout_ending(320, 400, 544, 400, te, 1), Ok(Complete));
+        assert_eq!(header_layout_ending(320, 400, 320, 400, te, 1), Ok(Fault { page: 8 }));
+        // E824: four arrays complete every held-out size; its control at one array faults
+        for (w, h) in
+            [(288, 144), (256, 288), (384, 384), (320, 160), (512, 384), (640, 480), (320, 400), (1024, 768)]
+        {
+            assert_eq!(header_layout_ending(w, h, w, h, te, 4), Ok(Complete), "{w}x{h}");
+        }
+        assert_eq!(header_layout_ending(288, 144, 288, 144, te, 1), Ok(Fault { page: 6 }));
+    }
+
+    #[test]
+    fn where_only_f_4_against_5_decides_the_ending_is_refused_unless_measured() {
+        // room for four arrays and not five: E729 alone leaves f at 4 or 5; E788's a5 measured
+        // 320 x 400 in 544 x 400, the same room at 288 x 400 was never run
+        let te = 0xe000_0000;
+        assert_eq!(header_layout_ending(320, 400, 544, 400, te, 1), Ok(HeaderEnding::Complete));
+        match header_layout_ending(288, 400, 544, 400, te, 1) {
+            Err(Outcome::Unsupported { why, ids }) => {
+                assert_eq!(ids, ["Q140"]);
+                assert!(why.contains("E729") && why.contains("E788"), "{why}");
+            }
+            r => panic!("{r:?}"),
+        }
+        // a target past its context, and a TE word whose arrays are not measured
+        assert!(header_layout_ending(544, 400, 320, 400, te, 1).is_err());
+        assert!(header_layout_ending(64, 64, 64, 64, 0x6000_0000, 1).is_err());
     }
 
     #[test]
