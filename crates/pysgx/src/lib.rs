@@ -553,6 +553,12 @@ impl Sgx {
         self.hw()?.count_serv_events(value, cite).map_err(PyValueError::new_err)
     }
 
+    /// CR_EVENT_STATUS's E1115 rule: `value` (the idle word) until a served event other than a
+    /// tick.
+    fn hw_idle_event_status(&mut self, value: u32, cite: &str) -> PyResult<()> {
+        self.hw()?.idle_event_status(value, cite).map_err(PyValueError::new_err)
+    }
+
     fn hw_note_open(&mut self, index: u32, note: &str) -> PyResult<()> {
         self.hw()?.note_open(index, note);
         Ok(())

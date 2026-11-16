@@ -39,6 +39,17 @@ kind = "count_ticks"
 value = 0x00010003
 cite = "E009"
 
+# CR_EVENT_STATUS: 0x20000000 (TIMER) in every sample outside a plain triangle, through the ticks
+# of a 0.5 s lead (E1115: 14 of 14 rows at 541 ns a sample; E547's idle controls). In a job the
+# word moves (bit 26 as 0x24000000, at a time after the CR_CACHE_CTRL write no kept reading
+# gives): after a served event other than a tick a read is refused.
+[[rule]]
+reg = 0x012c
+name = "CR_EVENT_STATUS"
+kind = "idle_until_event"
+value = 0x20000000
+cite = "E1115, E547"
+
 # The task state that outlives a firmware task (E536), at the first tick entry after the boot:
 # pclink 0x98 and p0, p1 set, as the reader of a plain tick read them (E791 A0, E809 S0). The
 # rest (p2, p3, r20, r21, i0, i1) no plain tick entry read: unknown, so a read of them stops.

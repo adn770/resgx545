@@ -76,10 +76,11 @@ def test_the_render_kick_is_one_slot_0_entry_with_the_count_and_the_kick_bit(kic
 def test_the_kick_with_the_data_bit_writes_cache_ctrl_then_stops_on_event_status(kicked):
     """The kernel's cache control on a render kick carries INVAL_DATA (bit 3): the firmware
     writes CR_CACHE_CTRL (E013). What CR_EVENT_STATUS reads after it while the invalidation
-    runs is a unit's reading no kept job gives (R1, R2; Q111): the run stops there, refused."""
+    runs is a unit's reading no kept job gives (R1, R2; Q111): the run stops there, refused.
+    E1115's idle word answers it only until a kick is served; the refusal names it."""
     r, evs, stop = kicked
     assert any(e["ev"] == "wr" and not e["host"] and int(e["reg"], 16) == CACHE_CTRL * 4 for e in evs)
-    assert "0x012c" in str(stop)
+    assert "0x012c" in str(stop) and "E1115" in str(stop)
     assert r.s.hw_refused() == {EVENT_STATUS: 1}
 
 

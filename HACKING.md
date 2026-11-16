@@ -414,6 +414,10 @@ Readings a scorer or a hook takes from the kept files, and the slips they have c
   climbs (regtimeline), not the words snapshot's: `words.101`'s `rtds:11` (0x20406000 in r20-own)
   is the base 0x062c holds during the second context's run, and the owner's was 0x20006000
   (E1091; r20-own's owt rule looked for the wrong base).
+- A control's idle register value is the one after the runner's reset, read from a kit session's
+  `snap0.regs`, never from a timeline read mid-session: r30-evst froze CR_CACHE_CTRL at E258's
+  0x1000ffff (read after earlier jobs, no reset) and every control of three stages failed on its
+  0x0000ffff (E1116); the bit sets at a kick and stays until a reset.
 - `tri --kept-copy` reads the copy right after a close again while `render_kept` reads empty (the
   park race of E1085), up to 10 reads 10 ms apart, from t20 on: `tri: render_kept read N times
   ...` says it took N, `tri: render_kept still empty after 10 reads ...: the copy is empty` that it

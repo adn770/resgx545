@@ -36,7 +36,7 @@ list.
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
   tag-5 OR that of lane 0 of the quad in a job whose words ... (E878, E880, E905)
 - `Q111` platform, high: which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2
-  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
+  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E921, E1115, E1116)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
@@ -289,9 +289,15 @@ list.
 
 ## Recent records
 
-25 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+27 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1116` platform, 2026-11-16: r30-evst on module E0CC4027, stages e2, e3, e4 (CR_EVENT_STATUS with
+  CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27 registers), readings only, no
+  verdict: every frozen headline ...
+- `E1115` platform, 2026-11-16: r30-evst on module E0CC4027 (Q111), stages e1 and e5
+  (CR_EVENT_STATUS alone at 541 ns a sample, every control passed): in plain 64x64 triangles
+  CR_EVENT_STATUS reads 0x20000000 in every sample ...
 - `E1114` pds, 2026-11-16: r29-kreg on module E0CC4027 (Q024), readings only, no verdict:
   CR_PDS_REG_0A78 written to each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256
   triangle job of six renders; the mean ...
@@ -370,9 +376,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-91 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+92 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r30-evst`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10
 - `render/closing-r29-kreg`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10
 - `render/closing-r29-flag2`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t22
@@ -509,7 +516,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 19 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
@@ -590,4 +597,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-40 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+41 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

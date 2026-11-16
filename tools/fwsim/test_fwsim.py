@@ -16,7 +16,8 @@ import kept  # noqa: E402
 def test_the_landed_seeds_load_and_each_cites_a_record():
     d = fwsim.load_seeds()
     assert {r["name"]: r["value"] for r in d["seed"]} == {"CORE_ID": 0x01150000, "CORE_REVISION": 0x0001000D}
-    assert [(r["reg"], r["value"]) for r in d["rule"]] == [(0x0B14, 0x00010003)]
+    assert [(r["reg"], r["kind"], r["value"]) for r in d["rule"]] == [
+        (0x0B14, "count_ticks", 0x00010003), (0x012C, "idle_until_event", 0x20000000)]
     assert d["carry"]["pclink"] == 0x98 and d["events"]["tick_tim"] == 0x01061A70
 
 
@@ -32,6 +33,13 @@ def test_a_seed_row_without_an_e_number_is_refused_at_load(tmp_path, cite):
 def test_a_rule_the_simulator_has_not_landed_is_refused(tmp_path):
     p = tmp_path / "seeds.toml"
     p.write_text(fwsim.SEEDS.read_text().replace('kind = "count_ticks"', 'kind = "count_all"'))
+    with pytest.raises(fwsim.Refused, match="no landed rule"):
+        fwsim.load_seeds(p)
+
+
+def test_the_idle_event_status_rule_is_refused_on_another_register(tmp_path):
+    p = tmp_path / "seeds.toml"
+    p.write_text(fwsim.SEEDS.read_text().replace("reg = 0x012c", "reg = 0x0118"))
     with pytest.raises(fwsim.Refused, match="no landed rule"):
         fwsim.load_seeds(p)
 

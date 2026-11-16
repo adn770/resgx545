@@ -6,7 +6,8 @@ kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
-            "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921"]
+            "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
+            "E1115", "E1116"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -154,3 +155,13 @@ whether mutex 0 is free on entry or anything releases it. If it holds, the stop'
 clear says nothing of the DPM's state-clear event, and this question's open part (which event sets
 each bit, a pulse or a level, their order, the other bits' clears) is unchanged. The direct test, an
 own EDM task taking `lock #0` twice (kernel option K2), was not run.
+
+Narrowed 2026-11-16 (round 30 session r30-evst, E1115; E1116 readings only; not retired). Plain
+64 x 64 triangles with CR_EVENT_STATUS sampled alone at 541 ns: outside the job it reads
+0x20000000 (14 of 14), bit 26 (MADD_CACHE_INVALCOMPLETE) whenever set reads 0x24000000 and in a
+one-render job rises 88 to 119 us before the first rise of bit 18 or 0 and falls before it (8 of
+8: the order of bit 26 against the render end), it is not seen in every job (8 of 14) and its
+episodes are 4 to 93 us; bits 6, 9 and 20 stay under 541 ns (14 of 14). Post hoc (E1116, its
+frozen controls failed on a wrong frozen value): CR_CACHE_CTRL bit 28 sets about 35 us before bit
+26 and stays until a reset, and with that register sampled bit 26 shows 5 to 13 us wide. Open as
+before: which event sets each bit, a pulse or a level, the other bits' order and clears.

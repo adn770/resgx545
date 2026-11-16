@@ -105,6 +105,10 @@ def checked_out(path: pathlib.Path, private: pathlib.Path) -> pathlib.Path:
     return full
 
 
+# the rules the simulator has landed (crates/sgx-sim/src/hw.rs): (kind, register)
+LANDED_RULES = {("count_ticks", 0x0B14), ("idle_until_event", 0x012C)}
+
+
 def load_seeds(path: pathlib.Path = SEEDS) -> dict:
     """seeds.toml, every row's citation checked: a row without an E-number is refused."""
     d = tomllib.loads(pathlib.Path(path).read_text())
@@ -115,7 +119,7 @@ def load_seeds(path: pathlib.Path = SEEDS) -> dict:
         if not E_NUMBER.search(str(row.get("cite", ""))):
             raise Refused(f"{path}: a {kind} row cites no record (E-number): {row}")
     for r in d.get("rule", []):
-        if r.get("kind") != "count_ticks" or r.get("reg") != 0x0B14:
+        if (r.get("kind"), r.get("reg")) not in LANDED_RULES:
             raise Refused(f"{path}: no landed rule {r.get('kind')!r} for register {r.get('reg')}")
     return d
 
@@ -151,7 +155,10 @@ class Run:
         for r in self.seeds.get("seed", []):
             s.hw_seed(r["reg"] // 4, r["value"], r["cite"])
         for r in self.seeds.get("rule", []):
-            s.hw_count_serv_events(r["value"], r["cite"])
+            if r["kind"] == "count_ticks":
+                s.hw_count_serv_events(r["value"], r["cite"])
+            else:
+                s.hw_idle_event_status(r["value"], r["cite"])
         s.alu_specials_in_movs = True       # PDS #13 passes ir1.l and tim.l on with movs (R5)
         for i, image in self.boot_data.images.items():
             s.map(self.lay.addr[i], image)

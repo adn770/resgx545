@@ -492,6 +492,13 @@ intervals averaging 1.06 to 5.58 microseconds), the time to the firmware's ackno
 is the firmware's own event and its pulse (4.3 to 87.5 microseconds) the host's handling of it; and
 which armed bit raised an interrupt is read from the enable written, not from the status the handler
 saw.
+At 541 ns a sample with `EVENT_STATUS` read alone (E1115), a plain 64 x 64 triangle reads
+0x20000000 outside the job, and `MADD_CACHE_INVALCOMPLETE` whenever set reads as 0x24000000
+alone, 88 to 119 us before the render end in a one-render job and fallen before it, in 8 of 14
+jobs (4 to 93 us wide). Post hoc (E1116): `CACHE_CTRL` reads 0x0000ffff after a reset and
+0x1000ffff from a kick on, its bit 28 set about 35 us before bit 26; sampled beside it, bit 26
+shows 5 to 13 us wide. sgx-sim's hardware model answers `EVENT_STATUS` with the idle word until
+a kick is served and refuses it after (crates/sgx-sim/src/hw.rs).
 
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
 OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and

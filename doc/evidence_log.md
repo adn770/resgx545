@@ -9431,6 +9431,32 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   neighbours c10 and c12 at -0.07 and -0.54 percent.
   *pds; HW, infer; data: `render-closing-r29-kreg:out/20261116-061842/s0/`,
   `render-closing-r29-kreg:out/20261116-061842/k1/`, `render-closing-r29-kreg:fold/`.*
+- `E1115` r30-evst on module E0CC4027 (Q111), stages e1 and e5 (CR_EVENT_STATUS alone at 541 ns a
+  sample, every control passed): in plain 64x64 triangles CR_EVENT_STATUS reads 0x20000000 in every
+  sample outside the job (14 of 14 e1 rows, 5 of 5 e5 rows) and, whenever bit 26
+  (MADD_CACHE_INVALCOMPLETE) is set, exactly 0x24000000 (19 episodes in 13 rows); in a one-render
+  job its first rise comes 87.7 to 118.7 us before the first rise of bit 18 or 0 and it falls before
+  that (8 of 8); it is seen in 8 of 14 e1 jobs (H-EVERY refuted, H-PART held), its first episode 55
+  to 93 us wide in 7 of 8 but some episodes 4.2 to 21.1 us (H-WIDE refuted on the held-out rows);
+  bits 6, 9 and 20 never show at 541 ns in e1 (14 of 14); with -n 3 bit 26 shows once in 4 of 5 jobs
+  and twice in one (H-ONCE and H-EACH both refuted as frozen), in two jobs after an earlier render's
+  end.
+  *platform; HW, infer; data: `render-closing-r30-evst:out/20261116-123552/e1/`,
+  `render-closing-r30-evst:out/20261116-123552/e5/`, `render-closing-r30-evst:fold/`.*
+- `E1116` r30-evst on module E0CC4027, stages e2, e3, e4 (CR_EVENT_STATUS with CR_EVENT_STATUS2,
+  CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27 registers), readings only, no verdict: every
+  frozen headline prints 'controls FAILED' because the controls' frozen CR_CACHE_CTRL value
+  0x1000ffff was the builder's error (taken from E258, read mid-session with no reset), while every
+  control read 0x0000ffff after the runner's reset as the kit's own snapshots do; post hoc,
+  CR_CACHE_CTRL reads 0x0000ffff after the reset, bit 28 sets 21 to 40 us before bit 26 rises in 7
+  of 10 rows where both show and stays to the end of the run (24 of 24); with these registers
+  sampled bit 26 shows 4.9 to 12.6 us wide (10 episodes) against 55 to 93 us for most first episodes
+  with CR_EVENT_STATUS alone (E1115); CR_USE0_SERV_EVENT counts 9 to 11 beyond the ticks over a
+  plain triangle (24 of 24 rows), its tick rate 0.9975 to 1.0004 a ms, bit 16 clear in up to 6
+  samples of a job.
+  *platform; HW, infer; data: `render-closing-r30-evst:out/20261116-123552/e2/`,
+  `render-closing-r30-evst:out/20261116-123552/e3/`,
+  `render-closing-r30-evst:out/20261116-123552/e4/`, `render-closing-r30-evst:fold/`.*
 
 ## By unit
 
@@ -9495,7 +9521,7 @@ E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837.
+E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116.
 
 ### render
 

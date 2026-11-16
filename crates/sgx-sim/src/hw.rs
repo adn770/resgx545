@@ -4,7 +4,8 @@
 //! (fwsim): every read is answered by exactly one source, or the run stops.
 //!
 //! The sources, in the order they are asked (`Source`):
-//! 1. a landed rule that claims the register (a value that moves with the events served, E009);
+//! 1. a landed rule that claims the register (a value that moves with the events served, E009;
+//!    the idle word of CR_EVENT_STATUS until a kick, E1115);
 //! 2. a value the run wrote (the firmware's `str`, the host's writes);
 //! 3. a seed, each citing the record whose reading gives it (an E-number, refused without one);
 //! 4. a reset value from a kept snapshot (the caller passes only the registers the kept
@@ -47,6 +48,13 @@ impl Source {
 /// count is not known and a read of it is refused.
 pub const USE0_SERV_EVENT: u32 = 0x0b14 / 4;
 
+/// `CR_EVENT_STATUS` (0x012c): 0x20000000 (TIMER) in every sample outside a plain triangle, through
+/// the ticks of the lead (E1115, 14 of 14 rows; E547's idle controls). Inside a job the word moves:
+/// bit 26 shows as 0x24000000 before the render end, not in every job, at a time after the
+/// CR_CACHE_CTRL write that no kept reading gives (E1115), so after a served event other than a
+/// tick a read is refused.
+pub const EVENT_STATUS: u32 = 0x012c / 4;
+
 #[derive(Clone, Debug)]
 struct Counted {
     value: u32,
@@ -62,6 +70,7 @@ pub struct HwModel {
     reset_cite: String,
     seeds: BTreeMap<u32, (u32, String)>,
     serv_event: Option<Counted>,
+    event_idle: Option<Counted>,
     open: BTreeMap<u32, String>,
     /// The reads refused, by register: what a run lists (offsets and counts).
     pub refused: BTreeMap<u32, u32>,
@@ -110,6 +119,16 @@ impl HwModel {
         Ok(())
     }
 
+    /// The E1115 rule for `CR_EVENT_STATUS`: `value` (the idle word) until a served event other
+    /// than a tick. Refused without an E-number.
+    pub fn idle_event_status(&mut self, value: u32, cite: &str) -> Result<(), String> {
+        if !cites_a_record(cite) {
+            return Err(format!("the idle event status cites no record: {cite:?}"));
+        }
+        self.event_idle = Some(Counted { value, cite: cite.to_string(), lost: None });
+        Ok(())
+    }
+
     /// What a refusal of `index` says beside the register (the open questions that block it).
     pub fn note_open(&mut self, index: u32, note: &str) {
         self.open.insert(index, note.to_string());
@@ -119,6 +138,18 @@ impl HwModel {
     /// advances the served-event count; anything else makes it unknown (E009 ran ticks only).
     pub fn on_event(&mut self, ir0: Option<u32>, ir1: u32) {
         let tick = ir0.is_some_and(|v| v & 2 != 0) && ir1 & 0x00ff_ffff == 0;
+        if let Some(c) = &mut self.event_idle
+            && c.lost.is_none()
+            && !tick
+        {
+            c.lost = Some(format!(
+                "a job is running (ir0 {}, ir1 {ir1:#010x} served): {} gives the idle word outside a job only; \
+                 in a plain triangle bit 26 shows as 0x24000000 before the render end, not in every job, \
+                 and when it shows after the CR_CACHE_CTRL write is not measured",
+                ir0.map_or("unknown".to_string(), |v| format!("{v:#x}")),
+                c.cite
+            ));
+        }
         if let Some(c) = &mut self.serv_event
             && c.lost.is_none()
         {
@@ -155,6 +186,14 @@ impl HwModel {
         {
             return match &c.lost {
                 None => Ok((c.value, Source::Rule("E009"))),
+                Some(why) => refuse(format!("reads register 0x{:04x}: {why}", index * 4)),
+            };
+        }
+        if index == EVENT_STATUS
+            && let Some(c) = &self.event_idle
+        {
+            return match &c.lost {
+                None => Ok((c.value, Source::Rule("E1115"))),
                 Some(why) => refuse(format!("reads register 0x{:04x}: {why}", index * 4)),
             };
         }
@@ -228,6 +267,25 @@ mod tests {
         hw.seed(7, 1, "E007").unwrap();
         hw.seed(8, 1, "CORE_REVISION (E007)").unwrap();
         assert_eq!(hw.seeds().count(), 2);
+    }
+
+    #[test]
+    fn event_status_reads_the_idle_word_through_ticks_and_is_refused_after_a_kick() {
+        // E1115 (with E547): 0x20000000 in every sample outside a plain triangle, through the
+        // ticks of a 0.5 s lead; in the job the word moves (bit 26 as 0x24000000 at a time
+        // after the CR_CACHE_CTRL write that no kept reading gives), so a read is refused
+        let mut hw = HwModel::default();
+        hw.idle_event_status(0x2000_0000, "E1115, E547").unwrap();
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap(), (0x2000_0000, Source::Rule("E1115")));
+        hw.on_event(Some(2), 0x0200_0000);
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap().0, 0x2000_0000);
+        hw.on_event(Some(0), 0x0200_0100);
+        let r = hw.read(EVENT_STATUS, None);
+        assert!(refused_naming(r.clone(), "0x012c") && refused_naming(r, "E1115"));
+        // a later tick does not bring the idle word back: the job's end is not modelled
+        hw.on_event(Some(2), 0x0300_0000);
+        assert!(refused_naming(hw.read(EVENT_STATUS, None), "0x012c"));
+        assert!(hw.idle_event_status(0x2000_0000, "the idle word").is_err());
     }
 
     #[test]
