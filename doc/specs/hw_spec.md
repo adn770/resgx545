@@ -511,7 +511,11 @@ it too (E1123, 6 of 6). In the two rows that order it against the kick pass, `BI
 0x00000008 for 4 to 8 us before it and is clear again in the change's sample (E1123) [infer: the
 firmware's BIF invalidation for cache-control bits 0 and 1, then its own `CACHE_CTRL |
 0x10000000` for bit 3, E013; the host's own bit 3 writes are two back-to-back MMIO writes on
-paths no job takes], so the hardware does not set bit 28 at the kick. sgx-sim's hardware model
+paths no job takes], so the hardware does not set bit 28 at the kick. A served GETMISCINFO, whose
+command carries no INVAL_DATA, leaves `CACHE_CTRL` at 0x0000ffff (E1126, E1127: 9 of 9 rows, after
+the boot's own and the kit's `pre:miscinfo`), so bit 28 needs the command's INVAL_DATA; whether it
+is the firmware's write or a hardware response to the firmware's work for it is not measured.
+sgx-sim's hardware model
 answers `EVENT_STATUS` with its idle word until a kick is served and refuses it after; it
 answers `CACHE_CTRL` with the reset word until a kick and after it until the run writes the
 register, then the run's write, 0x1000ffff only (crates/sgx-sim/src/hw.rs). With the kept order

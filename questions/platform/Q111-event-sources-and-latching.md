@@ -7,7 +7,7 @@ value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
             "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
-            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130"]
+            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130", "E1126", "E1127"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -191,3 +191,14 @@ only; not retired). After its CR_CACHE_CTRL write the kick pass waits on bit 26 
 [RE], and after the read that shows it writes bit 26 to CR_EVENT_HOST_CLEAR [infer: on the
 replayed word], so the firmware clears bit 26 itself; whether that write is what ends the bit's
 episode, and its timing, stay hardware questions. Open as before for every other bit.
+
+Narrowed 2026-11-16 (round 32 session r32-misc, E1126, E1127; every control passed, every row
+held out; not retired). With the kit word `pre:miscinfo` one served GETMISCINFO, a kick whose
+command carries no INVAL_DATA (no cache control at all; the boot's own GETMISCINFO before it has
+INVAL_BIF_PD only), leaves CR_CACHE_CTRL at 0x0000ffff (9 of 9 rows, snap0 3 s after the
+answer, and the timeline's first sample in 2): a served kick does not set bit 28, the command's
+INVAL_DATA does (every kick with it sets the bit, E1120 to E1123). A triangle's kick after the
+read changes it once, 24.4 and 25.2 ms after the tool starts, as without the read. Not decided:
+whether bit 28 is the firmware's own `| 0x10000000` (E013) or a hardware response to the work the
+firmware does for INVAL_DATA. Open as before: which event sets each other bit, a pulse or a level
+for them, their clears and order.

@@ -79,8 +79,10 @@ pub const EVENT_STATUS: u32 = 0x012c / 4;
 /// [infer: it is the firmware's own `| 0x10000000`, E013]. After a kick a read answers the reset
 /// word until the run writes the register, and the run's write after it; whether the read itself
 /// came before the change is not measured, but E013 gives the value read no test, only the `|`
-/// and the write, so either answer writes 0x1000ffff. A write after the kick of any other word is
-/// not measured, and a read is refused.
+/// and the write, so either answer writes 0x1000ffff. A served kick whose command carries no
+/// INVAL_DATA (GETMISCINFO, the boot's and the kit's `pre:miscinfo`) leaves the reset word (E1126,
+/// E1127: 9 of 9 rows), so a run that never writes the register reads it after any kick. A write
+/// after the kick of any other word is not measured, and a read is refused.
 pub const CACHE_CTRL: u32 = 0x0804 / 4;
 
 /// A read the replay answered that no spin has proven yet: where, and the run's effects then.
@@ -675,6 +677,21 @@ mod tests {
         hw.on_event(Some(2), 0x0300_0000);
         assert!(refused_naming(hw.read(EVENT_STATUS, None), "0x012c"));
         assert!(hw.idle_event_status(0x2000_0000, "the idle word").is_err());
+    }
+
+    #[test]
+    fn cache_ctrl_keeps_its_reset_word_after_served_kicks_whose_run_never_writes_it() {
+        // E1126, E1127: two served GETMISCINFO commands after a reset (the boot's, INVAL_BIF_PD
+        // only, and pre:miscinfo's, no cache control), neither with INVAL_DATA, leave 0x0000ffff
+        // 3 s on (9 of 9 rows): a kick does not set bit 28, so a run that never writes the
+        // register reads the reset word through any number of kicks and ticks
+        let mut hw = HwModel::default();
+        hw.idle_cache_ctrl(0x0000_ffff, "E1120").unwrap();
+        for ir1 in [0x0200_0100, 0x0300_0100] {
+            hw.on_event(Some(0), ir1);
+            hw.on_event(Some(2), 0x0300_0000);
+            assert_eq!(hw.read(CACHE_CTRL, None).unwrap(), (0x0000_ffff, Source::Rule("E1122")));
+        }
     }
 
     #[test]

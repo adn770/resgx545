@@ -9554,6 +9554,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   median 722.5 us, within the load's noise.
   *pds; HW, infer; data: `render-closing-r31-kreg2:out/20261116-145122/s0/`,
   `render-closing-r31-kreg2:out/20261116-145122/k2/`, `render-closing-r31-kreg2:fold/`.*
+- `E1126` r32-misc on module 7CE8E38E (Q111, a served kick without INVAL_DATA), stage m1 (the kit
+  word pre:miscinfo: one debugfs miscinfo read, a GETMISCINFO command with no cache control pending,
+  after the reset and before snap0), every control passed, every non-control row held out:
+  CR_CACHE_CTRL reads 0x0000ffff in snap0 after the served read in 7 of 7 rows (H-CC-FW held 7 of 7,
+  H-CC-HW refuted 7 of 7), so a served kick whose command carries no INVAL_DATA does not set bit 28;
+  the triangle after the read still leaves 0x1000ffff (H-CC-ONE 7 of 7); the read is answered in 154
+  to 161 us (H-MI-LAT 6 of 6), as the boot's own GETMISCINFO after each reset (the controls: one
+  logged answer before snap0 without the word, two with it); whether bit 28 is the firmware's write
+  or the hardware's response to the firmware's INVAL_DATA work is not decided.
+  *platform; HW, infer; data: `render-closing-r32-misc:out/20261116-185655/m1/`,
+  `render-closing-r32-misc:fold/`.*
+- `E1127` r32-misc on module 7CE8E38E (Q111), stage m2 (pre:miscinfo, then t10's 64x64 triangle
+  under regtimeline on CR_CACHE_CTRL and CR_USE0_SERV_EVENT at 852 to 856 ns a sample), every
+  control passed, the non-control row held out: the first sample after the served read reads
+  0x0000ffff and snap0 too (H-CC-FW held 3 of 3, H-CC-HW refuted 3 of 3); the triangle's change
+  comes once, to 0x1000ffff (H-CC-ONE 3 of 3), 24.41 and 25.15 ms after the tool starts (H-CC-LAT 2
+  of 2, inside E1122's 18.3 to 25.2 ms); the read answered in 148 us (H-MI-LAT 1 of 1).
+  *platform; HW; data: `render-closing-r32-misc:out/20261116-185655/m2/`,
+  `render-closing-r32-misc:fold/`.*
 - `E1130` fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1 c-off kicked as
   our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the kick's
   CR_CACHE_CTRL write (0x20000000, 0x24000000, 0x20000000; E1115, E1120, E1123): the kick pass reads
@@ -9629,7 +9648,7 @@ E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114, E112
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
 E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
-E1122, E1123.
+E1122, E1123, E1126, E1127.
 
 ### render
 
