@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "low"
 phase = 7
-evidence = ["E141", "E045", "E396", "E1114"]
+evidence = ["E141", "E045", "E396", "E1114", "E1124", "E1125"]
 terms = ["CR_PDS_REG_0A78"]
 +++
 
@@ -31,11 +31,20 @@ passes. [infer] By the median of renders 2-6 (post hoc) every value is within 0.
 Left narrowed: no frozen verdict yet, and the load with many small triangles was not run (no
 timed form in the tools).
 
-Open: a frozen verdict on the 256x256 load (E1114 gives readings: E141's slower 0x01 read
-+0.29 and -0.25 percent, 0x20 -0.60 and +0.10); whether a load that stresses the PDS more
-than one triangle, many small triangles, shows a difference.
+Narrowed in round 31 (E1124, a frozen verdict): on the 256x256 triangle, with the reading the
+median of renders 2-6 and at most one 0x2c control a stage allowed outside its band (frozen before
+the run), no value of 0x00-0x3f lies more than 1 percent from the 0x2c controls on both shuffled
+passes (64 of 64 decided; three readings over 1 percent, each on one pass only); E141's 0x01 and
+0x20 read +0.34 and -0.22, +0.24 and +0.11 percent. The 256x256 clause is closed. The second load,
+500 small triangles in a 64x64 render (t30 `probe --tri --vertices 1500`), could not be read
+(E1125): a render takes about 0.72 ms and its references spread 8.3 percent, so the frozen bound
+(24.8 percent) passed its 2.5 percent cap; [infer] post hoc every value's medians lie -6.0 to
++11.4 percent of the controls, within that noise.
 
-To settle it: a tool change that times a render of many small triangles (a job time on `probe
---tri --vertices N`, or a triangle count for `tri`), then one flagged session on the kit's
-`kreg` word with a reading frozen robust to a single slow render (the median of renders 2-6),
-the 64 values on both loads with 0x2c controls, restoring 0x2c after each.
+Open: whether a load of many small triangles, timed to about a percent, shows a difference.
+
+To settle it: one flagged session on the kit's `kreg` word with a many-small-triangles render long
+enough to time to a percent (tens of ms, e.g. the 1500 vertices on a larger target, or more
+renders a job), chosen by a safe calibration stage frozen to pick the first form whose references
+spread under about 0.8 percent, then the 64 values on two passes with 0x2c controls, the reading
+and the control rule of E1124.

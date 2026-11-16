@@ -197,7 +197,7 @@ list.
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change timing, when two of its values were slower in one
-  timing run? (E141, E396, E1114)
+  timing run? (E1114, E1124, E1125)
 - `Q059` pds, low: why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an
   rwfence after a store, or after a faulted job, touch page 0? (E144, E145, E395)
 - `Q062` pds, low: what makes the PDS fetch pc read one or two below the reading instruction's index
@@ -287,9 +287,15 @@ list.
 
 ## Recent records
 
-34 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+36 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1125` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k2, cannot tell by its frozen
+  premise: CR_PDS_REG_0A78 at each of its 64 values on two shuffled passes before a job of six
+  renders of 500 small triangles ...
+- `E1124` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k1: CR_PDS_REG_0A78 written to
+  each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256 triangle job of six
+  renders; by the frozen rule (the ...
 - `E1123` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
   after a kick), stages c4 (CR_EVENT_STATUS, CR_CACHE_CTRL, CR_DMS_CTRL, CR_USE0_SERV_EVENT and
   CR_BIF_CTRL at 1766 to 1789 ns a sample, ...
@@ -395,9 +401,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-95 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+96 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r31-kreg2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r31-cc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r30-pde`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
@@ -539,7 +547,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 3 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 4 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -611,4 +619,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-42 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+44 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

@@ -9533,6 +9533,27 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   as a triangle's does (H-CC-XFER 6 of 6, H-CC-TA refuted).
   *platform; HW, infer; data: `render-closing-r31-cc:out/20261116-144402/c4/`,
   `render-closing-r31-cc:out/20261116-144402/c5/`, `render-closing-r31-cc:fold/`.*
+- `E1124` r31-kreg2 on module 7CE8E38E (Q024), stage k1: CR_PDS_REG_0A78 written to each of its 64
+  values 0x00-0x3f on two shuffled passes before a 256x256 triangle job of six renders; by the
+  frozen rule (the median of renders 2-6 against the sixteen 0x2c controls' median 67004.5 us, a
+  value failing only when both passes lie more than 1 percent out on the same side) H0 held for all
+  64 values: 'CR_PDS_REG_0A78 at every value 0x00-0x3f leaves the 256x256 triangle's render time
+  within 1.00 percent of 0x2c's on two shuffled passes (64 of 64 rows decided)'; the controls lay
+  -0.61 to +0.10 percent of s0's references (67138 us), none outside the band, spread 0.332 percent;
+  three of 128 readings lay over 1 percent, each on one pass only (0x11 +1.53, 0x2e +1.34, 0x15
+  +1.25).
+  *pds; HW, infer; data: `render-closing-r31-kreg2:out/20261116-145122/s0/`,
+  `render-closing-r31-kreg2:out/20261116-145122/k1/`, `render-closing-r31-kreg2:fold/`.*
+- `E1125` r31-kreg2 on module 7CE8E38E (Q024), stage k2, cannot tell by its frozen premise:
+  CR_PDS_REG_0A78 at each of its 64 values on two shuffled passes before a job of six renders of 500
+  small triangles (t30 probe --tri --vertices 1500 at 64x64, about 0.72 ms a render); s0's eight
+  references v1-v8 spread 8.27 percent (interquartile range of their medians, 687-822 us), so the
+  frozen bound BOUND2 = 3 x 8.27 = 24.8 percent exceeded its 2.5 percent cap: 'k2: cannot tell: no
+  row decided; controls: bound2: cannot tell'; every row drew one image and no render failed; post
+  hoc readings (no verdict): every value's two medians lie -6.0 to +11.4 percent of the controls'
+  median 722.5 us, within the load's noise.
+  *pds; HW, infer; data: `render-closing-r31-kreg2:out/20261116-145122/s0/`,
+  `render-closing-r31-kreg2:out/20261116-145122/k2/`, `render-closing-r31-kreg2:fold/`.*
 
 ## By unit
 
@@ -9592,7 +9613,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114.
+E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114, E1124, E1125.
 
 ### platform
 
