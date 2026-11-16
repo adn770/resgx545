@@ -2215,3 +2215,18 @@ def test_the_fake_reset_ends_in_the_boot_s_own_getmiscinfo_as_the_kernel_s_does(
     m1 = kmsg[:kmsg.index("resgx545 r8t snap m1 0 ")]
     tail = m1[m1.rindex("SGX reset: BIF_FAULT"):]
     assert tail.count("SGX firmware: core 545") == 2, tail
+
+
+def test_the_fake_regs_show_cache_ctrl_set_by_a_job_and_cleared_by_a_reset(repos):
+    """The fake laptop's CR_CACHE_CTRL (0x0804) reads as r31-cc's snapshots do (E1122): the
+    reset word 0x0000ffff after a reset and the miscinfo read, 0x1000ffff after a tool's job."""
+    import gzip
+    kp = misc_session(repos)
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kept = next(kp.glob("debug/mock.*/model")) / "out/model/s0"
+    for n in ("m1", "m2"):
+        s0 = gzip.decompress((kept / f"{n}.snap0.regs.gz").read_bytes()).decode()
+        s9 = gzip.decompress((kept / f"{n}.snap9.regs.gz").read_bytes()).decode()
+        assert "reg 0x0804 0x0000ffff" in s0.splitlines(), s0
+        assert "reg 0x0804 0x1000ffff" in s9.splitlines(), s9
