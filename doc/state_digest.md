@@ -163,7 +163,7 @@ list.
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
   captured lists, and does the TA take indices wider than the 16 ... (E737, E756, E1075)
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
-  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E1021, E1035, E1076)
+  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E1035, E1076, E1113)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E1088, E1090, E1095)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
@@ -228,8 +228,8 @@ list.
   and no record explains do: the command's CR_MTE_CTRL ... (E180, E650, E652)
 - `Q008` texture, low: how is the luma compared at the luma key's high cut, where five colours with
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
-- `Q010` texture, low: what clears the colour-space words between jobs, given that a copy that does
-  not load set 0 converts with the last loaded words, and the ... (E046, E271, E399)
+- `Q010` texture, low: which job clears colour-space set 0 between jobs, given that a copy that does
+  not load it converts with the last loaded words across a ... (E1097, E1103, E1112)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
@@ -289,12 +289,18 @@ list.
 
 ## Recent records
 
-23 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+25 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1114` pds, 2026-11-16: r29-kreg on module E0CC4027 (Q024), readings only, no verdict:
   CR_PDS_REG_0A78 written to each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256
   triangle job of six renders; the mean ...
+- `E1113` vdm, 2026-11-16: r29-flag2 stage h2 (Q163, 9 rows of E700's two-block stream on t10 in
+  three triples from a reset, the kit's noreset, 2 planned hangs): a block-2 v = 1 job completed at
+  c = 8 after (6,2) (h2-a3) and ...
+- `E1112` texture, 2026-11-16: r29-flag2 stage h1 and h2's first row (Q010, 7 copies on t22 and
+  E737's bit-24 hang twice on t10, 2 planned hangs, both recovered): a copy without the load read
+  black 0xd3522437a14b6325 after each ...
 - `E1109` ta, 2026-11-16: r29-flag stage f2 (2 jobs, t10, E1074's form at 512 x 512 (n = 2, TA data
   32768 bytes by the kernel's layout, c-512's reading), the size's own CR_TE_MTILE1 and CR_TE_MTILE2
   with B2 cleared, words ...
@@ -364,10 +370,12 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-90 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+91 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r29-kreg`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10
+- `render/closing-r29-flag2`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t22
 - `render/closing-r29-flag`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14, ~/sgxfive-test-t22
 - `render/closing-r26-vol`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -501,7 +509,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 18 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 19 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions

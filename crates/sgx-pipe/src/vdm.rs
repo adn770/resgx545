@@ -85,7 +85,8 @@ fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
     // block-2 v = 1 clause and the v = 0 reset fail on E545's sweeps; E1035: block-2 v = 1 hung at c = 0,
     // 2 and 5, and time, a fill or the health between jobs leave c; E1076: the step and the
     // threshold held on 24 and 48 vertices, one and two objects, 64 x 64 and 128 x 64, block 1
-    // at v = 6 hanging the third job, 4 of 4 held out). The model keeps no job
+    // at v = 6 hanging the third job, 4 of 4 held out; E1113: a block-2 v = 1 job completes iff
+    // the job right before it completed with a block at v 1 or 6, 3 of 3 held out). The model keeps no job
     // history, so it gives one answer only where the word alone decides
     let no_object = match field {
         _ if bit12 => true,

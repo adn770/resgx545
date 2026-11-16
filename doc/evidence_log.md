@@ -9398,6 +9398,28 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   twice, no recovery failed, so the session stopped (rc 5) before its hang stages.
   *ta; HW, infer; data: `render-closing-r29-flag:out/20261116-055520/f2/`,
   `render-closing-r29-flag:fold/`.*
+- `E1112` r29-flag2 stage h1 and h2's first row (Q010, 7 copies on t22 and E737's bit-24 hang twice
+  on t10, 2 planned hangs, both recovered): a copy without the load read black 0xd3522437a14b6325
+  after each recovered hang (q010-p1, q010-p2), the reading of the rival H-RECOV-CLR, not of the
+  frozen H-KEEP (E037's 0xb6067a95fa98de2d), and so did q010-af, the first copy after s0's BT.601
+  copies with no fault or hang between, only the kit's health fill and triangle and debugfs resets;
+  q010-pre, after a load and a debugfs reset alone, read E037's hash as E1097 and E1103; frozen
+  'H-RECOV-CLR ... (1 of 2 rows decided)' (h1) and '(1 of 1 rows decided)' (h2), 'H-KEEP ... 0 held,
+  1 FAILED, 1 cannot tell of 2' and '0 held, 1 FAILED', R29-3 (a)'s rule 'not one hypothesis: narrow
+  only' (q010-af cannot tell: no fault before it); the six copy controls passed.
+  *texture; HW, infer; data: `render-closing-r29-flag2:out/20261116-073242/s0/`,
+  `render-closing-r29-flag2:out/20261116-073242/h1/`,
+  `render-closing-r29-flag2:out/20261116-073242/h2/`, `render-closing-r29-flag2:fold/`.*
+- `E1113` r29-flag2 stage h2 (Q163, 9 rows of E700's two-block stream on t10 in three triples from a
+  reset, the kit's noreset, 2 planned hangs): a block-2 v = 1 job completed at c = 8 after (6,2)
+  (h2-a3) and hung at c = 3 after (5,2) (h2-b3) and at c = 1 after (3,2) (h2-c3), as O29-2's
+  H-PREV16 (it completes iff the job right before it, no reset between, completed with a block at v
+  1 or 6) predicted, held out 3 of 3 with the control h2-c-b (the second (6,2), c = 8 under M1)
+  completing; frozen 'H-PREV16 ... (3 of 3 rows decided)', D-PREVADD and D-C '1 held, 2 FAILED',
+  H-ALWAYS '2 held, 1 FAILED'; H-PREV16 was formed after E1035 was read (post hoc on 18 kept jobs),
+  so these rows are its only held-out test.
+  *vdm; HW, infer; data: `render-closing-r29-flag2:out/20261116-073242/h2/`,
+  `render-closing-r29-flag2:fold/`, `render-closing-r29-flag2:fit/`.*
 - `E1114` r29-kreg on module E0CC4027 (Q024), readings only, no verdict: CR_PDS_REG_0A78 written to
   each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256 triangle job of six
   renders; the mean of renders 2-6 of 62 values lies within 1 percent of the sixteen 0x2c controls'
@@ -9498,7 +9520,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
 E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
-E1067, E1097, E1103, E1105.
+E1067, E1097, E1103, E1105, E1112.
 
 ### transfer
 
@@ -9526,7 +9548,7 @@ E1061, E1062, E1098, E1102, E1106.
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
 E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933, E1021,
-E1035, E1075, E1076.
+E1035, E1075, E1076, E1113.
 
 ### zls
 

@@ -1129,7 +1129,8 @@ impl Texture {
             // E568); with it loaded (E037; a fill's transfer command loads it too, E1103) E037's
             // conversion through set 0 (plain_texel, yuv_texel), on type 3 only. The set a job
             // without the load flag reads is the last load's (E1097, E1103: it survives later
-            // jobs and the reset): the caller's to know (Sample::csc, Machine::csc).
+            // jobs and the reset; the kit's health fill and triangle leave zeros, E1112): the
+            // caller's to know (Sample::csc, Machine::csc).
             28 | 29 => 2,
             f => return open(format!("texture format {f}")),
         })

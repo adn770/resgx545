@@ -9152,7 +9152,10 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   that does not load it reads the last loaded set (E1097, post hoc). A fill's transfer command
   loads set 0 when its load flag (xfer:17 bit 0) is set, as a copy's does (E037): BT.601 words
   turn a set of zeros into the conversion, zeros turn the conversion into black, and a later fill
-  without the flag keeps the loaded set (E1103, held out, formats 28 and 29) **[HW]**.
+  without the flag keeps the loaded set (E1103, held out, formats 28 and 29) **[HW]**. A copy
+  without the flag reads zeros after the kit's health fill and triangle, with or without a
+  recovered hang before them, while a debugfs reset alone keeps the set (E1112; which job of the
+  pair clears it is open, Q010) **[HW]**.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,
