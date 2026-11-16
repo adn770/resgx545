@@ -7,6 +7,7 @@ is one of the slips of rounds 5-7 made impossible: an unstaged lib, a dump direc
 a control that could not be read, /tmp, a mock that leaned on milliseconds, a freeze that broke
 when main moved."""
 import hashlib
+import importlib.util
 import os
 import pathlib
 import re
@@ -652,6 +653,58 @@ def test_a_tool_run_under_regtimeline_is_mocked_with_its_timeline(repos):
     assert re.search(r"^timeline: regs 0x0c04 0x0700 0x0704 0x0708 samples \d+ .* rc 3$", out,
                      re.M), out
     assert re.search(r"^tl \d+( [0-9a-f]{8}){4}$", out, re.M), out
+
+
+def _fake_tool():
+    spec = importlib.util.spec_from_file_location("fake_tool", KIT / "fake/tool.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.parametrize("nregs, ns", [(1, 541), (4, 1450), (27, 9000)])
+def test_the_fake_regtimeline_spaces_its_samples_as_the_laptop_does(nregs, ns):
+    """r31-cc and r32-misc: an m2-style control that premises `ivl` (the mean sample spacing,
+    seconds / samples) failed on the mock, whose timeline said 0 seconds. The fake's header now
+    carries the laptop's measured spacing (E1120, E1122: ~541 ns for 1 register, ~1.45 us for 4,
+    ~9 us for 27), so a correct session's controls pass on the mock."""
+    tool = _fake_tool()
+    assert abs(tool.interval_ns(nregs) - ns) < 1
+    assert tool.interval_ns(2) < tool.interval_ns(3) < tool.interval_ns(40)
+
+
+def test_a_world_may_set_the_fake_regtimeline_spacing_and_the_header_follows(capsys, monkeypatch):
+    tool = _fake_tool()
+
+    class World:
+        @staticmethod
+        def interval_ns(*a):
+            return 2000
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: subprocess.CompletedProcess(a, 0))
+    for world, want in ((World, 2000), (object, tool.interval_ns(2))):
+        tool.wrap(world, "rt", ["1.5", "0.5", "0x0804,0x0b14", "--", "x"], "model")
+        head = capsys.readouterr().out.splitlines()[0]
+        m = re.search(r"samples (\d+) seconds ([\d.]+) ", head)
+        assert m, head
+        ivl = float(m.group(2)) * 1e9 / int(m.group(1))
+        assert abs(ivl - want) / want < 0.01, (head, ivl)
+
+
+def test_a_mocked_timeline_header_gives_the_laptops_spacing_for_its_register_count(repos):
+    """End to end through the kit's mock: 4 registers give an ivl near the laptop's 1.45 us."""
+    kp = rt_session(repos, 'o1|fit|safe|expect:rc3-overflow|rt|1.5 0.5 0x0c04,0x0700-0x0708 -- '
+                           '"$HOME/sgxfive-test-rgn4" probe --tri pixel')
+    overflow_world(kp, {"model": (0, {"s0": 0}), "other": (4, {"s0": 4})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    out = kitscore.text(str(kept), "o1.txt")
+    h = re.search(r"^timeline: .* samples (\d+) seconds ([\d.]+) ", out, re.M)
+    assert h, out
+    assert 1300 < float(h.group(2)) * 1e9 / int(h.group(1)) < 1600, h.group(0)
 
 
 def test_the_guard_refuses_a_wrapped_command_that_is_not_a_pinned_tool(repos):

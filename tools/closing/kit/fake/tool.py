@@ -18,7 +18,11 @@ A wrapper tool (session.toml `wraps = true`, named in KIT_WRAPPERS), regtimeline
 wrapped tool, which the world answers as that tool) with the same stdout, then prints a timeline
 of REGS as regtimeline does and exits with COMMAND's status. The world's optional
 `timeline(tool, regs, argv, rc, world)` gives the sample lines' values ([[int per reg], ...]);
-without it, one sample of zeros."""
+without it, one sample of zeros. The header's `samples` and `seconds` give the mean sample spacing
+a scorer derives (seconds / samples, the `ivl` of the m2-style controls): by default the laptop's
+measured regtimeline spacing for that many registers (E1120, E1122: about 541 ns for 1, 1.45 us
+for 4, 9 us for 27, linear between and beyond), or the world's optional
+`interval_ns(tool, regs, argv, rc, world)` per world."""
 import importlib.util
 import os
 import subprocess
@@ -74,6 +78,21 @@ def offsets(spec):
     return out
 
 
+# (registers, ns between samples) measured on the laptop (E1120 and E1122)
+SPACING = ((1, 541), (4, 1450), (27, 9000))
+
+
+def interval_ns(nregs):
+    """The laptop's regtimeline sample spacing for NREGS registers: piecewise linear through the
+    measured points, extended with the last slope."""
+    pts = SPACING
+    for (n0, t0), (n1, t1) in zip(pts, pts[1:]):
+        if nregs <= n1:
+            return t0 + (t1 - t0) * (nregs - n0) / (n1 - n0) if nregs > n0 else t0
+    (n0, t0), (n1, t1) = pts[-2:]
+    return t1 + (t1 - t0) / (n1 - n0) * (nregs - n1)
+
+
 def wrap(mod, tool, args, world):
     if len(args) < 5 or args[3] != "--":
         sys.stderr.write("usage: regtimeline TOTAL LEAD LO-HI[,LO-HI...] -- COMMAND...\n")
@@ -83,8 +102,16 @@ def wrap(mod, tool, args, world):
     rc = subprocess.run(args[4:]).returncode
     rows = getattr(mod, "timeline", lambda *a: None)(tool, regs, args[5:], rc, world) or \
         [[0] * len(regs)]
-    sys.stdout.write("timeline: regs %s samples %d seconds 0 start 0 end 0 rc %d\n"
-                     % (" ".join("0x%04x" % r for r in regs), len(rows), rc))
+    try:
+        seconds = max(float(args[0]), 0.0)
+    except ValueError:
+        seconds = 0.0
+    seconds = seconds or 0.05           # TOTAL 0: sampling lasts as long as the command
+    ivl = getattr(mod, "interval_ns", lambda *a: None)(tool, regs, args[5:], rc, world) or \
+        interval_ns(len(regs))
+    samples = max(int(seconds * 1e9 / ivl), len(rows))
+    sys.stdout.write("timeline: regs %s samples %d seconds %g start 0 end 0 rc %d\n"
+                     % (" ".join("0x%04x" % r for r in regs), samples, seconds, rc))
     for i, vals in enumerate(rows):
         sys.stdout.write("tl %d %s\n" % (i * 1000, " ".join("%08x" % v for v in vals)))
     return rc
