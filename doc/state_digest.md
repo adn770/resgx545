@@ -199,7 +199,7 @@ list.
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change timing, when two of its values were slower in one
-  timing run? (E045, E141, E396)
+  timing run? (E141, E396, E1114)
 - `Q059` pds, low: why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an
   rwfence after a store, or after a faulted job, touch page 0? (E144, E145, E395)
 - `Q062` pds, low: what makes the PDS fetch pc read one or two below the reading instruction's index
@@ -289,9 +289,12 @@ list.
 
 ## Recent records
 
-22 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+23 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1114` pds, 2026-11-16: r29-kreg on module E0CC4027 (Q024), readings only, no verdict:
+  CR_PDS_REG_0A78 written to each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256
+  triangle job of six renders; the mean ...
 - `E1109` ta, 2026-11-16: r29-flag stage f2 (2 jobs, t10, E1074's form at 512 x 512 (n = 2, TA data
   32768 bytes by the kernel's layout, c-512's reading), the size's own CR_TE_MTILE1 and CR_TE_MTILE2
   with B2 cleared, words ...
@@ -361,9 +364,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-89 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+90 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r29-kreg`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10
 - `render/closing-r29-flag`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14, ~/sgxfive-test-t22
 - `render/closing-r26-vol`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -497,7 +501,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 17 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 18 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
@@ -558,4 +562,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-39 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+40 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

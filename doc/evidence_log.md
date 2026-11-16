@@ -9398,6 +9398,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   twice, no recovery failed, so the session stopped (rc 5) before its hang stages.
   *ta; HW, infer; data: `render-closing-r29-flag:out/20261116-055520/f2/`,
   `render-closing-r29-flag:fold/`.*
+- `E1114` r29-kreg on module E0CC4027 (Q024), readings only, no verdict: CR_PDS_REG_0A78 written to
+  each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256 triangle job of six
+  renders; the mean of renders 2-6 of 62 values lies within 1 percent of the sixteen 0x2c controls'
+  median (67162 us) on both passes (-0.60 to +0.97 percent), 0x23 read +4.77 percent on pass A only
+  and 0x39 +2.26 percent on pass B only, each from one slow render (82956 and 74235 us), so no value
+  lies outside 1 percent on both passes; the frozen score is 'controls FAILED: c11: FAILED' because
+  control c11 (0x2c) read 69190 us, +3.02 percent of s0's references (67164 us), from two slow
+  renders (71090 and 74071 us) in one job, with the register read back at 0x2c before it and its
+  neighbours c10 and c12 at -0.07 and -0.54 percent.
+  *pds; HW, infer; data: `render-closing-r29-kreg:out/20261116-061842/s0/`,
+  `render-closing-r29-kreg:out/20261116-061842/k1/`, `render-closing-r29-kreg:fold/`.*
 
 ## By unit
 
@@ -9457,7 +9468,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107.
+E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114.
 
 ### platform
 

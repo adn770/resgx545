@@ -750,6 +750,11 @@ E404: none changes a job's time or causes a fault at any load tried, and a reset
 this part again;
 `0x0818` with bit 8 set and bit 10 clear makes a triangle draw wrong after another of a
 different size, the job reporting ok.
+What `0x0a78` controls is open too (Q024): every value 0x00-0x3f draws a triangle exactly
+(E045), and none was seen to move a 256x256 triangle's render time: E396's six values lie within
+0.3 percent, and E1114's readings (no frozen verdict, its control rule failed on one slow job)
+put 62 of the 64 values within 1 percent of 0x2c on two passes and the other two outside on one
+pass each, from one slow render each.
 
 **Deinit** (9 writes): clear `EVENT_PDS_ENABLE`, `EVENT_OTHER_PDS_EXEC`, `_DATA` and `_INFO`,
 `USE_CODE_BASE_15`, `EVENT_HOST_ENABLE` and `EVENT_HOST_ENABLE2`, then `CLKGATECTL = 0` and
