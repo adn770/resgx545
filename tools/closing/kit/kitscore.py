@@ -19,6 +19,10 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           another written 00000000, so each stream ends at its first terminate
                           word and the words past it (stale, r19-k0) are not compared;
                           lib_kit.sh param_hash FILE is its twin (r19-k0b's pmask, E1077)
+  miscinfo(d, name)       the kept NAME.miscinfo of a pre:miscinfo row (None when absent): text,
+                          served (the kernel's "GETMISCINFO answered after N us" and "all
+                          values match" lines, no MISMATCH line: the kick was served) and us
+                          (N, or None)
   completed(row)          a kept row whose job ran to its end: class ok, with rc 0, rc 1 of an
                           `expectdiff` row (the runner took it as a reading only with `job: ok`
                           and a diff line) or the rc of an expected outcome its knobs declare
@@ -34,6 +38,7 @@ summary must say "N overflowed" (the line is a grep pattern); rc 0 without it is
 import gzip
 import hashlib
 import os
+import re
 
 import scorekit
 
@@ -130,6 +135,23 @@ def controls(kp, stage):
 def premise(kp, stage, d):
     want = {n: keys for n, (keys, _) in controls(kp, stage).items()}
     return scorekit.premise_stops(want, readings(d))
+
+
+# the kernel's lines of a served miscinfo read (fork 8bc0877e8603, sgxfive_miscinfo's
+# drm_printf): the answer, then each value checked; a mismatch prints MISMATCH and MISMATCHES
+MISCINFO_ANSWERED = re.compile(r"^GETMISCINFO answered after ([0-9]+) us$", re.M)
+MISCINFO_MATCH = re.compile(r"^all values match$", re.M)
+
+
+def miscinfo(d, name):
+    """The kept NAME.miscinfo of a pre:miscinfo row: {text, served, us}, or None."""
+    b = _read(os.path.join(d, name + ".miscinfo"))
+    if b is None:
+        return None
+    t = b.decode(errors="replace")
+    m = MISCINFO_ANSWERED.search(t)
+    served = bool(m and MISCINFO_MATCH.search(t) and "MISMATCH" not in t)
+    return dict(text=t, served=served, us=int(m.group(1)) if m else None)
 
 
 def completed(row):

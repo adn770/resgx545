@@ -91,6 +91,7 @@ ENV = None          # the environment of every command (the mock's; None: this p
 # the kit's knob words; expect:NAME are kitscore.OUTCOMES (run_stage.sh classifies them);
 # idle:S takes 1 to 120 seconds
 BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|"
+                        r"pre:miscinfo|"
                         r"idle:([1-9]|[1-9][0-9]|1[01][0-9]|120)|"
                         r"expect:(rc3-overflow|rc0-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
 # a stage's on_stop: what follows its runner status 24 (next: the next stage runs; end: the
@@ -115,6 +116,13 @@ KREG_LINES = ("""printf '%s=%s\\n' "$1" "$2" | sudo -n timeout -k 5 20 tee "$D/k
 # CR_PDS_REG_0A78 alone: E045 drew every value 0x00-0x3f exactly; 0x2c is the firmware's (E141).
 KREG_ALLOWED = {"0x0a78": ("0x2c", 0x3f)}
 KREG_WORD = re.compile(r"^kreg:(0x[0-9a-f]{4})=(0x[0-9a-f]{1,8})$")
+# pre:miscinfo (round 32, Q111): the debugfs miscinfo read after the row's reset and before snap0,
+# which sends the firmware one GETMISCINFO command (fork 8bc0877e8603, sgxfive_miscinfo): a read,
+# so any stage, but the only kit read that kicks the firmware; in the kit's runner only as
+# MISCINFO_LINE, never in a hook; its file must exist on the laptop (DEBUGFS_NEED)
+MISCINFO_WORD = "pre:miscinfo"
+MISCINFO_LINE = 'sudo -n timeout -k 5 10 cat "$D/miscinfo" > "$JW/miscinfo.out" 2>&1; r=$?'
+MISCINFO_USE = r"\$\{?D\}?/miscinfo|dbg_cat +miscinfo|miscinfo_read"
 # a stage's class: safe (the default), or flagged (a planned fault or hang, a register write of
 # ours): every flagged stage runs after every safe one, and only a flagged stage writes a kreg
 STAGE_CLASSES = ("safe", "flagged")
@@ -176,6 +184,23 @@ def config(kp):
     c.setdefault("forbid_options", [])
     c.setdefault("kregs", {})
     return c
+
+
+def uses_miscinfo(kp, c=None):
+    """Whether a row of any stage's table has the word pre:miscinfo."""
+    kp = pathlib.Path(kp)
+    c = c or config(kp)
+    return any(MISCINFO_WORD in r[3].split() for s in stages(c)
+               if (kp / "tables" / f"{s}.txt").exists()
+               for r in _rows(kp / "tables" / f"{s}.txt"))
+
+
+def debugfs_need(kp, c=None):
+    """The debugfs files the preflight wants besides reset, regs and the knobs: session.toml's
+    debugfs = [...], and miscinfo when a row reads it (pre:miscinfo)."""
+    c = c or config(kp)
+    return [*c["debugfs"], *(["miscinfo"] if uses_miscinfo(kp, c)
+                             and "miscinfo" not in c["debugfs"] else [])]
 
 
 def flagged_stages(c):
@@ -251,7 +276,7 @@ def generated(kp):
            f"JOB_TIMEOUT=${{JOB_TIMEOUT:-{int(c.get('job_timeout', 120))}}}",
            f"MIN_FREE_MB=${{MIN_FREE_MB:-{int(c.get('min_free_mb', 200))}}}",
            f"TOOLS=\"{' '.join(c['tools'])}\"", f"HEALTH_TOOL={c['health_tool']}",
-           f"DEBUGFS_NEED=\"{' '.join(c['debugfs'])}\"",
+           f"DEBUGFS_NEED=\"{' '.join(debugfs_need(kp, c))}\"",
            f"OUTDIR_OPTS=\"{' '.join(c['outdir_opts'])}\"",
            f"EXTRA_KNOBS=\"{' '.join(c['extra_knobs'])}\"",
            f"KNOBS=\"{' '.join(c['knobs'])}\"",
@@ -354,7 +379,9 @@ def guard(kp):
             where = f"{f}:{i}"
             if re.search(FORBID, ln) or (re.search(FORBID_KREG, ln) and (
                     hook or ("$D/kreg" in ln or "dbg_cat kreg" in ln)
-                    and ln.strip() not in KREG_LINES)):
+                    and ln.strip() not in KREG_LINES)) or (re.search(MISCINFO_USE, ln) and (
+                    hook or re.search(r"\$\{?D\}?/miscinfo|dbg_cat +miscinfo", ln)
+                    and ln.strip() != MISCINFO_LINE)):
                 bad.append(f"{where}: forbidden command: {ln.strip()}")
             if re.search(r"(^|[;&|\s])(while|until)\s", ln):
                 bad.append(f"{where}: a wait loop (while/until)")
@@ -426,6 +453,11 @@ def guard(kp):
             if "noreset" in words and not names - {name}:
                 bad.append(f"{where}: noreset on the stage's first row (no row before it whose "
                            "state it could keep)")
+            if words.count(MISCINFO_WORD) > 1:
+                bad.append(f"{where}: more than one {MISCINFO_WORD} word (one pre:miscinfo a row)")
+            if MISCINFO_WORD in words and "noreset" in words:
+                bad.append(f"{where}: {MISCINFO_WORD} with noreset (the read follows the row's "
+                           "reset)")
             if sum(w.startswith("idle:") for w in words) > 1:
                 bad.append(f"{where}: more than one idle: word (one idle:S a row)")
             if tool not in c["tools"]:
@@ -1052,7 +1084,7 @@ def libmock(kp, say=print):
     top = pathlib.Path(tempfile.mkdtemp(prefix="libmock.", dir=kp / "debug"))
     home = top / "home"
     home.mkdir()
-    n = stateless = 0
+    n = stateless = premisc = 0
     nsim = {}
     for st in stages(c):
         for row in _rows(kp / "tables" / f"{st}.txt"):
@@ -1093,6 +1125,8 @@ def libmock(kp, say=print):
                 continue
             if "noreset" in row[3].split():
                 stateless += 1
+            if MISCINFO_WORD in row[3].split():
+                premisc += 1
             prev = None
             for a in argv:              # the runner makes the directories outdir_opts name
                 if prev in c["outdir_opts"]:
@@ -1125,6 +1159,9 @@ def libmock(kp, say=print):
         say(f"note libmock: program not simulated (a probe of a program of ours: the mock's "
             f"unknown program fault, after the argv, usage and rejection checks): "
             + ", ".join(rows))
+    if premisc:
+        say(f"note libmock: {premisc} pre:miscinfo row(s) replayed without the miscinfo read "
+            "(the library mock sends the firmware no command; the fake laptop answers it)")
     if stateless:
         say(f"note libmock: {stateless} noreset row(s) replayed without the state of the row "
             "before (every replay starts from a fresh library mock)")
@@ -1205,7 +1242,7 @@ def mock(kp, worlds=None, say=print):
         home, real, dbg, fake = m / "home", m / "dbgreal", m / "dbg", m / "fake"
         for d in (home, real, dbg, fake, m / "bin"):
             d.mkdir(parents=True)
-        for f in ["reset", "regs", *c["debugfs"]]:
+        for f in ["reset", "regs", *debugfs_need(tree, c)]:
             (real / f).write_text("")
         for k, d in c["knobs"].items():
             (real / k).write_text(d["default"] + "\n")

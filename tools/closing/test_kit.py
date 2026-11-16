@@ -2019,3 +2019,183 @@ def test_the_runner_refuses_a_kreg_outside_a_flagged_stage_or_its_allow_list(tmp
         assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
     else:
         assert r.returncode == 7 and "kreg" in r.stdout, (r.returncode, r.stdout)
+
+
+# ---- pre:miscinfo, a debugfs miscinfo read before snap0 (Q111, round 32) ---------------------
+MISC_ROWS = ("m1|fit|safe|pre:miscinfo|t4|tri --width 64 --height 64\n"
+             "m2|fit|safe|-|t4|tri --width 32 --height 32\n")
+
+
+def misc_session(repos, rows=MISC_ROWS, expect=None):
+    """The template's safe stage s0 with ROWS after its rows."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + rows)
+    if expect:
+        w = (kp / "mock/world.py").read_text()
+        w = re.sub(r"^EXPECT = .*$", f"EXPECT = {expect!r}", w, count=1, flags=re.M)
+        (kp / "mock/world.py").write_text(w)
+    return kp
+
+
+def test_the_guard_allows_pre_miscinfo_in_a_safe_stage(repos):
+    kp = misc_session(repos)
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+
+
+@pytest.mark.parametrize("rows,word", [
+    ("m0|fit|safe|-|t4|tri\nm1|fit|safe|pre:miscinfo noreset|t4|tri\n", "noreset"),
+    ("m1|fit|safe|pre:miscinfo pre:miscinfo|t4|tri\n", "one pre:miscinfo"),
+    ("m1|fit|safe|pre:misc|t4|tri\n", "pre:misc"),
+])
+def test_the_guard_refuses_pre_miscinfo_with_noreset_or_twice(repos, rows, word):
+    kp = misc_session(repos, rows=rows)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and word in g.stdout, g.stdout
+
+
+@pytest.mark.parametrize("line", ['sudo -n timeout -k 5 10 cat "$D/miscinfo"',
+                                  "dbg_cat miscinfo", "miscinfo_read x"])
+def test_the_guard_refuses_a_miscinfo_read_in_a_hook(repos, line):
+    """The miscinfo read sends a firmware command (GETMISCINFO): the kit's word only."""
+    kp = misc_session(repos)
+    with open(kp / "run/hooks.sh", "a") as f:
+        f.write(f"hook_extra() {{ {line}; }}\n")
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "hooks.sh" in g.stdout, g.stdout
+
+
+def test_the_preflight_needs_debugfs_miscinfo_only_when_a_row_reads_it(repos):
+    kp = misc_session(repos)
+    env = S.generated(kp)["run/session.env"]
+    assert re.search(r'^DEBUGFS_NEED="[^"]*\bmiscinfo\b', env, re.M), env
+    kp = misc_session(dict(repos, tmp=repos["tmp"] / "none"), rows="")
+    env = S.generated(kp)["run/session.env"]
+    assert not re.search(r'^DEBUGFS_NEED="[^"]*\bmiscinfo\b', env, re.M), env
+
+
+def test_a_pre_miscinfo_row_reads_after_the_reset_and_before_snap0_and_keeps_it(repos):
+    kp = misc_session(repos)
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    mm = next(kp.glob("debug/mock.*/model"))
+    kmsg = (mm / "kmsg").read_text()
+    order = [kmsg.index(s) for s in ("resgx545 r8t miscinfo m1 ", "SGX firmware: core 545",
+                                     "resgx545 r8t snap m1 0 ", "resgx545 case m1 ")]
+    assert order == sorted(order), kmsg
+    # the reset before m1 comes before its read: the last reset line before the read's mark
+    before = kmsg[:kmsg.index("resgx545 r8t miscinfo m1 ")]
+    assert before.rindex("SGX reset") > before.rindex("resgx545 case f0-fill "), kmsg
+    assert "resgx545 r8t miscinfo m2 " not in kmsg, kmsg
+    # a read, not a write: the only debugfs writes are the resets
+    assert set((mm / "fake/writes").read_text().splitlines()) == {"reset 1"}
+    kept = mm / "out/model/s0"
+    import kitscore
+    assert kitscore.miscinfo(str(kept), "m1")["served"] is True
+    assert kitscore.miscinfo(str(kept), "m2") is None
+    log = (kept / "runner.log").read_text()
+    assert re.search(r"miscinfo before m1: served", log), log
+
+
+def test_a_miscinfo_read_with_a_mismatch_stops_before_the_job(repos):
+    kp = misc_session(repos, expect={"miscinfobad": (19, {"s0": 19})})
+    m = kit(kp, repos, "mock", "--world", "miscinfobad")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/miscinfobad"))
+    kmsg = (mm / "kmsg").read_text()
+    assert "resgx545 case m1 " not in kmsg, kmsg
+    log = (mm / "out/miscinfobad/s0/runner.log").read_text()
+    assert "## STOP: the miscinfo read before m1 was not served" in log, log
+    assert (mm / "out/miscinfobad/s0/m1.miscinfo.gz").exists()
+
+
+def test_a_miscinfo_read_that_fails_stops_before_the_job(repos):
+    kp = misc_session(repos, expect={"miscinfofail": (19, {"s0": 19})})
+    m = kit(kp, repos, "mock", "--world", "miscinfofail")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/miscinfofail"))
+    log = (mm / "out/miscinfofail/s0/runner.log").read_text()
+    assert "## STOP: the miscinfo read before m1 was not served (status 1" in log, log
+
+
+@pytest.mark.parametrize("row,ok", [
+    ("k|fit|safe|pre:miscinfo|t4|tri\n", True),
+    ("k|fit|safe|pre:miscinfo noreset|t4|tri\n", False),
+    ("k|fit|safe|pre:miscinfo pre:miscinfo|t4|tri\n", False),
+])
+def test_the_runner_refuses_pre_miscinfo_with_noreset_or_twice(tmp_path, row, ok):
+    r = runner_env_tree(tmp_path, "a|fit|safe|-|t4|fill\n" + row, "")
+    if ok:
+        assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+    else:
+        assert r.returncode == 7 and "miscinfo" in r.stdout, (r.returncode, r.stdout)
+
+
+MISC_OK = ("GETMISCINFO answered after 142 us\ncore rev         0x0001000d ok\n"
+           "all values match\n")
+MISC_BAD = ("GETMISCINFO answered after 142 us\ncore rev         0x0001000c MISMATCH\n"
+            "                 expected 0x0001000d\nMISMATCHES\n")
+
+
+def misc_kept(tmp, text=MISC_OK, knobs="pre:miscinfo"):
+    import gzip
+    d = tmp / "kept"
+    d.mkdir()
+    cols = "name\tstage\tset\trisk\tknobs\ttool\targs\trc\tclass\tfault_int\tfault_word\tfree_kb\n"
+    (d / "cases.tsv").write_text(cols + f"m1\ts0\tfit\tsafe\t{knobs}\tt4\ttri\t0\tok\t-\t-\t1\n")
+    (d / "m1.txt.gz").write_bytes(gzip.compress(b"job: ok\n"))
+    if text is not None:
+        (d / "m1.miscinfo.gz").write_bytes(gzip.compress(text.encode()))
+    return d
+
+
+@pytest.mark.parametrize("text,served,us", [(MISC_OK, True, 142), (MISC_BAD, False, 142),
+                                            ("cat: miscinfo: Connection timed out\n", False,
+                                             None)])
+def test_kitscore_reads_whether_the_miscinfo_kick_was_served(tmp_path, text, served, us):
+    import kitscore
+    d = misc_kept(tmp_path, text)
+    got = kitscore.miscinfo(str(d), "m1")
+    assert got["served"] is served and got["us"] == us, got
+
+
+def test_the_kept_check_wants_the_miscinfo_of_a_row_with_the_word(tmp_path):
+    import sessioncheck
+    d = misc_kept(tmp_path, text=None)
+    probs = sessioncheck.kept_problems(str(d), (".txt",), sessioncheck.kept_classes(str(d)))
+    assert any("m1.miscinfo" in p for p in probs), probs
+    (d / "m1.miscinfo").write_text(MISC_OK)
+    assert sessioncheck.kept_problems(str(d), (".txt",), sessioncheck.kept_classes(str(d))) == []
+
+
+def test_a_scorer_may_read_the_miscinfo_of_a_row_with_the_word(tmp_path):
+    import kitscore
+    import sessioncheck
+    d = misc_kept(tmp_path)
+    probs = sessioncheck.kept_problems(str(d), (".txt",), sessioncheck.kept_classes(str(d)),
+                                       lambda: kitscore.miscinfo(str(d), "m1"))
+    assert probs == [], probs
+
+
+def test_the_header_the_runner_and_the_guard_know_pre_miscinfo():
+    header = (KIT / "run_stage.sh").read_text().split("trap '' PIPE HUP")[0]
+    assert re.search(r"^#\s+pre:miscinfo\s", header, re.M)
+    assert S.BASE_KNOBS.match("pre:miscinfo")
+    for w in ("pre:", "pre:miscinfo2", "miscinfo"):
+        assert not S.BASE_KNOBS.match(w), w
+    lib = (KIT / "lib_kit.sh").read_text()
+    assert [ln.strip() for ln in lib.splitlines() if "$D/miscinfo" in ln] == [S.MISCINFO_LINE]
+
+
+def test_the_library_mock_replays_a_pre_miscinfo_row_and_says_it_sends_no_command(repos):
+    kp = scaffold(repos)
+    bind_source(repos, kp)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "m1|fit|safe|pre:miscinfo|t4|fill --width 8 --height 8\n")
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
+    assert re.search(r"^note libmock: 1 pre:miscinfo row\(s\) replayed without the miscinfo "
+                     r"read", m.stdout, re.M), m.stdout

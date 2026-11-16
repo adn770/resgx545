@@ -41,6 +41,13 @@
 #                    before the write and V after it (rc 19, the job never runs); after the job
 #                    the default is written and read back (else a reset and once more, then rc
 #                    19), and the exit trap writes it again at every exit once one was written
+#     pre:miscinfo   the debugfs miscinfo read (round 32, Q111): one GETMISCINFO command to the
+#                    firmware with the pending cache control (no INVAL_DATA), after the reset, the
+#                    knobs, the kregs and idle, right before snap0; any stage, one a row, never
+#                    with noreset (else rc 7). Kept as NAME.miscinfo; not served (a read status
+#                    other than 0, no "GETMISCINFO answered" or "all values match" line, or a
+#                    MISMATCH) stops the stage before the job (rc 19); a FATAL kernel line after
+#                    it rc 3, a fault or hang rc 4
 #     noreset        no GPU reset before the job, so it starts from the state the row before left
 #                    (Q163's hang sequences): only after a row that ended ok, or an expected hang
 #                    the runner already reset; after any other end (a soft failure, a gate refusal,
@@ -58,7 +65,8 @@
 # return; 7 a forbidden knob or tool; 12 registers unreadable; 13 a reset failed; 14 a fault latched
 # before a job; 16 strict health failed; 19 a knob did not read back; 22 not enough free space;
 # 23 a file the scorer reads was not kept, or an output directory missing; 24 the stage stopped by
-# its rule; 25 a control without its reading; 19 also a kreg that did not read back.
+# its rule; 25 a control without its reading; 19 also a kreg that did not read back, or a
+# pre:miscinfo read that was not served.
 # No reboot, no boot-loader change, no kernel build, no wait loop, and no register write of ours
 # but a flagged stage's kreg:OFF=V to a register of KIT_KREGS.
 trap '' PIPE HUP
@@ -98,10 +106,15 @@ case " ${FLAGGED_STAGES:-} " in
 esac
 awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " '
 	!/^#/ && NF >= 6 {
-		n = split($4, k, " "); row++; idles = 0; kregs = 0; xf = 0
-		for (i = 1; i <= n; i++) if (k[i] == "expectfault") xf = 1
+		n = split($4, k, " "); row++; idles = 0; kregs = 0; xf = 0; mis = 0; nr = 0
+		for (i = 1; i <= n; i++) { if (k[i] == "expectfault") xf = 1; if (k[i] == "noreset") nr = 1 }
 		for (i = 1; i <= n; i++) {
 			w = k[i]
+			if (w == "pre:miscinfo") {
+				if (++mis > 1) { print $1 ": more than one pre:miscinfo word"; bad = 1 }
+				if (nr) { print $1 ": pre:miscinfo with noreset (the read follows the row'"'"'s reset)"; bad = 1 }
+				continue
+			}
 			if (w ~ /^kreg:/) {
 				if (++kregs > 1) { print $1 ": more than one kreg word"; bad = 1 }
 				if (xf) { print $1 ": kreg with expectfault (a fault with our register written is a stop)"; bad = 1 }
@@ -152,7 +165,7 @@ for i in $(seq 1 "$TOTAL"); do
 $line
 EOF
 	[ -z "$name" ] && continue
-	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; kregs=""; expect=""; noreset=0; idle=0
+	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; kregs=""; expect=""; noreset=0; idle=0; premisc=0
 	for k in $knobs; do
 		case "$k" in
 		grp:*) grp=${k#grp:} ;;
@@ -167,6 +180,7 @@ EOF
 		kreg:*) kregs="$kregs ${k#kreg:}" ;;
 		noreset) noreset=1 ;;
 		idle:*) idle=${k#idle:} ;;
+		pre:miscinfo) premisc=1 ;;
 		*) ;;
 		esac
 	done
@@ -202,6 +216,15 @@ EOF
 		echo "  idle $idle s before $name"
 		mark "idle $name $idle"
 		sleep "${IDLE_WAIT:-$idle}"
+	fi
+	if [ "$premisc" = 1 ]; then
+		miscinfo_read "$name"; mr=$?
+		case "$mr" in
+		0) ;;
+		3) echo "## STOP: kernel watchdog/lockup/BUG after the miscinfo read before $name"; FATAL_STOP=1; exit 3 ;;
+		4) echo "## STOP: a fault or hang after the miscinfo read before $name"; reset_gpu; strict_health "$name" </dev/null; exit 4 ;;
+		*) echo "## STOP: the miscinfo read before $name was not served (status $MISCINFO_STATUS, $MISCINFO_WHY)"; exit 19 ;;
+		esac
 	fi
 	snap "$name" 0 || { echo "## STOP: registers unreadable before $name"; exit 12; }
 	f0=$(fault_req "$JW/snap0.regs")

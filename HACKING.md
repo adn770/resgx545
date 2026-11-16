@@ -381,6 +381,27 @@ the reset to put it back; its world token `kregstuck` takes a write without chan
 The kernel takes a kreg write only with the firmware live and no job queued (`-EBUSY`, `-ENODEV`:
 the read-back stops the row).
 
+One knob word reads a debugfs file that sends the firmware a command (round 32, Q111):
+`pre:miscinfo`, in any stage, one a row, never with `noreset` (the guard and the runner, rc 7).
+After the row's reset, its `dbg:` knobs, its kreg and its `idle:S`, right before `snap0`, the
+runner marks `miscinfo NAME` and reads debugfs `miscinfo` (`sudo -n timeout -k 5 10 cat`), which
+sends one GETMISCINFO command with the pending cache control (fork 8bc0877e8603,
+`sgxfive_miscinfo`; no INVAL_DATA) and checks the answer against the registers and the firmware
+file. It keeps the output as `NAME.miscinfo` (whatever the job's end; sessioncheck wants it for
+every kept row with the word, and `kitscore.miscinfo` reads it: `served`, the answer's `us`). The
+read is served when its status is 0 and it prints `GETMISCINFO answered after N us` and `all
+values match` with no `MISMATCH`; else the stage stops before the job (rc 19). A FATAL kernel
+line after the read stops it as a job's does (rc 3), a fault or hang line rc 4. The kit's rule
+"no debugfs write but reset and the knobs" still holds (this is a read), but it is the first kit
+read that kicks the firmware: the guard allows the read in the kit's runner as one line
+(`MISCINFO_LINE` in `kit/session.py`) and never in `run/hooks.sh`. The preflight wants debugfs
+`miscinfo` when any row has the word (`DEBUGFS_NEED`). The fake laptop answers it as the kernel
+does, its kernel line in the log; its world tokens `miscinfobad` (a MISMATCH) and `miscinfofail`
+(status 1) stop the stage with rc 19. Every kit reset already ends in the boot's own GETMISCINFO
+(`sgxfive_ident_ask`, the kernel line `SGX firmware: core ...`), with the firmware file's cache
+control; the word's command is a second one, with whatever cache control is pending then (none
+is set between the two in the kernel's code at the fork pin).
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset

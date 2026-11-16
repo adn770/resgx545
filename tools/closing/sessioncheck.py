@@ -259,17 +259,41 @@ def kept_classes(kept_dir):
     return out
 
 
+# a row's knob word whose runner keeps a file of its own before the job, whatever the job's end:
+# pre:miscinfo keeps NAME.miscinfo (the debugfs miscinfo read, kit/run_stage.sh)
+WORD_FILES = {"pre:miscinfo": ".miscinfo"}
+
+
+def kept_word_files(kept_dir):
+    """NAME.suffix of every kept row (cases.tsv) whose knobs (the fifth column) have a word of
+    WORD_FILES."""
+    p = os.path.join(kept_dir, "cases.tsv")
+    if not os.path.exists(p):
+        return []
+    out = []
+    for line in open(p):
+        f = line.rstrip("\n").split("\t")
+        if len(f) > 4 and not line.startswith("#") and f[0].strip() != "name":
+            out += [f[0].strip() + s for w, s in WORD_FILES.items() if w in f[4].split()]
+    return out
+
+
 def kept_problems(kept_dir, required, rows, fn=None):
     """The files of REQUIRED the kept directory lacks (a per-row file for the rows of its class:
-    rows a list of names, each ok, or {name: class}), then the files fn() reads there that
-    REQUIRED does not declare (any class's file of any row is declared)."""
+    rows a list of names, each ok, or {name: class}) and the file a row's word keeps
+    (WORD_FILES), then the files fn() reads there that neither declares (any class's file of any
+    row is declared)."""
     rows = rows if isinstance(rows, dict) else list(rows)
     out = [f"the scorer reads {m}, which is not kept"
            for m in scorekit.missing_files(required, kept_dir, rows)]
+    words = kept_word_files(kept_dir)
+    out += [f"{m} is not kept (its row's word keeps it)" for m in words
+            if not (os.path.exists(os.path.join(kept_dir, m))
+                    or os.path.exists(os.path.join(kept_dir, m + ".gz")))]
     if fn is None:
         return out
     names = [f for f in required if (scorekit.required_entry(f) or ("x",))[0] is None]
-    names += scorekit.row_files(required, rows, every_class=True)
+    names += scorekit.row_files(required, rows, every_class=True) + words
     declared = set(names) | {n + ".gz" for n in names}
     root = os.path.realpath(kept_dir)
     seen = []

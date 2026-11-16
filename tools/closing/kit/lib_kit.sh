@@ -11,6 +11,8 @@
 #  - debugfs only through `sudo -n`; the only debugfs writes are `reset 1` and the knobs
 #    session.toml declares, to the values it allows, read back after each write and restored to
 #    their defaults after every job and by the exit trap; kernel-log markers are appended;
+#  - one debugfs read sends the firmware a command: a row's pre:miscinfo reads debugfs miscinfo
+#    (one GETMISCINFO, no data invalidation) after its reset and before snap0, kept, checked;
 #  - the one register write of ours, a flagged stage's kreg:OFF=V (run_stage.sh): OFF one of
 #    KIT_KREGS (0x0a78), V one session.toml [kregs] declares, the register at its default before
 #    the write, V read back after it, the default written and read back after the job and again
@@ -177,6 +179,27 @@ kregs_at_default() {
 		same_value "$now" "$d" || { echo "kreg $r is ${now:-unread}, not its default $d"; return 1; }
 	done
 	return 0
+}
+
+# ---- pre:miscinfo: the debugfs miscinfo read, one GETMISCINFO command (run_stage.sh) -------------
+MISCINFO_STATUS=""; MISCINFO_WHY=""
+miscinfo_read() { # NAME: debugfs miscinfo into $JW/miscinfo.out, kept as NAME.miscinfo; 0 served, 3 a FATAL kernel line, 4 a fault or hang, 19 not served
+	local r
+	mark "miscinfo $1"
+	sudo -n timeout -k 5 10 cat "$D/miscinfo" > "$JW/miscinfo.out" 2>&1; r=$?
+	MISCINFO_STATUS=$r
+	keep "$1" "$JW/miscinfo.out" ".miscinfo"
+	slice_since "resgx545 $PREFIX miscinfo $1 $RUN" > "$JW/miscinfo.dmesg"
+	if bad_lines "$JW/miscinfo.dmesg" "$JW/miscinfo.out" | grep -Eq "$FATAL_RE"; then MISCINFO_WHY="a FATAL kernel line"; return 3; fi
+	if bad_lines "$JW/miscinfo.dmesg" | grep -Eq "$FAULT_RE|$HANG_RE"; then MISCINFO_WHY="a fault or hang in the kernel log"; return 4; fi
+	if [ "$r" -eq 0 ] && grep -Eq '^GETMISCINFO answered after [0-9]+ us$' "$JW/miscinfo.out" \
+		&& grep -q '^all values match$' "$JW/miscinfo.out" && ! grep -q 'MISMATCH' "$JW/miscinfo.out"; then
+		echo "  miscinfo before $1: served, $(grep -m 1 '^GETMISCINFO answered' "$JW/miscinfo.out")"
+		return 0
+	fi
+	MISCINFO_WHY=$(awk 'NF { l = $0 } END { print (l == "" ? "no output" : l) }' "$JW/miscinfo.out")
+	echo "  miscinfo before $1: status $r, $MISCINFO_WHY"
+	return 19
 }
 
 # ---- the GPU: reset, registers ------------------------------------------------------------------
