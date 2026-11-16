@@ -262,11 +262,15 @@ def cmd_gate(a):
     emit(gate())
 
 
-def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=True, ticks=False):
-    """One experiment: initfill, set registers, params, cmd; poll state. Returns the record."""
+def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=True, ticks=False,
+            extra=()):
+    """One experiment: initfill, set registers, params, cmd; poll state. Returns the record.
+    extra: the other result slots (command numbers) the task fills, initfilled and read too."""
     base = RESULTS + 4 * n
     if initfill:
         res.w(base, [INITFILL] * 4)
+        for s in extra:
+            res.w(RESULTS + 4 * s, [INITFILL] * 4)
     res.w(OVERLAP, 0)
     for off, val in regs_to_set.items():
         kreg_write(int(off), val)
@@ -285,6 +289,8 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     ms = (time.monotonic() - t0) * 1000
     out = {"done": done, "ms": ms, "slot": res.r(base, 4), "echo": res.r(ECHO)[0],
            "cmd_after": res.r(CMD)[0], "overlap": res.r(OVERLAP)[0]}
+    if extra:
+        out["slots"] = {str(s): res.r(RESULTS + 4 * s, 4) for s in extra}
     if ticks:
         time.sleep(0.03)
         tk1 = regs()[1].get(12)
@@ -326,7 +332,8 @@ def cmd_run(a):
     for i, j in enumerate(jobs):
         try:
             rec = one_cmd(res, j["n"], j.get("params", {}), j.get("runid", i + 1), j.get("regs", {}),
-                          j.get("timeout_ms", DONE_MS), ticks=j.get("ticks", False))
+                          j.get("timeout_ms", DONE_MS), ticks=j.get("ticks", False),
+                          extra=j.get("slots", ()))
             rec["job"] = j
             # host-side proof that a str landed: the register itself, then restore
             now = kreg_all()

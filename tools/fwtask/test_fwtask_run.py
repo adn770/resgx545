@@ -87,3 +87,36 @@ def test_every_result_is_flagged_when_the_marker_was_missing(tmp_path, monkeypat
     FR.dmesg_new(n1)
     FR.emit({"ok": True})
     assert "log_whole_buffer" not in capsys.readouterr().out
+
+
+class FakeRes:
+    """The results page with a task behind it: writing cmd n runs it (state = done, result slots
+    filled with n << 8 | slot << 4 | dword)."""
+
+    def __init__(self, fill=(1, 2, 3, 4)):
+        self.page = [0] * 1024
+        self.fill = fill
+
+    def r(self, dword, n=1):
+        return self.page[dword:dword + n]
+
+    def w(self, dword, vals):
+        vals = [vals] if isinstance(vals, int) else vals
+        self.page[dword:dword + len(vals)] = vals
+        if dword == FR.CMD and vals[0]:
+            for s in self.fill:
+                base = FR.RESULTS + 4 * s
+                self.page[base:base + 4] = [vals[0] << 8 | s << 4 | k for k in range(4)]
+            self.page[FR.STATE] = 2
+
+
+def test_a_job_reads_the_extra_result_slots_it_names_after_filling_them():
+    """emitsa (round 33): cmd 1 leaves its results in slots 1 to 4; the job names 2 to 4 beside
+    its own slot, and each is initfilled first so a slot the task never wrote reads 0xdeadc0de."""
+    res = FakeRes(fill=(1, 2, 4))
+    out = FR.one_cmd(res, 1, {}, 7, {}, extra=(2, 3, 4))
+    assert out["done"] and out["slot"] == [0x110, 0x111, 0x112, 0x113]
+    assert out["slots"] == {"2": [0x120, 0x121, 0x122, 0x123], "3": [FR.INITFILL] * 4,
+                            "4": [0x140, 0x141, 0x142, 0x143]}
+    out = FR.one_cmd(FakeRes(), 1, {}, 8, {})
+    assert "slots" not in out
