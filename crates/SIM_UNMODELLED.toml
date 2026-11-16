@@ -49,3 +49,4 @@ E1124 = "pds: refused: no simulator keeps a clock (r31-kreg2 k1 render times of 
 E1125 = "pds: refused: no simulator keeps a clock (r31-kreg2 k2 render times of CR_PDS_REG_0A78; no vectors table)"
 E1128 = "pds: refused: no simulator keeps a clock (r32-kreg3 s0 render times of the 500-triangle load, no register write; no vectors table)"
 E1129 = "pds: refused: no simulator keeps a clock (r32-kreg3 kl10 render times of CR_PDS_REG_0A78; no vectors table)"
+E1131 = "platform: refused: readings only, every frozen control failed on the sample interval; no simulator keeps a clock, so CR_EVENT_TIMER's count is not modelled (r33-tim t1, t1d; no vectors table)"

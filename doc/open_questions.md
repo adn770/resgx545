@@ -23,7 +23,7 @@
 
 ### edm
 
-- `Q002` (phase 3, hw, low): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124, E377)
+- `Q002` (phase 3, hw, low): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124, E377, E1131)
 - `Q033` (phase 10, hw, low): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
 - `Q082` (phase 11, hw, medium): what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a load: a tile's time near 125 us, E805; a program that waits on a load never sets it, E840; in triangles no frozen reading placed the five sizes, E841), and is the timeout that sets bit 7 in a vertex loop (E839: set iff the TA's busy-clock run reaches about 129.5 us, held out) the one that sets bit 6 or 7 about 121 us after a fault word (E764 to E766)? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784, E804, E805, E806, E807, E839, E840, E841)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)

@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 3
-evidence = ["E009", "E084", "E124", "E377"]
+evidence = ["E009", "E084", "E124", "E377", "E1131"]
 terms = ["CR_TIMER", "host_ctl.edm_ticks"]
 +++
 
@@ -39,3 +39,8 @@ of round 3; [data] for the count, [infer] for the clock). The gaps average 25000
 a unit, so one clock times both `CR_TIMER` and the event timer (`CR_EVENT_TIMER` bits 23:0 count
 down 400000 and reload by themselves, E751). The USSE clause stays open: the issue rate, not the
 timer, turns the rate into the USSE's clock.
+
+Note 2026-11-16 (r33-tim, E1131, post-hoc readings, no verdict: its controls failed on the sample
+interval). `CR_EVENT_TIMER` sampled by the host through /dev/mem over 40 to 60 ms in 15 jobs counts
+down 398.96 to 399.01 a us with a period of 1002.497 to 1002.535 us against the laptop's monotonic
+clock, which agrees with the 399.0 MHz above. The USSE clause stays open.

@@ -9603,6 +9603,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   run input gives for a program a task emits, and the run stops there (R1, R3); no register read is
   refused.
   *edm; RE, infer; data: `tools/fwsim/replay.toml`, `crates/pysgx/tests/test_fwsim_m2.py`.*
+- `E1131` r33-tim on module 7CE8E38E (fwsim's tim, E1130), stages t1 (CR_EVENT_STATUS, CR_CACHE_CTRL
+  and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER alone), regtimeline over plain 64x64 triangles: every
+  control FAILED on its sample interval (t1 4850 to 4901 ns against the frozen 700 to 2000, t1d 3696
+  against 400 to 1200; the frozen premise took the idle loop's spacing of E1115, E1120 and E1122 for
+  the job's, a builder's error), so no frozen verdict stands; readings post hoc, no verdict: the
+  sampler is spaced 1213 ns (three registers) and 622 ns (one) before t10 starts and 4.6 to 6.2 us
+  (median) while it runs; CR_EVENT_TIMER keeps bit 24 in every sample of 15 rows, counts down 398.96
+  to 399.01 a us with a period of 1002.497 to 1002.535 us, and once reads exactly 400000;
+  CR_CACHE_CTRL changes 22.93 to 24.10 ms after the tool starts (11 of 11), where the count sits
+  anywhere in the period (7389 to 384863 on its line); over the 120 us after the change the samples
+  stay within 255 counts of the line fitted before it in 3 rows and step to +568 to +633 counts for
+  about 100 us in 5 [infer: the host's read timing].
+  *platform; HW, infer; data: `render-closing-r33-tim:out/20261116-211055/t1/`,
+  `render-closing-r33-tim:out/20261116-211055/t1d/`, `render-closing-r33-tim:fold/`.*
 
 ## By unit
 
@@ -9669,7 +9683,7 @@ E1129.
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
 E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
-E1122, E1123, E1126, E1127.
+E1122, E1123, E1126, E1127, E1131.
 
 ### render
 

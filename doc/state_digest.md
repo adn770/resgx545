@@ -169,7 +169,7 @@ list.
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
   stride) do to the addresses of a requestor whose accesses ... (E021, E151, E246)
 - `Q002` edm, low: is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE
-  runs from? (E084, E124, E377)
+  runs from? (E124, E377, E1131)
 - `Q033` edm, low: which hardware event sets bit 19 of the event word pa1 that the hardware hands a
   PDS event program, if any (none of the 138 job events of ... (E746, E747, E771)
 - `Q096` edm, low: does the sampler cache erratum of host bridge revisions below 4 show when a
@@ -279,9 +279,12 @@ list.
 
 ## Recent records
 
-41 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+42 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1131` platform, 2026-11-16: r33-tim on module 7CE8E38E (fwsim's tim, E1130), stages t1
+  (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER alone), regtimeline
+  over plain 64x64 triangles: every control ...
 - `E1130` edm, 2026-11-16: fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1
   c-off kicked as our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the
   kick's CR_CACHE_CTRL write ...
@@ -408,9 +411,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-98 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+99 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r33-tim`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r32-misc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r32-kreg3`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
@@ -557,7 +561,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 6 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 7 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -629,4 +633,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-46 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+47 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

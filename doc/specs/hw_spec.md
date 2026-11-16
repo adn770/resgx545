@@ -969,8 +969,13 @@ the timer followed by the closed task kept the tick and moved the next entry to 
 correction of 2026-11-11); [infer] the store restarts the countdown where it executes. The timer
 reloads with nobody serving it: in 9 stops (E813, E814, E817, E818, E823, E830) bits 23:0 read
 below 400000 in 18 of 18 samples taken seconds after the last served pass [data, round 4 reading;
-a counter that ran through 24 bits would be below 400000 in 2.4% of samples]. A pass with the tick
-bit of `sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50
+a counter that ran through 24 bits would be below 400000 in 2.4% of samples]. Sampled by the
+host through a plain triangle (E1131, readings only: its controls failed on the sample interval),
+the count drops 398.96 to 399.01 a us with a period of 1002.497 to 1002.535 us in 15 of 15 jobs,
+reads exactly 400000 once (the reload word), is at any phase at the kick pass's `CACHE_CTRL`
+write, and is back within 350 counts of its own line 120 to 300 us after it (a step of about +600
+counts before that in 5 of 11 rows, the host's read timing [infer]). A pass with the tick bit of
+`sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50
 passes, 2 of 2), and a tick pass handed to the slot 2 closed task keeps the tick without advancing
 it (E813 X1, X20), so dword 12 counts the passes of the closed tick handler, not ticks [infer].
 
