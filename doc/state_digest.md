@@ -188,8 +188,8 @@ list.
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
 - `Q241` isp, low: what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle;
   E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E1045, E1056, E1072)
-- `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
-  changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
+- `Q044` pbe, low: does bit 25 of CR_REG_0400 act on pack modes 22 and 34, whose stored values vary
+  between runs (Q012), given that it inverts the alpha in ... (E385, E1135, E1136)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change the render time of a sub-millisecond load of many
@@ -279,9 +279,15 @@ list.
 
 ## Recent records
 
-43 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+45 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1136` pbe, 2026-11-16: r34-q044 on module 7CE8E38E (Q044), stage p2, E385's alpha ramp, every
+  control passed: the stored one-bit alpha of pack mode 4 is set where the alpha is at or above the
+  low byte of the word that ...
+- `E1135` pbe, 2026-11-16: r34-q044 on module 7CE8E38E (Q044), stages s0, p1 and pw, colour form (o0
+  0x80ff8040 over 0xff203040), every control passed: bit 25 of the word that loads CR_REG_0400
+  changes the stored image in pack ...
 - `E1133` platform, 2026-11-16: r33-tim2 on module 7CE8E38E (fwsim's tim, E1130; the rerun of
   E1131), stages t1 (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER
   alone), regtimeline over plain 64x64 ...
@@ -414,9 +420,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-100 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+101 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r34-q044`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r33-tim2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r33-tim`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r32-misc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -565,7 +572,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 8 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 9 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

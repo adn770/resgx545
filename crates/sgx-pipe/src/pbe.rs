@@ -17,8 +17,8 @@
 //! byte (every pixel of 139 kept images, tests/pbe_pack_images.rs). The rest refuse (Q044, and
 //! Q012 for modes 22 and 34). Bit 25 of the word that loads CR_REG_0400 inverts the stored alpha
 //! in the modes 0 to 2 and nothing in mode 3; no other bit of it changes a pixel in modes 0 to 3
-//! (E268); in mode 8 bit 25 changes nothing (E385); the one- and two-channel modes ran with the
-//! word 0x80 only.
+//! (E268); in the one- and two-channel modes neither bit 25 nor the low byte nor bits 11:8
+//! change a pixel where they ran (E385, E1135, E1136: `reg0400_known`).
 
 use crate::Outcome;
 use crate::mem::Mem;
@@ -96,12 +96,18 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
 
 /// Whether the records give the image for the word that loads CR_REG_0400 in this sideband's
 /// mode: in modes 0 to 3 no bit but 25 changes a pixel (E268); the one- and two-channel modes
-/// ran with the word 0x80 only (E031, E383, E999), and mode 8 with bit 25 too, which changed
-/// nothing there (E385, at bits 8:6 = 0).
+/// ran with the word 0x80 (E031, E383, E999) and, at bits 8:6 = 0, with these, none of which
+/// changed a pixel: bit 25 in modes 7, 8, 15, 18, 20, 24, 25, 27 and 28 (E385, E1135), the low
+/// bytes 0x00, 0x40, 0xc0, 0xff and 0xf80 in 7 and 8 (E1136), 0xf80 in 15, 20, 24 and 27 (E1136).
+/// Any other word, or another field, did not run.
 pub fn reg0400_known(sideband: u32, reg: u32) -> Result<(), Outcome> {
+    const B25: u32 = 0x80 | 1 << 25;
+    let field0 = sideband >> 6 & 7 == 0;
     let ok = match sideband & 0x3f {
         0..=3 => true,
-        8 if sideband >> 6 & 7 == 0 => reg & !(1 << 25) == 0x80,
+        7 | 8 if field0 => matches!(reg, 0x80 | B25 | 0x00 | 0x40 | 0xc0 | 0xff | 0xf80),
+        15 | 20 | 24 | 27 if field0 => matches!(reg, 0x80 | B25 | 0xf80),
+        18 | 25 | 28 if field0 => matches!(reg, 0x80 | B25),
         _ => reg == 0x80,
     };
     if ok {
@@ -141,8 +147,8 @@ pub fn rgb565_unknown() -> Outcome {
 /// The value stored for a shader colour `o0` (0xAARRGGBB as the shader writes it) and the number
 /// of bytes it takes. `invert_alpha` is bit 25 of the CR_REG_0400 word (E268).
 pub fn pack_pixel(p: Pack, o0: u32, invert_alpha: bool) -> u32 {
-    // E268: modes 0 to 2; E385: mode 8 (alpha at bits 8:6 = 0) unchanged; the other one- and
-    // two-channel modes refuse the bit (reg0400_known)
+    // E268: modes 0 to 2; E385, E1135: mode 8 (alpha at bits 8:6 = 0) and mode 7 (alpha and red)
+    // unchanged, as every one- and two-channel mode the bit ran in (reg0400_known)
     let inverts = matches!(p, Pack::Argb8888 | Pack::Abgr8888 | Pack::Bgra8888);
     let o0 = if invert_alpha && inverts { o0 ^ 0xff00_0000 } else { o0 };
     let (a, r, g, b) = (o0 >> 24, o0 >> 16 & 0xff, o0 >> 8 & 0xff, o0 & 0xff);
@@ -354,9 +360,16 @@ mod tests {
         // E383, E999, E031 ran with the word 0x80; E385: bit 25 changes nothing in mode 8 (field 0)
         assert!(reg0400_known(0x20f, 0x80).is_ok());
         assert!(reg0400_known(0x208, 0x80 | 1 << 25).is_ok());
-        for (sb, reg) in
-            [(0x20f, 0x80 | 1 << 25), (0x207, 0x80 | 1 << 25), (0x248, 0x80 | 1 << 25), (0x218, 0x40)]
-        {
+        // what no record ran: another field, a low byte or bits 11:8 where only bit 25 ran, a
+        // low byte with bit 25
+        for (sb, reg) in [
+            (0x247, 0x80 | 1 << 25),
+            (0x248, 0x80 | 1 << 25),
+            (0x218, 0x40),
+            (0x20f, 0x40),
+            (0x212, 0xf80),
+            (0x208, 0x40 | 1 << 25),
+        ] {
             let r = reg0400_known(sb, reg);
             assert!(
                 matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q044"]),
@@ -368,8 +381,35 @@ mod tests {
         // a store that the word does not admit stores nothing
         let e = emit([0, 31 | 15 << 16, 0x8000 | 3 << 16, 0x1000_0000], 0x20f);
         let mut m = mem_of(0x1000_0000, 512);
-        assert!(store_tile(&e, 0x80 | 1 << 25, (0, 0), &[A; 512], &mut m).is_err());
+        assert!(store_tile(&e, 0x40, (0, 0), &[A; 512], &mut m).is_err());
         assert_eq!(m.read32(0x1000_0000).unwrap(), 0xdead_beef);
+    }
+
+    #[test]
+    fn the_words_r34_q044_ran_are_known_in_the_modes_it_ran_them() {
+        // E1135: bit 25 changes nothing in modes 7 (alpha and red) and 8 (alpha) at bits 8:6 = 0,
+        // 15, 18, 20, 24, 25, 27, 28; E1136: the low bytes 0x00, 0x40, 0xc0, 0xff and 0xf80 change
+        // nothing in modes 7 and 8, 0xf80 nothing in 15, 20, 24, 27
+        let b25 = 0x80 | 1 << 25;
+        for m in [7u32, 8] {
+            for reg in [0x80, b25, 0x00, 0x40, 0xc0, 0xff, 0xf80] {
+                assert!(reg0400_known(0x200 | m, reg).is_ok(), "mode {m} {reg:#x}");
+            }
+        }
+        for m in [15u32, 20, 24, 27] {
+            for reg in [0x80, b25, 0xf80] {
+                assert!(reg0400_known(0x200 | m, reg).is_ok(), "mode {m} {reg:#x}");
+            }
+        }
+        for m in [18u32, 25, 28] {
+            assert!(reg0400_known(0x200 | m, b25).is_ok(), "mode {m}");
+        }
+        // bit 25 leaves mode 7's alpha as the shader wrote it (0x80ff8040 -> 0x80ff, E1135)
+        assert_eq!(pack_pixel(pack_of(0x207).unwrap(), 0x80ff_8040, true), 0x80ff);
+        let e = emit([0, 31 | 15 << 16, 0x8000 | 7 << 16, 0x1000_0000], 0x207);
+        let mut m = mem_of(0x1000_0000, 512);
+        store_tile(&e, b25, (0, 0), &[B; 512], &mut m).unwrap();
+        assert_eq!(m.read32(0x1000_0000).unwrap(), 0x80ff_80ff);
     }
 
     #[test]
