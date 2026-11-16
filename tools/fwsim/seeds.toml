@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# What a fwsim run's hardware model answers a register read with, beyond the run's own writes
+# (tools/fwsim/fwsim.py, crates/sgx-sim/src/hw.rs). Every row cites the record whose reading
+# gives it; a row without an E-number is refused at load. Nothing here is read from the
+# firmware: these are measurements of the hardware.
+
+# The reset values: the registers on which every kept snapshot of the loaded and running
+# firmware agrees with the snapshot before the load (platform/boot-registers before load,
+# loaded, booted, booted again: E006, E008; platform/edm-tick's 200: E009). A register any of
+# them shows moving is left out (tools/fwsim/kept.py stable_resets), so its read comes from a
+# run write, a seed or a rule, or the run stops.
+[reset]
+datasets = ["platform/boot-registers", "platform/edm-tick"]
+cite = "E006, E008, E009"
+
+# The core's identity as the host reads it (hw_spec 5.1).
+[[seed]]
+reg = 0x001c
+name = "CORE_ID"
+value = 0x01150000
+cite = "E007"
+
+[[seed]]
+reg = 0x0020
+name = "CORE_REVISION"
+value = 0x0001000d
+cite = "E007"
+
+# CR_USE0_SERV_EVENT: bit 16 always set, bits 15:0 one count a tick, 3 ahead of HostCtl dword 12
+# (E009: 186 of 200 idle snapshots; platform/boot-registers booted: 0xb6 against 0xb3). The boot
+# leaves dword 12 at 0, so the count starts at 3. Only ticks were measured: after any other
+# event (a kick) a read is refused.
+[[rule]]
+reg = 0x0b14
+name = "CR_USE0_SERV_EVENT"
+kind = "count_ticks"
+value = 0x00010003
+cite = "E009"
+
+# The task state that outlives a firmware task (E536), at the first tick entry after the boot:
+# pclink 0x98 and p0, p1 set, as the reader of a plain tick read them (E791 A0, E809 S0). The
+# rest (p2, p3, r20, r21, i0, i1) no plain tick entry read: unknown, so a read of them stops.
+[carry]
+pclink = 0x98
+p = [true, true]
+cite = "E536, E791, E809"
+
+# The event inputs the hardware gives the event program (ir0 and the counter tim it passes on):
+# a tick is ir0 bit 1 with tim 0x01061a70 (E532, E746, 2 of 2 and 3 of 3); a host kick has
+# pa0 = 0 (E746). A kick's tim is a sample of the counter between ticks (E746): a time input,
+# set to the tick's word and marked [time] in the facts.
+[events]
+tick_ir0 = 2
+tick_tim = 0x01061a70
+kick_ir0 = 0
+kick_tim = 0x01061a70
+cite = "E532, E746"

@@ -10,11 +10,15 @@
 //! The launch rules are doc/specs/hw_spec.md 11.1-11.3 and
 //! doc/specs/pds_isa.md 3.4, each cited where it is used. A register
 //! nobody wrote, and the caller did not seed with a value known from the
-//! hardware, stops the run.
+//! hardware, stops the run. With a hardware model (`hw::HwModel`, the firmware-in-sim track)
+//! every read is answered by a run write, a cited seed, a landed rule or a kept snapshot, and a
+//! tracer (`trace::Tracer`) may record what the run did, pass by pass.
 
+use crate::hw::{HwModel, Source};
 use crate::pds::{self, Pds, Port};
+use crate::trace::{Ev, Tracer, Unit as TraceUnit};
 use crate::{Bus, Error, Machine, Program};
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 use std::rc::Rc;
 use usse_isa::Core;
 
@@ -113,6 +117,13 @@ pub struct State {
     pub sa: [u32; 128],
     pub sa_written: u128,
     queue: VecDeque<Work>,
+    /// The registers `Sgx::seed` set that nothing has written since.
+    seeded: BTreeSet<u32>,
+    /// The hardware model; `None`: a register is known only once written or seeded.
+    pub hw: Option<HwModel>,
+    tracer: Option<Box<dyn Tracer>>,
+    /// The register whose read stopped the run, for the trace's refusal.
+    last_refused: Option<u32>,
 }
 
 impl Default for State {
@@ -124,6 +135,10 @@ impl Default for State {
             sa: [0; 128],
             sa_written: 0,
             queue: VecDeque::new(),
+            seeded: BTreeSet::new(),
+            hw: None,
+            tracer: None,
+            last_refused: None,
         }
     }
 }
@@ -162,11 +177,46 @@ impl State {
         Ok(())
     }
 
-    fn reg(&self, index: u32) -> Result<u32, Error> {
-        self.regs
-            .get(&index)
-            .copied()
-            .ok_or_else(|| why(format!("reads register 0x{:04x} before anything wrote it", index * 4)))
+    /// A register read and what answered it: the hardware model when there is one, else a
+    /// written or seeded value; nothing: the run stops.
+    fn read(&mut self, index: u32) -> Result<(u32, Source), Error> {
+        let known = self.regs.get(&index).copied();
+        let r = match &mut self.hw {
+            // a legacy seed (`Sgx::seed`) cites nothing: under the model only its seeds count
+            Some(hw) => hw.read(index, known.filter(|_| !self.seeded.contains(&index))),
+            None => match known {
+                Some(v) if self.seeded.contains(&index) => Ok((v, Source::Seed)),
+                Some(v) => Ok((v, Source::Written)),
+                None => Err(why(format!("reads register 0x{:04x} before anything wrote it", index * 4))),
+            },
+        };
+        if r.is_err() {
+            self.last_refused = Some(index);
+        }
+        r
+    }
+
+    fn reg(&mut self, index: u32) -> Result<u32, Error> {
+        self.read(index).map(|(v, _)| v)
+    }
+
+    fn store_reg(&mut self, index: u32, value: u32, host: bool) {
+        self.regs.insert(index, value);
+        self.seeded.remove(&index);
+        self.log.push(Event::Write { host, index, value });
+        self.trace(|| Ev::RegWrite { index, value, host });
+    }
+
+    fn trace(&mut self, e: impl FnOnce() -> Ev) {
+        if let Some(t) = &mut self.tracer {
+            t.record(&e());
+        }
+    }
+
+    fn load_traced(&mut self, addr: u32) -> Result<u32, Error> {
+        let value = self.mem.load(addr)?;
+        self.trace(|| Ev::Load { addr, value });
+        Ok(value)
     }
 }
 
@@ -204,6 +254,8 @@ pub struct Sgx {
     /// leaves replaces it (E536: pclink, p1 to p3, r20, r21, i0 and i1 at a firmware task's entry
     /// were as the task before left them); the caller seeds the first entry with what a run read.
     pub carry: Option<Carry>,
+    /// Passes run to the end (the queue empty), counted from 0.
+    pub passes: u64,
 }
 
 /// A firmware task's entry state that the task before left (`Sgx::carry`); `None`: unknown.
@@ -262,13 +314,28 @@ impl Sgx {
     /// A register value known from the hardware, readable before anything writes it.
     pub fn seed(&mut self, index: u32, value: u32) {
         self.st.regs.insert(index, value);
+        self.st.seeded.insert(index);
+    }
+
+    /// Record what the run does from here on (`trace::Tracer`), replacing any tracer before.
+    pub fn trace_to(&mut self, t: Box<dyn Tracer>) {
+        self.st.tracer = Some(t);
+    }
+
+    /// Stop tracing; the tracer, finished (a file sink flushed).
+    pub fn take_trace(&mut self) -> Option<Result<Box<dyn Tracer>, std::io::Error>> {
+        self.st.tracer.take().map(|mut t| t.finish().map(|_| t))
+    }
+
+    /// Queue a USSE task (a caller that starts one directly: tests, scenarios).
+    pub fn queue_task(&mut self, base: u32, pc: usize, temps: usize) {
+        self.st.queue.push_back(Work::Task { base, pc, temps, pa: Box::new([0; 128]), written: 0 });
     }
 
     /// A host register write (an init script, a kick).
     pub fn write_reg(&mut self, index: u32, value: u32) -> Result<(), Error> {
         self.st.clear_event(index, value)?;
-        self.st.regs.insert(index, value);
-        self.st.log.push(Event::Write { host: true, index, value });
+        self.st.store_reg(index, value, true);
         // EVENT_KICK2 runs the other-event PDS program (hw_spec 11.1-11.2):
         // its address in bits 31:4, its data size in rows of four dwords
         if index == reg::EVENT_KICK2 && value & 1 != 0 {
@@ -306,7 +373,8 @@ impl Sgx {
         if self.kick_unconsumed {
             return Err(why("a kick after a kick that was not consumed: not run (Q290, E819)"));
         }
-        let w = self.st.mem.load(self.st.reg(reg::EVENT_KICKER)? & !0xf)? & 0xff;
+        let kicker = self.st.reg(reg::EVENT_KICKER)? & !0xf;
+        let w = self.st.mem.load(kicker)? & 0xff;
         let count = u32::from(self.event_count);
         if w == (count + 1) & 0xff {
             self.event(1 << 8)?;
@@ -337,12 +405,41 @@ impl Sgx {
         let data = self.st.reg(reg::EVENT_OTHER_PDS_DATA)? as usize * 4;
         let (ir0, tim) = (self.event_ir0, self.event_tim);
         let ir1 = ir1 | u32::from(self.event_count) << 24;
+        if let Some(hw) = &mut self.st.hw {
+            hw.on_event(ir0, ir1);
+        }
+        self.st.trace(|| Ev::Event { ir0, ir1 });
         self.st.queue.push_back(Work::Pds { addr, data, ir0, ir1: Some(ir1), tim, bank: Bank::Primary });
         Ok(())
     }
 
-    /// Run the queued work until none is left.
+    /// Run the queued work until none is left: one pass. A stop is traced as a refusal.
     pub fn run(&mut self, max_steps: usize) -> Result<(), Error> {
+        let ran = !self.st.queue.is_empty();
+        let r = self.run_queue(max_steps);
+        match &r {
+            Ok(()) if ran => {
+                let n = self.passes;
+                self.passes += 1;
+                self.st.trace(|| Ev::Pass { n, time: None });
+            }
+            Ok(()) => {}
+            Err(e) => {
+                let index = self.st.last_refused.take();
+                let (pc, why) = match e {
+                    Error::Unsupported { pc, why, .. } => (*pc, why.clone()),
+                    Error::Fault(a) => (0, format!("fault at 0x{a:08x}")),
+                    Error::PcOutOfRange(pc) => (*pc, "pc out of range".to_string()),
+                    Error::StepLimit => (0, "step limit".to_string()),
+                };
+                self.st.trace(|| Ev::Refusal { index, pc, why });
+            }
+        }
+        r
+    }
+
+    fn run_queue(&mut self, max_steps: usize) -> Result<(), Error> {
+        self.st.last_refused = None;
         while let Some(w) = self.st.queue.pop_front() {
             if self.steps >= max_steps {
                 return Err(Error::StepLimit);
@@ -368,6 +465,7 @@ impl Sgx {
         max: usize,
     ) -> Result<(), Error> {
         self.st.log.push(Event::Pds { addr, data, ir0 });
+        self.st.trace(|| Ev::PdsStart { addr, data });
         let prog = pds::Program::new(&self.st.mem.words(addr, data + 256), data);
         self.pds.ir = [ir0, ir1, None];
         self.pds.alu_specials_in_movs = self.alu_specials_in_movs;
@@ -377,7 +475,21 @@ impl Sgx {
         });
         self.pds.ifs = [None; 2];
         let mut bus = Unit { st: &mut self.st, bank, pa: [0; 128], written: 0 };
-        let r = self.pds.run(&prog, &mut bus, max - self.steps);
+        // Pds::run, one step at a time so that each instruction can be traced
+        let limit = max - self.steps;
+        self.pds.start(&prog);
+        let r = loop {
+            if self.pds.steps >= limit {
+                break Err(Error::StepLimit);
+            }
+            let pc = self.pds.pc;
+            bus.st.trace(|| Ev::Insn { unit: TraceUnit::Pds, base: addr, pc });
+            match self.pds.step(&prog, &mut bus) {
+                Ok(true) => break Ok(()),
+                Ok(false) => {}
+                Err(e) => break Err(e),
+            }
+        };
         self.steps += self.pds.steps;
         r.map_err(|e| context(e, &format!("PDS 0x{addr:08x}")))
     }
@@ -392,6 +504,11 @@ impl Sgx {
         max: usize,
     ) -> Result<(), Error> {
         self.st.log.push(Event::Task { base, pc, temps });
+        self.st.trace(|| Ev::TaskStart {
+            base,
+            pc,
+            pa: std::array::from_fn(|n| (written >> n & 1 != 0).then_some(pa[n])),
+        });
         let len = self.code_len.unwrap_or(MAX_CODE);
         let prog = match self.programs.get(&(base, len)) {
             Some(p) => p.clone(),
@@ -422,7 +539,20 @@ impl Sgx {
             c.enter(&mut m);
         }
         let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0 };
-        let r = m.run(&prog, &mut bus, max - self.steps);
+        // Machine::run, one step at a time so that each instruction can be traced
+        let limit = max - self.steps;
+        let r = loop {
+            if m.steps >= limit {
+                break Err(Error::StepLimit);
+            }
+            let pc = m.pc;
+            bus.st.trace(|| Ev::Insn { unit: TraceUnit::Usse, base, pc });
+            match m.step(&prog, &mut bus) {
+                Ok(true) => break Ok(()),
+                Ok(false) => {}
+                Err(e) => break Err(e),
+            }
+        };
         self.steps += m.steps;
         if let Some(c) = &mut self.carry {
             c.leave(&m);
@@ -458,21 +588,24 @@ impl Unit<'_> {
 
 impl Bus for Unit<'_> {
     fn load32(&mut self, addr: u32) -> Result<u32, Error> {
-        self.st.mem.load(addr)
+        self.st.load_traced(addr)
     }
 
-    fn store32(&mut self, addr: u32, v: u32) -> Result<(), Error> {
-        self.st.mem.store(addr, v)
+    fn store32(&mut self, addr: u32, value: u32) -> Result<(), Error> {
+        self.st.mem.store(addr, value)?;
+        self.st.trace(|| Ev::Store { addr, value });
+        Ok(())
     }
 
     fn reg_read(&mut self, index: u32) -> Result<u32, Error> {
-        self.st.reg(index)
+        let (value, source) = self.st.read(index)?;
+        self.st.trace(|| Ev::RegRead { index, value, source });
+        Ok(value)
     }
 
     fn reg_write(&mut self, index: u32, value: u32) -> Result<(), Error> {
         self.st.clear_event(index, value)?;
-        self.st.regs.insert(index, value);
-        self.st.log.push(Event::Write { host: false, index, value });
+        self.st.store_reg(index, value, false);
         Ok(())
     }
 
@@ -520,7 +653,7 @@ impl Bus for Unit<'_> {
                     )));
                 }
                 for i in 0..burst * lines {
-                    let v = self.st.mem.load(w[0].wrapping_add(4 * i))?;
+                    let v = self.st.load_traced(w[0].wrapping_add(4 * i))?;
                     self.attr(dst + i as usize, v)?;
                 }
                 Ok(())
@@ -782,6 +915,39 @@ mod tests {
     }
 
     #[test]
+    fn a_traced_task_start_carries_the_event_s_inputs_and_each_pass_ends_traced() {
+        // fwsim's C4: the entry of the task an event starts, with pa0 to pa3 as its PDS program
+        // wrote them
+        let mut s = armed();
+        s.alu_specials_in_movs = true;
+        s.event_ir0 = Some(2);
+        s.st.mem.map(CODE, &usse("nop.end"));
+        let prog = pds(
+            &[code_word(0), 0, 0, 0x100],
+            "movs douta, ir0.l, ds1[0], ir0.l, ir0.l\n\
+             movs douta, ir1.l, ds1[1], ir1.l, ir1.l\n\
+             movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt",
+        );
+        s.st.mem.map(CODE + 0x1000, &prog);
+        let rec = Rc::new(std::cell::RefCell::new(Vec::new()));
+        s.trace_to(Box::new(rec.clone()));
+        s.event(0).unwrap();
+        s.run(10_000).unwrap();
+        s.run(10_000).unwrap();
+        let ev = rec.borrow().clone();
+        assert_eq!(ev[0], Ev::Event { ir0: Some(2), ir1: 0x0200_0000 });
+        assert_eq!(ev[1], Ev::PdsStart { addr: CODE + 0x1000, data: 4 });
+        assert!(ev.contains(&Ev::TaskStart {
+            base: CODE,
+            pc: 0,
+            pa: [Some(2), Some(0x0200_0000), None, None]
+        }));
+        // one pass: the second run had nothing queued
+        assert_eq!(ev.iter().filter(|e| matches!(e, Ev::Pass { .. })).count(), 1);
+        assert_eq!(s.passes, 1);
+    }
+
+    #[test]
     fn tim_is_the_event_timer_register() {
         // EVENT_TIMER (0xacc, sgx545defs.h): a movs tim writes it (bits 24-0), a PDS
         // program's tim reads it while it is stopped (bit 24 clear); running, it is unknown
@@ -1029,6 +1195,44 @@ mod tests {
         s.st.mem.map(CODE, &usse("mov r1, pclink\nstr #65, r1\nnop.end"));
         task_at(&mut s, 0);
         assert!(refused(s.run(100)));
+    }
+
+    #[test]
+    fn under_a_hardware_model_every_read_has_one_source_or_the_run_stops() {
+        // fwsim: a read is a run write, a cited seed, a landed rule or a kept reset value
+        let task = |s: &mut Sgx| {
+            s.st.mem.map(CODE, &usse("ldr r0, #16, drc0\nwdf drc0\nstr #64, r0\nnop.end"));
+            task_at(s, 0);
+            s.run(100)
+        };
+        let mut s = sgx();
+        s.seed(16, 0x55);
+        s.st.hw = Some(HwModel::default());
+        // a legacy seed cites nothing: under the model it answers nothing
+        assert!(refused(task(&mut s)));
+        assert_eq!(s.st.hw.as_ref().unwrap().refused.get(&16), Some(&1));
+        let mut hw = HwModel::default();
+        hw.reset(16, 0x1e00);
+        s.st.hw = Some(hw);
+        task(&mut s).unwrap();
+        assert_eq!(s.st.regs[&64], 0x1e00);
+        assert_eq!(s.st.hw.as_ref().unwrap().answered["reset"], 1);
+    }
+
+    #[test]
+    fn the_served_event_count_follows_the_ticks_the_sgx_delivers() {
+        let mut s = armed();
+        let mut hw = HwModel::default();
+        hw.count_serv_events(0x0001_0003, "E009").unwrap();
+        s.st.hw = Some(hw);
+        s.event_ir0 = Some(2);
+        s.event(0).unwrap();
+        s.event(0).unwrap();
+        s.st.queue.clear();
+        assert_eq!(s.st.read(crate::hw::USE0_SERV_EVENT).unwrap(), (0x0001_0005, Source::Rule("E009")));
+        s.event_ir0 = Some(0);
+        kick(&mut s).unwrap();
+        assert!(s.st.read(crate::hw::USE0_SERV_EVENT).is_err());
     }
 
     #[test]

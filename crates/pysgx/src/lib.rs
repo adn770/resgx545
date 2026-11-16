@@ -345,13 +345,20 @@ impl Machine {
 #[pyclass(unsendable)]
 struct Sgx {
     s: sgx_sim::sgx::Sgx,
+    mem_trace: Option<std::rc::Rc<std::cell::RefCell<Vec<sgx_sim::trace::Ev>>>>,
+}
+
+impl Sgx {
+    fn hw(&mut self) -> PyResult<&mut sgx_sim::hw::HwModel> {
+        self.s.st.hw.as_mut().ok_or_else(|| PyValueError::new_err("no hardware model: hw_enable() first"))
+    }
 }
 
 #[pymethods]
 impl Sgx {
     #[new]
     fn new() -> Self {
-        Sgx { s: sgx_sim::sgx::Sgx::default() }
+        Sgx { s: sgx_sim::sgx::Sgx::default(), mem_trace: None }
     }
 
     /// Map `data` at device address `addr`.
@@ -474,6 +481,91 @@ impl Sgx {
     #[pyo3(signature = (max_steps = 1_000_000))]
     fn run(&mut self, max_steps: usize) -> PyResult<()> {
         self.s.run(max_steps).map_err(sim_error)
+    }
+
+    /// Passes run to the end (the queue empty), counted from 0.
+    #[getter]
+    fn passes(&self) -> u64 {
+        self.s.passes
+    }
+
+    /// Trace the run from here on into `path` (JSON lines; sgx_sim::trace): refused unless the
+    /// path lies under `<private>/firmware/fwsim/`, `private` defaulting to
+    /// $RESGX545_DATA_PRIVATE. Without a path the events are kept in memory (`trace_events`).
+    #[pyo3(signature = (path = None, private = None))]
+    fn trace_to(
+        &mut self,
+        path: Option<std::path::PathBuf>,
+        private: Option<std::path::PathBuf>,
+    ) -> PyResult<()> {
+        use sgx_sim::trace::FileSink;
+        let Some(path) = path else {
+            let rec = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+            self.mem_trace = Some(rec.clone());
+            self.s.trace_to(Box::new(rec));
+            return Ok(());
+        };
+        let private =
+            private.or_else(|| std::env::var_os("RESGX545_DATA_PRIVATE").map(Into::into)).ok_or_else(
+                || PyValueError::new_err("trace_to: no private data directory (RESGX545_DATA_PRIVATE)"),
+            )?;
+        let sink = FileSink::create(&path, &private).map_err(PyValueError::new_err)?;
+        self.mem_trace = None;
+        self.s.trace_to(Box::new(sink));
+        Ok(())
+    }
+
+    /// The in-memory trace's events so far, as JSON lines (`trace_to()` without a path).
+    fn trace_events(&self) -> Vec<String> {
+        self.mem_trace.as_ref().map_or_else(Vec::new, |r| r.borrow().iter().map(|e| e.json()).collect())
+    }
+
+    /// Stop tracing (a file is flushed and closed).
+    fn finish_trace(&mut self) -> PyResult<()> {
+        self.mem_trace = None;
+        match self.s.take_trace() {
+            Some(Err(e)) => Err(PyValueError::new_err(e.to_string())),
+            _ => Ok(()),
+        }
+    }
+
+    /// Put a hardware model behind the register reads (sgx_sim::hw::HwModel): from here on a
+    /// read is a run write, a cited seed, a landed rule or a reset value, or the run stops.
+    /// `reset_cite` names the kept snapshot the reset values come from.
+    fn hw_enable(&mut self, reset_cite: &str) {
+        let mut hw = sgx_sim::hw::HwModel::default();
+        hw.reset_from(reset_cite);
+        self.s.st.hw = Some(hw);
+    }
+
+    fn hw_reset(&mut self, index: u32, value: u32) -> PyResult<()> {
+        self.hw()?.reset(index, value);
+        Ok(())
+    }
+
+    /// A seed; refused without an E-number in `cite`.
+    fn hw_seed(&mut self, index: u32, value: u32, cite: &str) -> PyResult<()> {
+        self.hw()?.seed(index, value, cite).map_err(PyValueError::new_err)
+    }
+
+    /// CR_USE0_SERV_EVENT's E009 rule: `value` now, one count a tick.
+    fn hw_count_serv_events(&mut self, value: u32, cite: &str) -> PyResult<()> {
+        self.hw()?.count_serv_events(value, cite).map_err(PyValueError::new_err)
+    }
+
+    fn hw_note_open(&mut self, index: u32, note: &str) -> PyResult<()> {
+        self.hw()?.note_open(index, note);
+        Ok(())
+    }
+
+    /// The refused reads by register index (counts).
+    fn hw_refused(&mut self) -> PyResult<std::collections::BTreeMap<u32, u32>> {
+        Ok(self.hw()?.refused.clone())
+    }
+
+    /// The answered reads by source name (counts).
+    fn hw_answered(&mut self) -> PyResult<std::collections::BTreeMap<String, u64>> {
+        Ok(self.hw()?.answered.clone())
     }
 
     /// What happened, in order: ("write", host, index, value), ("pds", addr,
