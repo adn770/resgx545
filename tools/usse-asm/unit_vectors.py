@@ -315,19 +315,19 @@ def pbe_emit(data):
     """E031: per pack mode of pbe/pack-modes, the values the end-of-tile emit stored for the
     background 0xff203040 and the shader colour 0x80ff8040 of the 64 x 64 triangle (modes 0 to 3,
     which the model packs; the other 60 are refused, 22 and 34 under Q012 and the rest under
-    Q044), and E268's mode 0 over the ten shader colours of pbe/pack-colours."""
+    Q302), and E268's mode 0 over the ten shader colours of pbe/pack-colours."""
     out = []
     for m in range(64):
         r = (data / PM / ("pbe-pack-modes-packmode-%02d" % m) / "report.txt").read_text()
         v = {"id": "pbe-emit__packmode-%02d" % m,
              "init": {"task": "pbe-emit", "sideband": "0x%x" % (0x200 | m), "reg0400": "0x80",
                       "colours": [BG, "0x80ff8040"]},
-             "provenance": {"records": ["E031", "E030"], "questions": ["Q012", "Q044"], "table": PM,
+             "provenance": {"records": ["E031", "E030"], "questions": ["Q012", "Q302"], "table": PM,
                             "case": "packmode-%02d" % m, "rebuilt": False}}
         if m < 4:
             v["expect"] = {"stored": pack_values(mixed(r, "pack mode %d" % m), 2 if m == 3 else 4)}
         else:
-            v["expect"] = {"refuse": ["Q012"] if m in (22, 34) else ["Q044"],
+            v["expect"] = {"refuse": ["Q012"] if m in (22, 34) else ["Q302"],
                            "mixed": mixed(r, "pack mode %d" % m)}
         out.append(v)
     r = (data / PC / "pbe-pack-colours-mode0/report.txt").read_text()

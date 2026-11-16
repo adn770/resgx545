@@ -68,7 +68,7 @@ RULES = [
     Rule(r"render/kick-objects/", "te-region", "scene-only", "E306", "Q070", "12.2", "3 kicks' PB"),
     Rule(r"usse/globals-vertex-eot/", "vertex-task", "exists", "E372", "Q053", "-",
          "vertex vectors of 11.33 replay in sgx-sim"),
-    Rule(r"usse/output-room-tiles/", "pbe-emit", "unit-blocked", "E043 E044", "Q044", "12.1",
+    Rule(r"usse/output-room-tiles/", "pbe-emit", "unit-blocked", "E043 E044", "Q302", "12.1",
          "end-of-tile output room per tile"),
 ]
 

@@ -68,7 +68,7 @@ list.
 - `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and
   why does the viewport's z offset (state-block word 10) scale ... (E981, E987, E1066)
 - `Q012` pbe, medium: what float formats are pack modes 22 and 34, given that both read o0 as an
-  IEEE single (sign, NaN and exponent) and store it at some of the ... (E387, E406, E429)
+  IEEE single (sign, NaN and exponent) and store it at some of the ... (E406, E429, E1135)
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
 - `Q046` pbe, medium: what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc,
@@ -188,8 +188,8 @@ list.
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
 - `Q241` isp, low: what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle;
   E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E1045, E1056, E1072)
-- `Q044` pbe, low: does bit 25 of CR_REG_0400 act on pack modes 22 and 34, whose stored values vary
-  between runs (Q012), given that it inverts the alpha in ... (E385, E1135, E1136)
+- `Q302` pbe, low: what do pack modes 4 to 6, 9 to 14 and the 40 ARGB8888-like modes other than 0
+  store for colours other than E031's two (how each narrows or ... (E385, E1135, E1136)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change the render time of a sub-millisecond load of many

@@ -57,11 +57,11 @@
 
 ### pbe
 
-- `Q012` (phase 6, hw, medium): what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before? (E032, E270, E387, E406, E429)
+- `Q012` (phase 6, hw, medium): what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before, and does bit 25 of CR_REG_0400 change what they store (E1135: of the dwords two references repeat, 3 of 4091 in mode 22 and none of 4092 in mode 34)? (E032, E270, E387, E406, E429, E1135)
 - `Q040` (phase 11, hw, medium): what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored for an even v up to 0x80, odd values hang and values above 0x80 change the image, and what do EMIT2 bits 6:0 select? (E046, E265, E266, E267, E382)
-- `Q044` (phase 11, hw, low): does bit 25 of CR_REG_0400 act on pack modes 22 and 34, whose stored values vary between runs (Q012), given that it inverts the alpha in exactly modes 0 to 2 and 4 to 6 of the others run (E268, E385, E1135), and do bits 11:8 one at a time change a pixel outside modes 0 and 4, when together they change none in any class run (E1136)? (E029, E028, E031, E251, E268, E385, E1135, E1136)
 - `Q046` (phase 11, hw, medium): what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc, E1028 and E1034: a high half fixed pixel for pixel, a low half and a per-pixel class layout that vary between runs, 0xff fields that follow the colour), and what does bit 11 do (it faults the job in modes 0 to 8, at page 0x37001000 with BIF_INT_STAT 0x91000, E383 and E1034)? (E030, E031, E210, E269, E383, E999, E1028, E1034)
 - `Q074` (phase 11, hw, medium): why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile? (E030, E130, E239, E240, E386)
+- `Q302` (phase 11, hw, low): what do pack modes 4 to 6, 9 to 14 and the 40 ARGB8888-like modes other than 0 store for colours other than E031's two (how each narrows or rounds its channels, what 9 to 13 write past the target, why 14 faults), how does RGB565 round a channel where truncation and rounding differ, and do CR_REG_0400 words no record ran in a mode (bit 25 with another low byte, another sideband field) store as E1135 and E1136 read? (E031, E268, E385, E1135, E1136)
 
 ### pds
 

@@ -1,9 +1,9 @@
 title = "unit vectors of the pipeline simulator, 12.1: pbe-emit pack modes"
 repo = "data"
 paths = ["unit-vectors/pbe/"]
-method = "tools/usse-asm/unit_vectors.py (pbe_emit) on the landed datasets pbe-pack-modes and pbe-pack-colours (offline, no new run): the stored values from the datasets' own reports; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order"
+method = "tools/usse-asm/unit_vectors.py (pbe_emit) on the landed datasets pbe-pack-modes and pbe-pack-colours (offline, no new run): the stored values from the datasets' own reports; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order; regenerated 2026-11-17 when Q044 retired: the refusals and provenance name Q302"
 date = "2026-11-09"
 files = 1
 size = 154805
-sha256 = "6d618cbd719afcc819612cdb9b8e38c2b3851eca8359a71fbb3ffa9abc067add"
+sha256 = "87e4788b2e83b89f09a82e99de8cab63085a949f00c8df1833817242ff766990"
 recipe = "tools/usse-asm/unit_vectors.py"

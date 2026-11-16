@@ -14,7 +14,7 @@
 //! blue), mode 7 two bytes (0 alpha and red, 1 to 7 green and blue), modes 15, 18, 20, 27 and 28
 //! the low 16 bits and 24 and 25 the blue byte whatever the field (E383, E999 for 20 and 27 at 0
 //! to 3); a pixel of n bytes is at byte x n of its row, so a dword holds 4 / n pixels from its low
-//! byte (every pixel of 139 kept images, tests/pbe_pack_images.rs). The rest refuse (Q044, and
+//! byte (every pixel of 139 kept images, tests/pbe_pack_images.rs). The rest refuse (Q302, and
 //! Q012 for modes 22 and 34). Bit 25 of the word that loads CR_REG_0400 inverts the stored alpha
 //! in the modes 0 to 2 and nothing in mode 3; no other bit of it changes a pixel in modes 0 to 3
 //! (E268); in the one- and two-channel modes neither bit 25 nor the low byte nor bits 11:8
@@ -24,7 +24,7 @@ use crate::Outcome;
 use crate::mem::Mem;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q012", "Q040", "Q044", "Q046", "Q074", "Q054", "Q183"];
+pub const OPEN: &[&str] = &["Q012", "Q040", "Q302", "Q046", "Q074", "Q054", "Q183"];
 
 /// A refusing stub for what the pack modes 0 to 3 and the rectangle do not cover.
 pub fn refuse() -> Outcome {
@@ -89,7 +89,7 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
         22 | 34 => Err(Outcome::unsupported("pack modes 22 and 34 read o0 as a float", &["Q012"])),
         m => Err(Outcome::unsupported(
             &format!("pack mode {m} at sideband bits 8:6 = {field} is not modelled"),
-            &["Q044"],
+            &["Q302"],
         )),
     }
 }
@@ -115,14 +115,14 @@ pub fn reg0400_known(sideband: u32, reg: u32) -> Result<(), Outcome> {
     } else {
         Err(Outcome::unsupported(
             &format!("the CR_REG_0400 word {reg:#x} in pack mode {} did not run", sideband & 0x3f),
-            &["Q044"],
+            &["Q302"],
         ))
     }
 }
 
 /// Whether the records fix the RGB565 value of the colour `o0`. E031 stored two colours only,
 /// 0xff203040 and 0x80ff8040, whose channels truncate and round to nearest to the same values;
-/// no record gives the conversion where the two differ, so there the model does not know it (Q044).
+/// no record gives the conversion where the two differ, so there the model does not know it (Q302).
 /// Mode 3 is therefore not a fitted rule but a refusal outside the colours that cannot tell the
 /// conversions apart.
 pub fn rgb565_known(o0: u32) -> bool {
@@ -140,7 +140,7 @@ pub fn rgb565_known(o0: u32) -> bool {
 pub fn rgb565_unknown() -> Outcome {
     Outcome::unsupported(
         "RGB565 of a colour where truncation and rounding differ: no record gives it",
-        &["Q044"],
+        &["Q302"],
     )
 }
 
@@ -258,7 +258,7 @@ mod tests {
         let mut m = mem_of(0x1000_0000, 512);
         let e = emit([0, 31 | 15 << 16, 0x8000 | 7 << 16, 0x1000_0000], 0x203);
         let r = store_tile(&e, 0x80, (0, 0), &[0xff7f_0000; 512], &mut m);
-        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q044"]), "{r:?}");
+        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q302"]), "{r:?}");
         assert_eq!(m.read32(0x1000_0000).unwrap(), 0xdead_beef, "nothing stored");
     }
 
@@ -295,10 +295,10 @@ mod tests {
         };
         assert_eq!(ids(0x216), ["Q012"]);
         assert_eq!(ids(0x222), ["Q012"]);
-        assert_eq!(ids(0x204), ["Q044"]);
+        assert_eq!(ids(0x204), ["Q302"]);
         // modes 20 and 27 ran at bits 8:6 = 0 to 3 only (E999)
         for m in [20u32, 27] {
-            assert_eq!(ids(0x200 | 4 << 6 | m), ["Q044"], "mode {m}");
+            assert_eq!(ids(0x200 | 4 << 6 | m), ["Q302"], "mode {m}");
         }
         assert_eq!(ids(0x003), ["Q074"]);
         assert_eq!(ids(0x600), ["Q046"]);
@@ -372,7 +372,7 @@ mod tests {
         ] {
             let r = reg0400_known(sb, reg);
             assert!(
-                matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q044"]),
+                matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q302"]),
                 "{sb:#x} {reg:#x}"
             );
         }

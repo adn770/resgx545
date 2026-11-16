@@ -1,11 +1,11 @@
 +++
 id = "Q012"
-question = "what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before?"
+question = "what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before, and does bit 25 of CR_REG_0400 change what they store (E1135: of the dwords two references repeat, 3 of 4091 in mode 22 and none of 4092 in mode 34)?"
 unit = "pbe"
 kind = "hw"
 value = "medium"
 phase = 6
-evidence = ["E032", "E270", "E387", "E406", "E429"]
+evidence = ["E032", "E270", "E387", "E406", "E429", "E1135"]
 terms = ["SIDEBAND.PACKMODE", "PACKMODE"]
 +++
 
@@ -58,3 +58,11 @@ the ramps), and o2 reaches o0's field in mode 22 on 61 pixels at 1.0 and
 over; o2 feeds nothing in mode 34 beyond 8 pixels. Still open: which pixels take o3 and why, what
 mode 22's fields encode between 0.25 and 0.5, the constants 0x88 and 0x60800000. Status: narrowed,
 not answered.
+
+Split in from Q044 (retired 2026-11-17, answered by E1136 with E1135; the question line gains the
+clause on bit 25). E1135 ran bit 25 of the word that loads CR_REG_0400 (0x02000080 against 0x80)
+in modes 22 and 34 with E031's colour 0x80ff8040, a second 0x80 reference after it: of the dwords
+the two references repeat, mode 22's bit-25 row changes 3 of 4091 (0x08800088 to 0x08800000 at
+dwords 1008, 1016 and 1017, of the 0x88 constant that varies between runs [infer: not bit 25]) and
+mode 34's none of 4092. In the other modes run bit 25 inverts the alpha in exactly 0 to 2 and 4 to
+6 (E268, E385, E1135). Whether it acts on these two waits on their formats.

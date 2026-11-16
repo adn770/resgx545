@@ -317,7 +317,7 @@ CR_REG_0400, default 0x80) and `colours` (the shader's o0 values), `expect.store
 hardware stored for each (a 16-bit pixel as its 16 bits). 64 vectors are the pack modes of
 `pbe/pack-modes`, with the background 0xff203040 and the shader colour 0x80ff8040 of the 64 x 64
 triangle: modes 0 to 3 (ARGB8888, ABGR8888, BGRA8888, RGB565) store the values the dumps hold
-(matched), and the other 60 refuse by question (`Q012` for modes 22 and 34, `Q044` for the rest;
+(matched), and the other 60 refuse by question (`Q012` for modes 22 and 34, `Q302` for the rest;
 the vector keeps the recorded `mixed` counts). Ten more are mode 0 over the ten colours of
 `pbe/pack-colours` (the colour stored unchanged). Measured rules: no vector is fitted.
 
