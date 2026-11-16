@@ -79,7 +79,7 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   pair it is the triangle: a copy without the flag reads zeros after the health triangle (t10
   `tri`, a 64 x 64 render) and keeps the loaded set after the health fill, a plain copy, a debugfs
   reset and 60 s or 120 s of idle (E1134, held out, both replicates) **[HW]**; which part of a
-  render clears it is not measured (Q010).
+  render clears it is not measured.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,

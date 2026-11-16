@@ -118,6 +118,7 @@ RETIRED: dict[str, str] = {
     "Q114": "answered by E1105",
     "Q123": "answered by E1102",
     "Q109": "answered by E1119",
+    "Q010": "answered by E1134",
     "Q126": "answered by E1106",
     "Q135": "folded into Q127 after E1069",
     "Q160": "folded into Q159 after E1125",

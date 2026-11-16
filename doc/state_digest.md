@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-132 open: 122 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+131 open: 121 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -218,8 +218,6 @@ list.
   and no record explains do: the command's CR_MTE_CTRL ... (E180, E650, E652)
 - `Q008` texture, low: how is the luma compared at the luma key's high cut, where five colours with
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
-- `Q010` texture, low: is the kit's health triangle, the job E1134 found to clear colour-space set 0
-  between jobs (a copy without the load reads zeros after it, ... (E1103, E1112, E1134)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
