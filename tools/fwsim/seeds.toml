@@ -80,4 +80,10 @@ tick_ir0 = 2
 tick_tim = 0x01061a70
 kick_ir0 = 0
 kick_tim = 0x01061a70
-cite = "E532, E746"
+# The counter a program a task emits reads while the timer runs (PDS #14 after the kick pass's
+# CACHE_CTRL write, E1130): E1133 decides bit 24 alone in 31:24, bits 23:0 at most 400000 (the
+# reload word read), 399.0 a us with a 1002.5 us period, no write or stop through the pass, and a
+# phase that no row gives (spread over the period across rows). The count here is one such
+# value, a [time] input like kick_tim (the sim keeps no clock); the sim refuses one outside the rule.
+emit_tim = 0x01061a70
+cite = "E532, E746, E1133"

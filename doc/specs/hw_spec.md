@@ -974,7 +974,13 @@ host through a plain triangle (E1131, readings only: its controls failed on the 
 the count drops 398.96 to 399.01 a us with a period of 1002.497 to 1002.535 us in 15 of 15 jobs,
 reads exactly 400000 once (the reload word), is at any phase at the kick pass's `CACHE_CTRL`
 write, and is back within 350 counts of its own line 120 to 300 us after it (a step of about +600
-counts before that in 5 of 11 rows, the host's read timing [infer]). A pass with the tick bit of
+counts before that in 5 of 11 rows, the host's read timing [infer]). Frozen and held out in the
+rerun (E1133): 398.9 to 399.1 counts a us and a 1002.40 to 1002.65 us period (not 400 MHz), bit 24
+alone in 31:24 and bits 23:0 at most 400000, a phase spread over the period at that write, and no
+write or stop through the kick pass (within 345 counts of the pre-change line 120 to 300 us after
+it); that the count stays on its line inside the window was not supported (3 of 22 clauses failed,
+each on a sample read up to 186 us late [infer]). sgx-sim gives a program a task emits a caller's
+running count within that rule (fwsim's [time] seed). A pass with the tick bit of
 `sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50
 passes, 2 of 2), and a tick pass handed to the slot 2 closed task keeps the tick without advancing
 it (E813 X1, X20), so dword 12 counts the passes of the closed tick handler, not ticks [infer].

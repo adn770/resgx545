@@ -114,6 +114,9 @@ def checked_out(path: pathlib.Path, private: pathlib.Path) -> pathlib.Path:
 LANDED_RULES = {("count_ticks", 0x0B14), ("idle_until_event", 0x012C), ("idle_until_event", 0x0804)}
 
 
+SEEDED = object()        # Run(emit_tim=...)'s default: the seeds' running count
+
+
 def load_seeds(path: pathlib.Path = SEEDS) -> dict:
     """seeds.toml, every row's citation checked: a row without an E-number is refused."""
     d = tomllib.loads(pathlib.Path(path).read_text())
@@ -158,7 +161,7 @@ class Run:
 
     def __init__(self, fw: pathlib.Path, data: pathlib.Path, *, seeds: dict | None = None,
                  trace: str | pathlib.Path | None = None, private: pathlib.Path | None = None,
-                 replay: dict | None = None):
+                 replay: dict | None = None, emit_tim: int | None | object = SEEDED):
         self.pysgx = load.pysgx()
         self.seeds = seeds if seeds is not None else load_seeds()
         self.replay = replay
@@ -190,6 +193,10 @@ class Run:
             s.hw_replay(r["reg"] // 4, r["trigger_reg"] // 4, r["trigger_value"], r["words"], r["missing"],
                         r["cite"])
         s.alu_specials_in_movs = True       # PDS #13 passes ir1.l and tim.l on with movs (R5)
+        # the running count a program a task emits reads (E1133; SEEDED: seeds.toml [events]
+        # emit_tim, None: refused); the sim refuses a count outside E1133's rule (ValueError)
+        self.emit_tim = self.seeds["events"].get("emit_tim") if emit_tim is SEEDED else emit_tim
+        s.emit_tim = self.emit_tim
         for i, image in self.boot_data.images.items():
             s.map(self.lay.addr[i], image)
         self.host = self.lay.addr[facts.HOST_CTL]
@@ -322,6 +329,10 @@ def summary(run: Run, evs: list[dict], phases: list[tuple[str, int, int, list[in
            "assumption alu_specials_in_movs = true (PDS #13 passes ir1 and tim on to its task; R5)",
            "[time] a kick's tim is set to the tick's word (seeds.toml [events]); E746 reads it as a "
            "sample of the counter"]
+    if run.emit_tim is not None:
+        out.append(f"[time] an emitted program's tim is the running count 0x{run.emit_tim:08x} "
+                   "(seeds.toml [events] emit_tim): E1133 gives bit 24, bits 23:0 at most 400000, "
+                   "399.0 a us, no write or stop in a kick pass, at no phase a row gives")
     for r in run.seeds.get("seed", []):
         out.append(f"seed 0x{r['reg']:04x} {r['name']} = 0x{r['value']:08x} ({r['cite']})")
     for r in run.seeds.get("rule", []):

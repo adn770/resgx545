@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 3
-evidence = ["E009", "E084", "E124", "E377", "E1131"]
+evidence = ["E009", "E084", "E124", "E377", "E1131", "E1133"]
 terms = ["CR_TIMER", "host_ctl.edm_ticks"]
 +++
 
@@ -44,3 +44,9 @@ Note 2026-11-16 (r33-tim, E1131, post-hoc readings, no verdict: its controls fai
 interval). `CR_EVENT_TIMER` sampled by the host through /dev/mem over 40 to 60 ms in 15 jobs counts
 down 398.96 to 399.01 a us with a period of 1002.497 to 1002.535 us against the laptop's monotonic
 clock, which agrees with the 399.0 MHz above. The USSE clause stays open.
+
+Narrowed 2026-11-16 (r33-tim2, E1133, frozen and held out): `CR_EVENT_TIMER` counts down 398.9 to
+399.1 a us with a period of 1002.40 to 1002.65 us in 15 of 15 jobs (H-TIM-399 30 of 30 clauses,
+H-TIM-400 refuted), so the clock that times the event timer is 399.0 MHz against the laptop's
+monotonic clock, not the DDK's 400 MHz. The USSE clause stays open: the issue rate, not the timer,
+turns the rate into the USSE's clock.

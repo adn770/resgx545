@@ -9617,6 +9617,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   about 100 us in 5 [infer: the host's read timing].
   *platform; HW, infer; data: `render-closing-r33-tim:out/20261116-211055/t1/`,
   `render-closing-r33-tim:out/20261116-211055/t1d/`, `render-closing-r33-tim:fold/`.*
+- `E1133` r33-tim2 on module 7CE8E38E (fwsim's tim, E1130; the rerun of E1131), stages t1
+  (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER alone), regtimeline
+  over plain 64x64 triangles, every control passed, every row held out: CR_EVENT_TIMER counts down
+  398.9 to 399.1 a us with a period of 1002.40 to 1002.65 us (H-TIM-399 30 of 30 clauses, H-TIM-400
+  refuted), keeps bit 24 alone in 31:24 and bits 23:0 at most 400000 (H-TIM-EN, H-TIM-RANGE,
+  H-TIM-RELOAD 15 of 15 rows; H-TIM-24 refuted), sits at a phase spread over the period at the kick
+  pass's CR_CACHE_CTRL write (H-TIM-ASYNC held, H-TIM-SYNC refuted) and is not written or stopped
+  through the pass (H-TIM-WRITE refuted 11 of 11: 120 to 300 us after the change within 345 counts
+  of its pre-change line); H-TIM-LINE is not supported (19 held, 3 FAILED of 22: the window's median
+  |residual| 69442.7, 72830.1 and 1049.6 against at most 800 in t1-01, t1-07 and t1-08); with
+  E1133's running count fwsim's M2 kick under replay passes PDS #14's tim read and stops on a memory
+  fault at 0x0002007c in the task PDS #14 starts.
+  *platform; HW, RE, infer; data: `tools/fwsim/seeds.toml`, `crates/pysgx/tests/test_fwsim_m2.py`,
+  `render-closing-r33-tim2:out/20261116-213803/t1/`,
+  `render-closing-r33-tim2:out/20261116-213803/t1d/`, `render-closing-r33-tim2:fold/`.*
 
 ## By unit
 
@@ -9683,7 +9698,7 @@ E1129.
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
 E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
-E1122, E1123, E1126, E1127, E1131.
+E1122, E1123, E1126, E1127, E1131, E1133.
 
 ### render
 

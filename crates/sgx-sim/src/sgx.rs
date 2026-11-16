@@ -116,6 +116,11 @@ pub struct State {
     /// The EDM's secondary attributes, kept from one task to the next (pds_isa 3.4).
     pub sa: [u32; 128],
     pub sa_written: u128,
+    /// The counter a program a task emits reads while the timer runs: a running count the
+    /// caller gives (`set_emit_tim`), since the sim keeps no clock. E1133: bit 24 alone in
+    /// 31:24 and bits 23:0 at most 400000 through a kick pass (no write or stop), at a phase no
+    /// row gives; None refuses the read as before. A stopped timer is read from the register.
+    emit_tim: Option<u32>,
     queue: VecDeque<Work>,
     /// The registers `Sgx::seed` set that nothing has written since.
     seeded: BTreeSet<u32>,
@@ -134,6 +139,7 @@ impl Default for State {
             log: Vec::new(),
             sa: [0; 128],
             sa_written: 0,
+            emit_tim: None,
             queue: VecDeque::new(),
             seeded: BTreeSet::new(),
             hw: None,
@@ -397,6 +403,24 @@ impl Sgx {
             )));
         }
         Ok(())
+    }
+
+    /// The running count an emitted program reads (see `emit_tim`); a value outside E1133's
+    /// rule (bit 24 alone in 31:24, bits 23:0 at most 400000) is refused.
+    pub fn set_emit_tim(&mut self, v: Option<u32>) -> Result<(), Error> {
+        if let Some(t) = v {
+            if t >> 24 != 1 || t & 0x00ff_ffff > 400_000 {
+                return Err(why(format!(
+                    "{t:#010x} is not a running count (E1133: bit 24 alone in 31:24, bits 23:0 at most 400000)"
+                )));
+            }
+        }
+        self.st.emit_tim = v;
+        Ok(())
+    }
+
+    pub fn emit_tim(&self) -> Option<u32> {
+        self.st.emit_tim
     }
 
     /// An event: the other-event PDS program with the event word `ir1`, and the ir0 and
@@ -735,12 +759,14 @@ impl Bus for Unit<'_> {
         }
         self.st.effect()?;
         let data = (s[0] >> 23 & 31) as usize * 4;
+        // a running timer: the caller's count (E1133); a stopped one: run_pds reads the register
+        let running = self.st.regs.get(&reg::EVENT_TIMER).is_some_and(|v| v >> 24 & 1 == 1);
         self.st.queue.push_back(Work::Pds {
             addr: s[1] << 4,
             data,
             ir0: Some(s[2]),
             ir1: None,
-            tim: None,
+            tim: if running { self.st.emit_tim } else { None },
             bank: Bank::Secondary,
         });
         Ok(())
@@ -1103,6 +1129,48 @@ mod tests {
         // the firmware's own setting (enable set, 400000): counting, so unknown
         s.write_reg(reg::EVENT_TIMER, 0x0106_1a80).unwrap();
         assert!(matches!(run(&mut s), Err(Error::Unsupported { ref why, .. }) if why.contains("tim")));
+    }
+
+    #[test]
+    fn an_emitted_program_reads_the_callers_running_count() {
+        // E1133: while the timer runs (bit 24 set) its count is a running count, bits 23:0 at
+        // most 400000, at a phase no row gives; an emitted program's tim is the caller's
+        // `emit_tim`, refused without one, and a stopped timer is read from the register
+        let mut s = sgx();
+        s.st.mem.map(DATA, &[0; 16]);
+        s.st.mem.map(CODE + 0x1000, &pds(&[0, 0, 0, 0], "or ds0[48], tim, ds1[1]\nhalt"));
+        s.st.mem.map(CODE, &usse("mov r0, pa0\nmov r2, pa2\nmov r4, pa4\nemitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nnop.end"));
+        let go = |s: &mut Sgx| {
+            let mut pa = [0; 128];
+            (pa[0], pa[2], pa[4]) = (1 << 23, (CODE + 0x1000) >> 4, 7);
+            s.st.queue.push_back(Work::Task {
+                base: CODE,
+                pc: 0,
+                temps: 8,
+                pa: Box::new(pa),
+                written: 0b10101,
+            });
+            s.run(10_000)
+        };
+        s.write_reg(reg::EVENT_TIMER, 0x0106_1a80).unwrap();
+        assert!(matches!(go(&mut s), Err(Error::Unsupported { ref why, .. }) if why.contains("tim")));
+        let mut s2 = sgx();
+        s2.st.mem.map(DATA, &[0; 16]);
+        s2.st.mem.map(CODE + 0x1000, &pds(&[0, 0, 0, 0], "or ds0[48], tim, ds1[1]\nhalt"));
+        s2.st.mem.map(CODE, &usse("mov r0, pa0\nmov r2, pa2\nmov r4, pa4\nemitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nnop.end"));
+        s2.write_reg(reg::EVENT_TIMER, 0x0106_1a80).unwrap();
+        s2.set_emit_tim(Some(0x0102_0304)).unwrap();
+        go(&mut s2).unwrap();
+        assert_eq!(s2.pds.ds[0][48], 0x0102_0304);
+        // stopped (bit 24 clear): the register, not the caller's count
+        s2.write_reg(reg::EVENT_TIMER, 0x0000_0042).unwrap();
+        go(&mut s2).unwrap();
+        assert_eq!(s2.pds.ds[0][48], 0x42);
+        // the rule: bit 24 alone in 31:24, bits 23:0 at most 400000
+        for bad in [0x0106_1a81u32, 0x0002_0000, 0x0300_0000] {
+            assert!(s2.set_emit_tim(Some(bad)).is_err(), "{bad:#x}");
+        }
+        assert!(s2.set_emit_tim(Some(0x0106_1a80)).is_ok() && s2.set_emit_tim(None).is_ok());
     }
 
     #[test]

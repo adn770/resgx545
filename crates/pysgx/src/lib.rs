@@ -427,6 +427,19 @@ impl Sgx {
         self.s.event_tim = v;
     }
 
+    /// The running count a program a task emits reads while the timer runs (E1133); None: the
+    /// read is refused. A value outside the rule (bit 24 alone in 31:24, bits 23:0 at most
+    /// 400000) raises ValueError.
+    #[getter]
+    fn emit_tim(&self) -> Option<u32> {
+        self.s.emit_tim()
+    }
+
+    #[setter]
+    fn set_emit_tim(&mut self, v: Option<u32>) -> PyResult<()> {
+        self.s.set_emit_tim(v).map_err(|e| PyValueError::new_err(format!("{e:?}")))
+    }
+
     /// The assumption that a movs reads specials 1 and 2 as the ALU does (off by default).
     #[getter]
     fn alu_specials_in_movs(&self) -> bool {

@@ -140,9 +140,54 @@ def test_under_replay_the_kick_pass_spins_on_event_status_then_reads_bit_26_and_
     assert EVENT_STATUS not in r.s.hw_refused() and "0x012c" not in str(stop)
 
 
-def test_under_replay_the_next_stop_is_the_counter_of_a_program_the_pass_emits(replayed):
+def replay_run(built, emit_tim):
+    r = fwsim.Run(FW, DATA, trace="memory", replay=fwsim.load_replay(), emit_tim=emit_tim)
+    r.boot()
+    r.arm()
+    r.tick()
+    r.map_render(built)
+    n = len(r.events())
+    with pytest.raises(Exception) as stop:
+        r.kick_render()
+    return r, r.events()[n:], stop.value
+
+
+def test_without_a_running_count_the_next_stop_is_the_counter_of_a_program_the_pass_emits(built):
     """E1130: the pass then emits a PDS program that reads the counter tim, which no run input
     gives for a program a task emits (R1, R3): the run stops there, not on a register read."""
-    r, evs, stop = replayed
+    r, evs, stop = replay_run(built, None)
     assert "tim is not known" in str(stop)
     assert r.s.hw_refused() == {}
+
+
+def test_the_seeded_count_is_a_running_count_by_e1133():
+    """E1133: through a kick pass the timer keeps bit 24 alone in 31:24 and bits 23:0 at most
+    400000 (no write or stop), at a phase no row gives: the seed is one such count, marked
+    [time], and a count outside the rule is refused."""
+    e = fwsim.load_seeds()["events"]
+    assert e["emit_tim"] >> 24 == 1 and e["emit_tim"] & 0xFFFFFF <= 400000
+    for bad in (0x01061A81, 0x00020000, 0x03000000):
+        with pytest.raises(ValueError):
+            fwsim.Run(FW, DATA, emit_tim=bad)
+
+
+def test_with_a_running_count_the_pass_gets_past_the_counter(replayed):
+    """With E1133's running count (seeds.toml [events] emit_tim) the emitted program's tim read
+    is answered: the run no longer stops on it. PDS #14 starts one task, the second entry of the
+    kick (E146's second group), and the run stops on a memory fault at 0x0002007c, an address no
+    placed page holds; no register read is refused."""
+    r, evs, stop = replayed
+    assert "tim is not known" not in str(stop)
+    assert [e["addr"] for e in evs if e["ev"] == "pds"] == ["0x30010000", "0x30011000"]
+    assert len(fwsim.entries(evs)) == 2
+    assert "fault at 0x0002007c" in str(stop).lower() and r.s.hw_refused() == {}
+
+
+@pytest.mark.parametrize("count", [0x01000000, 0x01061A80])
+def test_the_next_stop_does_not_depend_on_the_count(built, count):
+    """E1133 leaves the phase open: the run reaches the same stop, with the same firmware
+    register writes, at both ends of the running counts."""
+    r, evs, stop = replay_run(built, count)
+    _, evs0, stop0 = replay_run(built, fwsim.load_seeds()["events"]["emit_tim"])
+    w = lambda es: [(e["reg"], e["value"]) for e in es if e["ev"] == "wr" and not e["host"]]
+    assert str(stop) == str(stop0) and w(evs) == w(evs0)
