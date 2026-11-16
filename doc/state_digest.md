@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-134 open: 124 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+133 open: 123 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -196,8 +196,6 @@ list.
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change timing, when two of its values were slower in one
   timing run? (E1114, E1124, E1125)
-- `Q059` pds, low: why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an
-  rwfence after a store, or after a faulted job, touch page 0? (E144, E145, E395)
 - `Q062` pds, low: what makes the PDS fetch pc read one or two below the reading instruction's index
   plus 3, at instructions 26-27 back to back (the end of a ... (E260, E261, E384)
 - `Q063` pds, low: what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX

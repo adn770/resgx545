@@ -15,7 +15,7 @@
    true on any pixel either (E389). *(`adc`/`sbc` setting the flags: settled, they do.)*
 3. **`load`/`store`**: why stores totalling 2-4 dwords fault, and why `rwfence` after a store
    (or after a faulted job) touches page 0 (their timing and the fences: E143; which
-   programs fault: E144) (Q059). Totals of 11, 13, 14, 15 and 17 dwords complete (one total-11
+   programs fault: E144) (Q025). Totals of 11, 13, 14, 15 and 17 dwords complete (one total-11
    run in three faulted), 1 and 10 complete in five runs each, and 2 faults with an `rfence`
    between the stores too (E395).
 4. **`mr01`/`mr23`** read 0 in a fill, the primary pixel and the pixel-event programs; `ir1` reads 0

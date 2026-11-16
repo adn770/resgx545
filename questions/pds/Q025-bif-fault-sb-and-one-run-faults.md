@@ -1,6 +1,6 @@
 +++
 id = "Q025"
-question = "what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only?"
+question = "what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only, and (folded from Q059) why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an rwfence after a store, or after a faulted job, touch page 0?"
 unit = "pds"
 kind = "hw"
 value = "medium"
@@ -42,3 +42,22 @@ the status and value of each, and tabulate SB against the store's size, the fenc
 job's outcome. Run the store of one dword, the store of one dword and nine `nop`s, and 2 + 8, each
 alone in a fresh context ten times, and again after a deliberate fault. Add stores totalling 2 to 4
 dwords with an `rfence` between them, to see whether SB follows the total.
+
+**Correction 2026-11-16 (round 31, with the user):** Q059 is folded into this question (retired as
+folded into Q025 after E1125; a fold is not an answer): both ask about the same PDS store faults,
+from the same records (E143, E144, E145, E395), Q059 for the totals that fault and the `rwfence`
+that touches page 0, this question for the fault's SB field and the one-run faults. Its clauses
+are appended to the line above; its evidence and its term (`CR_BIF_FAULT`) were already this
+question's. Its text, kept here: a PDS load's dwords reach its registers only at the next fence, a
+store reaches memory (E143), and a program with stores and no `rwfence` faults when they total 2,
+3 or 4 dwords, after every dword has landed (E144). The kernel logs one BIF fault per faulting case
+(E145). Narrowed in 11.14 (E395): totals of 11, 13, 14, 15 and 17 dwords complete (one total-11
+job of three faulted), so the faulting totals stay 2 to 4; a total of 2 faults with an `rfence`
+between the stores too. The `rwfence` cases with page 0 mapped were not run.
+
+Open from Q059 (pds_isa.md §7, item 3): the rule behind the totals that fault, and why an
+`rwfence` after a store, or after a faulted job, touches page 0. To settle it (Q059's plan): on the
+laptop, the store totals E144 did not run (11, 13, 14, 15 and 17 dwords) in every split, and
+totals 1 and 10, which fault in one run only, ten runs each; then an `rwfence` after a store and an
+`rwfence` right after a faulted job, the two cases whose fault lands on page 0 (E145), with page 0
+mapped to a scratch page that is read back after each case and the fault registers sampled.
