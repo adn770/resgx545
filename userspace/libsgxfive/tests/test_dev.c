@@ -694,6 +694,61 @@ static void file_limits(void)
 	sgxfive_dev_close(dev);
 }
 
+/*
+ * The kernel's debugfs vm_pde_addr, vm_pde_size and vm_pde_layout (Q109): a VM_MAP at the
+ * address takes the large-page path only for exactly 4 MiB and a size code and layout the
+ * kernel makes a region for (codes 1-4 any layout, 0 and 5 dense or pt4k, 6 and 7 dense);
+ * anything else at the address is -EINVAL, elsewhere every map is as ever. The mock checks
+ * these and maps the buffer as ever: it does not model the large page.
+ */
+static void vm_pde_knobs(void)
+{
+	static const struct { uint32_t code, layout; int want; } pairs[] = {
+		{ 0, 0, 0 }, { 0, 1, 0 }, { 0, 2, -EINVAL }, { 0, 3, -EINVAL },
+		{ 1, 3, 0 }, { 3, 2, 0 }, { 4, 3, 0 },
+		{ 5, 1, 0 }, { 5, 2, -EINVAL }, { 5, 3, -EINVAL },
+		{ 6, 0, 0 }, { 6, 1, -EINVAL }, { 7, 0, 0 }, { 7, 3, -EINVAL },
+	};
+	const uint64_t at = 0x60000000;
+
+	for (unsigned int i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
+		struct sgxfive_dev *dev = open_dev(&(struct sgxfive_mock_config){
+			.vm_pde_addr = (uint32_t)at, .vm_pde_size = pairs[i].code,
+			.vm_pde_layout = pairs[i].layout });
+		struct sgxfive_vm *vm = NULL;
+		struct sgxfive_bo *bo = NULL;
+
+		CHECK_EQ(sgxfive_vm_create(dev, &vm), 0);
+		CHECK_EQ(sgxfive_bo_create(dev, 0x800000, 0, &bo), 0);
+		CHECK_EQ(sgxfive_vm_map(vm, at, bo, 0, 0x400000, 0), pairs[i].want);
+		/* elsewhere, and the next slot, as ever */
+		CHECK_EQ(sgxfive_vm_map(vm, at + 0x400000, bo, 0x400000, 0x400000, 0), 0);
+		if (!pairs[i].want)
+			CHECK_EQ(sgxfive_vm_unmap(vm, at, 0x400000), 0);
+		/* at the address, only 4 MiB */
+		CHECK_EQ(sgxfive_vm_map(vm, at, bo, 0, 0x1000, 0), -EINVAL);
+		CHECK_EQ(sgxfive_vm_map(vm, at, bo, 0, 0x3ff000, 0), -EINVAL);
+		CHECK_EQ(sgxfive_vm_map(vm, at - 0x1000, bo, 0, 0x1000, 0), 0);
+		sgxfive_bo_destroy(bo);
+		sgxfive_vm_destroy(vm);
+		sgxfive_dev_close(dev);
+	}
+	/* off (address 0): whatever the code and layout */
+	{
+		struct sgxfive_dev *dev = open_dev(&(struct sgxfive_mock_config){
+			.vm_pde_size = 5, .vm_pde_layout = 2 });
+		struct sgxfive_vm *vm = NULL;
+		struct sgxfive_bo *bo = NULL;
+
+		CHECK_EQ(sgxfive_vm_create(dev, &vm), 0);
+		CHECK_EQ(sgxfive_bo_create(dev, 0x400000, 0, &bo), 0);
+		CHECK_EQ(sgxfive_vm_map(vm, at, bo, 0, 0x1000, 0), 0);
+		sgxfive_bo_destroy(bo);
+		sgxfive_vm_destroy(vm);
+		sgxfive_dev_close(dev);
+	}
+}
+
 int main(void)
 {
 	discovery();
@@ -701,6 +756,7 @@ int main(void)
 	query();
 	bos();
 	vms();
+	vm_pde_knobs();
 	sync_and_submit();
 	arrays();
 	whole_call();

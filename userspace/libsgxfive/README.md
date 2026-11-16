@@ -261,10 +261,10 @@ query                          GPU, firmware, job limits and heaps
 dummy [-n N] [--kpoke-job N:SPEC]... [--wait-ms MS]
                                N dummy transfers chained through one syncobj
 fill  [--width W --height H --x X --y Y --stride S --colour C] [--kpoke-job 1:SPEC]...
-      [JOB OPTIONS]
+      [--dst-addr ADDR] [--large-copy DIR] [JOB OPTIONS]
 copy  [--width W --height H --sx X --sy Y --src-stride S --dx X --dy Y --dst-stride S]
       [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
-      [JOB OPTIONS]
+      [--src-addr ADDR] [--large-copy DIR] [JOB OPTIONS]
 isolation                      kernel-heap-unmappable, same-address-separate-vms,
                                other-vm-address-faults, fault-recovered-quickly,
                                lost-context-cancelled, other-context-survives,
@@ -303,6 +303,26 @@ the source count from START, one a pixel (modulo 256), the others `--ramp-base V
 `--print-addrs` prints where the source's and destination's buffers lie, and `--page-before`
 gives the source's buffer a page before the source, dword i holding `0xB0000000 | i`, so that
 a read below the source shows which dword it took.
+
+`copy --src-addr ADDR` and `fill --dst-addr ADDR` put the source or the destination at ADDR (a
+page) for Q109's large-page rows: one buffer of its own covers the 4 MiB slots from ADDR's slot
+to the surface's end (two at most, else `-EINVAL`), each slot mapped by its own VM_MAP of 4 MiB,
+so the slot at the kernel's debugfs `vm_pde_addr` takes its large-page path and the next slot is
+mapped as ever (a row that crosses the large page's end into a 4 KiB one). The tool's own
+allocations start at the general heap's base, so ADDR is chosen well above them (0x60000000
+and up). After the copy each 4 KiB page of the source it read is a `tags:` line: its first dword
+read as the kernel's tag (`0xa0000000 | slab << 24 | page << 12 | dword`, the page of the
+large mapping's region it came from), how many of its dwords follow that tag in order, and how
+many are the buffer's own pattern (a plain mapping's copy is all pattern; its pattern can look
+like a tag, which the count settles). With the knob set the copy reads tags, not the pattern,
+and the fill writes the region, not the buffer, so both end with a `diff:` line and rc 1: such
+rows are `expectdiff` (and `expectfault` where a fault is a reading). `--large-copy DIR` writes
+debugfs `vm_large` (the PDE, the table entries that are not the trap, whether the table page is
+intact, and each 4 KiB of the region intact or its changed dwords) to `DIR/vm_large.txt` after
+the job, and fails without the file (an older module). The mock maps the buffers as ever (the
+large page is not modelled), refuses at `vm_pde_addr` what the kernel refuses (`--mock-knob
+vm_pde_addr=A`, `vm_pde_size=C`, `vm_pde_layout=L`), and its `--large-copy` writes one line
+naming its knobs.
 
 `tri` renders the first triangle on a render context N times in alternating colours, every
 pixel against the CPU reference and the area after the target against a sentinel. The
