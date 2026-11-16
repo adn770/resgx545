@@ -16,6 +16,9 @@ path is refused, here and in the simulator's file sink. A trace holds indices, a
 values, never instruction text; facts.txt holds counts and values only.
 
     tools/fwsim/fwsim.py idle --ticks 1000 --power --out $RESGX545_DATA_PRIVATE/firmware/fwsim/m1-idle
+    tools/fwsim/fwsim.py kick --session r9-c-off --out $RESGX545_DATA_PRIVATE/firmware/fwsim/m2-kick
+
+The kick scenario (M2) places one kept render job as our kernel built it (kick.py) and kicks it.
 """
 from __future__ import annotations
 
@@ -53,6 +56,13 @@ SLOTS = {6: 0, 1434: 1, 2766: 2, 3594: 3}
 INIT_STATUS, HW_RECOVERY_SAMPLE_RATE, UKERNEL_TIMER_CLOCK, HOST_CLOCK = 0x00, 0x14, 0x18, 0x34
 EVENT_KICK, EVENT_TIMER, EVENT_KICK2 = 0xAC8 // 4, 0xACC // 4, 0xAE8 // 4
 MISCINFO_GET_STRUCT_SIZES = 0x2
+PAGE = 0x1000
+# A render context's parameter slot (the fork's sgx_render.h SGX_RENDER_PARAM_*): the PB from the
+# second page, its page table, the scratch primitive block, the background object.
+PARAM_PB, PARAM_PT, PARAM_BG, PARAM_SIZE = 0x1000, 0x423000, 0x464000, 0x465000
+# The kernel's cache control on a render kick after the context's pages were mapped: the BIF's
+# page tables and directory, and the data cache (the fork's sgxfive.c, SGX_CC_INVAL_BIF | _DATA).
+KICK_CACHE_CONTROL = 0x3 | 0x8
 E_NUMBER = re.compile(r"(?<![A-Za-z0-9])E\d{3,4}(?!\d)")
 
 
@@ -173,7 +183,8 @@ class Run:
         self.s.event(0)
         self.s.run(self.s.steps + max_steps)
 
-    def submit(self, cmd: str, data: list[int], max_steps: int = 200_000, *, bump: bool = True) -> None:
+    def submit(self, cmd: str, data: list[int], max_steps: int = 200_000, *, bump: bool = True,
+               cache_control: int = 0) -> None:
         """The host's writes for one kernel CCB command (ccb.submit), then the kick (EVENT_KICK)
         with the kick's event inputs. `bump=False`: the kicker word is left as it is (E819 Q3)."""
         s, lay = self.s, self.lay
@@ -181,7 +192,8 @@ class Run:
         s.event_ir0, s.event_tim = e["kick_ir0"], e["kick_tim"]
         offset = s.load32(lay.addr[facts.CCB_CTL])
         kicker = s.load32(lay.addr[facts.KICKER])
-        for target, off, value in ccb.submit(self.boot_data.kick, cmd, data, offset, kicker):
+        for target, off, value in ccb.submit(self.boot_data.kick, cmd, data, offset, kicker,
+                                             cache_control):
             if target == "ccb":
                 for i, w in enumerate(struct.unpack("<8I", value)):
                     s.store32(lay.addr[facts.CCB] + off + 4 * i, w)
@@ -209,6 +221,44 @@ class Run:
 
     def power_idle(self) -> None:
         self.submit("POWER", ccb.power(ccb.POWERCMD_IDLE))
+
+    # -- a render job (M2): our kernel's structures, kick.build ----------------------------
+
+    def map_render(self, built: dict) -> None:
+        """Place one render context as our kernel leaves it before the job's kick (kick.build's
+        `job` words): its kernel memory (the TA CCB with the TA command at offset 0, then the
+        control page: HW context, CCB control, the status words, RT data set, PB descriptor and
+        block, render details), its parameter slot (zeroed pages, the PB's page table, the
+        background object) and its TA-data slot (zeroed), each at its device address. One flat
+        memory serves the EDM's directory and the context's (the kernel aliases its memory in
+        the context's directory at the same address)."""
+        a, j = built["addr"], built["job"]
+        page = a["ctx"]
+        mem = bytearray(page - a["ccb"] + PAGE)
+        put = lambda addr, words: [struct.pack_into("<I", mem, addr - a["ccb"] + 4 * i, words[i])
+                                   for i in sorted(words)]
+        put(a["ccb"], j["ta"])
+        put(a["ctx"], j["ctx"])
+        put(a["ccb_ctl"], j["ctl"])
+        put(a["access"], j["kw"])
+        put(a["rtds"], j["rtds"])
+        put(a["pbdesc"], j["pb"])
+        put(a["pbblock"], j["pbblk"])
+        put(a["rd"], j["rd"])
+        self.s.map(a["ccb"], bytes(mem))
+        param = bytearray(PARAM_SIZE - PARAM_PB)
+        for i, v in built["init"].get("pt", {}).items():
+            struct.pack_into("<I", param, PARAM_PT - PARAM_PB + 4 * i, v)
+        for i, v in j["bg"].items():
+            struct.pack_into("<I", param, PARAM_BG - PARAM_PB + 4 * i, v)
+        self.s.map(a["param_base"] + PARAM_PB, bytes(param))
+        self.s.map(a["tadata"], bytes(a["td_size"]))
+        self.render = built
+
+    def kick_render(self, max_steps: int = 2_000_000, cache_control: int = KICK_CACHE_CONTROL) -> None:
+        """The kernel's TA command for the mapped context (sgxfive_kick_render: data word 1 the HW
+        render context's address)."""
+        self.submit("TA", [0, self.render["addr"]["ctx"]], max_steps, cache_control=cache_control)
 
     # -- what the run shows ---------------------------------------------------------------
 
@@ -272,14 +322,12 @@ def git_commit() -> str:
     return r.stdout.strip() + ("-dirty" if dirty else "")
 
 
-def idle(ticks: int, out: pathlib.Path, power: bool, data: pathlib.Path, fw: pathlib.Path,
-         private: pathlib.Path) -> list[str]:
-    """The M1 idle scenario: boot, arm (two GETMISCINFO), `ticks` tick passes, then optionally
-    POWER IDLE. Writes run.toml, trace.jsonl.gz, facts.txt and output.txt into `out`."""
-    out = checked_out(out, private)
-    out.mkdir(parents=True, exist_ok=True)
+def scenario(out: pathlib.Path, run: Run, phases_in: list[tuple[str, object, int]],
+             meta: dict, extra_facts: list[str] = ()) -> list[str]:
+    """Run `phases_in` ((name, fn, passes it is cut at) in order, stopping at the first stop) on
+    a run tracing into `out`/trace.jsonl; write run.toml, trace.jsonl.gz, facts.txt and
+    output.txt there. The run's trace path must lie under `out` (checked by `Run`)."""
     trace = out / "trace.jsonl"
-    run = Run(fw, data, trace=trace, private=private)
     log, phases, refusal = [], [], None
 
     def phase(name, fn):
@@ -293,41 +341,85 @@ def idle(ticks: int, out: pathlib.Path, power: bool, data: pathlib.Path, fw: pat
         log.append(f"{name}: {'stopped' if refusal and refusal.startswith(name) else 'ok'}")
         return refusal is None
 
-    ok = phase("boot", run.boot) and phase("arm", run.arm)
-    ok = ok and phase(f"ticks x{ticks}", lambda: [run.tick() for _ in range(ticks)])
-    if ok and power:
-        phase("power idle", run.power_idle)
+    for name, fn, _ in phases_in:
+        if not phase(name, fn):
+            break
     run.s.finish_trace()
     with open(trace, "rb") as f, gzip.open(out / "trace.jsonl.gz", "wb") as g:
         shutil.copyfileobj(f, g)
     evs = [json.loads(line) for line in gzip.open(out / "trace.jsonl.gz", "rt")]
     trace.unlink()
-    cut = _cuts(evs, [p[0] for p in phases], ticks)
+    cut = _cuts(evs, [n for n, _, _ in phases_in][:len(phases)], {n: k for n, _, k in phases_in})
     phases = [(name, lo, hi, b, a) for (name, b, a), (lo, hi) in zip(phases, cut)]
-    lines = summary(run, evs, phases, refusal)
+    lines = summary(run, evs, phases, refusal) + list(extra_facts)
     (out / "facts.txt").write_text("\n".join(lines) + "\n")
-    meta = {
-        "scenario": "idle", "ticks": ticks, "power": power,
-        "firmware_sha256": hashlib.sha256(fw.read_bytes()).hexdigest(),
-        "resgx545_commit": git_commit(),
-        "seeds_sha256": hashlib.sha256(SEEDS.read_bytes()).hexdigest(),
-        "data": str(data.name), "passes": run.s.passes, "steps": run.s.steps,
-    }
+    meta = {**meta, "firmware_sha256": hashlib.sha256(run.fw.read_bytes()).hexdigest(),
+            "resgx545_commit": git_commit(),
+            "seeds_sha256": hashlib.sha256(SEEDS.read_bytes()).hexdigest(),
+            "passes": run.s.passes, "steps": run.s.steps}
     (out / "run.toml").write_text("".join(f"{k} = {json.dumps(v)}\n" for k, v in meta.items()))
     log += [f"passes {run.s.passes}", f"refused {sum(run.s.hw_refused().values())}"]
     (out / "output.txt").write_text("\n".join(log) + "\n")
     return log
 
 
-def _cuts(evs: list[dict], names: list[str], ticks: int) -> list[tuple[int, int]]:
-    """Trace index ranges of the phases: the boot is one pass, the arm two, the ticks `ticks`,
-    the power command one (a stop ends the phase it is in)."""
-    want = {"boot": 1, "arm": 2, "power idle": 1}
+def idle(ticks: int, out: pathlib.Path, power: bool, data: pathlib.Path, fw: pathlib.Path,
+         private: pathlib.Path) -> list[str]:
+    """The M1 idle scenario: boot, arm (two GETMISCINFO), `ticks` tick passes, then optionally
+    POWER IDLE. Writes run.toml, trace.jsonl.gz, facts.txt and output.txt into `out`."""
+    out = checked_out(out, private)
+    out.mkdir(parents=True, exist_ok=True)
+    run = Run(fw, data, trace=out / "trace.jsonl", private=private)
+    phases = [("boot", run.boot, 1), ("arm", run.arm, 2),
+              (f"ticks x{ticks}", lambda: [run.tick() for _ in range(ticks)], ticks)]
+    if power:
+        phases.append(("power idle", run.power_idle, 1))
+    meta = {"scenario": "idle", "ticks": ticks, "power": power, "data": str(data.name)}
+    return scenario(out, run, phases, meta)
+
+
+def render_kick(session: str, ticks: int, out: pathlib.Path, data: pathlib.Path, fw: pathlib.Path,
+                private: pathlib.Path) -> list[str]:
+    """The M2 kick scenario (P3): boot, arm, `ticks` tick passes, then one render job of a kept
+    session as our kernel built it (kick.build: the session's fork and tool commits), its
+    structures placed at their device addresses and the kernel's TA command kicked. Writes the
+    run directory into `out`, as `idle`."""
+    import kick
+    s = kick.SESSIONS[session]
+    built = kick.build(s, data)
+    out = checked_out(out, private)
+    out.mkdir(parents=True, exist_ok=True)
+    run = Run(fw, data, trace=out / "trace.jsonl", private=private)
+    phases = [("boot", run.boot, 1), ("arm", run.arm, 2),
+              (f"ticks x{ticks}", lambda: [run.tick() for _ in range(ticks)], ticks),
+              ("map", lambda: run.map_render(built), 0), ("render kick", run.kick_render, 1)]
+    a = built["addr"]
+    facts = [f"job {s.cite}: fork {s.fork}, tool {s.tool}, {s.width}x{s.height}, one kick FIRST|LAST "
+             f"(kick.py; built words equal the kept words.0 and, but the firmware's, words.1)",
+             f"job inputs from the kept words.0: memory 0x{a['ccb']:08x}, HW context 0x{a['ctx']:08x}, "
+             f"page directory 0x{built['init']['ctx'][2]:08x}, parameter base 0x{a['param_base']:08x}, "
+             f"TA data 0x{a['tadata']:08x} (0x{a['td_size']:x} bytes)",
+             f"kick: TA command data [0, 0x{a['ctx']:08x}], cache control 0x{KICK_CACHE_CONTROL:x}"]
+    meta = {"scenario": "render-kick", "session": session, "fork": s.fork, "tool": s.tool,
+            "ticks": ticks, "data": str(data.name)}
+    log = scenario(out, run, phases, meta, facts)
+    refused = ", ".join(f"0x{i * 4:04x}" for i in sorted(run.s.hw_refused())) or "none"
+    reached = "render kick: ok" in log
+    with open(out / "facts.txt", "a") as f:
+        f.write(f"M2 checks K1-K8 (plan-fwsim.md): {'run to the end of the kick pass' if reached else 'not reached'}"
+                f"; the kick pass {'ended' if reached else 'stopped'} with refused reads {refused} (R1; "
+                "a unit's reading no kept job gives is the replay package's, FW-5 a)\n")
+    return log
+
+
+def _cuts(evs: list[dict], names: list[str], want: dict[str, int]) -> list[tuple[int, int]]:
+    """Trace index ranges of the phases, by the passes each runs (`want`; a stop ends the phase
+    it is in)."""
     ends = [i + 1 for i, e in enumerate(evs) if e["ev"] in ("pass", "refusal")]
     cuts, lo, k = [], 0, 0
     for name in names:
-        k += want.get(name, ticks)
-        hi = ends[min(k, len(ends)) - 1] if ends else 0
+        k += want[name]
+        hi = ends[min(k, len(ends)) - 1] if ends and k and want[name] else lo
         cuts.append((lo, hi))
         lo = hi
     return cuts
@@ -340,12 +432,20 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--ticks", type=int, default=1000)
     a.add_argument("--power", action="store_true", help="then POWER IDLE")
     a.add_argument("--out", type=pathlib.Path, required=True)
+    k = sub.add_parser("kick", help="boot, arm, N ticks, one kept render job's kick (M2)")
+    k.add_argument("--session", default="r9-c-off")
+    k.add_argument("--ticks", type=int, default=3)
+    k.add_argument("--out", type=pathlib.Path, required=True)
     args = ap.parse_args(argv)
     private, fw, data = private_dir(), find_fw(), kept.data_dir()
     if private is None or fw is None or data is None:
         print("fwsim: needs the private firmware and both data repositories", file=sys.stderr)
         return 2
-    for line in idle(args.ticks, args.out, args.power, data, fw, private):
+    if args.cmd == "idle":
+        lines = idle(args.ticks, args.out, args.power, data, fw, private)
+    else:
+        lines = render_kick(args.session, args.ticks, args.out, data, fw, private)
+    for line in lines:
         print(line)
     return 0
 
