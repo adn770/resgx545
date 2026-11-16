@@ -29,8 +29,9 @@
 //!   item 9, E263); assumed for the primary program, where only the baselines' image hashes
 //!   support it (without it 24 of 13679 scenes match).
 //! - `ifs` and `ir2` are not assumed: they are unknown inputs (if0 and if1 are open on SGX,
-//!   pds_isa 3.2, and ir2 is measured only in `movs`), so a program that reads one refuses under
-//!   Q207. None of the three template programs does (the replay is unchanged with them unknown).
+//!   pds_isa 3.2, whether they test true in a transfer's programs is Q058, and ir2 is measured
+//!   only in `movs`), so a program that reads one refuses under Q207, being no template. None of
+//!   the three template programs does (the replay is unchanged with them unknown).
 //! - The builder's addresses (the target, a copy's source, the pages of the programs and the
 //!   background object) are the mock's: the fill and copy sweeps print no layout line.
 //!

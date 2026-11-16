@@ -88,13 +88,13 @@ list.
 - `Q057` pds, medium: what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on
   ports other than doutd, and does an enabled small count in tim ... (E128, E264, E421)
 - `Q058` pds, medium: what sets the input flags if0 and if1 outside a vertex program, since neither
-  tests true in any primary pixel or pixel-event task tried? (E262, E263, E389)
+  tests true in any primary pixel or pixel-event task tried, ... (E263, E389, E620)
 - `Q060` pds, medium: what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs?
   (E262, E263, E390)
 - `Q093` pds, medium: does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as
   it did in 4 of 126 jobs with both bits in colour and ... (E454, E459, E460)
 - `Q207` pds, medium: what do the PDS programs of a transfer do with the inputs and instructions no
-  record measured: if0 and if1, ir2, a movs reading ir1.l and ... (E263, E265, E620)
+  record measured: ir2, a movs reading ir1.l and tim.l in the ... (E263, E265, E620)
 - `Q001` platform, medium: what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1,
   0xffff and 0x7ff, control? (E403, E404, E405)
 - `Q043` render, medium: what does bit 0 of CR_REG_0148, which the firmware loads for every render,

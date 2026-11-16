@@ -1,6 +1,6 @@
 +++
 id = "Q207"
-question = "what do the PDS programs of a transfer do with the inputs and instructions no record measured: if0 and if1, ir2, a movs reading ir1.l and tim.l in the primary program, and a program that is not one of the three templates the records ran?"
+question = "what do the PDS programs of a transfer do with the inputs and instructions no record measured: ir2, a movs reading ir1.l and tim.l in the primary program, and a program that is not one of the three templates the records ran?"
 unit = "pds"
 kind = "hw"
 value = "medium"
@@ -26,3 +26,11 @@ what the hardware does with a program the templates do not cover.
 
 To settle it: a primary-program probe that stores its `movs` specials for `ir1.l`, `tim.l` and
 `ir2.l`, and one that branches on `if0` and `if1`, run on the laptop with a fill and a copy.
+
+**Correction 2026-11-16 (round 31, with the user):** the `if0`/`if1` clause moves to Q058, which
+asks what sets the two flags outside a vertex program: whether `if0` and `if1` test true in the
+primary and pixel-event programs of a transfer, and the branch probe that settles it, are Q058's
+now. This question keeps `ir2`, the primary program's `movs` of `ir1.l` and `tim.l`, and the
+programs that are not one of the three templates. The transfer model still refuses a program that
+reads `if0` or `if1` under this question, since none of the three templates reads them and any
+other program is not a template.

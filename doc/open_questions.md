@@ -74,12 +74,12 @@
 - `Q026` (phase 7, hw, medium): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130, E394)
 - `Q027` (phase 7, hw, medium): where do the values of a no-wait iteration go, given that pa0 never holds the iterated value and holds 0, 2, 6 and a few other values instead? (E131, E048, E393, E430)
 - `Q057` (phase 11, hw, medium): what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and does an enabled small count in tim hang the job, and why? (E127, E128, E264, E421)
-- `Q058` (phase 11, hw, medium): what sets the input flags if0 and if1 outside a vertex program, since neither tests true in any primary pixel or pixel-event task tried? (E128, E130, E262, E263, E389)
+- `Q058` (phase 11, hw, medium): what sets the input flags if0 and if1 outside a vertex program, since neither tests true in any primary pixel or pixel-event task tried, and (moved from Q207) do if0 and if1 test true in the primary and pixel-event PDS programs of a transfer (a fill or a copy)? (E128, E130, E262, E263, E389, E620)
 - `Q060` (phase 11, hw, medium): what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs? (E128, E130, E262, E263, E390)
 - `Q062` (phase 11, hw, low): what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs? (E128, E142, E143, E260, E261, E384)
 - `Q063` (phase 11, hw, low): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
 - `Q093` (phase 11, hw, medium): does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as it did in 4 of 126 jobs with both bits in colour and coordinate shapes, and why does the closed driver set it with bit 25? (E345, E364, E436, E454, E459, E460)
-- `Q207` (phase 12, hw, medium): what do the PDS programs of a transfer do with the inputs and instructions no record measured: if0 and if1, ir2, a movs reading ir1.l and tim.l in the primary program, and a program that is not one of the three templates the records ran? (E130, E262, E263, E043, E265, E620)
+- `Q207` (phase 12, hw, medium): what do the PDS programs of a transfer do with the inputs and instructions no record measured: ir2, a movs reading ir1.l and tim.l in the primary program, and a program that is not one of the three templates the records ran? (E130, E262, E263, E043, E265, E620)
 - `Q276` (phase 11, hw, high): in E709's command (state block word 4 at 0x00030001), why is the o3 word in the tag-5 OR that of lane 0 of the quad in a job whose words carry x and of lane 1 in one whose words carry y (E880, held out), and what selects the lane (E709, E570, E406, E742, E759, E772, E808, E838, E850, E858, E081, E871, E878, E880, E905)
 
 ### platform
