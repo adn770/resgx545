@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965", "E1046", "E1071"]
+evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965", "E1046", "E1071", "E1108"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT"]
 +++
 
@@ -78,3 +78,10 @@ mapping's first page before anything is read, and EDMPROTECT alone lets both thr
 store byte for byte, E1047's image), held out 4 of 4; sgx-pipe's `bif::pte_access` takes them.
 What stays: data cached within one render, the flags on the TA's own writes and the EDM's buffers,
 the flags together on a read, and which unit makes the last-page access under WRITEONLY.
+
+Narrowed 2026-11-16 (round 29, session r29-flag stage f1, E1108). WRITEONLY and EDMPROTECT
+together (0x12) on the same two reads fault as WRITEONLY alone (0x80200 on the ZLS load, 0x80002
+on the texture read, the mapping's first page, `FAULT_TYPE` 0), not with EDMPROTECT's type as on
+a colour write (E965), held out 2 of 2; sgx-pipe's `bif::pte_access` takes them. What stays: data
+cached within one render, the flags on the TA's own writes and the EDM's buffers, and which unit
+makes the last-page access under WRITEONLY.

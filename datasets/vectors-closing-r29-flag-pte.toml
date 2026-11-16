@@ -1,0 +1,9 @@
+title = "r29-flag f1: the PTE knobs, the kernel's PTE and BIF fault lines and the job's outcome of each job (2 jobs)"
+repo = "data"
+paths = ["vectors/closing/r29-flag/pte/"]
+method = "tools/usse-asm/closing_tables.py pte on the published render/closing-r29-flag session (stage f1 of its one attempt, out/20261116-055520), one file; rows are measurements; replayed by crates/sgx-pipe/tests/pte_table.rs::the_model_replays_every_modelled_row_of_the_pte_tables (sgx-pipe bif::pte_access with WRITEONLY and EDMPROTECT together on the ZLS load and the texture read; 2 rows modelled, none refused)"
+date = "2026-11-16"
+files = 1
+size = 2493
+sha256 = "f6bbfcc95426192366139f6dece9cd3168c46ba32bec1361f3de1e6628de9cd5"
+recipe = "tools/usse-asm/closing_tables.py"

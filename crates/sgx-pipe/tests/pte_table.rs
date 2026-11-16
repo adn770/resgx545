@@ -17,7 +17,8 @@
 //! (`vectors/closing/r18-flag/pte/f2.table.json`, E1071) puts WRITEONLY and EDMPROTECT alone on
 //! that load's buffer and on a probe's scratch read as a texture (`probe ... --scratch-pages 256`,
 //! the scratch at 0x3e003000); a texture read's clean end is its match (its image is the record's
-//! reading, E1047's byte for byte). Each table's `replay` names
+//! reading, E1047's byte for byte). The r29-flag table (`vectors/closing/r29-flag/pte/f1.table.json`,
+//! E1108) puts both flags together (0x12) on the same two reads. Each table's `replay` names
 //! `the_model_replays_every_modelled_row_of_the_pte_tables`. Skips without the data, and fails
 //! with `RESGX545_REQUIRE_DATA` set.
 
@@ -31,6 +32,7 @@ const TABLES: &[(&str, usize, usize)] = &[
     ("vectors/closing/r9-faults/pte/tri2.table.json", 7, 6),
     ("vectors/closing/r14-bif/pte/refill.table.json", 6, 6),
     ("vectors/closing/r18-flag/pte/f2.table.json", 4, 4),
+    ("vectors/closing/r29-flag/pte/f1.table.json", 2, 2),
 ];
 const NAME: &str = "the_model_replays_every_modelled_row_of_the_pte_tables";
 const PAGE: u64 = 0x1000;

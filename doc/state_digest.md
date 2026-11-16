@@ -44,7 +44,7 @@ list.
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
-  do on the hardware, which of the bus interface's requestors do ... (E965, E1046, E1071)
+  do on the hardware, which of the bus interface's requestors do ... (E1046, E1071, E1108)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
@@ -108,7 +108,7 @@ list.
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
 - `Q139` ta, medium: what is the stride's relation to the RT data, and what places the TA's region
-  header write of a macrotile word with an axis whose bounds ... (E1048, E1073, E1074)
+  header write of a macrotile word with an axis whose bounds ... (E1073, E1074, E1109)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -289,9 +289,15 @@ list.
 
 ## Recent records
 
-72 records of 2026-11-14 to 2026-11-15 (the last 2 days to the newest record's date), newest first;
+22 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1109` ta, 2026-11-16: r29-flag stage f2 (2 jobs, t10, E1074's form at 512 x 512 (n = 2, TA data
+  32768 bytes by the kernel's layout, c-512's reading), the size's own CR_TE_MTILE1 and CR_TE_MTILE2
+  with B2 cleared, words ...
+- `E1108` bif, 2026-11-16: r29-flag stage f1 (2 jobs, t14, the debugfs knobs vm_pte_addr and
+  vm_pte_flags = 0x12, WRITEONLY and EDMPROTECT together, on a mapping only read, held out; 2
+  planned faults): r14-bif's ZLS load of ...
 - `E1107` pds, 2026-11-15: sgx-sim replays the kept vectors of two published sessions exactly:
   r25-sa64's 58 jobs (E1104; stages pk64 and q019, one vector a job) replay 58 of 58 with each set's
   sixteen markers read exactly at ...
@@ -352,168 +358,14 @@ the claims are cut at 200 characters.
 - `E1088` zls, 2026-11-15: r20-zls stages zc and zr (Q088, Q038, 11 jobs): after a host refill of
   the load buffer with 0.25 between an overflowing geometry kick and a moved final on its own PB, no
   frozen form of the separate ...
-- `E1087` dpm, 2026-11-14: r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context
-  closed early; t18b copied the kept TA data right after the close and after the second context's
-  render, every copy made): the ...
-- `E1086` dpm, 2026-11-14: r19-flag stage fl (3 jobs, t18b, module E0CC40275493F8AEAD8180B, the
-  flagged session with the user's OK, 2 planned rows, no fault and no hang): on a 1024 x 768 scene
-  whose geometry kick overflows ...
-- `E1085` dpm, 2026-11-14: r19-own stage own1 (Q191) decided nothing: on its first flag-0xc row
-  (o1-c-a, 64x64, P 0x422) t18b's copy of render_kept right after the first context's early close
-  read 0 bytes although the kernel ...
-- `E1084` dpm, 2026-11-14: r19-own stage own2 (6 jobs, t18b, render_keep armed, 1024x768 owners kept
-  by the first context's early close; t18b copied the kept TA data after the close and after the
-  second context's render): the ...
-- `E1083` zls, 2026-11-14: r19-dpm stage rd (Q088, 6 jobs, t18b): the partial render of a geometry
-  kick stores the depth with the G of its own kick's ZLS control word (the render details' word the
-  tool sets for render 1), not ...
-- `E1082` zls, 2026-11-14: r19-dpm stages zsc and zs (Q107, 7 jobs): on E629's full-screen ramp with
-  the final on its own PB (no abort), the G 1 store fails E996's header-order overlay against its G
-  33 twin as the overflowed ...
-- `E1081` zls, 2026-11-14: r19-dpm stages dzl, dza, dzc, dzo (Q038, 15 jobs): with the final render
-  on its own PB (no abort), no frozen form of the dl rows held on every row (H-PRPATH 5 of 6,
-  H-HOSTBITS 4 of 6, H-PRZERO 5 of ...
-- `E1080` dpm, 2026-11-14: r19-dpm stage ldb (Q045, 6 jobs, t18b, knob 0): at 4096 x 4096 (the
-  default triangle, -n 1) with the state page located per width (TA data 0x42000, E627), the 16
-  macrotile list counts sum to the last ...
-- `E1079` dpm, 2026-11-14: r19-dpm stage ld (Q045, 8 jobs, t18b): after a geometry kick that
-  overflows at P 0x28, 0x2c and 0x30 (one partial render; the state page, page 6 of the TA data,
-  holding 18, 16 and 20 non-zero dwords ...
-- `E1078` dpm, 2026-11-14: r19-k0b stage f0 on module E0CC40275493F8AEAD8180B (12 jobs on t18b: a
-  geometry kick at P, the closing render on its own PB of N pages through render_final_pb_pages,
-  whose TA command carries flag ...
-- `E1077` dpm, 2026-11-14: r19-k0b stages k0 and kg on module E0CC40275493F8AEAD8180B (fork
-  456404fcffe5, debugfs render_final_pb_pages at its default 0): every control passed and H-SAME
-  held 20 of 20 (k0) and 15 of 15 (kg): ...
-- `E1076` vdm, 2026-11-14: r18-flag stage h2 (8 jobs, t10, the kit's noreset; 2 planned hangs): with
-  block 1 at VDM_STATE1 bits 11:9 = 6 (E700's M1: add 4 a job), a job after a reset then two noreset
-  jobs completed, completed ...
-- `E1075` vdm, 2026-11-14: r18-flag stage h1 (1 job, t10, E756's form with --index-width 32 --vdm
-  2^=0x03000000: bit 25 cleared, bit 24 set alone over E414's list written as 32-bit words, never
-  run; 1 planned hang): the job ...
-- `E1074` ta, 2026-11-14: r18-flag stage f3 (2 jobs, t10, E1048's form at 384 x 256, a size of none
-  of E509's cases, two CR_TE_MTILE1 words never run; 2 planned faults): 0x00c00005 (B2 = 0, every
-  bound of the x axis 0) ...
-- `E1073` ta, 2026-11-14: Round 18 offline (O18-1, Q139; no run): on E509's 329 kept cases
-  (ta/mtile-fields and ta/mtile-fields-risky), the first kernel fault line of each of the 162 that
-  faulted gives two kinds, 155 at ...
-- `E1072` isp, 2026-11-14: r18-flag stage f4 (2 jobs, t10, ISP word 0 bit 18 set alone; 2 planned
-  faults): E065's library triangle (tri --poke blk:1^=0x00040000) and E977's 80 x 40 ramp with its
-  depth buffer loaded and stored ...
-- `E1071` bif, 2026-11-14: r18-flag stage f2 (4 jobs, t14, the debugfs knobs vm_pte_addr and
-  vm_pte_flags on a mapping only read, held out; 2 planned faults): WRITEONLY alone (0x2) faulted
-  r14-bif's ZLS load of the depth ...
-- `E1070` zls, 2026-11-14: r18-flag stage f1 (2 jobs, t10: E411's G 3 and G 5 stores in E1051's zv-
-  form with a 16-page depth buffer, never run on t10 at 16 pages, held out; 1 planned fault): G 5
-  faulted the job with BIF fault ...
-- `E1069` zls, 2026-11-14: r17-zls rows zb20- (Q071, 9 jobs in stage zb20, t10): with bit 20
-  cleared, formats 6 and 7 at 96 x 48 G 2 and 128 x 64 G 3 store their per-tile records one after
-  another from dword 2048 whatever the ...
-- `E1068` zls, 2026-11-14: r17-zls rows zo2- (Q299, 8 jobs in stages zovp2 and zovs2, t10): the
-  depth load pass over overlapping tiles with edge tiles (65 x 33 G 1 and 63 x 31 G 0, E996's plane
-  over a 0.2 load) loads each ...
-- `E1067` texture, 2026-11-14: r17-tw stage tw17 (14 probe fills on t14 with a 1 MiB scratch,
-  E1047's tx_map form; safe class, no fault, no stop): T3 bit 14 on a twiddled 32-bit texture
-  samples a texture W' = W + 4096 texels wide ...
-- `E1066` mte, 2026-11-14: r16-zls rows zw2- (Q069, 9 jobs in stage zoff, t10): on E987's ramp (256
-  x 128, t = x / 512, format 0) the viewport's z offset w at 0, 1/16, 3/16, 5/16, 3/8 and 7/16
-  stored (1.6 w + 0.2) t (frozen ...
-- `E1065` texture, 2026-11-14: r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8
-  x 8, 64 x 64 and type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base
-  0 of a 32-page named scratch): ...
-- `E1064` zls, 2026-11-14: r16-zls rows zo- (Q299, 11 jobs in stages zovp and zbits4, t10): a load
-  pass over overlapping tiles (64 x 32 G 0 and 160 x 48 G 2) loads each tile's slot by E465, passes
-  each tile on its own and ...
-- `E1063` zls, 2026-11-14: r16-zls rows zb4- (Q071, 14 jobs in stages zbits4, zovp and zoff, t10):
-  bit 0 under E988's stencil row, E1030's bit 16 cleared and E1031's flat format-6 and F7K rows
-  writes no colour pixel and leaves ...
-- `E1062` usse, 2026-11-14: r16-usse stage utest on module B60AB0B4 (Q137; 20 client fills, one form
-  and one join a program, the 16 values of the test field enc[43:40] packed one bit a field from p0
-  by `p0 or`, with the ...
-- `E1061` usse, 2026-11-14: r16-usse stages uadd and urpt on module B60AB0B4 (Q126; client fills,
-  `iaddu32.testtaz.chan0 DST, p0, r1, SRC2` over eight (r1, source 2) pairs a program, r1's low half
-  0x8000 to 0xffff in seven of ...
-- `E1060` mte, 2026-11-14: r16-mte stage rclip on module B60AB0B4 (Q116; the MTE state's region
-  clip, presence bit 7 and its two words, added to the probe triangle's block by t10's --blk-add
-  7=C0,C1, 0xdf43 becoming the closed ...
-- `E1059` zls, 2026-11-14: r16-zls rows zp2- (Q297, 15 jobs in stage zpass2, t10): E1050's load pass
-  (64 x 32, the bit:9 load of 0.25 and 0.75, depth less) at the flat depths 0.125, 0.0625, 0.1, 0.3,
-  0.375, 0.625 and 0.5 + ...
-- `E1058` texture, 2026-11-14: r16-tw stage tw16 (17 probe fills on t14 with a 1 MiB scratch,
-  E1047's tx_map form; safe class, no fault, no stop): T3 bit 14 on twiddled 32-bit textures point
-  sampled at 32 and 128 by 8, 32 and 128 ...
-- `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
-  sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
-  all ran, rc 0): the period ...
-- `E1056` isp, 2026-11-14: r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with
-  one vertex depth at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and
-  each made vertex is rounded ...
-- `E1055` texture, 2026-11-14: r15-tex stage ty on module B60AB0B4 (Q177; texture types 1, 3 and 4
-  in u modes 4 to 7, 15 probe fills at base 0 of a 32-page named scratch): both controls passed
-  (E1000's addr3-16x64-u4 and E1039's ...
-- `E1054` zls, 2026-11-14: r15-zls rows zl2- (Q120, 13 jobs in stage zflat2, t10): format 6 stores
-  E1031's 44-dword block with row 0's record carrying the depth where the plane is one float at
-  every pixel: frozen H-FLATPLANE 3 ...
-- `E1053` zls, 2026-11-14: r15-zls rows zb3- (Q071, 10 jobs in stage zbits3, t10): E1042's post hoc
-  forms held out: bit 15 alone fails E988's stencil test at every pixel and stores the loaded bytes
-  unchanged, at 96 x 32 G 2 ...
-- `E1052` texture, 2026-11-14: r15-tex stage chain on module B60AB0B4 (Q104; 18 probe fills, the
-  scratch as the texture, dword i named 0xD0000000 | i, LOD (y >> 2) + c down the rows): both
-  controls passed (E562's shp-32x16-l5 and ...
-- `E1051` zls, 2026-11-14: r15-zls rows zv- (Q298, 16 jobs in stage zovl, t10): overlapping stores
-  in the 16-bit format (64 x 32 G 0, 160 x 48 G 2) and in the 24-bit one with edge tiles (65 x 33 G
-  1) and four macrotiles a side ...
-- `E1050` zls, 2026-11-14: r15-zls rows zp- (Q297, 13 jobs in stages zpass and zbits3, t10): over 34
-  x 18 edge tiles the ZLS load pass tests E831's band against the loaded depth and the loaded
-  stencil and keeps the loaded ...
-- `E1049` texture, 2026-11-14: r15-tw stage tw14 (14 probe fills on t14 with a 1 MiB scratch,
-  E1047's tx_map form; safe class, no fault): T3 bit 14 on twiddled W x 32 32-bit textures at W 16,
-  64 and 128, with u in (0, 1), (1, 2) ...
-- `E1048` ta, 2026-11-14: r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x
-  640 baselines and four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at
-  256 x 256 and 26 and 27 at 768 ...
-- `E1047` texture, 2026-11-14: r14-flag stage f1 (5 probe fills on E566's twiddled 32 x 32 32-bit
-  texture in the tx_map form, t14 with a 1 MiB scratch (probe --scratch-pages 256) that maps E1033's
-  two fault pages; 3 planned ...
-- `E1046` bif, 2026-11-14: R14-bif stage refill (Q108's stale-data clause; E1029's zb-c-id depth
-  form, 64 x 32, depth test never so the store holds the load, run twice on one context, 6 jobs,
-  every control passed): when the ...
-- `E1045` isp, 2026-11-14: r14-isp stage wind (8 jobs, E998's form: E977's ramp at 80 x 40, the
-  depth dumped): ISP word 0 bit 15, 16 or 17 set alone removes the ramp triangle in the reversed
-  vertex order too (no pixel, the ...
-- `E1044` dpm, 2026-11-14: r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1,
-  4 and 7 partial renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage
-  stopped by its own rule (rc ...
-- `E1043` zls, 2026-11-14: r14-zls rows zl- (Q120, 9 jobs in stage zflat, t10): format 6 on flat
-  planes at 0.25, 0.75, 1.0 and 0.0 stores E1031's 44 dwords a block, the four blocks alike and the
-  0x9e markers in place, with the ...
-- `E1042` zls, 2026-11-14: r14-zls rows zb2- (Q071, 20 jobs in stages zbits2, zgran and zodd, t10):
-  no frozen model of the set half held all 11 rows (best Z-ONE-23 and Z-GRP-21-23, 9 of 11): bits 21
-  to 23 set together make ...
-- `E1041` zls, 2026-11-14: r14-zls rows zo- (Q242, 11 jobs in stage zodd, t10): past odd targets (63
-  x 31 at G 1, 65 x 33 at G 2) formats 1 and 2 store, at every dword of the edge tiles, the floor
-  rule of the float the same ...
-- `E1040` zls, 2026-11-14: r14-zls rows zg- (Q243, 12 jobs in stages zgran and zbits2, t10): the ZLS
-  depth load base (render details dword 12) is rounded down to 16 bytes: frozen G16 held 5 of 5
-  held-out moves (+8 loaded ...
-- `E1039` texture, 2026-11-14: r14-tex stage addr5 on module B60AB0B4 (Q177; 14 probe fills of
-  twiddled 32-bit textures): both controls passed (E1000's 16 x 64 mode 4 and E565's bd-uv5, their
-  kept images, 2048 of 2048); with u and ...
-- `E1038` texture, 2026-11-14: r14-tex stage srgb4 on module B60AB0B4 (Q282; sRGB, T0 bit 27, 13
-  probe fills): the three controls passed (E723's g-bl-st-a, r13-tex's srgb3-tri and srgb3-x1's
-  channel 0 read through the second ...
-- `E1037` isp, 2026-11-14: r14-isp stage clipr (10 jobs): a vertex the guard-band clip makes is
-  rounded half away from zero to 1/256 pixel (frozen CLIP-HA held 3 of 3 rows with the clip vertex
-  on an exact 1/512 tie at x = 80: ...
-- `E1036` isp, 2026-11-14: r14-isp stage g14 (21 jobs): the guard the ISP clips far edges to is a
-  quarter of the viewport past each edge (clip x and y within 1.5 w): frozen H-VP drew every
-  held-out far triangle pixel for ...
 
 ## Closing sessions
 
-88 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+89 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r29-flag`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t14, ~/sgxfive-test-t22
 - `render/closing-r26-vol`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t24
 - `render/closing-r26-sa0`: 2026-11-15; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
@@ -645,7 +497,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-15, 16 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 17 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
