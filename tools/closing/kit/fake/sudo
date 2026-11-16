@@ -7,7 +7,10 @@
 # $FAKE_DIR/state ("idle", or "INT WORD": a latched fault). A leading `timeout [-k K] N` is
 # stripped. Every debugfs write is logged in $FAKE_DIR/writes ("NAME VALUE"). dmesg reads the
 # fake kernel log $KIT_KMSG; journalctl fails (the runner falls back to dmesg). FAKE_RESET_FAIL:
-# every reset fails; FAKE_SNAP_FAIL: regs unreadable.
+# every reset fails; FAKE_SNAP_FAIL: regs unreadable. kreg takes `OFF=VALUE` as the kernel does
+# (logged "kreg OFF=VALUE", the file's "OFF 0x%08x" line set, the kernel's line in the log); in a
+# world with the token kregstuck the write is taken but the register keeps its value. A reset
+# leaves kreg as it is: the kit must not lean on a reset to put it back.
 [ "${1:-}" = "-n" ] && shift
 DB=${KIT_DEBUGFS:?}; R=${FAKE_DBGREAL:?}; F=${FAKE_DIR:?}
 if [ "$1" = timeout ]; then shift; [ "$1" = "-k" ] && shift 2; shift; fi
@@ -34,6 +37,14 @@ if [ "$1" = tee ]; then
 		[ -n "${FAKE_RESET_FAIL:-}" ] && { echo "tee: reset: Connection timed out" >&2; exit 1; }
 		echo "gma500 0000:00:02.0: [drm] SGX reset: BIF_FAULT 0x0 BIF_INT_STAT 0x80000" >> "$KIT_KMSG"
 		echo idle > "$F/state"
+		exit 0 ;;
+	"$DB/kreg")
+		read -r v; echo "kreg $v" >> "$F/writes"
+		off=${v%%=*}; val=${v#*=}
+		case ",${FAKE_WORLD:-}," in *,kregstuck,*) exit 0 ;; esac
+		new=$(printf '0x%08x' $(( val )))
+		awk -v o="$off" -v n="$new" '$1 == o { $2 = n } { print }' "$R/kreg" > "$R/kreg.new" && mv "$R/kreg.new" "$R/kreg"
+		echo "gma500 0000:00:02.0: [drm] sgxfive: kreg $off: -> $new, reads $new" >> "$KIT_KMSG"
 		exit 0 ;;
 	"$DB/"*) read -r v; echo "${2##*/} $v" >> "$F/writes"; echo "$v" > "$R/${2##*/}"; exit 0 ;;
 	esac

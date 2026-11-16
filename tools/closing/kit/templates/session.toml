@@ -19,8 +19,15 @@ forbid_options = []                 # options no row may use, besides the kit's
 #   NAME = { default = "0", values = ["0", "1"] }
 [knobs]
 
+# a register a flagged stage's rows may write (kreg:OFF=V), on the kit's allow-list only
+# (KREG_ALLOWED: 0x0a78 up to 0x3f), restored to the kit's default (0x2c) after each job and by
+# the exit trap:
+#   "0x0a78" = { values = ["0x00", "0x01"] }
+[kregs]
+
 # the stages in run order; alarm: the Mac's bound on the stage (s); gate = true: score.py gate;
-# on_stop = "end": the stage's rc 24 (stopped by its rule) ends the session (default "next")
+# on_stop = "end": the stage's rc 24 (stopped by its rule) ends the session (default "next");
+# class = "flagged": a stage of planned faults, hangs or kreg writes, after every safe stage
 [stages]
 s0 = { alarm = 1800 }
 

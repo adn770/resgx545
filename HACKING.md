@@ -344,7 +344,8 @@ them with the guard, the mock and the verify. Every command a README gives is ru
 interpreter (`bash ...`, `python3 ...`), never by its mode bits: r7-geo's stage script had mode
 644 and staged nothing; the guard refuses a README command that leans on the exec bit.
 
-The guard refuses the options `--kreg`, `--clkgate` and `--trc-hazard` in every row, and `--kpoke`
+The guard refuses the tool options `--kreg`, `--clkgate` and `--trc-hazard` in every row (a
+register write goes through the kit's `kreg:OFF=V` word only, below), and `--kpoke`
 except on a `probe` row (probe's kernel poke, no riskier than tri's `--kpoke-render`). An option
 whose tool writes a debugfs knob itself (`TOOL_KNOBS` in `kit/session.py`: `--final-pb-pages`,
 `render_final_pb_pages`) needs that knob in session.toml `[knobs]` at default 0, so the preflight
@@ -359,6 +360,26 @@ soft failure, a gate refusal, a skipped row) the row is skipped, never run, and 
 guard refuse it on a stage's first row (rc 7). `idle:S` (1 to 120, one a row) is one fixed sleep
 of S seconds right before the job, after the reset and the knobs; the mock sets it to 0
 (`IDLE_WAIT`), and the library mock replays a `noreset` row from a fresh mock, which it says.
+
+One knob word writes a register of ours (round 29, Q024): `kreg:OFF=V`, OFF as `0x` and four
+lower-case hex digits, V as `0x` and hex, one a row. The register must be on the kit's frozen
+allow-list (`KREG_ALLOWED` in `kit/session.py`, `KIT_KREGS` in `kit/run_stage.sh`, tested equal):
+today CR_PDS_REG_0A78 alone, 0x0a78, values up to 0x3f, default 0x2c. session.toml declares it
+as `[kregs] "0x0a78" = { values = [...] }` (no default: the kit's), and the row's stage as
+`class = "flagged"` in `[stages]`; the guard and the runner (rc 7) refuse a kreg word in any
+other stage, a register or value not declared, the flip form `^=`, two kreg words in a row and
+kreg with `expectfault` (a fault or hang with our register written is a stop, never a reading),
+and the guard refuses a flagged stage before a safe one and any kreg in `run/hooks.sh`. After
+the reset and the `dbg:` knobs the runner reads the register (it must be at its default), writes
+`OFF=V` to debugfs `kreg`, reads V back (else rc 19, the job never runs) and marks
+`kreg NAME OFF=V`; after the job it writes the default and reads it back (else a reset and once
+more, then rc 19) and marks `kreg-restored NAME`; the exit trap writes the default again at every
+exit once one was written (`exit kregs restored`), the frozen stops (rc 3, rc 6) included, and
+checks it after its reset. A safe stage never writes a declared register: the preflight only
+reads it. The fake laptop's `kreg` keeps a register's value across a reset, so no test leans on
+the reset to put it back; its world token `kregstuck` takes a write without changing the value.
+The kernel takes a kreg write only with the firmware live and no job queued (`-EBUSY`, `-ENODEV`:
+the read-back stops the row).
 
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in

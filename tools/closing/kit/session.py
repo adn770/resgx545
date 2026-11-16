@@ -103,8 +103,21 @@ FORBID_OPTIONS = ("--kpoke", "--kreg", "--clkgate", "--trc-hazard")
 # it back should a tool die before the kernel took it
 TOOL_KNOBS = {"--final-pb-pages": "render_final_pb_pages"}
 FORBID = (r"reboot|shutdown|poweroff|kexec|grub|mkinitcpio|(^|[^a-z_-])make |gcc|(^|[^a-z])cc |"
-          r"push-gma500|deploy-tool|trc_hazard|CLKGATE|clkgate|(^|[^a-z0-9])kreg([^a-z0-9-]|$)|"
+          r"push-gma500|deploy-tool|trc_hazard|CLKGATE|clkgate|"
           r"kregnow|kicker|kpoke|/dev/mem|git |\| *tail|\|\| *true")
+# the debugfs register write (kreg, kreg_set, kregs_restore): never in a hook; in the kit's own
+# runner only as KREG_LINES, its one write and its one read of debugfs kreg
+FORBID_KREG = r"(^|[^a-z0-9])kregs?([^a-z0-9-]|$)"
+KREG_LINES = ("""printf '%s=%s\\n' "$1" "$2" | sudo -n timeout -k 5 20 tee "$D/kreg" >/dev/null""",
+              """dbg_cat kreg | awk -v o="$1" '$1 == o { print $2; exit }'""")
+# kreg:OFF=V (round 29, Q024): the registers a row may write through debugfs kreg, frozen here and
+# in run_stage.sh's KIT_KREGS: {offset: (the value the runner restores, the largest value)}.
+# CR_PDS_REG_0A78 alone: E045 drew every value 0x00-0x3f exactly; 0x2c is the firmware's (E141).
+KREG_ALLOWED = {"0x0a78": ("0x2c", 0x3f)}
+KREG_WORD = re.compile(r"^kreg:(0x[0-9a-f]{4})=(0x[0-9a-f]{1,8})$")
+# a stage's class: safe (the default), or flagged (a planned fault or hang, a register write of
+# ours): every flagged stage runs after every safe one, and only a flagged stage writes a kreg
+STAGE_CLASSES = ("safe", "flagged")
 
 
 class Stop(Exception):
@@ -161,7 +174,12 @@ def config(kp):
     c.setdefault("extra_knobs", [])
     c.setdefault("debugfs", [])
     c.setdefault("forbid_options", [])
+    c.setdefault("kregs", {})
     return c
+
+
+def flagged_stages(c):
+    return [s for s in stages(c) if c["stages"][s].get("class", "safe") == "flagged"]
 
 
 def stages(c):
@@ -236,12 +254,16 @@ def generated(kp):
            f"DEBUGFS_NEED=\"{' '.join(c['debugfs'])}\"",
            f"OUTDIR_OPTS=\"{' '.join(c['outdir_opts'])}\"",
            f"EXTRA_KNOBS=\"{' '.join(c['extra_knobs'])}\"",
-           f"KNOBS=\"{' '.join(c['knobs'])}\""]
+           f"KNOBS=\"{' '.join(c['knobs'])}\"",
+           f"KREGS=\"{' '.join(c['kregs'])}\"",
+           f"FLAGGED_STAGES=\"{' '.join(flagged_stages(c))}\""]
     for t in c["tools"]:
         env += [f"TOOL_{t}_PATH={tool_path(c, p, t)}", f"TOOL_{t}_SHA={c['tools'][t]['sha256']}"]
     for k, v in c["knobs"].items():
         env += [f"KNOB_{k}_DEFAULT={v['default']}",
                 f"KNOB_{k}_VALUES=\"{' '.join(v['values'])}\""]
+    for r, v in c["kregs"].items():
+        env += [f"KREG_{r}_VALUES=\"{' '.join(v.get('values', []))}\""]
     req = scorer(kp).REQUIRED
     rq = "".join(f"{s}\t{f}\n" for s in stages(c) for f in req.get(s, ()))
     staged = [f for f in laptop_files(kp, c)]
@@ -302,6 +324,18 @@ def guard(kp):
         if d.get("on_stop", "next") not in ON_STOP:
             bad.append(f"session.toml: stage {st}: on_stop {d['on_stop']!r} is not one of "
                        f"{', '.join(ON_STOP)}")
+    seen_flagged = None
+    for st, d in c["stages"].items():
+        cls = d.get("class", "safe")
+        if cls not in STAGE_CLASSES:
+            bad.append(f"session.toml: stage {st}: class {cls!r} is not one of "
+                       f"{', '.join(STAGE_CLASSES)}")
+        elif cls == "flagged":
+            seen_flagged = seen_flagged or st
+        elif seen_flagged:
+            bad.append(f"session.toml: stage {seen_flagged} is flagged and runs before the safe "
+                       f"stage {st}: every flagged stage runs after every safe stage")
+    bad += _kreg_decl(c)
     if c.get("health_tool") not in c["tools"]:
         bad.append("session.toml: health_tool is not one of [tools]")
     try:
@@ -318,7 +352,9 @@ def guard(kp):
         hook = f == "run/hooks.sh"
         for i, ln in _code(kp / f):
             where = f"{f}:{i}"
-            if re.search(FORBID, ln):
+            if re.search(FORBID, ln) or (re.search(FORBID_KREG, ln) and (
+                    hook or ("$D/kreg" in ln or "dbg_cat kreg" in ln)
+                    and ln.strip() not in KREG_LINES)):
                 bad.append(f"{where}: forbidden command: {ln.strip()}")
             if re.search(r"(^|[;&|\s])(while|until)\s", ln):
                 bad.append(f"{where}: a wait loop (while/until)")
@@ -379,7 +415,10 @@ def guard(kp):
                 bad.append(f"{where}: row name {name!r} repeated or not a plain name")
             names.add(name)
             words = knobs.split()
+            bad += [f"{where}: {x}" for x in _kreg_words(c, s, words)]
             for w in words:
+                if w.startswith("kreg:"):
+                    continue
                 if not BASE_KNOBS.match(w) and w not in allowed:
                     bad.append(f"{where}: knob {w} is not the kit's nor session.toml's"
                                + (" (idle:S takes 1 to 120 seconds)" if w.startswith("idle:")
@@ -417,6 +456,52 @@ def guard(kp):
                 bad.append(f"{where}: args do not parse: {e}")
             if re.search(r"/tmp|`|\$\(", args):
                 bad.append(f"{where}: /tmp or a command substitution in args")
+    return bad
+
+
+def _kreg_decl(c):
+    """What is wrong with session.toml [kregs]: a register off the kit's KREG_ALLOWED, a value
+    not 0xHEX (lower case) or above the register's largest, a default (the kit's alone)."""
+    bad = []
+    for r, d in c["kregs"].items():
+        if r not in KREG_ALLOWED:
+            bad.append(f"session.toml: [kregs] {r} is not on the kit's allow-list "
+                       f"({', '.join(KREG_ALLOWED)})")
+            continue
+        extra = sorted(set(d) - {"values"})
+        if extra:
+            bad.append(f"session.toml: [kregs] {r} declares {', '.join(extra)}: only values "
+                       f"(the default is the kit's, {KREG_ALLOWED[r][0]})")
+        for v in d.get("values", []):
+            if not re.fullmatch(r"0x[0-9a-f]{1,8}", v):
+                bad.append(f"session.toml: [kregs] {r} value {v!r} is not 0x and lower-case hex")
+            elif int(v, 16) > KREG_ALLOWED[r][1]:
+                bad.append(f"session.toml: [kregs] {r} value {v} is above its largest, "
+                           f"{KREG_ALLOWED[r][1]:#04x}")
+    return bad
+
+
+def _kreg_words(c, st, words):
+    """What is wrong with a row's kreg:OFF=V words: a stage that is not flagged, a register or
+    value session.toml [kregs] does not declare, more than one, or with expectfault (a fault or
+    hang with our register written is a stop, never a reading)."""
+    ks = [w for w in words if w.startswith("kreg:")]
+    if not ks:
+        return []
+    bad = []
+    if c["stages"][st].get("class", "safe") != "flagged":
+        bad.append(f"{' '.join(ks)} in stage {st}, which is not flagged (class = \"flagged\"): "
+                   "only a flagged stage writes a register")
+    for w in ks:
+        m = KREG_WORD.match(w)
+        if not m or m[1] not in c["kregs"] or m[1] not in KREG_ALLOWED or \
+                m[2] not in c["kregs"][m[1]].get("values", []):
+            bad.append(f"knob {w} is not kreg:0xOFFS=0xV of a register and value session.toml "
+                       "[kregs] declares")
+    if len(ks) > 1:
+        bad.append("more than one kreg word (one kreg:OFF=V a row)")
+    if "expectfault" in words:
+        bad.append("kreg with expectfault: a fault or hang with our register written is a stop")
     return bad
 
 
@@ -1119,6 +1204,11 @@ def mock(kp, worlds=None, say=print):
             (real / f).write_text("")
         for k, d in c["knobs"].items():
             (real / k).write_text(d["default"] + "\n")
+        if c["kregs"]:
+            # the kernel's kreg file: every register it allows, "0xOFFS 0xVALUE" a line
+            (real / "kreg").write_text("".join(
+                f"{r} 0x{int(KREG_ALLOWED[r][0], 16) if r in KREG_ALLOWED else 0:08x}\n"
+                for r in sorted({*c["kregs"], "0x0abc"})))
         (fake / "state").write_text("idle\n")
         (m / "kmsg").write_text("")
         (m / "srcv").write_text(c["srcversion"] + "\n")
@@ -1180,10 +1270,17 @@ def mock(kp, worlds=None, say=print):
             probs.append(f"left in ~/scratch/tmp: {[p.name for p in left]}")
         writes = (fake / "writes").read_text().splitlines() if (fake / "writes").exists() else []
         okw = {"reset 1"} | {f"{k} {v}" for k, d in c["knobs"].items() for v in d["values"]}
+        okw |= {f"kreg {r}={v}" for r, d in c["kregs"].items() if r in KREG_ALLOWED
+                for v in [*d.get("values", []), KREG_ALLOWED[r][0]]}
         probs += [f"a debugfs write the session does not allow: {x}" for x in writes if x not in okw]
         back = [k for k, d in c["knobs"].items()
                 if (real / k).read_text().strip() != d["default"]]
         probs += [f"knob {k} not back at its default" for k in back]
+        if c["kregs"]:
+            now = dict(ln.split()[:2] for ln in (real / "kreg").read_text().splitlines() if ln)
+            probs += [f"kreg {r} not back at its default" for r in c["kregs"]
+                      if r in KREG_ALLOWED and int(now.get(r, "-1"), 0) !=
+                      int(KREG_ALLOWED[r][0], 16)]
         logs = [x for x in (m / "out" / w).rglob("*.log") if x != m / "out" / w / "run.log"] \
             if (m / "out" / w).exists() else []
         for p in logs:

@@ -30,6 +30,14 @@
 #                    (sessioncheck.py premise), else the stage STOPS (rc 25)
 #     dbg:NAME=V     the debugfs knob NAME written V before the job, read back (rc 19), restored to
 #                    its default after the job and by the exit trap (session.toml [knobs])
+#     kreg:OFF=V     a register write of ours (round 29, Q024): debugfs kreg `OFF=V` after the
+#                    reset and the knobs, right before the job, OFF one of the kit's KIT_KREGS
+#                    (0x0a78 alone, V at most 0x3f) and V one session.toml [kregs] declares; only
+#                    in a stage session.toml declares `class = "flagged"`, one a row, never with
+#                    expectfault (else rc 7, nothing runs). The register must read its default
+#                    before the write and V after it (rc 19, the job never runs); after the job
+#                    the default is written and read back (else a reset and once more, then rc
+#                    19), and the exit trap writes it again at every exit once one was written
 #     noreset        no GPU reset before the job, so it starts from the state the row before left
 #                    (Q163's hang sequences): only after a row that ended ok, or an expected hang
 #                    the runner already reset; after any other end (a soft failure, a gate refusal,
@@ -47,8 +55,9 @@
 # return; 7 a forbidden knob or tool; 12 registers unreadable; 13 a reset failed; 14 a fault latched
 # before a job; 16 strict health failed; 19 a knob did not read back; 22 not enough free space;
 # 23 a file the scorer reads was not kept, or an output directory missing; 24 the stage stopped by
-# its rule; 25 a control without its reading.
-# No reboot, no boot-loader change, no kernel build, no register write of ours, no wait loop.
+# its rule; 25 a control without its reading; 19 also a kreg that did not read back.
+# No reboot, no boot-loader change, no kernel build, no wait loop, and no register write of ours
+# but a flagged stage's kreg:OFF=V to a register of KIT_KREGS.
 trap '' PIPE HUP
 STAGE=${1:?stage name}
 FROZEN_WANT=${2:-}
@@ -64,14 +73,38 @@ else FROZEN_GOT=$(shasum -a 256 "$FZ" | cut -d' ' -f1); fi
 [ -n "$FROZEN_WANT" ] && [ "$FROZEN_WANT" = "$FROZEN_GOT" ] || { echo "the laptop's FROZEN.sha256 is not the Mac's (${FROZEN_GOT:-none}, Mac ${FROZEN_WANT:-not given}): stage again"; exit 1; }
 [ -n "$ATT" ] || { echo "no attempt name (the driver passes it)"; exit 1; }
 . "$STAGED/run/session.env"
+# the registers kreg:OFF=V may write, frozen with kit/session.py's KREG_ALLOWED: OFF=DEFAULT/MAX
+# (CR_PDS_REG_0A78: E045 drew 0x00-0x3f exactly; 0x2c the firmware's value, E141)
+KIT_KREGS="0x0a78=0x2c/0x3f"
 # the table's knobs and tools, before anything is touched
 ALLOWED="$EXTRA_KNOBS"
 for k in $KNOBS; do v="KNOB_${k}_VALUES"; for x in ${!v}; do ALLOWED="$ALLOWED dbg:$k=$x"; done; done
+# kreg words: only in a flagged stage, a register of KIT_KREGS, a declared value up to its MAX
+case " ${FLAGGED_STAGES:-} " in
+*" $STAGE "*)
+	for r in ${KREGS:-}; do
+		for e in $KIT_KREGS; do
+			[ "${e%%=*}" = "$r" ] || continue
+			v="KREG_${r}_VALUES"
+			for x in ${!v}; do
+				case "$x" in 0x*) ;; *) continue ;; esac
+				[ $(( x )) -le $(( ${e##*/} )) ] && ALLOWED="$ALLOWED kreg:$r=$x"
+			done
+		done
+	done ;;
+esac
 awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " '
 	!/^#/ && NF >= 6 {
-		n = split($4, k, " "); row++; idles = 0
+		n = split($4, k, " "); row++; idles = 0; kregs = 0; xf = 0
+		for (i = 1; i <= n; i++) if (k[i] == "expectfault") xf = 1
 		for (i = 1; i <= n; i++) {
 			w = k[i]
+			if (w ~ /^kreg:/) {
+				if (++kregs > 1) { print $1 ": more than one kreg word"; bad = 1 }
+				if (xf) { print $1 ": kreg with expectfault (a fault with our register written is a stop)"; bad = 1 }
+				if (!index(allowed, " " w " ")) { print $1 ": knob " w " (kreg: a flagged stage, a register of the kit and a declared value only)"; bad = 1 }
+				continue
+			}
 			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) {
 				if (w == "noreset" && row == 1) { print $1 ": knob noreset on the stage'"'"'s first row (nothing before it to keep)"; bad = 1 }
 				continue
@@ -116,7 +149,7 @@ for i in $(seq 1 "$TOTAL"); do
 $line
 EOF
 	[ -z "$name" ] && continue
-	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; expect=""; noreset=0; idle=0
+	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; kregs=""; expect=""; noreset=0; idle=0
 	for k in $knobs; do
 		case "$k" in
 		grp:*) grp=${k#grp:} ;;
@@ -128,6 +161,7 @@ EOF
 		expect:*) expect="$expect ${k#expect:}" ;;
 		reads:*) reads=$(printf '%s' "${k#reads:}" | tr ',' ' ') ;;
 		dbg:*) dbgs="$dbgs ${k#dbg:}" ;;
+		kreg:*) kregs="$kregs ${k#kreg:}" ;;
 		noreset) noreset=1 ;;
 		idle:*) idle=${k#idle:} ;;
 		*) ;;
@@ -156,6 +190,10 @@ EOF
 	for kv in $dbgs; do
 		knob_set "${kv%%=*}" "${kv#*=}" || { echo "## STOP: knob ${kv%%=*} does not read back ${kv#*=} before $name"; exit 19; }
 		mark "knob $name $kv"
+	done
+	for kv in $kregs; do
+		kreg_set "${kv%%=*}" "${kv#*=}" || { echo "## STOP: kreg ${kv%%=*} does not read back ${kv#*=} before $name"; exit 19; }
+		mark "kreg $name $kv"
 	done
 	if [ "$idle" -gt 0 ]; then
 		echo "  idle $idle s before $name"
@@ -205,6 +243,13 @@ EOF
 	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$STAGE" "$sset" "$risk" "$knobs" "$tool" "$args" \
 		"$rc" "$class" "${fint:-unread}" "${fword:-unread}" "$fk" >> "$KEEP/$tsv"
 	if [ -n "$KNOBS_SET$dbgs" ]; then knobs_restore || { echo "## STOP: a knob did not go back to its default after $name"; exit 19; }; fi
+	if [ -n "$kregs" ]; then
+		if ! kregs_restore; then
+			echo "  kreg: not back at its default after $name: a reset, then once more"
+			reset_gpu; kregs_restore || { echo "## STOP: a kreg did not go back to its default after $name"; exit 19; }
+		fi
+		mark "kreg-restored $name"
+	fi
 	case "$class" in
 	ok)
 		SOFT_RUN=0

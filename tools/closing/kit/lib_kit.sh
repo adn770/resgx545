@@ -11,6 +11,10 @@
 #  - debugfs only through `sudo -n`; the only debugfs writes are `reset 1` and the knobs
 #    session.toml declares, to the values it allows, read back after each write and restored to
 #    their defaults after every job and by the exit trap; kernel-log markers are appended;
+#  - the one register write of ours, a flagged stage's kreg:OFF=V (run_stage.sh): OFF one of
+#    KIT_KREGS (0x0a78), V one session.toml [kregs] declares, the register at its default before
+#    the write, V read back after it, the default written and read back after the job and again
+#    by the exit trap once any was written;
 #  - every laptop command that can block is bounded by `timeout -k`; no wait loop (no while or
 #    until), single fixed sleeps whose length the mock sets to 0;
 #  - at least MIN_FREE_MB free on ~ before each job; the kernel log of a job is its slice after
@@ -113,6 +117,64 @@ knobs_at_default() {
 	for k in $KNOBS; do
 		d="KNOB_${k}_DEFAULT"
 		same_value "$(dbg_cat "$k")" "${!d}" || { echo "knob $k is $(dbg_cat "$k"), not its default ${!d}"; return 1; }
+	done
+	return 0
+}
+
+# ---- kreg: the register write of a flagged stage (run_stage.sh's KIT_KREGS) ---------------------
+KREG_TOUCHED=0
+kreg_entry() { # OFF: "DEFAULT MAX" of a register of KIT_KREGS, nothing for any other
+	local e
+	for e in ${KIT_KREGS:-}; do [ "${e%%=*}" = "$1" ] && { e=${e#*=}; echo "${e%%/*} ${e##*/}"; return 0; }; done
+	return 1
+}
+kreg_allows() { # OFF VALUE: 0 if the kit and session.toml [kregs] let a row write VALUE to OFF
+	local r v e vals="KREG_$1_VALUES"
+	e=$(kreg_entry "$1") || return 1
+	case "$2" in 0x*) ;; *) return 1 ;; esac
+	[ $(( $2 )) -le $(( ${e#* } )) ] || return 1
+	[ "$2" = "${e%% *}" ] && return 0
+	for r in ${KREGS:-}; do
+		[ "$r" = "$1" ] || continue
+		for v in ${!vals}; do [ "$v" = "$2" ] && return 0; done
+	done
+	return 1
+}
+kreg_read() { # OFF: the register's value as debugfs kreg shows it ("0xOFFS 0xVALUE" lines)
+	dbg_cat kreg | awk -v o="$1" '$1 == o { print $2; exit }'
+}
+kreg_write() { # OFF VALUE: one write `OFF=VALUE`, an allowed one only, bounded; the write's status
+	kreg_allows "$1" "$2" || { echo "kreg_write: $1=$2 is not allowed in $PREFIX (KIT_KREGS, session.toml [kregs])"; exit 7; }
+	KREG_TOUCHED=1
+	printf '%s=%s\n' "$1" "$2" | sudo -n timeout -k 5 20 tee "$D/kreg" >/dev/null
+}
+kreg_set() { # OFF VALUE: at its default before, the write, VALUE read back; 1 otherwise
+	local d now r
+	d=$(kreg_entry "$1") || { echo "  kreg $1 is not a register of the kit"; return 1; }
+	d=${d%% *}
+	now=$(kreg_read "$1")
+	same_value "$now" "$d" || { echo "  kreg $1 reads ${now:-nothing} before the write, not its default $d"; return 1; }
+	kreg_write "$1" "$2"; r=$?
+	echo "  kreg $1: $now -> $2, reads $(kreg_read "$1") (write status $r)"
+	[ "$r" -eq 0 ] && same_value "$(kreg_read "$1")" "$2"
+}
+kregs_restore() { # every declared register back to its default, read back; 1 if one does not
+	local r d bad=0
+	for r in ${KREGS:-}; do
+		d=$(kreg_entry "$r") || continue
+		d=${d%% *}
+		kreg_write "$r" "$d"
+		same_value "$(kreg_read "$r")" "$d" || { echo "  kreg $r does not read back its default $d"; bad=1; }
+	done
+	return $bad
+}
+kregs_at_default() {
+	local r d now
+	for r in ${KREGS:-}; do
+		d=$(kreg_entry "$r") || { echo "kreg $r is not a register of the kit (KIT_KREGS)"; return 1; }
+		d=${d%% *}
+		now=$(kreg_read "$r")
+		same_value "$now" "$d" || { echo "kreg $r is ${now:-unread}, not its default $d"; return 1; }
 	done
 	return 0
 }
@@ -249,7 +311,7 @@ preflight() {
 	[ -n "$SRCV_FILE" ] && [ "$SRCV_FILE" = "$SRCV_LOADED" ] || { echo "the loaded module is not the installed one"; exit 1; }
 	[ "$SRCV_LOADED" = "$SRCV_EXPECT" ] || { echo "the loaded module ($SRCV_LOADED) is not the expected build ($SRCV_EXPECT)"; exit 1; }
 	echo "## debugfs directory: $D"
-	for f in reset regs $KNOBS $DEBUGFS_NEED; do
+	for f in reset regs $KNOBS $DEBUGFS_NEED ${KREGS:+kreg}; do
 		sudo -n test -e "$D/$f" || { echo "the loaded driver has no debugfs $f"; exit 1; }
 	done
 	for t in $TOOLS; do
@@ -259,6 +321,10 @@ preflight() {
 	done
 	echo "## knobs at start (their defaults: nothing of an earlier session left)"
 	knobs_at_default || exit 1
+	if [ -n "${KREGS:-}" ]; then
+		echo "## kregs at start (read only: their defaults)"
+		kregs_at_default || exit 1
+	fi
 	python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' || { echo "python3 is older than 3.10 (sessioncheck.py premise)"; exit 1; }
 	echo "## free space on ~: $(free_kb) KiB (at least $MIN_FREE_MB MiB)"
 	space_ok || { echo "less than $MIN_FREE_MB MiB free on ~"; exit 22; }
@@ -279,7 +345,15 @@ cleanup() {
 		# the knobs back to their defaults at EVERY exit (bounded writes), then a reset unless the kernel is in trouble
 		knobs_restore
 		mark "exit knobs restored"
+		# a register of ours back to its default, once one was written (never in a safe stage)
+		if [ "$KREG_TOUCHED" = 1 ]; then
+			kregs_restore || echo "## kreg: not back at its default at exit"
+			mark "exit kregs restored"
+		fi
 		[ "$FATAL_STOP" = 1 ] || reset_gpu
+		if [ "$KREG_TOUCHED" = 1 ] && [ "$FATAL_STOP" != 1 ]; then
+			kregs_at_default || echo "## kreg: not at its default after the exit reset"
+		fi
 		finish_log
 	else
 		echo "## exit before the preflight passed: nothing touched"

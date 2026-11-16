@@ -1688,3 +1688,215 @@ def test_whole_buffer_sha256_differs_on_r19_k0_s_dump():
         pytest.skip("E1077's kept dumps are not here (RESGX545_DATA)")
     a, b = gzip.decompress(old.read_bytes()), gzip.decompress(new.read_bytes())
     assert hashlib.sha256(a).hexdigest() != hashlib.sha256(b).hexdigest()
+
+
+# ---- kreg:OFF=V, a register write of ours (Q024, round 29) ------------------------------------
+KREG_TOML = '[kregs]\n"0x0a78" = { values = ["0x00", "0x01", "0x2c", "0x3f"] }\n\n'
+KREG_ROWS = ("k1|fit|flagged|kreg:0x0a78=0x01|t4|tri --width 64 --height 64\n"
+             "k2|fit|flagged|kreg:0x0a78=0x3f|t4|tri --width 32 --height 32\n")
+KREG_ANSWER = ("def answer(tool, argv, world):\n"
+               "    if 'kregfreeze' in world and argv[:1] == ['tri'] and '32' in argv:\n"
+               "        return dict(rc=124, out='')\n")
+
+
+def kreg_session(repos, cls="flagged", rows=KREG_ROWS, toml=KREG_TOML, expect=None):
+    """The template's stage s0 declared `class = CLS`, session.toml's [kregs] TOML, and ROWS
+    after the template's rows; the world freezes k2 (rc 124) in world kregfreeze."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + rows)
+    st = (kp / "session.toml").read_text()
+    st = st.replace("s0 = { alarm = 1800 }", f's0 = {{ alarm = 1800, class = "{cls}" }}')
+    st = st.replace("\n[kregs]\n", "\n")        # the template's empty table
+    st = st.replace("# a debugfs knob a row may write", toml + "# a debugfs knob a row may write")
+    (kp / "session.toml").write_text(st)
+    w = (kp / "mock/world.py").read_text().replace("def answer(tool, argv, world):\n",
+                                                   KREG_ANSWER)
+    if expect:
+        w = re.sub(r"^EXPECT = .*$", f"EXPECT = {expect!r}", w, count=1, flags=re.M)
+    (kp / "mock/world.py").write_text(w)
+    return kp
+
+
+def lib_kregs():
+    """lib_kit.sh's and run_stage.sh's frozen allow-list: {offset: (default, max)}."""
+    run = (KIT / "run_stage.sh").read_text()
+    m = re.search(r'^KIT_KREGS="([^"]*)"', run, re.M)
+    assert m, "run_stage.sh freezes KIT_KREGS"
+    out = {}
+    for e in m.group(1).split():
+        off, _, rest = e.partition("=")
+        d, _, mx = rest.partition("/")
+        out[off] = (d, int(mx, 0))
+    return out
+
+
+def test_the_kreg_allow_list_is_0x0a78_alone_and_the_same_on_both_sides():
+    """Round 29 (Q024): the kit writes one register, CR_PDS_REG_0A78, to 0x00-0x3f (E045's 64
+    values), back to the firmware's 0x2c; the Mac guard and the laptop runner freeze one list."""
+    assert S.KREG_ALLOWED == {"0x0a78": ("0x2c", 0x3f)}
+    assert lib_kregs() == S.KREG_ALLOWED
+
+
+def test_the_guard_allows_a_kreg_word_only_in_a_flagged_stage(repos):
+    kp = kreg_session(repos)
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    kp = kreg_session(dict(repos, tmp=repos["tmp"] / "safe"), cls="safe")
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "flagged" in g.stdout and "kreg:0x0a78=0x01" in g.stdout, g.stdout
+    kp = kreg_session(dict(repos, tmp=repos["tmp"] / "none"))
+    st = (kp / "session.toml").read_text().replace(', class = "flagged"', "")
+    (kp / "session.toml").write_text(st)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "flagged" in g.stdout, g.stdout
+
+
+@pytest.mark.parametrize("toml,rows,word", [
+    ('[kregs]\n"0x0abc" = { values = ["0x00"] }\n\n',
+     "k1|fit|flagged|kreg:0x0abc=0x00|t4|tri\n", "0x0abc"),
+    ('[kregs]\n"0x0a78" = { values = ["0x40"] }\n\n',
+     "k1|fit|flagged|kreg:0x0a78=0x40|t4|tri\n", "0x40"),
+    ('[kregs]\n"0x0a78" = { values = ["0x01"], default = "0x00" }\n\n',
+     "k1|fit|flagged|kreg:0x0a78=0x01|t4|tri\n", "default"),
+    ('[kregs]\n"0x0a78" = { values = ["1"] }\n\n',
+     "k1|fit|flagged|kreg:0x0a78=1|t4|tri\n", "0x"),
+    (KREG_TOML, "k1|fit|flagged|kreg:0x0a78=0x08|t4|tri\n", "kreg:0x0a78=0x08"),
+    (KREG_TOML, "k1|fit|flagged|kreg:0x0a78^=0x01|t4|tri\n", "kreg:0x0a78^=0x01"),
+    (KREG_TOML, "k1|fit|flagged|kreg:0x0A78=0x01|t4|tri\n", "kreg:0x0A78=0x01"),
+    (KREG_TOML, "k1|fit|flagged|kreg:0x0a78=0x01 expectfault|t4|tri\n", "expectfault"),
+    (KREG_TOML, "k1|fit|flagged|kreg:0x0a78=0x01 kreg:0x0a78=0x00|t4|tri\n", "one kreg"),
+    ("", "k1|fit|flagged|kreg:0x0a78=0x01|t4|tri\n", "kreg:0x0a78=0x01"),
+])
+def test_the_guard_refuses_a_register_or_value_off_the_allow_list(repos, toml, rows, word):
+    kp = kreg_session(repos, rows=rows, toml=toml)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and word in g.stdout, g.stdout
+
+
+def test_the_guard_wants_every_flagged_stage_after_every_safe_one(repos):
+    kp = kreg_session(repos)
+    (kp / "tables/s1.txt").write_text((kp / "tables/s0.txt").read_text()
+                                      .replace("#stage s0", "#stage s1")
+                                      .replace(KREG_ROWS, ""))
+    st = (kp / "session.toml").read_text()
+    (kp / "session.toml").write_text(st.replace(
+        's0 = { alarm = 1800, class = "flagged" }',
+        's0 = { alarm = 1800, class = "flagged" }\ns1 = { alarm = 1800 }'))
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "after every safe stage" in g.stdout, g.stdout
+    (kp / "session.toml").write_text(st.replace(
+        's0 = { alarm = 1800, class = "flagged" }',
+        's0 = { alarm = 1800, class = "unsafe" }'))
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "class" in g.stdout, g.stdout
+
+
+@pytest.mark.parametrize("line", ["kreg_set 0x0a78 0x01", "kregs_restore",
+                                  "printf '0x0a78=1\\n' | sudo -n timeout -k 5 20 tee \"$D/kreg\""])
+def test_the_guard_refuses_a_register_write_in_a_hook(repos, line):
+    kp = kreg_session(repos)
+    with open(kp / "run/hooks.sh", "a") as f:
+        f.write(f"hook_extra() {{ {line}; }}\n")
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "hooks.sh" in g.stdout, g.stdout
+
+
+def test_a_kreg_row_writes_before_its_job_reads_back_and_restores_after_it(repos):
+    kp = kreg_session(repos)
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    mm = next(kp.glob("debug/mock.*/model"))
+    writes = (mm / "fake/writes").read_text().splitlines()
+    kw = [x for x in writes if x.startswith("kreg ")]
+    # each row's write and the restore after its job, then the exit trap's restore
+    assert kw == ["kreg 0x0a78=0x01", "kreg 0x0a78=0x2c", "kreg 0x0a78=0x3f",
+                  "kreg 0x0a78=0x2c", "kreg 0x0a78=0x2c"], writes
+    kmsg = (mm / "kmsg").read_text()
+    order = [kmsg.index(s) for s in ("resgx545 r8t kreg k1 0x0a78=0x01 ", "resgx545 case k1 ",
+                                     "resgx545 r8t kreg-restored k1 ", "resgx545 case k2 ",
+                                     "resgx545 r8t kreg-restored k2 ",
+                                     "resgx545 r8t exit kregs restored ")]
+    assert order == sorted(order), kmsg
+    assert re.search(r"^0x0a78 0x0000002c$", (mm / "dbgreal/kreg").read_text(), re.M)
+    log = (mm / "out/model/s0/runner.log").read_text()
+    assert "kreg 0x0a78: 0x0000002c -> 0x01, reads 0x00000001" in log, log
+
+
+def test_a_kreg_that_does_not_read_back_stops_before_the_job(repos):
+    kp = kreg_session(repos, expect={"kregstuck": (19, {"s0": 19})})
+    m = kit(kp, repos, "mock", "--world", "kregstuck")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/kregstuck"))
+    kmsg = (mm / "kmsg").read_text()
+    assert "resgx545 case k1 " not in kmsg, kmsg
+    log = (mm / "out/kregstuck/s0/runner.log").read_text()
+    assert "## STOP: kreg 0x0a78 does not read back 0x01 before k1" in log, log
+
+
+def test_a_kreg_is_restored_by_the_exit_trap_when_its_job_does_not_return(repos):
+    kp = kreg_session(repos, expect={"kregfreeze": (6, {"s0": 6})})
+    m = kit(kp, repos, "mock", "--world", "kregfreeze")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/kregfreeze"))
+    kmsg = (mm / "kmsg").read_text()
+    assert "resgx545 r8t kreg-restored k2 " not in kmsg, kmsg
+    assert re.search(r"resgx545 r8t exit kregs restored", kmsg), kmsg
+    assert kmsg.index("resgx545 case k2 ") < kmsg.index("exit kregs restored")
+    writes = [x for x in (mm / "fake/writes").read_text().splitlines() if x.startswith("kreg ")]
+    assert writes[-2:] == ["kreg 0x0a78=0x3f", "kreg 0x0a78=0x2c"], writes
+    assert re.search(r"^0x0a78 0x0000002c$", (mm / "dbgreal/kreg").read_text(), re.M)
+
+
+def test_a_safe_stage_never_writes_a_declared_register(repos):
+    """A session that declares [kregs] but whose stage is safe and has no kreg row: the runner
+    reads the register (preflight: at its default) and writes it never, not even in its trap."""
+    kp = kreg_session(repos, cls="safe", rows="")
+    assert kit(kp, repos, "guard").returncode == 0
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert not [x for x in (mm / "fake/writes").read_text().splitlines()
+                if x.startswith("kreg")]
+
+
+def runner_env_tree(tmp, rows, env):
+    """runner_tree with session.env ENV: the runner's table check alone (rc 7 or the frozen-file
+    check's rc 1)."""
+    st = tmp / "staged"
+    (st / "kit").mkdir(parents=True)
+    (st / "run").mkdir()
+    (st / "tables").mkdir()
+    (st / "kit/run_stage.sh").write_bytes((KIT / "run_stage.sh").read_bytes())
+    (st / "tables/s0.txt").write_text("#stage s0\n#limit 0\n" + rows)
+    (st / "run/session.env").write_text('PREFIX=r8t\nTOOLS="t4"\nEXTRA_KNOBS=""\nKNOBS=""\n' + env)
+    (st / "FROZEN.sha256").write_text("x\n")
+    fz = hashlib.sha256(b"x\n").hexdigest()
+    return subprocess.run(["bash", str(st / "kit/run_stage.sh"), "s0", fz, "a1"],
+                          capture_output=True, text=True, timeout=60,
+                          env=dict(PATH=os.environ["PATH"], HOME=str(tmp)))
+
+
+KREG_ENV = 'KREGS="0x0a78"\nKREG_0x0a78_VALUES="0x00 0x01"\n'
+
+
+@pytest.mark.parametrize("env,row,ok", [
+    (KREG_ENV + 'FLAGGED_STAGES="s0"\n', "k|fit|flagged|kreg:0x0a78=0x01|t4|tri\n", True),
+    (KREG_ENV + 'FLAGGED_STAGES="s1"\n', "k|fit|flagged|kreg:0x0a78=0x01|t4|tri\n", False),
+    (KREG_ENV, "k|fit|flagged|kreg:0x0a78=0x01|t4|tri\n", False),
+    (KREG_ENV + 'FLAGGED_STAGES="s0"\n', "k|fit|flagged|kreg:0x0a78=0x08|t4|tri\n", False),
+    (KREG_ENV + 'FLAGGED_STAGES="s0"\n',
+     "k|fit|flagged|kreg:0x0a78=0x01 expectfault|t4|tri\n", False),
+    ('KREGS="0x0abc"\nKREG_0x0abc_VALUES="0x00"\nFLAGGED_STAGES="s0"\n',
+     "k|fit|flagged|kreg:0x0abc=0x00|t4|tri\n", False),
+    ('KREGS="0x0a78"\nKREG_0x0a78_VALUES="0x40"\nFLAGGED_STAGES="s0"\n',
+     "k|fit|flagged|kreg:0x0a78=0x40|t4|tri\n", False),
+])
+def test_the_runner_refuses_a_kreg_outside_a_flagged_stage_or_its_allow_list(tmp_path, env, row,
+                                                                            ok):
+    r = runner_env_tree(tmp_path, "a|fit|safe|-|t4|fill\n" + row, env)
+    if ok:
+        assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+    else:
+        assert r.returncode == 7 and "kreg" in r.stdout, (r.returncode, r.stdout)
