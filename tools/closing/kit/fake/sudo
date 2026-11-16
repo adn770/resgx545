@@ -10,9 +10,10 @@
 # every reset fails; FAKE_SNAP_FAIL: regs unreadable. kreg takes `OFF=VALUE` as the kernel does
 # (logged "kreg OFF=VALUE", the file's "OFF 0x%08x" line set, the kernel's line in the log); in a
 # world with the token kregstuck the write is taken but the register keeps its value. A reset
-# leaves kreg as it is: the kit must not lean on a reset to put it back. miscinfo answers as the
-# kernel's sgxfive_miscinfo (fork 8bc0877e8603) does, its kernel line in the log; world token
-# miscinfobad: a MISMATCH (status 0), miscinfofail: the read fails (status 1).
+# leaves kreg as it is: the kit must not lean on a reset to put it back. A reset logs the boot's
+# lines as the fork's does, its own GETMISCINFO answer last (sgxfive_ident_ask). miscinfo
+# answers as the kernel's sgxfive_miscinfo (fork 8bc0877e8603) does, its kernel line in the log;
+# world token miscinfobad: a MISMATCH (status 0), miscinfofail: the read fails (status 1).
 [ "${1:-}" = "-n" ] && shift
 DB=${KIT_DEBUGFS:?}; R=${FAKE_DBGREAL:?}; F=${FAKE_DIR:?}
 if [ "$1" = timeout ]; then shift; [ "$1" = "-k" ] && shift 2; shift; fi
@@ -46,7 +47,12 @@ if [ "$1" = tee ]; then
 		cat > /dev/null
 		echo "reset 1" >> "$F/writes"
 		[ -n "${FAKE_RESET_FAIL:-}" ] && { echo "tee: reset: Connection timed out" >&2; exit 1; }
-		echo "gma500 0000:00:02.0: [drm] SGX reset: BIF_FAULT 0x0 BIF_INT_STAT 0x80000" >> "$KIT_KMSG"
+		{
+			echo "gma500 0000:00:02.0: [drm] SGX reset: BIF_FAULT 0x0 BIF_INT_STAT 0x80000"
+			echo "gma500 0000:00:02.0: [drm] SGX boot: kicking the EDM"
+			echo "gma500 0000:00:02.0: [drm] SGX boot: EDM up after 150 us"
+			echo "gma500 0000:00:02.0: [drm] SGX firmware: core 545 rev 0x1000d, DDK 1.7.17 build 862890, answered after 142 us"
+		} >> "$KIT_KMSG"
 		echo idle > "$F/state"
 		exit 0 ;;
 	"$DB/kreg")

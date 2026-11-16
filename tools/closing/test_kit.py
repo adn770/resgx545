@@ -2082,9 +2082,10 @@ def test_a_pre_miscinfo_row_reads_after_the_reset_and_before_snap0_and_keeps_it(
     assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
     mm = next(kp.glob("debug/mock.*/model"))
     kmsg = (mm / "kmsg").read_text()
-    order = [kmsg.index(s) for s in ("resgx545 r8t miscinfo m1 ", "SGX firmware: core 545",
-                                     "resgx545 r8t snap m1 0 ", "resgx545 case m1 ")]
-    assert order == sorted(order), kmsg
+    mark = kmsg.index("resgx545 r8t miscinfo m1 ")
+    answer = kmsg.index("SGX firmware: core 545", mark)
+    assert mark < answer < kmsg.index("resgx545 r8t snap m1 0 ") < kmsg.index("resgx545 case m1 "), \
+        kmsg
     # the reset before m1 comes before its read: the last reset line before the read's mark
     before = kmsg[:kmsg.index("resgx545 r8t miscinfo m1 ")]
     assert before.rindex("SGX reset") > before.rindex("resgx545 case f0-fill "), kmsg
@@ -2199,3 +2200,18 @@ def test_the_library_mock_replays_a_pre_miscinfo_row_and_says_it_sends_no_comman
     assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
     assert re.search(r"^note libmock: 1 pre:miscinfo row\(s\) replayed without the miscinfo "
                      r"read", m.stdout, re.M), m.stdout
+
+
+def test_the_fake_reset_ends_in_the_boot_s_own_getmiscinfo_as_the_kernel_s_does(repos):
+    """The fork's boot after every reset asks GETMISCINFO (sgxfive_ident_ask) and logs its
+    answer; a row's pre:miscinfo is a second command, so the fake log has one answer a reset."""
+    kp = misc_session(repos)
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kmsg = (next(kp.glob("debug/mock.*/model")) / "kmsg").read_text()
+    resets = kmsg.count("SGX reset: BIF_FAULT")
+    assert resets and kmsg.count("SGX boot: kicking the EDM") == resets
+    assert kmsg.count("SGX firmware: core 545") == resets + 1, kmsg
+    m1 = kmsg[:kmsg.index("resgx545 r8t snap m1 0 ")]
+    tail = m1[m1.rindex("SGX reset: BIF_FAULT"):]
+    assert tail.count("SGX firmware: core 545") == 2, tail
