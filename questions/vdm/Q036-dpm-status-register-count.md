@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044", "E1057"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044", "E1057", "E1138"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -174,3 +174,10 @@ failed again, 7 of 8 rows, and R-RARE's total (1 to 8) failed at 17: no ranking.
 a pulse of about 4 us, at about half a partial render [infer; the label is not read back];
 whether the other half is missed or never happens, what the clear marks, the other bits of
 0x0748, the owner words, CR_DMS_CTRL and the builder-fault clause stay open.
+
+Round 34 attempt (r34-ev stage d, E1138; no verdict): 0x0660 and 0x0748 sampled together in E1032's
+overflow probe read 4095 and 4168 ns a sample in the calibration, above the 3500 ns bound that
+E1057's 4 us bit 2 pulse needs, so the gated stage of five PB sizes did not run. The two PR 0
+calibration jobs repeat E1057's and E1032's readings (no bit 2 clear, bit 4 clear once for 20.3 ms,
+CR_DPM_3D_PAGE_COUNTS 0x70305 kept across a reset). A rerun samples 0x0748 alone (1.7 us) and
+CR_DPM_3D_PAGE_COUNTS in a stage of its own. Open as before.

@@ -86,7 +86,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857, E890, E902, E921, E1115, E1116, E1120, E1121, E1122, E1123, E1130, E1126, E1127)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857, E890, E902, E921, E1115, E1116, E1120, E1121, E1122, E1123, E1130, E1126, E1127, E1137)
 
 ### render
 
@@ -163,7 +163,7 @@
 
 ### vdm
 
-- `Q036` (phase 10, hw, medium): what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463, E574, E626, E630, E631, E1019, E1032, E1044, E1057)
+- `Q036` (phase 10, hw, medium): what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463, E574, E626, E630, E631, E1019, E1032, E1044, E1057, E1138)
 - `Q042` (phase 11, hw, medium): what do bits 31:24 of the index list's first trailing word (VDM_INDEX2) do: bits 27:24, when its low bits move the list's first index and 0x0f000000 drops two of five triangles, and (folded from Q092) what do bits 31:28 count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E188, E300, E307, E308, E414, E346, E348, E546)
 - `Q047` (phase 11, hw, high): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299, E414, E427, E440, E545)
 - `Q112` (phase 11, hw, medium): what do bits 25:24 of the index list header do, which are clear in all 1888 captured lists, and does the TA take indices wider than the 16 bits the captured lists use? (E188, E346, E414, E737, E756, E1075)
