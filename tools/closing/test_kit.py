@@ -522,6 +522,66 @@ def test_a_declared_overflow_is_a_completed_job_for_the_runner_and_the_scorer(re
     assert m.returncode == 0, m.stdout + m.stderr
 
 
+OVERFLOW0 = "tri: 0 of 1 renders ok, 1 overflowed\n"
+
+
+def overflow0_world(kp, expect):
+    """A world whose `tri` rows end rc 0 with --keep-overflow's summary (world `model`), or rc 0
+    with a render that did not overflow (world `other`)."""
+    w = (kp / "mock/world.py").read_text()
+    w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                  f"EXPECT = {expect!r}")
+    w = w.replace("def answer(tool, argv, world):\n",
+                  "def answer(tool, argv, world):\n"
+                  "    if argv[:1] == ['tri'] and '--keep-overflow' in argv:\n"
+                  "        if 'other' in world:\n"
+                  "            return dict(rc=0, out='tri: 1 renders ok\\n')\n"
+                  f"        return dict(rc=0, out={OVERFLOW0!r})\n")
+    (kp / "mock/world.py").write_text(w)
+
+
+def test_a_declared_rc0_overflow_needs_the_overflow_the_row_declares(repos):
+    """Q024's many-small-triangles renders end rc 0 whether or not the scene overflowed the
+    parameter buffer (`tri --keep-overflow` counts it and goes on). A row that declares
+    `expect:rc0-overflow` is a completed job only when the summary says `N overflowed`; a render
+    that did not overflow (rc 0, no such line) is a failure that stops the stage, as the
+    premise of the row is gone. A row without the knob takes either end."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    base, world = t.read_text(), (kp / "mock/world.py").read_text()
+    t.write_text(base + "o1|fit|safe|expect:rc0-overflow|t4|tri --keep-overflow\n")
+    overflow0_world(kp, {"model": (0, {"s0": 0}), "other": (4, {"s0": 4})})
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    assert re.search(r"^ok +world other: driver 4 \(s0 4\)", m.stdout, re.M), m.stdout
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    row = kitscore.rows(str(kept))["o1"]
+    assert (row["rc"], row["class"]) == (0, "ok") and kitscore.completed(row)
+    t.write_text(base + "o1|fit|safe|-|t4|tri --keep-overflow\n")
+    (kp / "mock/world.py").write_text(world)
+    overflow0_world(kp, {"model": (0, {"s0": 0}), "other": (0, {"s0": 0})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+
+
+def test_the_replay_of_an_rc0_overflow_row_needs_the_overflow(repos):
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=REPLAY_SRC)
+    base = (kp / "tables/s0.txt").read_text()
+    m, bad = replay_findings(repos, kp, base,
+                             "o1|fit|safe|expect:rc0-overflow|t4|tri --overflow0\n")
+    assert not bad, (bad, m.stdout)
+    m, bad = replay_findings(repos, kp, base,
+                             "o2|fit|safe|expect:rc0-overflow|t4|tri --fine\n")
+    assert len(bad) == 1 and "tables/s0.txt o2" in bad[0] and "did not overflow" in bad[0], \
+        (bad, m.stdout)
+
+
 def test_an_unknown_expected_outcome_is_refused(repos):
     kp = scaffold(repos)
     t = kp / "tables/s0.txt"
@@ -812,6 +872,7 @@ case "$*" in
     || { echo "sgxfive-test: kpoke: No such file or directory" >&2; exit 1; } ;;
 *--probefail*) echo "probe p: failed: program at 0x1: Invalid argument"; exit 0 ;;
 *--silent1*) exit 1 ;;
+*--overflow0*) echo "tri: 0 of 1 renders ok, 1 overflowed"; exit 0 ;;
 *--overflow*) echo "job: failed: scene overflowed the parameter buffer, context kept"; exit 3 ;;
 esac
 echo "job: ok"; echo "diff: 0 of 2048 pixels"

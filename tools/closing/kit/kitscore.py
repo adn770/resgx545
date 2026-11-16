@@ -28,6 +28,8 @@ OUTCOMES: {NAME: (rc, line)} the expected outcomes a row may declare with the kn
 `expect:NAME`: a job that ends with that rc and prints that line is a completed job, not a
 failure (kit/run_stage.sh classifies it ok the same way). rc3-overflow: a `probe` DPM cell's
 normal end, "scene overflowed the parameter buffer" (R7-dpm's runner took it the same way).
+rc0-overflow: a `tri --keep-overflow` run, which counts an overflowed render and ends rc 0: the
+summary must say "N overflowed" (the line is a grep pattern); rc 0 without it is a failure.
 """
 import gzip
 import hashlib
@@ -35,7 +37,8 @@ import os
 
 import scorekit
 
-OUTCOMES = {"rc3-overflow": (3, "scene overflowed the parameter buffer")}
+OUTCOMES = {"rc3-overflow": (3, "scene overflowed the parameter buffer"),
+            "rc0-overflow": (0, "renders ok, [0-9]* overflowed")}
 COLUMNS = ("name", "stage", "set", "risk", "knobs", "tool", "args", "rc", "class", "fault_int",
            "fault_word", "free_kb")
 

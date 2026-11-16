@@ -394,7 +394,10 @@ sense after that stop (round 13's r13-tex and r13-flag used gates for it).
 A job whose normal end is not rc 0 declares it with an expected outcome, `expect:NAME` of
 `kitscore.OUTCOMES` (`expect:rc3-overflow`: rc 3 with "scene overflowed the parameter buffer",
 a `probe` DPM cell's end), which the runner classifies ok and `kitscore.completed` counts as a
-completed job; any other end still stops the stage. A tool declared `wraps = true` in
+completed job; any other end still stops the stage. `expect:rc0-overflow` is the rc 0 form
+(`tri --keep-overflow`, which counts an overflowed render and goes on): the summary must say
+"N overflowed", and an rc 0 without it is a failure, so the row's premise is checked. A tool
+declared `wraps = true` in
 session.toml (regtimeline, args `TOTAL LEAD REGS -- "$HOME/TOOL" ...`) must run a declared tool
 after `--` (the guard refuses any `$HOME/PATH` that is not one: the preflight pins only those),
 and the mock runs the wrapped tool's fake and prints a timeline after it, with its status.

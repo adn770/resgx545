@@ -265,6 +265,19 @@ expected_end() {
 	for e in "$@"; do
 		case "$e" in
 		rc3-overflow) [ "$rc" -eq 3 ] && grep -q "scene overflowed the parameter buffer" "$out" && return 0 ;;
+		rc0-overflow) [ "$rc" -eq 0 ] && grep -q "renders ok, [0-9]* overflowed" "$out" && return 0 ;;
+		esac
+	done
+	return 1
+}
+# unmet_end RC OUT NAME...: 0 if a declared outcome NAME... ends rc 0 and the rc 0 job lacks its
+# line (the premise of the row is gone: a render that did not overflow)
+unmet_end() {
+	local rc=$1 out=$2 e; shift 2
+	[ "$rc" -eq 0 ] || return 1
+	for e in "$@"; do
+		case "$e" in
+		rc0-overflow) expected_end "$rc" "$out" "$e" || return 0 ;;
 		esac
 	done
 	return 1

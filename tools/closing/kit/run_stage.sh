@@ -22,6 +22,8 @@
 #                    its output is a completed job (class ok), as rc 0 is; only these:
 #                    expect:rc3-overflow  rc 3 with "scene overflowed the parameter buffer" (a
 #                                         `probe` DPM cell's normal end)
+#                    expect:rc0-overflow  rc 0 with "N overflowed" in the summary (`tri
+#                                         --keep-overflow`); rc 0 without it is a failure
 #     after          the health fill and triangle right after the job (strict)
 #     soft           a failure (no fault, no hang) goes to void.tsv and the stage goes on; the second
 #                    soft failure in a row stops it (rc 24)
@@ -105,7 +107,7 @@ awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " '
 				if (!index(allowed, " " w " ")) { print $1 ": knob " w " (kreg: a flagged stage, a register of the kit and a declared value only)"; bad = 1 }
 				continue
 			}
-			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) {
+			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|expect:(rc3-overflow|rc0-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) {
 				if (w == "noreset" && row == 1) { print $1 ": knob noreset on the stage'"'"'s first row (nothing before it to keep)"; bad = 1 }
 				continue
 			}
@@ -231,6 +233,9 @@ EOF
 	if [ "$class" = fail ] && [ "$expectdiff" = 1 ] && [ "$rc" -eq 1 ] && grep -q '^diff:' "$JW/$name.out"; then
 		if grep -q '^job: ok' "$JW/$name.out"; then class=ok
 		else echo "  expectdiff: a diff line without \`job: ok\` ($(grep -m 1 '^job:' "$JW/$name.out" || echo 'no job line')): not a reading"; fi
+	fi
+	if [ "$class" = ok ] && unmet_end "$rc" "$JW/$name.out" $expect; then
+		class=fail; echo "  expect:$expect declared but the job ended rc 0 without it: a failure"
 	fi
 	if [ "$class" = fail ] && expected_end "$rc" "$JW/$name.out" $expect; then class=ok; echo "  expected end:$expect (rc $rc)"; fi
 	fint=-; fword=-

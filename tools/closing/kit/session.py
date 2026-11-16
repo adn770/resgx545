@@ -92,7 +92,7 @@ ENV = None          # the environment of every command (the mock's; None: this p
 # idle:S takes 1 to 120 seconds
 BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|"
                         r"idle:([1-9]|[1-9][0-9]|1[01][0-9]|120)|"
-                        r"expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
+                        r"expect:(rc3-overflow|rc0-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
 # a stage's on_stop: what follows its runner status 24 (next: the next stage runs; end: the
 # session ends there)
 ON_STOP = ("next", "end")
@@ -1137,7 +1137,10 @@ def _unexpected_end(words, r):
     out = r.stdout + r.stderr
     fault = "expectfault" in words
     declared = any(w.startswith("expect:") and kitscore.OUTCOMES.get(w[7:], (None,))[0] ==
-                   r.returncode and kitscore.OUTCOMES[w[7:]][1] in out for w in words)
+                   r.returncode and re.search(kitscore.OUTCOMES[w[7:]][1], out)
+                   for w in words)
+    if not r.returncode and "expect:rc0-overflow" in words and not declared:
+        return "the library mock's render did not overflow (expect:rc0-overflow)"
     if r.returncode and not (declared or fault or (
             "expectdiff" in words and r.returncode == 1 and "\ndiff:" in "\n" + r.stdout)):
         return f"the library mock ended with status {r.returncode}: " + (
