@@ -245,7 +245,7 @@ list.
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
   when it is 0 or 196 to 252, whatever the task was started ... (E535, E540, E594)
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
-  0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
+  0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496, E1139)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
@@ -279,9 +279,12 @@ list.
 
 ## Recent records
 
-46 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+27 records of 2026-11-16 to 2026-11-17 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1139` usse, 2026-11-17: r34-sa0 stage s (60 jobs, t30 probe fills, module 7CE8E38E): every
+  control passed (18 sa0 writers read their marker M back in dword 0 with K1 their most frequent
+  colour, 6 colour fills K3), but the ...
 - `E1136` pbe, 2026-11-16: r34-q044 on module 7CE8E38E (Q044), stage p2, E385's alpha ramp, every
   control passed: the stored one-bit alpha of pack mode 4 is set where the alpha is at or above the
   low byte of the word that ...
@@ -360,72 +363,14 @@ the claims are cut at 200 characters.
 - `E1108` bif, 2026-11-16: r29-flag stage f1 (2 jobs, t14, the debugfs knobs vm_pte_addr and
   vm_pte_flags = 0x12, WRITEONLY and EDMPROTECT together, on a mapping only read, held out; 2
   planned faults): r14-bif's ZLS load of ...
-- `E1107` pds, 2026-11-15: sgx-sim replays the kept vectors of two published sessions exactly:
-  r25-sa64's 58 jobs (E1104; stages pk64 and q019, one vector a job) replay 58 of 58 with each set's
-  sixteen markers read exactly at ...
-- `E1106` usse, 2026-11-15: r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module
-  E0CC4027: a single writer alone writes iaddu32's value into sa0 and it is the zero-extended one:
-  eight (r1, source 2) pairs a ...
-- `E1105` texture, 2026-11-15: r26-vol on module E0CC4027 (Q114): with each of 19 sampler-word bits
-  flipped one at a time on E567's twiddled 16 x 16 format 12 texture (T0 bits 14, 15, 16, 27, 28,
-  29, 30; T3 bits 8, 9, 10, 11, 12, ...
-- `E1104` pds, 2026-11-15: r25-sa64 stages pk64 and q019 (58 jobs) on t24, whose probe
-  --scratch-show 64 prints all 64 scratch dwords sa64_dump.s stores: E391's 40 jobs and 16 held-out
-  jobs at 3 and 6 rows read the markers of ...
-- `E1103` texture, 2026-11-15: r25-csc stage csc (16 jobs): a fill's transfer command loads
-  colour-space set 0 when its load flag is set (xfer:17 bit 0, the set's words xfer:18 to 22), and a
-  fill without the flag keeps the set the ...
-- `E1102` usse, 2026-11-15: r25-q123 stages q123s and q123w (21 jobs), held out and frozen before
-  the run: E492's read and jump programs placed at four new offsets (0x0c3010, 0x2ca7f8, 0x3d0100,
-  0x1c8008) read the links the ...
-- `E1101` zls, 2026-11-15: r23-dpm stage zn (Q088, 5 jobs): after a geometry kick that overflowed
-  without a raised abort (P 0x2e, 0x30, 0x32, 0x34), a moved final with the load bits (0x0017510e)
-  and the host's 0.75 refill of ...
-- `E1100` dpm, 2026-11-15: r23-dpm stage og (Q191, 6 jobs): with the second context's render 1 split
-  into a geometry kick and a closing render (t22b --ctx2-geometry 1), the kept 64x64 owner's words
-  0x00200047, 0x04000417, ...
-- `E1099` dpm, 2026-11-15: r23-dpm stage rl (Q038, 10 jobs): with E442's reload background (a pixel
-  shader fetching the target at the pixel) in every render of a geometry kick and a moved final on
-  its own PB, and the target ...
-- `E1098` usse, 2026-11-15: r23-pk stages q123 and q123h (10 jobs): in placed programs whose every
-  word outside the code ends the task with its own number, the instruction index counts as an 18-bit
-  counter across the ...
-- `E1097` texture, 2026-11-15: r23-pk stage q181 (8 jobs) and pk-e568 gave no frozen verdict: the
-  control c-copy-none (E037's UYVY copy, load flag clear) read 0xb6067a95fa98de2d, the hash of
-  c-copy-csc that ran just before it with ...
-- `E1096` pds, 2026-11-15: r23-pk stages pk and q019 (44 jobs) on t22, whose probe echoes every poke
-  as sent: bg:1 left the library as 0x00130000 (4 rows) and reached the fill's job as poked in every
-  poked job (0x30000, ...
-- `E1095` zls, 2026-11-15: r21-zls stage zz (Q107, 4 jobs): on E629's ramp with the final on its own
-  PB the final's G 33 store (depth.2) holds 184320 zero window dwords in tile rows 0-11 after a
-  raised kick (0x24, 0x38) and ...
-- `E1094` zls, 2026-11-15: r21-zls stage zw (Q088, 3 jobs): during the partial renders CR_ISP_ZLSCTL
-  (0x0480) reads the render details' word rd:11 with bits 14, 18 and 19 ORed in (rd:11 | 0x000c4000)
-  in every sample, on E336's ...
-- `E1093` zls, 2026-11-15: r21-zls stages zc and zl (Q088, 9 jobs): with the host's 0.75 refill of
-  the load buffer between an overflowing geometry kick and a moved final on its own PB, after a
-  raised kick (0x24, 0x28, 0x2c ...
-- `E1092` dpm, 2026-11-15: r20-own stage owp (5 jobs, t18b under regtimeline, render_keep armed, a
-  1024x768 owner closed early after its overflowing render, the second context drawing the default
-  triangle): the kept owner's ...
-- `E1091` dpm, 2026-11-15: r20-own stages ow and owt (6 jobs, t18b under regtimeline, render_keep
-  armed, a 1024x768 owner at P 0x422 closed early, the second context drawing the library's default
-  triangle): with the owner's ...
-- `E1090` zls, 2026-11-15: r20-zls stage zq (Q107, 4 jobs): on E629's ramp at P 0x44 and 0x4c the
-  kick overflows once without a raise (TA3DCtl dword 38 0, E625 with U 49) and the final render on
-  its own PB still keeps the zero ...
-- `E1089` dpm, 2026-11-15: r20-zls stage zm (Q038, 3 jobs): a final render on its own PB without a
-  depth buffer, its triangle moved 96 px right, painted every target pixel after a raised kick
-  (H-REPAINT 2 of 2 at 0x28 and ...
-- `E1088` zls, 2026-11-15: r20-zls stages zc and zr (Q088, Q038, 11 jobs): after a host refill of
-  the load buffer with 0.25 between an overflowing geometry kick and a moved final on its own PB, no
-  frozen form of the separate ...
 
 ## Closing sessions
 
-102 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+103 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r34-sa0`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r34-q044`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r34-q010`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
@@ -577,7 +522,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 10 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-17, 11 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

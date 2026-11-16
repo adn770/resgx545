@@ -9663,6 +9663,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r34_q044.rs`,
   `render-closing-r34-q044:out/20261116-232915/p2/`, `render-closing-r34-q044:fold/`.*
 
+### 2026-11-17
+
+- `E1139` r34-sa0 stage s (60 jobs, t30 probe fills, module 7CE8E38E): every control passed (18 sa0
+  writers read their marker M back in dword 0 with K1 their most frequent colour, 6 colour fills
+  K3), but the frozen reader decode (each pixel = the value read xor a key) did not hold: every
+  reader's pixels came in pairs {x, x ^ key}, about 1904 and 144 of 2048, so 18 of 20 sa0 readers
+  and every pa0 row read cannot tell and the frozen rule printed 'Q136 RULE: NARROW: neither clause
+  decided' (a builder error: the reader form had no control on a known value; the 'held' H-RESET 2
+  of 2, H-IDLE 6 of 6 and the two rr-r2 rows are artefacts of that decode); post hoc [infer], taking
+  the more frequent member of each pair as the value read before the job's own o0 writes (a reader's
+  read aliases what earlier instances of the job wrote to o0): sa0 read its marker after the writer
+  with no job between, across a debugfs reset and 10, 60 and 120 s idle (14 of 14 rows), and the
+  output of a job between (a colour fill, the t10 fill, the t10 triangle, a reader; 8 of 8),
+  H-ONEJOB's pattern on 20 of 20; pa0 read the colour of the job before on 8 of 8 rows, a reset
+  between included, and after the t10 triangle 0xff00ff00 in 1536 and 0xff203040 in 512 pixels in
+  both replicates, E496's first-job mixture count for count; nothing post hoc decides: the corrected
+  rerun r34-sa0b freezes it.
+  *usse; HW; data: `render-closing-r34-sa0:out/20261117-001613/s/`, `render-closing-r34-sa0:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9775,7 +9794,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062, E1098, E1102, E1106.
+E1061, E1062, E1098, E1102, E1106, E1139.
 
 ### vdm
 
