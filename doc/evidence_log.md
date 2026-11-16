@@ -9509,6 +9509,30 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   us.
   *platform; HW, infer; data: `render-closing-r30-evst2:out/20261116-132348/e1/`,
   `render-closing-r30-evst2:out/20261116-132348/e5/`, `render-closing-r30-evst2:fold/`.*
+- `E1122` r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL after a kick), stages c1,
+  c2, c3 (CR_CACHE_CTRL alone at 540 to 542 ns a sample, with CR_USE0_SERV_EVENT, with CR_BIF_CTRL,
+  both at 849 to 864 ns), every control passed, every row held out: CR_CACHE_CTRL changes once from
+  0x0000ffff to 0x1000ffff and stays (H-CC-ONE 28 of 28 rows), 18.3 to 25.2 ms after the tool starts
+  (H-CC-LAT 28 of 28); no CR_USE0_SERV_EVENT count comes in the 30 us before the change and the next
+  comes 4.4 to 8.8 us after it in 8 rows and in its sample in 1 (H-CNT-LAG 9 of 9 decided,
+  H-CNT-LEAD refuted); CR_BIF_CTRL shows no word near the change in 10 of 10 rows (H-BIF-HIDDEN
+  held, H-BIF-FIRST and H-BIF-LATER cannot tell).
+  *platform; HW, infer; data: `render-closing-r31-cc:out/20261116-144402/c1/`,
+  `render-closing-r31-cc:out/20261116-144402/c2/`, `render-closing-r31-cc:out/20261116-144402/c3/`,
+  `render-closing-r31-cc:fold/`.*
+- `E1123` r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL after a kick), stages c4
+  (CR_EVENT_STATUS, CR_CACHE_CTRL, CR_DMS_CTRL, CR_USE0_SERV_EVENT and CR_BIF_CTRL at 1766 to 1789
+  ns a sample, plain triangles) and c5 (the same without CR_DMS_CTRL, the default fill), every
+  control passed, every row held out: CR_BIF_CTRL reads 0x00000008 from 5.7 and 6.8 us before
+  CR_CACHE_CTRL's change to its sample in the 2 rows that order them (c4-04, c5-01; H-BIF-FIRST
+  held, H-BIF-LATER refuted there; 12 rows cannot tell), which the fold reads as the firmware's BIF
+  write of the kick pass [infer], so the hardware does not set bit 28 at the kick; the change comes
+  before every CR_EVENT_STATUS event (H-CCFIRST 14 of 14), once from 0x0000ffff to 0x1000ffff
+  (H-CC-ONE 14 of 14), with no served count in the 30 us before it (H-CNT-LAG 14 of 14, H-CNT-LEAD
+  refuted); CR_DMS_CTRL is written 31.0 to 43.6 us after it (H-DMS 8 of 8); a fill's kick changes it
+  as a triangle's does (H-CC-XFER 6 of 6, H-CC-TA refuted).
+  *platform; HW, infer; data: `render-closing-r31-cc:out/20261116-144402/c4/`,
+  `render-closing-r31-cc:out/20261116-144402/c5/`, `render-closing-r31-cc:fold/`.*
 
 ## By unit
 
@@ -9573,7 +9597,8 @@ E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121.
+E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
+E1122, E1123.
 
 ### render
 

@@ -5,7 +5,8 @@
 //!
 //! The sources, in the order they are asked (`Source`):
 //! 1. a landed rule that claims the register (a value that moves with the events served, E009;
-//!    the idle words of CR_EVENT_STATUS and CR_CACHE_CTRL until a kick, E1115, E1120);
+//!    the idle words of CR_EVENT_STATUS and CR_CACHE_CTRL until a kick, E1115, E1120;
+//!    CR_CACHE_CTRL after a kick, E1122);
 //! 2. a value the run wrote (the firmware's `str`, the host's writes);
 //! 3. a seed, each citing the record whose reading gives it (an E-number, refused without one);
 //! 4. a reset value from a kept snapshot (the caller passes only the registers the kept
@@ -56,10 +57,16 @@ pub const USE0_SERV_EVENT: u32 = 0x0b14 / 4;
 pub const EVENT_STATUS: u32 = 0x012c / 4;
 
 /// `CR_CACHE_CTRL` (0x0804): 0x0000ffff after a reset, through the ticks (E1120: the first sample
-/// of 24 of 24 rows; the kit's snapshots after its reset). From a change that comes before bit 26
-/// of CR_EVENT_STATUS to the end of the run it reads 0x1000ffff (24 of 24 rows); when that change
-/// comes after the kick or after the firmware's own write is not measured, so after a served
-/// event other than a tick a read is refused, even over a run write.
+/// of 24 of 24 rows; the kit's snapshots after its reset). From one change that comes before every
+/// event of the job to the reset it reads 0x1000ffff (E1120 24 of 24 rows, E1122 and E1123 52 of
+/// 52, a fill's kick as a triangle's). In the two rows that order it against the firmware's first
+/// response, the kick pass's BIF write (E1122, E1123: CR_BIF_CTRL 0x8 for 4 to 8 us, gone in the
+/// change's sample), the change comes after it, so the hardware does not set the bit at the kick
+/// [infer: it is the firmware's own `| 0x10000000`, E013]. After a kick a read answers the reset
+/// word until the run writes the register, and the run's write after it; whether the read itself
+/// came before the change is not measured, but E013 gives the value read no test, only the `|`
+/// and the write, so either answer writes 0x1000ffff. A write after the kick of any other word is
+/// not measured, and a read is refused.
 pub const CACHE_CTRL: u32 = 0x0804 / 4;
 
 #[derive(Clone, Debug)]
@@ -79,6 +86,8 @@ pub struct HwModel {
     serv_event: Option<Counted>,
     event_idle: Option<Counted>,
     cache_idle: Option<Counted>,
+    /// What the run wrote to CR_CACHE_CTRL after the kick that ended `cache_idle`, if anything.
+    cache_written: Option<u32>,
     open: BTreeMap<u32, String>,
     /// The reads refused, by register: what a run lists (offsets and counts).
     pub refused: BTreeMap<u32, u32>,
@@ -147,6 +156,15 @@ impl HwModel {
         Ok(())
     }
 
+    /// A register write of the run (the firmware's `str`, the host's): CR_CACHE_CTRL's after a
+    /// kick is what a later read answers (E1122); before the kick a write changes nothing the rule
+    /// answers (the reset word, E1120).
+    pub fn on_write(&mut self, index: u32, value: u32) {
+        if index == CACHE_CTRL && self.cache_idle.as_ref().is_some_and(|c| c.lost.is_some()) {
+            self.cache_written = Some(value);
+        }
+    }
+
     /// What a refusal of `index` says beside the register (the open questions that block it).
     pub fn note_open(&mut self, index: u32, note: &str) {
         self.open.insert(index, note.to_string());
@@ -174,9 +192,9 @@ impl HwModel {
             && !tick
         {
             c.lost = Some(format!(
-                "a kick was served (ir0 {}, ir1 {ir1:#010x}): {} reads 0x1000ffff from a change 19.5 to 106.6 us \
-                 before bit 26 (10 of 12 rows; 5 and 18 ms in two) of CR_EVENT_STATUS until a reset; when that change comes after the kick or \
-                 the firmware's write is not measured",
+                "a kick was served (ir0 {}, ir1 {ir1:#010x}): {} gives 0x0000ffff after a reset; E1122: the reset word \
+                 until the run writes it after the kick, then 0x1000ffff (held to the reset, E1120, E1122, E1123); \
+                 no other written word is measured",
                 ir0.map_or("unknown".to_string(), |v| format!("{v:#x}")),
                 c.cite
             ));
@@ -232,9 +250,14 @@ impl HwModel {
         if index == CACHE_CTRL
             && let Some(c) = &self.cache_idle
         {
-            return match &c.lost {
-                None => Ok((c.value, Source::Rule("E1120"))),
-                Some(why) => refuse(format!("reads register 0x{:04x}: {why}", index * 4)),
+            return match (&c.lost, self.cache_written) {
+                (None, _) => Ok((c.value, Source::Rule("E1120"))),
+                (Some(_), None) => Ok((c.value, Source::Rule("E1122"))),
+                (Some(_), Some(v)) if v == c.value | 0x1000_0000 => Ok((v, Source::Rule("E1122"))),
+                (Some(why), Some(v)) => refuse(format!(
+                    "reads register 0x{:04x} after the run wrote {v:#010x} to it: {why}",
+                    index * 4
+                )),
             };
         }
         if let Some(v) = written {
@@ -329,17 +352,29 @@ mod tests {
     }
 
     #[test]
-    fn cache_ctrl_reads_its_reset_word_through_ticks_and_is_refused_after_a_kick() {
+    fn cache_ctrl_reads_its_reset_word_until_the_runs_write_after_a_kick_then_that_write() {
         // E1120: 0x0000ffff after the reset through the ticks of the lead (24 of 24 rows' first
-        // samples); from a change before bit 26 to the end of the run 0x1000ffff (24 of 24), when
-        // that change comes after the kick or the run's own write is not measured: refused, even
-        // over a run write, since the hardware moves the register
+        // samples), 0x1000ffff from one change to the reset. E1122, E1123: the change follows the
+        // firmware's BIF write of the kick pass (2 of 2 decided rows) and the word written is the
+        // only one the hardware then reads, so after a kick the read before the run's own write
+        // answers the reset word, the run's write after it, and only 0x1000ffff
         let mut hw = HwModel::default();
         hw.idle_cache_ctrl(0x0000_ffff, "E1120").unwrap();
         assert_eq!(hw.read(CACHE_CTRL, None).unwrap(), (0x0000_ffff, Source::Rule("E1120")));
+        // a write before the kick (the boot's) is not what a read after the kick sees
+        hw.on_write(CACHE_CTRL, 0x0000_1234);
         hw.on_event(Some(2), 0x0200_0000);
-        assert_eq!(hw.read(CACHE_CTRL, Some(0xffff)).unwrap().0, 0x0000_ffff);
+        assert_eq!(hw.read(CACHE_CTRL, Some(0x1234)).unwrap().0, 0x0000_ffff);
         hw.on_event(Some(0), 0x0200_0100);
+        assert_eq!(hw.read(CACHE_CTRL, Some(0x1234)).unwrap(), (0x0000_ffff, Source::Rule("E1122")));
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        assert_eq!(hw.read(CACHE_CTRL, Some(0x1000_ffff)).unwrap(), (0x1000_ffff, Source::Rule("E1122")));
+        // a later kick and tick keep it (held to the reset, E1120, E1122)
+        hw.on_event(Some(0), 0x0300_0100);
+        hw.on_event(Some(2), 0x0300_0000);
+        assert_eq!(hw.read(CACHE_CTRL, Some(0x1000_ffff)).unwrap().0, 0x1000_ffff);
+        // any other word written after the kick is not measured: refused
+        hw.on_write(CACHE_CTRL, 0x0000_0008);
         let r = hw.read(CACHE_CTRL, Some(0x0000_0008));
         assert!(refused_naming(r.clone(), "0x0804") && refused_naming(r, "0x1000ffff"));
         assert!(hw.idle_cache_ctrl(0xffff, "after the reset").is_err());

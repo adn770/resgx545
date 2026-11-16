@@ -203,6 +203,9 @@ impl State {
     fn store_reg(&mut self, index: u32, value: u32, host: bool) {
         self.regs.insert(index, value);
         self.seeded.remove(&index);
+        if let Some(hw) = &mut self.hw {
+            hw.on_write(index, value);
+        }
         self.log.push(Event::Write { host, index, value });
         self.trace(|| Ev::RegWrite { index, value, host });
     }

@@ -36,7 +36,7 @@ list.
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
   tag-5 OR that of lane 0 of the quad in a job whose words ... (E878, E880, E905)
 - `Q111` platform, high: which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2
-  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1116, E1120, E1121)
+  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1121, E1122, E1123)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
@@ -287,9 +287,15 @@ list.
 
 ## Recent records
 
-32 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+34 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1123` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
+  after a kick), stages c4 (CR_EVENT_STATUS, CR_CACHE_CTRL, CR_DMS_CTRL, CR_USE0_SERV_EVENT and
+  CR_BIF_CTRL at 1766 to 1789 ns a sample, ...
+- `E1122` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
+  after a kick), stages c1, c2, c3 (CR_CACHE_CTRL alone at 540 to 542 ns a sample, with
+  CR_USE0_SERV_EVENT, with CR_BIF_CTRL, both at ...
 - `E1121` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111), stages e1 and e5
   (CR_EVENT_STATUS alone at 539 to 548 ns a sample, every control passed, every row held out against
   E1115): CR_EVENT_STATUS reads 0x20000000 ...
@@ -389,9 +395,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-94 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+95 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r31-cc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r30-pde`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
 - `render/closing-r30-evst2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -532,7 +539,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 2 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 3 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

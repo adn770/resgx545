@@ -505,9 +505,16 @@ after a reset and
 0x1000ffff from a change ahead of every event of a kicked job until a reset (19 of 19 rows), bit
 26 19.5 to 48.3 us after it in 9 of 12 rows and 106.6 us in one; the word while bit 26 is set is
 the idle word with bit 26 and any other pending bit (once 0xa4004000); a plain triangle adds 9
-to 11 counts to `USE0_SERV_EVENT` beyond the ticks. sgx-sim's hardware model answers
-`EVENT_STATUS` and `CACHE_CTRL` with their idle words until a kick is served and refuses them
-after (crates/sgx-sim/src/hw.rs).
+to 11 counts to `USE0_SERV_EVENT` beyond the ticks. The change comes before the kick's next
+served count (E1122, E1123: none in the 30 us before it, 23 of 23 rows), and a fill's kick makes
+it too (E1123, 6 of 6). In the two rows that order it against the kick pass, `BIF_CTRL` reads
+0x00000008 for 4 to 8 us before it and is clear again in the change's sample (E1123) [infer: the
+firmware's BIF invalidation for cache-control bits 0 and 1, then its own `CACHE_CTRL |
+0x10000000` for bit 3, E013; the host's own bit 3 writes are two back-to-back MMIO writes on
+paths no job takes], so the hardware does not set bit 28 at the kick. sgx-sim's hardware model
+answers `EVENT_STATUS` with its idle word until a kick is served and refuses it after; it
+answers `CACHE_CTRL` with the reset word until a kick and after it until the run writes the
+register, then the run's write, 0x1000ffff only (crates/sgx-sim/src/hw.rs).
 
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
 OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and

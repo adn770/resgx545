@@ -51,15 +51,16 @@ value = 0x20000000
 cite = "E1115, E547"
 
 # CR_CACHE_CTRL: 0x0000ffff after a reset, through the ticks (E1120: the first sample of 24 of 24
-# rows; the kit's snapshots after its reset). From a change before bit 26 to the end of the run it
-# reads 0x1000ffff, and when that change comes after the kick or the firmware's write is not
-# measured: after a served event other than a tick a read is refused, even over a run write.
+# rows; the kit's snapshots after its reset), 0x1000ffff from one change to the reset. The change
+# follows the kick pass's BIF write (E1122, E1123, 2 of 2 decided rows), so after a served event
+# other than a tick a read answers the reset word until the run writes the register, then the
+# run's write, 0x1000ffff only (crates/sgx-sim/src/hw.rs; any other written word is refused).
 [[rule]]
 reg = 0x0804
 name = "CR_CACHE_CTRL"
 kind = "idle_until_event"
 value = 0x0000ffff
-cite = "E1120"
+cite = "E1120, E1122"
 
 # The task state that outlives a firmware task (E536), at the first tick entry after the boot:
 # pclink 0x98 and p0, p1 set, as the reader of a plain tick read them (E791 A0, E809 S0). The

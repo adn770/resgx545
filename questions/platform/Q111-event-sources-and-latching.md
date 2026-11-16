@@ -7,7 +7,7 @@ value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
             "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
-            "E1115", "E1116", "E1120", "E1121"]
+            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -175,3 +175,13 @@ bit (once 0xa4004000 with SW_EVENT); bit 26 is again absent from about half the 
 at 541 ns, its width depends on what else is sampled (about 6 us with four registers), and in
 `-n 3` a later render can show it, short. Retiring needs every clause decided: which event sets
 each other bit, a pulse or a level for them, their clears and order stay open.
+
+Narrowed 2026-11-16 (round 31 session r31-cc, E1122, E1123; every control passed, every row held
+out; not retired). CR_CACHE_CTRL's change comes before every CR_EVENT_STATUS event of a triangle
+and of a fill (14 of 14), and before the kick's next served count (no count in the 30 us before
+it, 23 of 23 decided rows). In the two rows that order it against the kick pass's first
+visible response, CR_BIF_CTRL 0x00000008 for 4 to 8 us, the BIF word comes first and is gone in
+the change's sample [infer: the firmware's BIF invalidation, then its own `| 0x10000000`; E013];
+so bit 26 (MADD_CACHE_INVALCOMPLETE) follows the firmware's data-cache invalidation request, and
+a fill's kick sets the bit as a triangle's does. Open as before: which event sets each other bit,
+a pulse or a level for them, their clears and order.
