@@ -1207,6 +1207,24 @@ def test_a_control_that_expects_its_fault_does_not_count_against_the_limit(repos
     assert re.search(r"^ok +world model: driver 0 \(s0 24\)", m.stdout, re.M), m.stdout
 
 
+def test_a_stage_stopped_by_its_limit_names_the_rows_it_did_not_run(repos):
+    """`#limit` is a budget of planned faults and hangs, not a row count: the stage stops (rc 24)
+    when the limit is reached with rows left, and the runner log says which rows were not run
+    (limit), so a summary never reads them as run or as refused. A stage that reaches the end
+    names none."""
+    kp = fault_limit_session(repos, "fit")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    log = (mm / "out/model/s0/runner.log").read_text()
+    assert re.search(r"^## not run \(limit\): f1-fill *$", log, re.M), log
+    kp = fault_limit_session(dict(repos, tmp=repos["tmp"] / "ctl"), "control")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert "not run (limit)" not in (mm / "out/model/s0/runner.log").read_text()
+
+
 def test_a_hook_runs_after_a_fault_row_and_its_reason_stops_the_stage(repos):
     """r9-faults: the runner called no hook after a fault row, so a stage rule on the fault's own
     kernel lines (two `SGX recovery failed: -110` in a row) was read only at the next ok row.

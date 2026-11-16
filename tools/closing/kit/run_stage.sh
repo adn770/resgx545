@@ -9,7 +9,8 @@
 # ssh does not stop a stage half way); everything printed also goes to the kept runner.log.
 #
 # Table header lines: #stage NAME, #limit N (the faults and hangs of `expectfault` rows the stage
-# may take; a control's expected fault is its reading and is not counted). Line: name|set|risk|knobs|tool|args (tool: a name of session.toml [tools]; in args
+# may take; a control's expected fault is its reading and is not counted; the Nth one stops the
+# stage with rc 24 when rows are left, and the log names them: "## not run (limit): A B"). Line: name|set|risk|knobs|tool|args (tool: a name of session.toml [tools]; in args
 # $W is the job's work directory, every file the tool writes there is kept, and $S the staged tree;
 # a tool declared `wraps = true`, as regtimeline, runs `-- "$HOME/PATH" ...` of a declared tool)
 #   knobs  words, only these (any other: rc 7, nothing runs):
@@ -281,7 +282,10 @@ EOF
 		why=$(cat "$JW/check.txt")
 		[ -z "$why" ] || { echo "## STOP (stage $STAGE): $why, after $name"; exit 24; }
 		if [ "$FAULT_EVENTS" -ge "$FAULT_LIMIT" ] && [ "$i" -lt "$TOTAL" ]; then
-			echo "## STOP (stage $STAGE): $FAULT_EVENTS faults or hangs (the limit is $FAULT_LIMIT) with rows left, after $name"; exit 24
+			left=$(sed -n "$((i + 1)),\$p" "$WROOT/rows" | cut -d'|' -f1 | tr '\n' ' ')
+			mark "notrun-limit $left"
+			echo "## STOP (stage $STAGE): $FAULT_EVENTS faults or hangs (the limit is $FAULT_LIMIT) with rows left, after $name"
+			echo "## not run (limit): $left"; exit 24
 		fi ;;
 	fail)
 		if [ "$gate" = 1 ] && [ "$rc" -eq 1 ] && ! grep -q '^diff:' "$JW/$name.out"; then
