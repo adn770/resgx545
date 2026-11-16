@@ -43,3 +43,4 @@ E1091 = "dpm: refused: no simulator models a kept DPM owner's pages (r20-own ow,
 E1092 = "dpm: refused: no simulator models a kept DPM owner's pages (r20-own owp; no vectors table)"
 E1099 = "dpm: refused: no simulator models a background object reading the target or a partial render's colour (r23-dpm rl; no vectors table)"
 E1100 = "dpm: refused: no simulator models a kept DPM owner's pages (r23-dpm og; no vectors table)"
+E1114 = "pds: refused: no simulator keeps a clock (r29-kreg render times of CR_PDS_REG_0A78; no vectors table)"

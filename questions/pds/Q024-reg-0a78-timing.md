@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "low"
 phase = 7
-evidence = ["E141", "E045", "E396"]
+evidence = ["E141", "E045", "E396", "E1114"]
 terms = ["CR_PDS_REG_0A78"]
 +++
 
@@ -23,10 +23,19 @@ shuffled order, give medians within 0.3 percent (67274-67469 us), so E141's slow
 were noise; one 0x01 run had two slow renders. Left narrowed: the other 58 values and a render with
 many small triangles were not run.
 
-Open: whether 0x01 and 0x20 are slower again on a second run (a real dependence) or were noise or
-a one-off disturbance; what the other 57 values do; whether a load that stresses the PDS more than
-a small triangle does shows a larger difference.
+Narrowed in round 29 (E1114, readings only: its frozen control rule failed on one 0x2c control,
+c11, whose job had two slow renders): all 64 values, two shuffled passes each, timed on the
+256x256 triangle. 62 values lie within 1 percent of the 0x2c controls on both passes; 0x23 and
+0x39 lie outside on one pass each, from one slow render each; no value lies outside on both
+passes. [infer] By the median of renders 2-6 (post hoc) every value is within 0.82 percent.
+Left narrowed: no frozen verdict yet, and the load with many small triangles was not run (no
+timed form in the tools).
 
-To settle it: time all 64 values, ten times each in random order, on the 256x256 triangle, and
-once more on a render with many small triangles (more PDS tasks); give the mean and spread per
-value and restore 0x2c after each.
+Open: a frozen verdict on the 256x256 load (E1114 gives readings: E141's slower 0x01 read
++0.29 and -0.25 percent, 0x20 -0.60 and +0.10); whether a load that stresses the PDS more
+than one triangle, many small triangles, shows a difference.
+
+To settle it: a tool change that times a render of many small triangles (a job time on `probe
+--tri --vertices N`, or a triangle count for `tri`), then one flagged session on the kit's
+`kreg` word with a reading frozen robust to a single slow render (the median of renders 2-6),
+the 64 values on both loads with 0x2c controls, restoring 0x2c after each.

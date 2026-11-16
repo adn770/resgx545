@@ -71,7 +71,7 @@
 - `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that a fill's douta reaches attributes 0-63 at their own sa at 0 to 8 rows, or does the task take its size from elsewhere? (E125, E391, E1096, E1104)
 - `Q020` (phase 7, hw, medium): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125, E381, E440, E545)
 - `Q023` (phase 7, hw, high): how many output dwords does a pixel task get per setup, and what do the data rows limit (E406) (E139, E081, E406, E570, E709, E742, E759, E880)
-- `Q024` (phase 7, hw, low): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396)
+- `Q024` (phase 7, hw, low): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396, E1114)
 - `Q025` (phase 7, hw, medium): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145, E395)
 - `Q026` (phase 7, hw, medium): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130, E394)
 - `Q027` (phase 7, hw, medium): where do the values of a no-wait iteration go, given that pa0 never holds the iterated value and holds 0, 2, 6 and a few other values instead? (E131, E048, E393, E430)
