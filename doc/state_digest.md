@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-137 open: 127 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+136 open: 126 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -168,8 +168,6 @@ list.
   row of macrotiles and the depth with its sign bit set for the ... (E1088, E1090, E1095)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
   how are they laid out, given that they store depth and stencil ... (E1031, E1043, E1054)
-- `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
-  translate on the hardware, and with which address mask and ... (E1117, E1118, E1119)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
   stride) do to the addresses of a requestor whose accesses ... (E021, E151, E246)
 - `Q002` edm, low: is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE

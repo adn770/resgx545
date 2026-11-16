@@ -5,7 +5,7 @@
 use crate::Outcome;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q076", "Q108", "Q109", "Q110", "Q003"];
+pub const OPEN: &[&str] = &["Q076", "Q108", "Q110", "Q003"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses. Among what it
 /// refuses: the client directory's alias of the EDM's buffers (Q076), of which E980 held out that
