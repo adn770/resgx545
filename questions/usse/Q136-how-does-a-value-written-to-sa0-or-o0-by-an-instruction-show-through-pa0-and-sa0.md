@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E496", "E484"]
+evidence = ["E496", "E484", "E1139"]
 terms = ["Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -32,3 +32,15 @@ Narrowed 2026-11-12 (round 6 housekeeping, decision R6-1 a): why the `ima32` and
 destination of pa0 is lost while sa0, o0, i1 and i2 take it (E496), and whether a pa1 to pa4
 destination is lost as well, moved to Q098, whose lost `mov` to pa_n it is. This question keeps the
 sa0 lifetime and the left-over colour.
+
+Narrowed 2026-11-17 (round 34, E1139), nothing decided. r34-sa0's frozen rule printed NARROW:
+its readers xored what they read into their own output, and what a reader reads aliases what
+earlier instances of the same job wrote to o0, so every reader's pixels came in pairs.
+
+Read post hoc, not decided:
+- sa0 read the writer's marker with no job between, across a debugfs reset and 120 s idle, and
+  the colour of a job between, both replicates: E484's one-job pattern.
+- pa0 read the colour of the job before, across a reset; after the t10 triangle it read
+  0xff00ff00 in 1536 and 0xff203040 in 512 pixels, E496's first-job mixture.
+
+The corrected rerun (readers that output the value read, E496's form) is r34-sa0b.
