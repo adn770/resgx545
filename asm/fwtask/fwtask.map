@@ -1,4 +1,11 @@
 {
+ "emitsa": {
+  "bytes": 564,
+  "insns": 58,
+  "sha256": "3dc8152d846cc7a100cc2224e28d2ad83c71fd978206aac82f7b1486940579e1",
+  "source": "emitsa.s",
+  "source_sha256": "8059d7404b968c8a973b6758c105cd4dee4dad88c51352d0de907cbe7873729c"
+ },
  "events": {
   "bytes": 600,
   "insns": 64,

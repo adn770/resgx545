@@ -220,7 +220,11 @@ static int do_fw(int argc, char **argv)
 			apply = sgx_own_apply(&b, &a, &fw, &l, SGXFIVE_OWN_PDS_BUF,
 					      bufs[SGXFIVE_OWN_PDS_BUF],
 					      sgx_fw_buffer(&fw, SGXFIVE_OWN_PDS_BUF)->size, code,
-					      strtoul(argv[8], NULL, 16));
+					      strtoul(argv[8], NULL, 16)
+#ifdef HOST_APPLY_PDS			/* from the emitpds commit on: the image, none here */
+					      , NULL
+#endif
+					      );
 		printf("apply %d\n", apply);
 	}
 #endif

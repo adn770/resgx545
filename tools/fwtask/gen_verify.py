@@ -12,6 +12,7 @@ import fwtask
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 import forkpin  # noqa: E402
+import gen_tri_progs  # noqa: E402
 LINUX = pathlib.Path(os.environ.get("RESGX545_LINUX", fwtask.ROOT.parent / "linux"))
 # the fork's sgxfive sources at the pinned commit (forkpin.py), whatever the home has checked out;
 # a path that does not exist when there is no fork, so the tests that read it skip
@@ -35,7 +36,7 @@ def in_spec(spec: str, mask: int, value: int) -> bool:
 
 
 KINDS = ("PLAIN", "LDR", "STR", "BR", "LAPC", "MOVLIMM", "MOVREG", "MOVPCLINK", "MOVFROMPC",
-         "NOP", "IMA32", "LOAD_ABS", "STORE_ABS", "DENY", "MOVPA")
+         "NOP", "IMA32", "LOAD_ABS", "STORE_ABS", "DENY", "MOVPA", "EMITPDS")
 
 
 def render(regs) -> str:
@@ -107,7 +108,6 @@ def crafted_blobs():
         ("ldr_unlisted", "ldr r1, #1000, drc0", Y.LDR),
         ("ldr_reg_index", "ldr r1, r2, drc0", Y.DENY), ("str_reg_index", "str r2, r1", Y.DENY),
         ("emit", "emitpix1.freep #0, r0, r1", Y.UNKNOWN),
-        ("emitpds", "emitpds.tasks.taske #0, r2, r3, r4, #0x0", Y.UNKNOWN),
         ("bexception", "bexception #0", Y.UNKNOWN),
         # R3-K11: of cfi and phas only the shared exit's two words are allowed
         ("phas", "phas #0, #0, pixel, end, perinstance", Y.UNKNOWN),
@@ -121,6 +121,38 @@ def crafted_blobs():
         ("ba_savelink", "ba.savelink #0x4001", Y.DENY), ("br_savelink", "br.savelink #1", Y.DENY),
     ):
         add(name, blob([ins] + ok_tail), "EPERM", why)
+    # N3 (round 33): one emitpds form, its sources the kernel's pds0 to pds2, once, entry 1 apart
+    own = "emitpds.tasks.taske #0, r2, r3, r4, #0x0"
+    setup = ["mov r2, #0xdeadbeef", "mov r3, #0xdeadbeef", "mov r4, #0xdeadbeef"]
+    pds = [P(0, "pds0"), P(1, "pds1"), P(2, "pds2")]
+    for name, ins in (("emitpds_flags", "emitpds #0, r2, r3, r4, #0x0"),
+                      ("emitpds_freep", "emitpds.tasks.taske.freep #0, r2, r3, r4, #0x0"),
+                      ("emitpds_sideband", "emitpds.tasks.taske #0, r2, r3, r4, #0x1"),
+                      ("emitpds_incp", "emitpds.tasks.taske #1, r2, r3, r4, #0x0"),
+                      ("emitpds_regs", "emitpds.tasks.taske #0, r5, r3, r4, #0x0"),
+                      ("emitpds_bank", "emitpds.tasks.taske #0, sa2, r3, r4, #0x0")):
+        add(name, blob(setup + [ins, "nop.end", "nop.end"], pds, [0, 5]), "EPERM", Y.UNKNOWN)
+    add("emitpds", blob([own, "nop.end"], [], [0, 1]), "EPERM", Y.EMIT_ARGS)
+    add("emitpds_unpatched", blob(setup + [own, "nop.end", "nop.end"], [], [0, 5]), "EPERM", Y.EMIT_ARGS)
+    add("emitpds_swapped", blob(setup + [own, "nop.end", "nop.end"],
+                                [P(0, "pds1"), P(1, "pds0"), P(2, "pds2")], [0, 5]), "EPERM", Y.EMIT_ARGS)
+    add("emitpds_res_patch", blob(setup + [own, "nop.end", "nop.end"],
+                                  [P(0, "pds0"), P(1, "res"), P(2, "pds2")], [0, 5]), "EPERM", Y.EMIT_ARGS)
+    add("emitpds_overwritten", blob(setup + ["mov r3, r5", own, "nop.end", "nop.end"], pds, [0, 6]),
+        "EPERM", Y.EMIT_ARGS)
+    add("emitpds_one_path", blob(["mov r2, #0xdeadbeef", "p0 br #2"] + setup[1:] + [own, "nop.end", "nop.end"],
+                                 [P(0, "pds0"), P(2, "pds1"), P(3, "pds2")], [0, 6]), "EPERM", Y.EMIT_ARGS)
+    add("emitpds_twice", blob(setup + [own, own, "nop.end", "nop.end"], pds, [0, 6]), "EPERM", Y.EMIT_ONCE)
+    add("emitpds_loop", blob(setup + [own, "p0 br -#0x1", "nop.end", "nop.end"], pds, [0, 6]), "EPERM",
+        Y.EMIT_ONCE)
+    add("emitpds_from_entry1", blob(setup + [own, "nop.end", "br -#0x5"], pds, [0, 5]), "EPERM", Y.EMIT_ONCE)
+    add("emitpds_one_entry", blob(setup + [own, "nop.end", "nop.end"], pds, [0]), "EPERM", Y.EMIT_ENTRY)
+    add("pds_slot3", blob(setup + [own, "nop.end", "nop.end"], [P(0, "pds0"), P(1, "pds1"), P(2, "pds3")],
+                          [0, 5]), "EPERM", Y.PATCH_SLOT)
+    add("pds_addend", blob(setup + [own, "nop.end", "nop.end"], [P(0, "pds0", 4), P(1, "pds1"), P(2, "pds2")],
+                           [0, 5]), "EPERM", Y.PATCH_ADD)
+    add("pds_base", blob(setup + ["stad [r3,+#0], r4", own, "nop.end", "nop.end"], pds, [0, 6]), "EPERM",
+        Y.BASE)
     # R2: only the forms our sources use: an ALU op no source uses and the register offset, fetch,
     # increment and repeat forms of a load, a store or a move are refused
     for name, ins in (("alu_add", "xor r1, r2, r3"), ("fmad", "fmad r1, r2, r3, r4"),
@@ -197,7 +229,51 @@ def c_array(name, data):
     return f"static const u8 {name}[] = {{\n\t" + ",\n\t".join(rows) + ",\n};\n"
 
 
-OK_BLOBS = ("null", "mem", "ldr", "x9b_r1", "x9b_r2", "state", "events", "slow", "trc_08", "trc_31")
+OK_BLOBS = ("null", "mem", "ldr", "x9b_r1", "x9b_r2", "state", "events", "slow", "trc_08", "trc_31",
+            "emitsa")
+
+# ---- the one PDS image (N3) ------------------------------------------------------------------
+PDS_SOURCE = "fwtask/pds/emit.s"        # under asm/
+PDS_ROWS = 2                            # data rows of 4 dwords
+PDS_ADDEND = 0x100                      # the control word's addend (PDS #14's, E488's base)
+PDS_CTL = (PDS_ROWS << 23) | PDS_ADDEND
+PDS_DWORDS = {"U0": 0, "U1": 1, "U2": 2, "V0": 4, "V2": 5}     # the dwords the kernel fills
+
+
+def pds_listing():
+    """(word, text) of asm/fwtask/pds/emit.s, assembled by our pds-asm."""
+    return gen_tri_progs.listing(PDS_SOURCE, "pds")
+
+
+def pds_image() -> list[int]:
+    return [w for w, _ in pds_listing()]
+
+
+def render_pds() -> str:
+    words = pds_listing()
+    if sum(1 for _, t in words if t == "data") != 4 * PDS_ROWS:
+        raise SystemExit(f"{PDS_SOURCE}: not {PDS_ROWS} data rows")
+    out = ["/* SPDX-License-" "Identifier: GPL-2.0-only OR MIT */",
+           "/*",
+           " * GENERATED by tools/fwtask/gen_verify.py from asm/fwtask/pds/emit.s: do not edit.",
+           " * The one PDS program a firmware task of ours may emit (sgxfive_owntask.h): its words,",
+           " * the dwords the kernel fills at the arm, its data rows and the emitpds control word.",
+           " */",
+           "#ifndef _SGX_OWN_PDS_H_",
+           "#define _SGX_OWN_PDS_H_",
+           "",
+           "#include <linux/compiler.h>", "#include <linux/types.h>",
+           ""]
+    out += [f"#define SGX_OWN_PDS_{k}\t{v}" for k, v in PDS_DWORDS.items()]
+    out += [f"#define SGX_OWN_PDS_ROWS\t{PDS_ROWS}",
+            f"#define SGX_OWN_PDS_CTL\t0x{PDS_CTL:08x}\t/* (rows << 23) | 0x{PDS_ADDEND:x} */",
+            f"#define SGX_OWN_PDS_WORDS\t{len(words)}",
+            "",
+            "static const u32 sgx_own_pds_image[SGX_OWN_PDS_WORDS] __maybe_unused = {"]
+    for w, text in words:
+        out.append(f"\t0x{w:08x},\t/* {text} */")
+    out += ["};", "", "#endif", ""]
+    return "\n".join(out)
 
 
 def render_test_blobs(asm_dir) -> str:
@@ -220,9 +296,11 @@ def render_test_blobs(asm_dir) -> str:
 
 
 def main(argv):
-    """gen_verify.py regs OUT | blobs ASMDIR OUT"""
+    """gen_verify.py regs OUT | blobs ASMDIR OUT | pds OUT"""
     if argv[1] == "regs":
         pathlib.Path(argv[2]).write_text(render(fwtask.load_regs()))
+    elif argv[1] == "pds":
+        pathlib.Path(argv[2]).write_text(render_pds())
     elif argv[1] == "blobs":
         pathlib.Path(argv[3]).write_text(render_test_blobs(argv[2]))
     else:
