@@ -47,3 +47,5 @@ E1116 = "platform: refused: readings only, every frozen control failed on a wron
 E1121 = "platform: refused: the held-out repeat of E1115 (bit 26 at 541 ns, -n 3); hw.rs answers CR_EVENT_STATUS by E1115 until a kick and refuses it after (r30-evst2 e1, e5; no vectors table)"
 E1124 = "pds: refused: no simulator keeps a clock (r31-kreg2 k1 render times of CR_PDS_REG_0A78; no vectors table)"
 E1125 = "pds: refused: no simulator keeps a clock (r31-kreg2 k2 render times of CR_PDS_REG_0A78; no vectors table)"
+E1128 = "pds: refused: no simulator keeps a clock (r32-kreg3 s0 render times of the 500-triangle load, no register write; no vectors table)"
+E1129 = "pds: refused: no simulator keeps a clock (r32-kreg3 kl10 render times of CR_PDS_REG_0A78; no vectors table)"

@@ -1,11 +1,11 @@
 +++
 id = "Q024"
-question = "does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run?"
+question = "does CR_PDS_REG_0A78 change the render time of a sub-millisecond load of many small triangles (64x64), when no value moves a 256x256 triangle or 500 triangles at 1024x768 by 1 percent (E1124, E1129)?"
 unit = "pds"
 kind = "hw"
 value = "low"
 phase = 7
-evidence = ["E141", "E045", "E396", "E1114", "E1124", "E1125"]
+evidence = ["E141", "E045", "E396", "E1114", "E1124", "E1125", "E1128", "E1129"]
 terms = ["CR_PDS_REG_0A78"]
 +++
 
@@ -41,10 +41,22 @@ passes (64 of 64 decided; three readings over 1 percent, each on one pass only);
 (24.8 percent) passed its 2.5 percent cap; [infer] post hoc every value's medians lie -6.0 to
 +11.4 percent of the controls, within that noise.
 
-Open: whether a load of many small triangles, timed to about a percent, shows a difference.
+Narrowed in round 32 (E1128, E1129, frozen verdicts; the user's decision of 2026-11-16: the load
+of E1129 answers its clause, Q024 narrows). Two loads are answered: no value of 0x00-0x3f moves
+the render time by 1 percent on two shuffled passes, on the 256x256 triangle (E1124) and on 500
+triangles (1500 vertices) at 1024x768, ten renders a job, about 22 ms a render (E1129: 64 of 64
+decided, the farthest 0x1d at 0.48 percent; E141's 0x01 and 0x20 read -0.11 and -0.05, +0.39 and
+-0.17 percent). [infer] At 1024x768 each of the 500 triangles covers about a quarter of the
+target, so that load is many large overlapping triangles.
 
-To settle it: one flagged session on the kit's `kreg` word with a many-small-triangles render long
-enough to time to a percent (tens of ms, e.g. the 1500 vertices on a larger target, or more
-renders a job), chosen by a safe calibration stage frozen to pick the first form whose references
-spread under about 0.8 percent, then the 64 values on two passes with 0x2c controls, the reading
-and the control rule of E1124.
+Open: whether a sub-millisecond load of many small triangles (the same 500 triangles at 64x64,
+about 0.73 ms a render) shows a difference under 1 percent. It cannot be timed to 1 percent
+today: a safe calibration (E1128) found the eight job medians spread 4.42, 3.28 and 3.50 percent
+(interquartile range) at 10, 20 and 40 renders a job, after E1125's 8.27 percent at six, so more
+renders a job do not shrink the spread, which lies between jobs [infer]; the frozen bound (three
+times that spread) would be about 10 percent.
+
+To settle it: a way to time a short render to a percent first (a timing of the 64x64 load over
+many more jobs, or more small triangles in one render), checked by the same safe calibration
+(references spread at most 0.8 percent) before any flagged row, then the 64 values on two passes
+with 0x2c controls and E1124's reading and control rule.
