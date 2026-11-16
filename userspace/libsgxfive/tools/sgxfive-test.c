@@ -249,7 +249,8 @@
  *                                 --max-height (default W x H); each --slot FILE
  *                                 replaces another slot's program in every render;
  *                                 --vertices N (3 to 1500, whole triangles): copies of
- *                                 the triangle after it, for the vertex programs;
+ *                                 the triangle after it, for the vertex programs
+ *                                 (a completed render prints "tri WxH #1: N us");
  *                                 --index-width 32: the index list as 32-bit words
  *                                 and VDM word 2 bit 25 set (one object, up to 126
  *                                 vertices; 16, the default: 16-bit pairs);
@@ -2538,6 +2539,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 	uint64_t saddr = 0;
 	bool submitted = false;
 	char why[96];
+	long long t0 = 0;
 	int ret;
 
 	for (unsigned int k = 0; k < SGXFIVE_TRI_SLOT_COUNT; k++)
@@ -2707,6 +2709,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 			ret = sgxfive_tri_rig_build(g, &p, &pr);
 		if (!ret && pt->emit_scene)
 			ret = emit_tri_scene(pt->emit_scene, g, pt);
+		t0 = now_ns();
 		if (!ret)
 			ret = sgxfive_tri_rig_submit(g);
 		submitted = !ret;
@@ -2725,6 +2728,10 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 			      SGXFIVE_TRI_SENTINEL)) {
 		PROBE_FAILED("probe %s: failed: no pixel written\n", f->name);
 	} else {
+		/* --vertices: the plain tri form's per-render timing line (kit timing scorers) */
+		if (pt->vertices)
+			printf("tri %ux%u #1: %lld us\n", pt->width, pt->height,
+			       (now_ns() - t0) / 1000);
 		probe_report(f->name, g->fb, pt->width, pt->height, po->pixels, sp,
 			     SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
 	}

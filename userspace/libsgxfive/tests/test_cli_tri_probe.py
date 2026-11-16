@@ -201,6 +201,15 @@ def test_tri_reports_a_failed_render(tmp_path):
     assert r.stdout.index("failed: scene overflowed") < r.stdout.index("probe pix: row 0:")
 
 
+def test_tri_vertices_failed_render_prints_no_time(tmp_path):
+    # an overflowed render did not complete: no timing line
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "--mock-pb-pages=0x23", "probe", "--tri", "pixel", "--vertices", "6",
+            str(f))
+    assert r.returncode == 3 and "failed: scene overflowed" in r.stdout, r.stdout + r.stderr
+    assert not re.search(r"^tri 64x64 #1:", r.stdout, re.M), r.stdout
+
+
 def test_tri_vertices(tmp_path):
     # --vertices N: copies of the triangle after it (sgxfive_tri_probe.h), so that the vertex
     # programs run for more vertices than one task's; the mock draws them all.
@@ -210,6 +219,8 @@ def test_tri_vertices(tmp_path):
     assert re.search(r"^probe pix: tri 64x64 \(15 vertices\), pixel replaced$", r.stdout,
                      re.M), r.stdout
     assert summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout
+    # the same per-render timing line the plain tri form prints (kit timing scorers read it)
+    assert re.search(r"^tri 64x64 #1: \d+ us$", r.stdout, re.M), r.stdout
     # 126: the vertex buffer moved to the scene page's spare room, still drawn
     r = run("--mock", "probe", "--tri", "pixel", "--vertices", "126", str(f))
     assert r.returncode == 0 and summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout + r.stderr
