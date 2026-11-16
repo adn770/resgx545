@@ -14,10 +14,12 @@
 pub mod edm_pass;
 pub mod func;
 pub mod fwtask;
+pub mod hw;
 pub mod json;
 pub mod pds;
 pub mod sgx;
 pub mod tex;
+pub mod trace;
 mod usse;
 pub mod vectors;
 
