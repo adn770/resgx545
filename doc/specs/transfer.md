@@ -270,7 +270,8 @@ Other values of the copy's words, read back pixel by pixel on the laptop:
 - Word 7 bit 1 (`CR_ISP_MSAA` mode 2): only the first 32 x 16 tile is written, pixel (x, y)
   taking texel (16 + x / 2, 8 + y / 2) (E272; Q011).
 - T1 bit 28: the source read as YUYV and converted through colour-space set 0, whose words stay
-  from the last job that loaded them (E271; Q010).
+  from the last job that loaded them (E271), across fills, copies, a debugfs reset and 120 s of
+  idle; the kit's health triangle (a 64 x 64 render) leaves them at zeros (E1134; Q010).
 - T2 bits 12 to 14: reads of the buffers around the source: the copy's source lies at 0x3e002000
   with its buffer's first page below it, bit 13 reaches the heap's first page, 0x3e000000, bit 12
   the source's own second half and bit 14 the destination's second page (E273, E425).
@@ -341,7 +342,7 @@ Evidence: E011, E012, E017.
 - Q004: whether a context with bit 4 set can be released, who sets bits 1 and 4, and the queue slots
   behind priorities above 0 (E455 ran them: a hang for bit 4 and priorities 1 and 2, a fault for 3).
 - Q008: the rounding at the luma key's low cut.
-- Q010: what clears the colour-space words between jobs.
+- Q010: which part of a render clears the colour-space words (E1134: the health triangle does).
 - Q011: why a wrong background-object tag reads the source's last texel.
 - The meanings of the register words without a name here (`0x042c`, `0x0400`, `0x0148`, the
   value `+0x194` adjusts) belong to the 3D state specs (phase 10); the transfer needs only
