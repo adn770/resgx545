@@ -9663,6 +9663,29 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r34_q044.rs`,
   `render-closing-r34-q044:out/20261116-232915/p2/`, `render-closing-r34-q044:fold/`.*
 
+### 2026-11-17
+
+- `E1137` r34-ev on module 7CE8E38E (Q111), stages e0, e1, e2c, e2 (32 jobs: calibrations of
+  CR_EVENT_STATUS alone and with CR_EVENT_STATUS2, every control passed with premises read from
+  snap0 and the calibrations): 0x012c alone samples at 3.1 to 3.9 us in these job windows; frozen
+  H-IMG (11 of 11), H-PR0-QUIET (3 of 3), H-THR-NEVER (14 of 14), H-S2-NONE (3 of 3) and
+  H-S2-COPYIDLE (2 of 2) held; H-OOM-SET against H-OOM-NONE split (e1 4 held 4 FAILED, e2 2 held 1
+  FAILED), H-OOM-MT (e1 6 of 8, e2 3 of 3), H-SHORT (14 of 16) and H-COPY (e1 8 of 12, e2 2 of 4)
+  not supported, H-S2-SET refuted (0 of 3); post hoc the out-of-memory bit follows the PB size: bit
+  1 in 6 of 6 rows at 0xe2 and 0x82, none in 5 at 0x2b6 and 0x1c2, bit 2 31 us after a bit 1 episode
+  at 0xe2 in 2 of 3; a copy shows bit 18 as one 60 to 206 us episode in 10 of 14 copy rows and bit 0
+  in none.
+  *platform; HW, infer; data: `render-closing-r34-ev:out/20261117-001058/e0/`,
+  `render-closing-r34-ev:out/20261117-001058/e1/`, `render-closing-r34-ev:out/20261117-001058/e2c/`,
+  `render-closing-r34-ev:out/20261117-001058/e2/`, `render-closing-r34-ev:fold/`.*
+- `E1138` r34-ev on module 7CE8E38E (Q036), stage d0 (calibration of 0x0660 + 0x0748, 2 jobs of the
+  overflow probe at 0x422, both controls passed: 0x0660's first sample = snap0, 0x0748's = 0x1f, the
+  kept image) and d1 not run: its gate closed on the measured interval, 4131.5 ns median (4095 and
+  4168), above the frozen 3500 ns bound for E1057's 4 us bit 2 pulse; readings only: no bit 2 clear
+  (2 of 2), bit 4 clear once for 20.3 ms, bit 3 clears at most 4.4 us, CR_DPM_3D_PAGE_COUNTS ends at
+  0x70305 (one change from 0x2, none from 0x70305).
+  *dpm; HW; data: `render-closing-r34-ev:out/20261117-001058/d0/`, `render-closing-r34-ev:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9679,7 +9702,7 @@ E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E8
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
 E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087, E1089, E1091,
-E1092, E1099, E1100.
+E1092, E1099, E1100, E1138.
 
 ### edm
 
@@ -9728,7 +9751,7 @@ E1129.
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
 E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
-E1122, E1123, E1126, E1127, E1131, E1133.
+E1122, E1123, E1126, E1127, E1131, E1133, E1137.
 
 ### render
 

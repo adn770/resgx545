@@ -7,7 +7,7 @@ value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
             "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
-            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130", "E1126", "E1127"]
+            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130", "E1126", "E1127", "E1137"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -202,3 +202,15 @@ read changes it once, 24.4 and 25.2 ms after the tool starts, as without the rea
 whether bit 28 is the firmware's own `| 0x10000000` (E013) or a hardware response to the work the
 firmware does for INVAL_DATA. Open as before: which event sets each other bit, a pulse or a level
 for them, their clears and order.
+
+Narrowed 2026-11-17 (round 34 session r34-ev, E1137; every control passed with premises read from
+snap0 and same-set calibrations; not retired). In E1032's overflow probe (3072 x 2048, 1500
+vertices) CR_EVENT_STATUS read alone samples at 3.1 to 3.9 us. The out-of-memory bit is bit 1
+(DPM_OUT_OF_MEMORY_MT): in 6 of 6 rows at the two smallest PBs (0xe2, 0x82; 4 and 7 partial
+renders) and in none of 5 at 0x2b6 and 0x1c2 (1 and 2), so the frozen per-row rivals split and
+neither is supported; bit 2 shows only at 0xe2, 31 us after a bit 1 episode (2 of 3); bit 3 never
+(14 of 14); bits 0 and 13 pulse about 4 us with a few 60 to 120 us episodes; CR_EVENT_STATUS2 keeps
+its word through an overflow (3 of 3, H-S2-SET refuted). A copy, plain or 256 x 256, shows no bit 0
+and in 10 of 14 rows one PIXELBE_END_RENDER (bit 18) episode of 60 to 206 us, which E547's copies
+never showed. Open as before: what sets each bit, why the smaller PBs raise bit 1, which copies end
+with bit 18, the order of the bits, and the host-clear clause.

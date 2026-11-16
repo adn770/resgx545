@@ -515,6 +515,13 @@ paths no job takes], so the hardware does not set bit 28 at the kick. A served G
 command carries no INVAL_DATA, leaves `CACHE_CTRL` at 0x0000ffff (E1126, E1127: 9 of 9 rows, after
 the boot's own and the kit's `pre:miscinfo`), so bit 28 needs the command's INVAL_DATA; whether it
 is the firmware's write or a hardware response to the firmware's work for it is not measured.
+In an overflowing render (E1032's probe at 3072 x 2048, `EVENT_STATUS` alone sampled every 3.1 to
+3.9 us, E1137) the out-of-memory bit is `DPM_OUT_OF_MEMORY_MT` (bit 1): about 4 us episodes in
+every job at the two smallest parameter buffers (0xe2 and 0x82 pages, 6 of 6) and none at 0x2b6
+and 0x1c2 (0 of 5); `DPM_OUT_OF_MEMORY_GBL` (bit 2) only at 0xe2, 31 us after a bit 1 episode (2
+of 3); `DPM_REACHED_MEM_THRESH` never (14 of 14); `EVENT_STATUS2` keeps its word. A copy, 64 x 32
+or 256 x 256, shows no `DPM_3D_MEM_FREE` and in 10 of 14 jobs one `PIXELBE_END_RENDER` episode
+of 60 to 206 us, as a fill's.
 sgx-sim's hardware model
 answers `EVENT_STATUS` with its idle word until a kick is served and refuses it after; it
 answers `CACHE_CTRL` with the reset word until a kick and after it until the run writes the
