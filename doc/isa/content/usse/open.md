@@ -67,11 +67,11 @@ open driver:
    event that arrives meanwhile is queued, up to four ticks and a kick or a job's events once, E751,
    E752; a `wdf` with
    nothing outstanding and an unfenced store at the end of a task act as in a fill, E534); what a
-   client `str` changes and what an `idf` is needed for beyond an instance's own store (Q134; `str`
-   then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other registers and
-   the register-index forms are Q154); when another reader sees an unfenced store and when a load
-   not waited for lands (Q143, Q146); why a client `emitpds` faults the job and why its addend 0xFFF
-   to 0x2000 leaves the fill's value (Q128); the 12 pixels of an `sa` writer that show the
+   client `str` changes (Q134; `str` then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task,
+   E534, and its other registers and the register-index forms are Q154); when another reader sees
+   an unfenced store and what an `idf` is needed for beyond an instance's own store (Q143), and when
+   a load not waited for lands (Q146); why a client `emitpds` faults the job and why its addend
+   0xFFF to 0x2000 leaves the fill's value (Q128); the 12 pixels of an `sa` writer that show the
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's

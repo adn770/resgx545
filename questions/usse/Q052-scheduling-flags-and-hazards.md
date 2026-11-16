@@ -38,7 +38,7 @@ when a `stad` reads it with no `wdf` after 0, 1, 2, 4, 8, 16 or 32 `nop`s (one l
 16 (four loads), 9 of 9 cases (E478), so no interlock was seen for that reader and the result was
 seen only after the `wdf` that counts it; a `stad` and a later `ldad` of the same dword, all
 instances storing the same value to it, return the stored value with no `idf` (16 cases, E481;
-Q134). Not run: a load read by an ALU instruction (the interlock of that reader might differ), a
+Q143). Not run: a load read by an ALU instruction (the interlock of that reader might differ), a
 load read more than 32 instructions on with no `wdf`, a load overwritten by a later write to its
 register, and the time a load takes.
 

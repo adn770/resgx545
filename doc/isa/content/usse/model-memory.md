@@ -64,7 +64,7 @@
   1024 at no delay, 792 and 984 after 64 and 192 `nop`s for the next quad in x, none for 32 columns
   on): a rule of timing and of the order of the tiles, the left half first **[infer]** (E514), and
   no case needed an `idf`. The `idf` in the storing instance, the host reading during the job, a
-  texture fetch of the stored data are **[open]** (Q143, Q134); an EDM task's own store lands with
+  texture fetch of the stored data are **[open]** (Q143); an EDM task's own store lands with
   no `idf` before the flag the host reads (E534). `str` then `ldr` is ordered for two registers in
   an EDM task of ours (E534, below). The `pixelbe` and reserved modes of `idf` are **[open]**.
 - **Addresses.** Loads and stores take a base register and an offset counted in elements of

@@ -1,6 +1,6 @@
 +++
 id = "Q134"
-question = "which register does a client str change, and when is an idf drcN, bif required beyond an instance's own store (the host reading during the job, a texture fetch of the stored data)"
+question = "which register does a client str change (the order of a client str then ldr follows once one is known)?"
 unit = "usse"
 kind = "hw"
 value = "medium"
@@ -57,3 +57,11 @@ other than a load of the same fill: the `idf` in the storing instance, the host 
 job, a texture fetch of the stored data and an EDM task other than the one measured (the order in
 which instances run is Q143, a task's overlap, answered by E752). The question is not retired because those parts
 have no record.
+
+**Correction 2026-11-16 (round 31, with the user):** the `idf` clause moves to Q143, which asked it
+too: when an `idf drcN, bif` after a `stad` is required for a reader other than a load of the same
+fill (the `idf` in the storing instance, the host reading during the job, a texture fetch of the
+stored data, an EDM task other than the one measured) is now Q143's alone, with its evidence (E481,
+E512 to E514, E533). This question keeps its `str` clause: which register a client `str` changes,
+and then the order of a client `str` and `ldr`. The registers whose write has an effect, a job
+running, the register-index forms and the time of a `str` stay Q154's.

@@ -146,10 +146,10 @@ list.
   the s0, s1 and s2 operands of the started PDS program become ... (E488, E513, E520)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
   (does it land in the register whose index is the register's ... (E486, E519, E535)
-- `Q134` usse, medium: which register does a client str change, and when is an idf drcN, bif
-  required beyond an instance's own store (the host reading during the ... (E514, E533, E534)
+- `Q134` usse, medium: which register does a client str change (the order of a client str then ldr
+  follows once one is known)? (E514, E533, E534)
 - `Q143` usse, medium: when does another instance's unfenced stad reach a load, what orders the
-  tiles and quads (the left 32 columns before the right, a quad ... (E512, E513, E514)
+  tiles and quads (the left 32 columns before the right, a quad ... (E513, E514, E533)
 - `Q154` usse, medium: does str then ldr of one register stay ordered for a register whose write
   starts work or that another writer changes, with a job running, ... (E445, E534)
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
