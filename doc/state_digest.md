@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-137 open: 127 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+136 open: 126 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -168,8 +168,6 @@ list.
   row of macrotiles and the depth with its sign bit set for the ... (E1088, E1090, E1095)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
   how are they laid out, given that they store depth and stencil ... (E1031, E1043, E1054)
-- `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
-  translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
   stride) do to the addresses of a requestor whose accesses ... (E021, E151, E246)
 - `Q002` edm, low: is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE
@@ -289,7 +287,7 @@ list.
 
 ## Recent records
 
-29 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+32 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1121` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111), stages e1 and e5
@@ -298,6 +296,15 @@ the claims are cut at 200 characters.
 - `E1120` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111, the fwsim read rules), stages
   e2, e3, e4 (CR_EVENT_STATUS with CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with
   27 registers), every control ...
+- `E1119` bif, 2026-11-16: r30-pde stage f67 (Q109, a size field the BIF does not take; every s0
+  control passed): a client directory entry with the unnamed size codes 6 and 7 is walked as 4 KiB
+  entries like codes 0 to 5: four ...
+- `E1118` bif, 2026-11-16: r30-pde stages f2 and f45 (Q109, the table's layout and address bits,
+  every s0 control passed): over codes 1 to 4 a table laid out with each entry 4 KiB past its block
+  (misalign) and a table at + ...
+- `E1117` bif, 2026-11-16: r30-pde stages s0, f1 and f45 (Q109, module 7CE8E38E, every control
+  passed): a client page directory entry whose size field (bits 3:1) names 16 KiB, 64 KiB, 256 KiB,
+  1 MiB or 4 MiB (codes 1 to 5), ...
 - `E1116` platform, 2026-11-16: r30-evst on module E0CC4027, stages e2, e3, e4 (CR_EVENT_STATUS with
   CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27 registers), readings only, no
   verdict: every frozen headline ...
@@ -382,9 +389,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-93 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+94 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r30-pde`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r30-evst2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r30-evst`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10
 - `render/closing-r29-kreg`: 2026-11-16; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10
@@ -523,7 +532,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 456404fcffe5
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 1 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 2 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -583,25 +592,15 @@ stays with what a session must do around it.
   input `tools/texture/p1132/recompute/texmodel.py`: the same model with E561's address
   (`tilemodel.tm`, tested on E564's an-t3b11, 2048 of 2048, `tools/texture/test_tilemodel.py`).
 
-- no job can map a page directory entry with a size field other than 4 KiB (Q109): a client's
-  VM_MAP pages are shmem pages, not contiguous, so a large page cannot be a buffer's own. The
-  kernel change is on the fork's branch `r30-kernel` (round 30, N1: a8c89868592a, 8bc0877e8603,
-  not landed, its module not installed or booted): debugfs `vm_pde_addr` (0 off, else a 4 MiB
-  slot in a user heap), `vm_pde_size` (code 0-7) and `vm_pde_layout` (0 dense, 1 pt4k, 2
-  misalign, 3 ptoff) map the VM_MAP of exactly 4 MiB at the address through a PDE of that code
-  over a region the driver owns, every 4 KiB tagged (`0xa0000000 | slab << 24 | page << 12 |
-  dword`), and `vm_large` reads it back. A pair no region is made for (misalign or ptoff with
-  code 0 or 5, any layout but dense with 6 or 7) or another size at the address is `-EINVAL` at
-  the map, so the knobs may be written in any order. The tool has `copy --src-addr`, `fill
-  --dst-addr` and `--large-copy DIR` (branch `r30-kernel-tool`); the kit takes the rows as it is:
-  session.toml `[knobs]` declares the three at default 0, `debugfs = ["vm_large"]`, `outdir_opts
-  = ["--large-copy"]`, the rows are `expectdiff` (the copy reads tags, the fill writes the
-  region) and `expectfault` where a fault is the reading. The fork's KUnit safety case holds the
-  GPU to the region under every reading of the session's rows only, VA offsets in the slot:
-  code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K) and [2S - 8K, 2S + 8K); code 5
-  [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only. A row outside them is a change to the
-  fork's test first. It stays listed until the fork lands, the module is booted with the user's
-  OK, and a session (r30-pde) runs on it.
+- a page directory entry with a size field other than 4 KiB is mapped only by the fork's debugfs
+  `vm_pde_addr`, `vm_pde_size` and `vm_pde_layout` (branch `r30-kernel` 8bc0877e8603, landing
+  with the r30-pde fold; read back by `vm_large`, t30's `copy --src-addr`, `fill --dst-addr` and
+  `--large-copy DIR`), over a region the driver owns, not a buffer's pages. r30-pde found the
+  field not taken: every code 0 to 7 walks 4 KiB entries (E1117 to E1119), so a row there
+  measures the 4 KiB walk of that region. The fork's KUnit safety case holds the GPU to the region
+  only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
+  and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
+  outside them changes that test first.
 
 ## Simulator coverage baseline
 

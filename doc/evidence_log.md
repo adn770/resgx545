@@ -9457,6 +9457,32 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, infer; data: `render-closing-r30-evst:out/20261116-123552/e2/`,
   `render-closing-r30-evst:out/20261116-123552/e3/`,
   `render-closing-r30-evst:out/20261116-123552/e4/`, `render-closing-r30-evst:fold/`.*
+- `E1117` r30-pde stages s0, f1 and f45 (Q109, module 7CE8E38E, every control passed): a client page
+  directory entry whose size field (bits 3:1) names 16 KiB, 64 KiB, 256 KiB, 1 MiB or 4 MiB (codes 1
+  to 5), over a dense table of large-page entries, is walked as an ordinary 4 KiB table: entry va /
+  4 KiB, its address plus va % 4 KiB, the size field ignored; every copy read and every fill wrote
+  the region pages the 4 KiB reading names (H-4K 9 of 9 in f1, 6 of 6 dense rows in f45, fit and
+  held out), none faulted or hung, and the frozen H-DENSE (entry va / S, masked to S) was refuted on
+  all 15 rows, as were H-SECTION and H-FAULT.
+  *bif; HW, infer; data: `render-closing-r30-pde:out/20261116-131809/s0/`,
+  `render-closing-r30-pde:out/20261116-131809/f1/`,
+  `render-closing-r30-pde:out/20261116-131809/f45/`, `render-closing-r30-pde:fold/`.*
+- `E1118` r30-pde stages f2 and f45 (Q109, the table's layout and address bits, every s0 control
+  passed): over codes 1 to 4 a table laid out with each entry 4 KiB past its block (misalign) and a
+  table at + 0x400 named by the PDE's bits 11:4 with a rotated decoy at + 0 (ptoff) are both read as
+  plain 4 KiB entries from the PDE's page: H-4K held on 8 of 8 rows (f2 6 of 6, f45 2 of 2, held
+  out), H-4K-PTOFF refuted on c4-o, where the 4 KiB index crosses into the real table at entry 256
+  (`3:0,3:0,1:0,2:0`, H-4K's), and H-MASK-S, H-MASK4K, H-PTOFF-IGN, H-PTOFF-USE and H-SECTION
+  refuted on every row.
+  *bif; HW, infer; data: `render-closing-r30-pde:out/20261116-131809/f2/`,
+  `render-closing-r30-pde:out/20261116-131809/f45/`, `render-closing-r30-pde:fold/`.*
+- `E1119` r30-pde stage f67 (Q109, a size field the BIF does not take; every s0 control passed): a
+  client directory entry with the unnamed size codes 6 and 7 is walked as 4 KiB entries like codes 0
+  to 5: four copies (each code twice) completed and read region pages 4 to 7 through table entries 4
+  to 7, as frozen H-ALIAS predicts (4 of 4), with no fault, no hang, BIF_INT_STAT 0x80000 and
+  BIF_FAULT 0 after each; the frozen H-FAULT and H-ALIAS16 were refuted (0 held, 4 FAILED each).
+  *bif; HW, infer; data: `render-closing-r30-pde:out/20261116-131809/f67/`,
+  `render-closing-r30-pde:fold/`.*
 - `E1120` r30-evst2 on module 7CE8E38E (Q111, the fwsim read rules), stages e2, e3, e4
   (CR_EVENT_STATUS with CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27
   registers), every control passed, every row held out: CR_CACHE_CTRL reads 0x0000ffff after the
@@ -9489,7 +9515,7 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
 ### bif
 
 Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
-E945, E946, E964, E965, E980, E1046, E1071, E1108.
+E945, E946, E964, E965, E980, E1046, E1071, E1108, E1117, E1118, E1119.
 
 ### dpm
 
