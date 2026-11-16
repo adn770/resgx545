@@ -783,8 +783,9 @@ this part again;
 different size, the job reporting ok.
 What `0x0a78` controls is open too (Q024): every value 0x00-0x3f draws a triangle exactly
 (E045), and none moves a 256x256 triangle's render time by more than 1 percent on two shuffled
-passes (E1124, a frozen verdict; E396, E1114 readings). A render of 500 small triangles was too
-short (about 0.72 ms, 8 percent jitter) to read to a percent (E1125).
+passes (E1124, a frozen verdict; E396, E1114 readings), nor the render time of 500 triangles
+at 1024x768, each about a quarter of the target (E1129). The same 500 triangles at 64x64 (about
+0.73 ms a render) do not time to a percent, at 6 to 40 renders a job (E1125, E1128).
 
 **Deinit** (9 writes): clear `EVENT_PDS_ENABLE`, `EVENT_OTHER_PDS_EXEC`, `_DATA` and `_INFO`,
 `USE_CODE_BASE_15`, `EVENT_HOST_ENABLE` and `EVENT_HOST_ENABLE2`, then `CLKGATECTL = 0` and

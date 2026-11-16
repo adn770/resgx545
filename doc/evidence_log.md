@@ -9554,6 +9554,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   median 722.5 us, within the load's noise.
   *pds; HW, infer; data: `render-closing-r31-kreg2:out/20261116-145122/s0/`,
   `render-closing-r31-kreg2:out/20261116-145122/k2/`, `render-closing-r31-kreg2:fold/`.*
+- `E1128` r32-kreg3 on module 7CE8E38E (Q024), stage s0, a safe calibration of the many-triangles
+  load (t30 probe --tri --vertices 1500, the triangle and 499 copies, no register write): eight
+  references a form, reading the median of renders 2-N; their spread (interquartile range of the
+  eight medians) is 4.42, 3.28 and 3.50 percent at 64x64 with 10, 20 and 40 renders a job (about
+  0.73 ms a render), and 0.32, 0.20 and 0.16 percent at 1024x768 (about 22.07 ms a render); the
+  frozen pick: 's0's references draw; picked form l10 (48 of 48 rows decided)', the first form at
+  most 0.8 percent; no 64x64 form qualifies, so more renders a job do not time the 64x64 load to a
+  percent.
+  *pds; HW, infer; data: `render-closing-r32-kreg3:out/20261116-183256/s0/`,
+  `render-closing-r32-kreg3:fold/`.*
+- `E1129` r32-kreg3 on module 7CE8E38E (Q024), stage kl10, H0 held for all 64 values:
+  CR_PDS_REG_0A78 at each value 0x00-0x3f on two shuffled passes leaves the render time of 500
+  triangles (t30 probe --tri --vertices 1500, the triangle and 499 copies moved c/16 pixel) at
+  1024x768, ten renders a job, about 22.07 ms a render, within 1.00 percent of the 0x2c controls:
+  'CR_PDS_REG_0A78 at every value 0x00-0x3f leaves the render time of 500 triangles (1500 vertices)
+  at 1024x768, 10 renders a job within 1.00 percent of 0x2c's on two shuffled passes (64 of 64 rows
+  decided)'; the farthest value 0x1d at 0.48 percent; at this target each triangle covers about a
+  quarter of the render, so the load is many large overlapping triangles, not small ones.
+  *pds; HW, infer; data: `render-closing-r32-kreg3:out/20261116-183256/s0/`,
+  `render-closing-r32-kreg3:out/20261116-183256/kl10/`, `render-closing-r32-kreg3:fold/`.*
 - `E1130` fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1 c-off kicked as
   our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the kick's
   CR_CACHE_CTRL write (0x20000000, 0x24000000, 0x20000000; E1115, E1120, E1123): the kick pass reads
@@ -9623,7 +9643,8 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114, E1124, E1125.
+E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114, E1124, E1125, E1128,
+E1129.
 
 ### platform
 

@@ -192,8 +192,8 @@ list.
   changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
-- `Q024` pds, low: does CR_PDS_REG_0A78 change timing, when two of its values were slower in one
-  timing run? (E1114, E1124, E1125)
+- `Q024` pds, low: does CR_PDS_REG_0A78 change the render time of a sub-millisecond load of many
+  small triangles (64x64), when no value moves a 256x256 ... (E1125, E1128, E1129)
 - `Q062` pds, low: what makes the PDS fetch pc read one or two below the reading instruction's index
   plus 3, at instructions 26-27 back to back (the end of a ... (E260, E261, E384)
 - `Q063` pds, low: what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX
@@ -279,12 +279,18 @@ list.
 
 ## Recent records
 
-37 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+39 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1130` edm, 2026-11-16: fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1
   c-off kicked as our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the
   kick's CR_CACHE_CTRL write ...
+- `E1129` pds, 2026-11-16: r32-kreg3 on module 7CE8E38E (Q024), stage kl10, H0 held for all 64
+  values: CR_PDS_REG_0A78 at each value 0x00-0x3f on two shuffled passes leaves the render time of
+  500 triangles (t30 probe --tri ...
+- `E1128` pds, 2026-11-16: r32-kreg3 on module 7CE8E38E (Q024), stage s0, a safe calibration of the
+  many-triangles load (t30 probe --tri --vertices 1500, the triangle and 499 copies, no register
+  write): eight references a ...
 - `E1125` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k2, cannot tell by its frozen
   premise: CR_PDS_REG_0A78 at each of its 64 values on two shuffled passes before a job of six
   renders of 500 small triangles ...
@@ -396,9 +402,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-96 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+97 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r32-kreg3`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r31-kreg2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
 - `render/closing-r31-cc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -542,7 +550,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 4 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 5 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -614,4 +622,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-44 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+46 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
