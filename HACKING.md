@@ -755,25 +755,15 @@ stays with what a session must do around it.
   input `tools/texture/p1132/recompute/texmodel.py`: the same model with E561's address
   (`tilemodel.tm`, tested on E564's an-t3b11, 2048 of 2048, `tools/texture/test_tilemodel.py`).
 
-- no job can map a page directory entry with a size field other than 4 KiB (Q109): a client's
-  VM_MAP pages are shmem pages, not contiguous, so a large page cannot be a buffer's own. The
-  kernel change is on the fork's branch `r30-kernel` (round 30, N1: a8c89868592a, 8bc0877e8603,
-  not landed, its module not installed or booted): debugfs `vm_pde_addr` (0 off, else a 4 MiB
-  slot in a user heap), `vm_pde_size` (code 0-7) and `vm_pde_layout` (0 dense, 1 pt4k, 2
-  misalign, 3 ptoff) map the VM_MAP of exactly 4 MiB at the address through a PDE of that code
-  over a region the driver owns, every 4 KiB tagged (`0xa0000000 | slab << 24 | page << 12 |
-  dword`), and `vm_large` reads it back. A pair no region is made for (misalign or ptoff with
-  code 0 or 5, any layout but dense with 6 or 7) or another size at the address is `-EINVAL` at
-  the map, so the knobs may be written in any order. The tool has `copy --src-addr`, `fill
-  --dst-addr` and `--large-copy DIR` (branch `r30-kernel-tool`); the kit takes the rows as it is:
-  session.toml `[knobs]` declares the three at default 0, `debugfs = ["vm_large"]`, `outdir_opts
-  = ["--large-copy"]`, the rows are `expectdiff` (the copy reads tags, the fill writes the
-  region) and `expectfault` where a fault is the reading. The fork's KUnit safety case holds the
-  GPU to the region under every reading of the session's rows only, VA offsets in the slot:
-  code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K) and [2S - 8K, 2S + 8K); code 5
-  [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only. A row outside them is a change to the
-  fork's test first. It stays listed until the fork lands, the module is booted with the user's
-  OK, and a session (r30-pde) runs on it.
+- a page directory entry with a size field other than 4 KiB is mapped only by the fork's debugfs
+  `vm_pde_addr`, `vm_pde_size` and `vm_pde_layout` (branch `r30-kernel` 8bc0877e8603, landing
+  with the r30-pde fold; read back by `vm_large`, t30's `copy --src-addr`, `fill --dst-addr` and
+  `--large-copy DIR`), over a region the driver owns, not a buffer's pages. r30-pde found the
+  field not taken: every code 0 to 7 walks 4 KiB entries (E1117 to E1119), so a row there
+  measures the 4 KiB walk of that region. The fork's KUnit safety case holds the GPU to the region
+  only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
+  and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
+  outside them changes that test first.
 
 ## Markdown
 

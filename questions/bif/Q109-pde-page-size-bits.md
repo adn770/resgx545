@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E021", "E151"]
+evidence = ["E021", "E151", "E1117", "E1118", "E1119"]
 terms = ["CR_BIF_DIR_LIST_BASE0"]
 +++
 
@@ -21,3 +21,11 @@ change) that builds one directory entry of a client with a chosen size field ove
 for that size, then `fill` and `copy` aimed at the pages it maps, compared with the same buffer
 mapped by 4 KiB entries, and the bus interface's registers read after a job that crosses the page's
 end.
+
+Measured in round 30 (r30-pde, fork r30-kernel 8bc0877e8603, module 7CE8E38E): the fork's debugfs
+`vm_pde_*` mapped one client 4 MiB slot through a PDE of each code 0 to 7 over a tagged region
+the driver owns. The size field is not taken: codes 1 to 5 over dense tables read and wrote the
+pages a 4 KiB walk names, never the large page (E1117, H-4K 15 of 15 frozen rows); the PDE's bits
+11:4 do not offset the table and a misaligned entry is walked as a 4 KiB one (E1118); the
+unnamed codes 6 and 7 neither fault nor stall and walk 4 KiB entries too (E1119). The frozen rule
+(`score.py q109`) prints RETIRE.

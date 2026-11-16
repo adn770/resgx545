@@ -134,6 +134,32 @@ pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
     })
 }
 
+/// The physical address a client access at offset `va` of a 4 MiB directory slot reaches through
+/// the slot's PDE `pde` and its table `pt` (1024 entries). The PDE's size field (bits 3:1) is not
+/// taken: every code 0 to 7 walks 4 KiB entries, entry va[21:12], its address plus va[11:0]
+/// (E1117: codes 1 to 5, dense tables, H-4K 15 of 15 frozen rows; E1119: codes 6 and 7, 4 of 4,
+/// no fault), and the PDE's bits 11:4 do not offset the table (E1118: c4-o's entries 254 to 257).
+/// Measured on the transfer's texture reads and pixel writes, entries address | VALID only: a PDE
+/// or an entry without VALID, an entry with PTE flags under a code other than 0, an offset past
+/// the slot and a table that is not 1024 entries are refused.
+pub fn pde_walk(pde: u32, pt: &[u32], va: u32) -> Result<u32, Outcome> {
+    let refuse = |why: &str| Err(Outcome::unsupported(why, &["Q108"]));
+    if pde & 1 == 0 {
+        return refuse("a PDE without VALID: not run (E1117 to E1119)");
+    }
+    if pt.len() != 1024 || va >= 0x40_0000 {
+        return refuse("a walk outside one 4 MiB slot's 1024-entry table: not run");
+    }
+    let e = pt[(va >> 12) as usize];
+    let code = (pde >> 1) & 7;
+    if e & 1 == 0 || (code != 0 && e & 0xffe != 0) {
+        return refuse(&format!(
+            "entry {e:#x} under size code {code}: only address | VALID entries ran (E1117 to E1119)"
+        ));
+    }
+    Ok((e & 0xffff_f000) | (va & 0xfff))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +292,75 @@ mod tests {
         assert_eq!(pte_access(0x12, ZlsLoad), first(0x80200), "q108-both-load");
         assert_eq!(pte_access(0x12, TextureRead), first(0x80002), "q108-both-tex");
         assert!(pte_access(0x12, ZlsStore).is_err());
+    }
+
+    /// A client table as the fork's vm_pde_* built it for a row (sgx_mmu_large_table: region
+    /// `r`, `entries` its listed entries (index, address), every other entry the trap).
+    fn table(trap: u32, entries: &[(usize, u32)]) -> Vec<u32> {
+        let mut pt = vec![trap | 1; 1024];
+        for &(i, a) in entries {
+            pt[i] = a | 1;
+        }
+        pt
+    }
+
+    #[test]
+    fn a_pde_of_any_size_code_walks_4_kib_entries_as_the_r30_pde_rows() {
+        // E1117 (r30-pde f1, f45, frozen H-4K, held out): codes 1 to 5 over a dense table read
+        // the pages the 4 KiB walk names; region addresses and tables from the kept vm_large
+        let r = 0x03ec_0000; // c1-a, c1-b: code 1 (16 KiB), blocks at r + 16K, 32K, 48K
+        let pt = table(r + 0xc000, &[(0, r + 0x4000), (1, r + 0x8000), (2, r + 0xc000)]);
+        for va in [0x2000, 0x3000, 0x4000, 0x5000, 0x6000, 0x9000] {
+            assert_eq!(pde_walk(r | 1 << 1 | 1, &pt, va + 0x123), Ok(r + 0xc000 + 0x123), "c1 {va:#x}");
+        }
+        let r = 0x2f80_0000; // c5-a, c5-b: code 5 (4 MiB), one block at the table page
+        let pt = table(r + 0x3f_f000, &[(0, r)]);
+        for va in [0x3f_c000, 0x3f_d000, 0x3f_e000, 0x3f_f000] {
+            assert_eq!(pde_walk(r | 5 << 1 | 1, &pt, va), Ok(r + 0x3f_f000), "c5 {va:#x}");
+        }
+        let r = 0x043c_8000; // s0-kcopy: code 0, the reference walk
+        let pt = table(r + 0x7000, &[(0, r + 0x1000), (1, r + 0x2000), (2, r + 0x3000)]);
+        let got: Vec<_> = (0..4).map(|p| pde_walk(r | 1, &pt, p << 12).unwrap()).collect();
+        assert_eq!(got, [r + 0x1000, r + 0x2000, r + 0x3000, r + 0x7000]);
+    }
+
+    #[test]
+    fn the_pde_bits_11_4_do_not_offset_the_table_as_the_r30_pde_ptoff_rows() {
+        // E1118 (c4-o, held out): code 4 (1 MiB), the PDE's bits 11:4 = 0x40, the real table at
+        // entry 256, a decoy at 0: entries 254 to 257 from the page's start (trap, trap, 1:0, 2:0)
+        let r = 0x2f80_0000;
+        let (b0, b1, b2) = (r + 0x10_0000, r + 0x20_0000, r + 0x30_0000);
+        let pt = table(b2, &[(0, b1), (1, b2), (2, b0), (256, b0), (257, b1), (258, b2)]);
+        let got: Vec<_> =
+            (254..258).map(|p| pde_walk(r | 0x400 | 4 << 1 | 1, &pt, p << 12).unwrap()).collect();
+        assert_eq!(got, [b2, b2, b0, b1]);
+    }
+
+    #[test]
+    fn the_unnamed_size_codes_neither_fault_nor_stall_as_the_r30_pde_f67_rows() {
+        // E1119 (f67, 4 of 4): codes 6 and 7 over a table whose entry i names page i (entry 0
+        // page 1) read pages 4 to 7 for VA 16K to 32K
+        let r = 0x2f80_0000;
+        let mut pt: Vec<u32> = (0..1024).map(|i: u32| (r + i.max(1) * 0x1000) | 1).collect();
+        pt[0] = (r + 0x1000) | 1;
+        for code in [6, 7] {
+            let got: Vec<_> = (4..8).map(|p| pde_walk(r | code << 1 | 1, &pt, p << 12).unwrap()).collect();
+            assert_eq!(got, [r + 0x4000, r + 0x5000, r + 0x6000, r + 0x7000], "code {code}");
+        }
+    }
+
+    #[test]
+    fn a_pde_walk_no_row_ran_is_refused() {
+        let pt = table(0x1000, &[]);
+        let refused = |pde, pt: &[u32], va| matches!(pde_walk(pde, pt, va), Err(Outcome::Unsupported { .. }));
+        assert!(refused(0x2f80_0002, &pt, 0), "a PDE without VALID: not run");
+        let mut bad = pt.clone();
+        bad[3] = 0x5000;
+        assert!(refused(0x2f80_0001, &bad, 0x3000), "an entry without VALID under a large code: not run");
+        bad[3] = 0x5000 | 0x3;
+        assert!(refused(0x2f80_0003, &bad, 0x3000), "PTE flags under a large code: not run");
+        assert!(refused(0x2f80_0003, &pt, 0x40_0000), "past the 4 MiB slot");
+        assert!(refused(0x2f80_0003, &pt[..512], 0x20_0000), "a table that is not 1024 entries");
     }
 
     #[test]

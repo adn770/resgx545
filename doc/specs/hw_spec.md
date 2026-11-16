@@ -135,12 +135,15 @@ Key registers:
   (`SGX_MMU_PD_SHIFT` 10, mask `0xFFC00000`), page table index (`SGX_MMU_PT_SHIFT` 10, mask
   `0x003FF000`), page offset (`SGX_MMU_PAGE_SHIFT` 12).
 - **PDE** (`sgxmmu.h:45-52`): bit 0 `VALID`; bits 1-3 the page size (4K, 16K, 64K, 256K, 1M,
-  4M); address mask `0xFFFFF000`. The 36-bit layout does not apply (§2). No record shows a run
-  with a size other than the smallest (Q109). The round 30 kernel's debugfs `vm_pde_addr`,
-  `vm_pde_size` and `vm_pde_layout` (fork branch r30-kernel a8c89868592a, 8bc0877e8603; not
-  landed, not booted) map one client 4 MiB slot through a PDE of a chosen code over a region the
-  driver owns, every 4 KiB of it tagged, read back by `vm_large` (HACKING.md, "Known tool
-  weaknesses"); nothing is measured with it yet.
+  4M); address mask `0xFFFFF000`. The 36-bit layout does not apply (§2). **On the SGX545 the
+  size field is not taken:** a client PDE with any code 0 to 7 is walked as a table of 4 KiB
+  entries, entry va[21:12], the entry's address plus va[11:0]; codes 1 to 5 read and wrote the
+  pages the 4 KiB walk names, never the large page (E1117), the PDE's bits 11:4 do not offset the
+  table (E1118), and the unnamed codes 6 and 7 neither fault nor stall (E1119; BIF_INT_STAT 0x80000
+  and BIF_FAULT 0 after each job). Measured through the transfer's texture reads and pixel writes
+  with the fork's debugfs `vm_pde_addr`, `vm_pde_size`, `vm_pde_layout` and `vm_large` (fork
+  8bc0877e8603, module 7CE8E38E; r30-pde); the EDM's and the kernel's directories and the render
+  requestors were not tried.
 - **PTE** (`sgxmmu.h:65-69`): `VALID` `0x1`, `WRITEONLY` `0x2`, `READONLY` `0x4`,
   `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`. A write to a
   read-only page faults (E021, E319). The round 8 kernel's debugfs `vm_pte_flags` puts the
