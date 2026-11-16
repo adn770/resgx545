@@ -218,8 +218,8 @@ list.
   and no record explains do: the command's CR_MTE_CTRL ... (E180, E650, E652)
 - `Q008` texture, low: how is the luma compared at the luma key's high cut, where five colours with
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
-- `Q010` texture, low: which job clears colour-space set 0 between jobs, given that a copy that does
-  not load it converts with the last loaded words across a ... (E1097, E1103, E1112)
+- `Q010` texture, low: is the kit's health triangle, the job E1134 found to clear colour-space set 0
+  between jobs (a copy without the load reads zeros after it, ... (E1103, E1112, E1134)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
@@ -279,9 +279,12 @@ list.
 
 ## Recent records
 
-43 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+44 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1134` texture, 2026-11-16: r34-q010 stage c (Q010, 32 jobs, safe): the kit's health triangle
+  clears colour-space set 0 and the health fill does not: after a BT.601 load, a copy without the
+  load read black 0xd3522437a14b6325 ...
 - `E1133` platform, 2026-11-16: r33-tim2 on module 7CE8E38E (fwsim's tim, E1130; the rerun of
   E1131), stages t1 (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER
   alone), regtimeline over plain 64x64 ...
@@ -414,9 +417,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-100 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+101 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r34-q010`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r33-tim2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r33-tim`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r32-misc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -565,7 +570,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 8 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 9 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

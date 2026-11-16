@@ -416,7 +416,8 @@ pub struct Machine {
     pub csc_unloaded: bool,
     /// The words colour-space set 0 holds for this job, where known: the last load before it in
     /// its batch (init.job.csc; E1097, E1103: a job without the load flag reads the last load's
-    /// set). The YUV formats convert through it (tex::Sample::csc).
+    /// set; the kit's health triangle, a 64 x 64 render, between leaves zeros, E1134). The YUV
+    /// formats convert through it (tex::Sample::csc).
     pub csc: Option<[u32; 5]>,
     /// The registers holding a value the hardware may not have (bank, number), with why:
     /// reading one stops the program.

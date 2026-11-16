@@ -9632,6 +9632,16 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, RE, infer; data: `tools/fwsim/seeds.toml`, `crates/pysgx/tests/test_fwsim_m2.py`,
   `render-closing-r33-tim2:out/20261116-213803/t1/`,
   `render-closing-r33-tim2:out/20261116-213803/t1d/`, `render-closing-r33-tim2:fold/`.*
+- `E1134` r34-q010 stage c (Q010, 32 jobs, safe): the kit's health triangle clears colour-space set
+  0 and the health fill does not: after a BT.601 load, a copy without the load read black
+  0xd3522437a14b6325 after a t10 `tri` (t2a-rd, t2b-rd) and after the fill-then-triangle pair
+  (t6-rd), and E037's 0xb6067a95fa98de2d after a t10 `fill` (t1a-rd, t1b-rd), a plain copy (t3a-rd,
+  t3b-rd), 60 s and 120 s idle (t4-rd, t5-rd) and a debugfs reset alone (t0a-rd, t0b-rd, controls);
+  frozen 'H-TRI ... (9 of 9 rows decided)', H-FILL '5 held, 4 FAILED', H-BOTH '7 held, 2 FAILED',
+  H-NONE '6 held, 3 FAILED', H-IDLE and H-COPYNL '0 held, 2 FAILED', every one of 15 controls
+  passed, and the frozen Q010 rule printed 'one job hypothesis, H-TRI: RETIRE-CAPABLE'.
+  *texture; HW; data: `render-closing-r34-q010:out/20261116-231015/c/`,
+  `render-closing-r34-q010:fold/`.*
 
 ## By unit
 
@@ -9723,7 +9733,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
 E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
-E1067, E1097, E1103, E1105, E1112.
+E1067, E1097, E1103, E1105, E1112, E1134.
 
 ### transfer
 
