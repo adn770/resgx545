@@ -36,7 +36,7 @@ list.
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
   tag-5 OR that of lane 0 of the quad in a job whose words ... (E878, E880, E905)
 - `Q111` platform, high: which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2
-  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1121, E1122, E1123)
+  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1122, E1123, E1130)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
@@ -279,9 +279,12 @@ list.
 
 ## Recent records
 
-36 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+37 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1130` edm, 2026-11-16: fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1
+  c-off kicked as our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the
+  kick's CR_CACHE_CTRL write ...
 - `E1125` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k2, cannot tell by its frozen
   premise: CR_PDS_REG_0A78 at each of its 64 values on two shuffled passes before a job of six
   renders of 500 small triangles ...

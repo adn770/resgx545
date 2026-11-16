@@ -210,6 +210,12 @@ impl State {
         self.trace(|| Ev::RegWrite { index, value, host });
     }
 
+    /// An effect of a task (a register write, a store, an emit), which a replayed read the
+    /// hardware model has not proven a spin may not precede (hw::HwModel::replay).
+    fn effect(&mut self) -> Result<(), Error> {
+        self.hw.as_mut().map_or(Ok(()), HwModel::effect)
+    }
+
     fn trace(&mut self, e: impl FnOnce() -> Ev) {
         if let Some(t) = &mut self.tracer {
             t.record(&e());
@@ -550,8 +556,14 @@ impl Sgx {
             }
             let pc = m.pc;
             bus.st.trace(|| Ev::Insn { unit: TraceUnit::Usse, base, pc });
+            if let Some(hw) = &mut bus.st.hw {
+                hw.at(base, pc);
+                if hw.waits_at() == Some((base, pc)) {
+                    hw.arrive(base, pc, || spin_key(&m));
+                }
+            }
             match m.step(&prog, &mut bus) {
-                Ok(true) => break Ok(()),
+                Ok(true) => break bus.st.hw.as_mut().map_or(Ok(()), HwModel::task_end),
                 Ok(false) => {}
                 Err(e) => break Err(e),
             }
@@ -564,6 +576,107 @@ impl Sgx {
         (self.st.sa, self.st.sa_written) = (m.sa, m.written.sa);
         r.map_err(|e| context(e, &format!("task 0x{base:08x}+{pc:#x}")))
     }
+}
+
+/// A task's whole state between instructions, but its pc and step count, as words: two arrivals
+/// at a replayed read with the same key and nothing written in between are a spin
+/// (hw::HwModel::arrive). Every field is named, so a new one does not go unseen; a state the key
+/// cannot hold whole (bounds, unknown values, a quad) gets a fresh nonce and proves no spin.
+fn spin_key(m: &Machine) -> Vec<u32> {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static NONCE: AtomicU32 = AtomicU32::new(0);
+    let Machine {
+        core: _,
+        pixel,
+        tri_pixel,
+        vertex,
+        r,
+        i,
+        o,
+        pa,
+        sa,
+        p,
+        p_set,
+        pc: _,
+        link,
+        link_set,
+        steps: _,
+        written,
+        pending,
+        pending_unknown,
+        moe_inc,
+        moe_swizzle,
+        moe_base,
+        moe_addr,
+        moe_range,
+        index,
+        quad,
+        quad_i1,
+        temps,
+        near,
+        uniform,
+        bounds,
+        near_mem,
+        now: _,
+        firh_latch,
+        firh_written,
+        fitted,
+        coeffs,
+        csc_unloaded,
+        csc,
+        unknown,
+        phase,
+        vertex_task,
+        code_index,
+        edm_task,
+        mov_dest,
+        locks,
+    } = m;
+    let mut k: Vec<u32> = Vec::with_capacity(700);
+    if pixel.is_some()
+        || vertex.is_some()
+        || quad.is_some()
+        || coeffs.is_some()
+        || !bounds.is_empty()
+        || !near_mem.is_empty()
+        || !unknown.is_empty()
+        || !pending_unknown.is_empty()
+    {
+        k.push(NONCE.fetch_add(1, Ordering::Relaxed));
+        k.push(u32::MAX);
+    }
+    let flag = |b: bool| u32::from(b);
+    k.extend(r.iter().chain(i).chain(o).chain(pa).chain(sa));
+    k.extend(p.iter().map(|&b| flag(b)));
+    k.extend([u32::from(*p_set), *link, flag(*link_set), flag(*tri_pixel), flag(*near), flag(*uniform)]);
+    for w in [written.r, written.o, written.pa, written.sa] {
+        k.extend([w as u32, (w >> 32) as u32, (w >> 64) as u32, (w >> 96) as u32]);
+    }
+    k.extend([u32::from(written.i), u32::from(written.index)]);
+    k.push(pending.len() as u32);
+    for (drc, reg, v) in pending {
+        let (bank, n) = match reg {
+            crate::usse::Reg::R(n) => (0, *n),
+            crate::usse::Reg::Pa(n) => (1, *n),
+        };
+        k.extend([*drc, bank, n as u32, *v]);
+    }
+    let opt4 = |o: &Option<[i32; 4]>| {
+        o.map_or([u32::MAX; 5], |a| [0, a[0] as u32, a[1] as u32, a[2] as u32, a[3] as u32])
+    };
+    k.extend(opt4(moe_inc));
+    for s in moe_swizzle {
+        k.extend(opt4(s));
+    }
+    k.extend(moe_base.iter().chain(moe_range).chain(&moe_addr.1).chain(index));
+    k.extend(moe_addr.0.iter().map(|&x| x as u32));
+    k.extend([quad_i1.map_or(u32::MAX, |v| v), *temps as u32, flag(*fitted), flag(*csc_unloaded)]);
+    k.extend(firh_latch.iter().map(|b| b.map_or(u32::MAX, u32::from)));
+    k.extend(firh_written.iter().map(|&b| flag(b)));
+    k.extend(csc.map_or([u32::MAX; 5], |c| c));
+    k.extend(phase.map_or([u32::MAX; 2], |(a, b)| [a as u32, b as u32]));
+    k.extend([flag(*vertex_task), *code_index, flag(*edm_task), flag(*mov_dest), u32::from(*locks)]);
+    k
 }
 
 /// The bus one piece of work sees: memory, the registers, and where its PDS
@@ -595,6 +708,7 @@ impl Bus for Unit<'_> {
     }
 
     fn store32(&mut self, addr: u32, value: u32) -> Result<(), Error> {
+        self.st.effect()?;
         self.st.mem.store(addr, value)?;
         self.st.trace(|| Ev::Store { addr, value });
         Ok(())
@@ -607,6 +721,7 @@ impl Bus for Unit<'_> {
     }
 
     fn reg_write(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        self.st.effect()?;
         self.st.clear_event(index, value)?;
         self.st.store_reg(index, value, false);
         Ok(())
@@ -618,6 +733,7 @@ impl Bus for Unit<'_> {
         if !text.starts_with("emitpds") {
             return Err(why(format!("{text}: no unit for this emit")));
         }
+        self.st.effect()?;
         let data = (s[0] >> 23 & 31) as usize * 4;
         self.st.queue.push_back(Work::Pds {
             addr: s[1] << 4,
@@ -1198,6 +1314,65 @@ mod tests {
         s.st.mem.map(CODE, &usse("mov r1, pclink\nstr #65, r1\nnop.end"));
         task_at(&mut s, 0);
         assert!(refused(s.run(100)));
+    }
+
+    /// A hardware model replaying CR_EVENT_STATUS after a kick's CR_CACHE_CTRL write, armed.
+    fn replaying(s: &mut Sgx) {
+        use crate::hw::{CACHE_CTRL, EVENT_STATUS};
+        let mut hw = HwModel::default();
+        hw.replay(
+            EVENT_STATUS,
+            (CACHE_CTRL, 0x1000_ffff),
+            &[0x2000_0000, 0x2400_0000, 0x2000_0000],
+            &["the rise", "the fall", "after the fall"],
+            "E1115",
+        )
+        .unwrap();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        s.st.hw = Some(hw);
+    }
+
+    #[test]
+    fn a_task_spinning_on_a_replayed_register_moves_on_with_the_kept_order() {
+        // the poll's state is the same at each read while the word lacks bit 26: a spin, so it
+        // reads the next kept word and goes on to its write
+        let mut s = sgx();
+        replaying(&mut s);
+        let poll = "mov r1, #0x04000000\nldr r0, #75, drc0\nwdf drc0\nand.testtaz.chan0 !c0, p0, r0, r1\n\
+                    p0 br -#0x00000003\nstr #77, r1\nnop.end";
+        s.st.mem.map(CODE, &usse(poll));
+        task_at(&mut s, 0);
+        s.run(1000).unwrap();
+        assert_eq!(s.st.regs[&reg::EVENT_HOST_CLEAR], 0x0400_0000);
+        let hw = s.st.hw.as_ref().unwrap();
+        assert_eq!(hw.answered["replay"], 3);
+        assert_eq!(hw.replay_log().len(), 1);
+    }
+
+    #[test]
+    fn a_read_the_task_acts_on_without_a_spin_stops_naming_the_measurement() {
+        // read once and written on: whether the word had changed by then is a time
+        let mut s = sgx();
+        replaying(&mut s);
+        s.st.mem.map(CODE, &usse("ldr r0, #75, drc0\nwdf drc0\nstr #64, r0\nnop.end"));
+        task_at(&mut s, 0);
+        let r = s.run(1000);
+        assert!(matches!(r, Err(Error::Unsupported { ref why, .. }) if why.contains("the rise")), "{r:?}");
+        assert!(!s.st.regs.contains_key(&64));
+    }
+
+    #[test]
+    fn a_poll_that_counts_is_no_spin() {
+        // a loop whose state changes at every read never proves a spin: the step limit, not a word
+        let mut s = sgx();
+        replaying(&mut s);
+        let poll = "mov r1, #0x04000000\nmov r2, #0x00000000\nmov r3, #0x00000001\nldr r0, #75, drc0\nwdf drc0\n\
+                    iadd32.skipinv.testtanz.chan0 r2, p1, r3, r2\nand.testtaz.chan0 !c0, p0, r0, r1\np0 br -#0x00000004\nnop.end";
+        s.st.mem.map(CODE, &usse(poll));
+        task_at(&mut s, 0);
+        assert_eq!(s.run(500), Err(Error::StepLimit));
+        assert!(s.st.hw.as_ref().unwrap().replay_log().is_empty());
     }
 
     #[test]

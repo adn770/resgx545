@@ -32,7 +32,7 @@ pytestmark = [
 
 SLOT0 = 6                                       # PDS #13 slot 0's start index (E146)
 K = 2                                           # the count byte after the arm (E768)
-CACHE_CTRL, EVENT_STATUS = 0x0804 // 4, 0x012C // 4
+CACHE_CTRL, EVENT_STATUS, EVENT_HOST_CLEAR = 0x0804 // 4, 0x012C // 4, 0x0134 // 4
 SESSION = kick.SESSIONS["r9-c-off"]
 
 
@@ -104,3 +104,45 @@ def test_the_kick_scenario_writes_its_run_directory_without_instruction_text(tmp
     for src in (text, gzip.open(out / "trace.jsonl.gz", "rt").read()):
         words = set(src.replace('"', " ").replace(",", " ").split())
         assert not words & mnemonics, words & mnemonics
+
+
+@pytest.fixture(scope="module")
+def replayed(built):
+    r = fwsim.Run(FW, DATA, trace="memory", replay=fwsim.load_replay())
+    r.boot()
+    r.arm()
+    r.tick()
+    r.map_render(built)
+    n = len(r.events())
+    with pytest.raises(Exception) as stop:
+        r.kick_render()
+    return r, r.events()[n:], stop.value
+
+
+def test_without_replay_the_strict_rule_is_the_default(kicked):
+    """Replay is explicit per run: the run above (no replay) stops on the 0x012c read."""
+    r, _, _ = kicked
+    assert "replay" not in r.s.hw_answered() and r.s.hw_replay_log() == []
+
+
+def test_under_replay_the_kick_pass_spins_on_event_status_then_reads_bit_26_and_clears_it(replayed):
+    """E1130 (fwsim, replay of E1115, E1120, E1123): after its CR_CACHE_CTRL write the kick pass
+    reads CR_EVENT_STATUS with its state unchanged between reads while the word is 0x20000000 (a
+    spin, so how long the hardware holds the word changes nothing), reads 0x24000000 when the kept
+    order moves on, and writes bit 26 to CR_EVENT_HOST_CLEAR; no 0x012c read is refused."""
+    r, evs, stop = replayed
+    reads = [int(e["value"], 16) for e in evs if e["ev"] == "rd" and int(e["reg"], 16) == EVENT_STATUS * 4]
+    assert reads[0] == 0x20000000 and reads[-1] == 0x24000000 and set(reads) == {0x20000000, 0x24000000}
+    assert r.s.hw_replay_log() == [
+        "0x012c: a spin on word 0 moved to word 1 0x24000000 (E1115, E1120, E1123)"]
+    writes = [(int(e["reg"], 16), int(e["value"], 16)) for e in evs if e["ev"] == "wr" and not e["host"]]
+    assert (EVENT_HOST_CLEAR * 4, 0x04000000) in writes
+    assert EVENT_STATUS not in r.s.hw_refused() and "0x012c" not in str(stop)
+
+
+def test_under_replay_the_next_stop_is_the_counter_of_a_program_the_pass_emits(replayed):
+    """E1130: the pass then emits a PDS program that reads the counter tim, which no run input
+    gives for a program a task emits (R1, R3): the run stops there, not on a register read."""
+    r, evs, stop = replayed
+    assert "tim is not known" in str(stop)
+    assert r.s.hw_refused() == {}

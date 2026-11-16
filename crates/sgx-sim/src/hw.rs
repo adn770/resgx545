@@ -15,6 +15,17 @@
 //! Anything else stops the run with `Error::Unsupported` naming the register, and the open
 //! questions the caller noted for it. No default 0, no "last seen". The model knows nothing
 //! of the firmware: which registers it reads is what a run finds out.
+//!
+//! A run may also replay a kept series (`HwModel::replay`, explicit per run, off by default): once
+//! the run writes a trigger after a served kick, a register reads the words a kept series shows
+//! it taking, in their measured order, without a clock. The model has no time inside a pass, so
+//! a read answers the current word only provisionally; the replay moves on to the next word only
+//! where the time between reads cannot matter, a proven spin (the task's state at the read the
+//! same on two arrivals, nothing written in between: the firmware would read the word forever,
+//! so how long the hardware held it changes nothing). The read the spin moves on is the first one
+//! after the change. A provisional read followed by anything the run does (a register write, a
+//! store, an emit, the task's end, a read elsewhere) depended on when the word changes: the run
+//! stops, naming the measurement the rule lacks for that word.
 
 use crate::Error;
 use std::collections::BTreeMap;
@@ -30,6 +41,8 @@ pub enum Source {
     Seed,
     /// The kept snapshot's reset value.
     Reset,
+    /// A kept series replayed in its measured order (`HwModel::replay`).
+    Replay,
 }
 
 impl Source {
@@ -39,6 +52,7 @@ impl Source {
             Source::Written => "written".into(),
             Source::Seed => "seed".into(),
             Source::Reset => "reset".into(),
+            Source::Replay => "replay".into(),
         }
     }
 }
@@ -69,6 +83,29 @@ pub const EVENT_STATUS: u32 = 0x012c / 4;
 /// not measured, and a read is refused.
 pub const CACHE_CTRL: u32 = 0x0804 / 4;
 
+/// A read the replay answered that no spin has proven yet: where, and the run's effects then.
+#[derive(Clone, Debug)]
+struct Provisional {
+    at: (u32, usize),
+    effects: u64,
+    /// The task's state on the last arrival at the read (`HwModel::arrive`).
+    key: Option<Vec<u32>>,
+}
+
+/// A kept series replayed for one register (`HwModel::replay`).
+#[derive(Clone, Debug)]
+struct Replay {
+    trigger: (u32, u32),
+    words: Vec<u32>,
+    /// For each word, the measurement that would place its end against the run's reads.
+    missing: Vec<String>,
+    cite: String,
+    armed: bool,
+    k: usize,
+    prov: Option<Provisional>,
+    advance: bool,
+}
+
 #[derive(Clone, Debug)]
 struct Counted {
     value: u32,
@@ -89,6 +126,16 @@ pub struct HwModel {
     /// What the run wrote to CR_CACHE_CTRL after the kick that ended `cache_idle`, if anything.
     cache_written: Option<u32>,
     open: BTreeMap<u32, String>,
+    /// The kept series replayed, by register (none unless a run asks).
+    replays: BTreeMap<u32, Replay>,
+    /// A non-tick event was served (a kick): what arms a replay's trigger.
+    kicked: bool,
+    /// The task instruction running (code base, index), set by the caller before each step.
+    pc: Option<(u32, usize)>,
+    /// The run's effects so far (register writes, stores, emits) as the caller reports them.
+    effects: u64,
+    /// What each replay did, in order (for a run's facts).
+    log: Vec<String>,
     /// The reads refused, by register: what a run lists (offsets and counts).
     pub refused: BTreeMap<u32, u32>,
     /// The reads answered, by source name (counts).
@@ -160,8 +207,166 @@ impl HwModel {
     /// kick is what a later read answers (E1122); before the kick a write changes nothing the rule
     /// answers (the reset word, E1120).
     pub fn on_write(&mut self, index: u32, value: u32) {
+        let kicked = self.kicked;
+        for r in self.replays.values_mut() {
+            if kicked && !r.armed && r.trigger == (index, value) {
+                r.armed = true;
+            }
+        }
         if index == CACHE_CTRL && self.cache_idle.as_ref().is_some_and(|c| c.lost.is_some()) {
             self.cache_written = Some(value);
+        }
+    }
+
+    /// A kept series of `index` replayed in its measured order `words` once the run writes
+    /// `trigger` (register, value) after a served kick (see the module's notes). `missing[k]`
+    /// names the measurement that would place the end of `words[k]` against a read, quoted when
+    /// the run stops for want of it. Refused without an E-number, without words, or without a
+    /// measurement named for each word.
+    pub fn replay(
+        &mut self,
+        index: u32,
+        trigger: (u32, u32),
+        words: &[u32],
+        missing: &[&str],
+        cite: &str,
+    ) -> Result<(), String> {
+        if !cites_a_record(cite) {
+            return Err(format!("the replay of register 0x{:04x} cites no record: {cite:?}", index * 4));
+        }
+        if words.is_empty() || missing.len() != words.len() {
+            return Err(format!(
+                "the replay of register 0x{:04x} needs its words and, for each, what decides its end",
+                index * 4
+            ));
+        }
+        self.replays.insert(
+            index,
+            Replay {
+                trigger,
+                words: words.to_vec(),
+                missing: missing.iter().map(|m| m.to_string()).collect(),
+                cite: cite.to_string(),
+                armed: false,
+                k: 0,
+                prov: None,
+                advance: false,
+            },
+        );
+        Ok(())
+    }
+
+    /// The task instruction about to run (code base, index): where a replayed read is.
+    pub fn at(&mut self, base: u32, pc: usize) {
+        self.pc = Some((base, pc));
+    }
+
+    /// Where a provisional replayed read waits for its spin to be proven, if anywhere: the
+    /// caller computes the task's state there (`arrive`) and nowhere else.
+    pub fn waits_at(&self) -> Option<(u32, usize)> {
+        self.replays.values().find_map(|r| r.prov.as_ref().filter(|_| !r.advance).map(|p| p.at))
+    }
+
+    /// The task is about to run (base, pc) again with the state `key()`: the same state as on the
+    /// arrival before, with nothing done in between, proves a spin, and the read there moves on.
+    pub fn arrive(&mut self, base: u32, pc: usize, key: impl FnOnce() -> Vec<u32>) {
+        let effects = self.effects;
+        let Some(r) = self.replays.values_mut().find(|r| r.prov.as_ref().is_some_and(|p| p.at == (base, pc)))
+        else {
+            return;
+        };
+        let p = r.prov.as_mut().unwrap();
+        if p.effects != effects {
+            return;
+        }
+        let k = key();
+        if p.key.as_ref() == Some(&k) {
+            r.advance = true;
+        } else {
+            p.key = Some(k);
+        }
+    }
+
+    /// An effect of the run (a register write, a store, an emit): refused while a replayed read
+    /// waits unproven, since what was read then depended on time.
+    pub fn effect(&mut self) -> Result<(), Error> {
+        self.effects += 1;
+        self.unproven("the run acted on it")
+    }
+
+    /// The task ended: refused while a replayed read waits unproven.
+    pub fn task_end(&mut self) -> Result<(), Error> {
+        self.unproven("the task ended after it")
+    }
+
+    /// What the replays did, in order: each word a spin moved on to (for a run's facts).
+    pub fn replay_log(&self) -> &[String] {
+        &self.log
+    }
+
+    fn unproven(&mut self, what: &str) -> Result<(), Error> {
+        let Some((index, r)) = self.replays.iter().find(|(_, r)| r.prov.is_some()) else {
+            return Ok(());
+        };
+        let why = format!(
+            "reads register 0x{:04x} as {:#010x} (word {} of the kept series, {}) with no spin proven, and {what}: \
+             the answer depends on when the word ends, which needs {}",
+            index * 4,
+            r.words[r.k],
+            r.k,
+            r.cite,
+            r.missing[r.k]
+        );
+        let index = *index;
+        *self.refused.entry(index).or_default() += 1;
+        Err(Error::Unsupported { pc: 0, text: String::new(), why })
+    }
+
+    /// A read of a replayed register, once armed (`None`: the replay does not answer it).
+    fn replayed(&mut self, index: u32) -> Option<Result<(u32, Source), Error>> {
+        let (effects, at) = (self.effects, self.pc.unwrap_or((0, usize::MAX)));
+        let r = self.replays.get_mut(&index).filter(|r| r.armed)?;
+        let refuse = |r: &Replay, why: String| {
+            Some(Err(Error::Unsupported {
+                pc: 0,
+                text: String::new(),
+                why: format!("reads register 0x{:04x} ({}): {why}", index * 4, r.cite),
+            }))
+        };
+        if r.advance {
+            r.advance = false;
+            r.prov = None;
+            if r.k + 1 == r.words.len() {
+                let why = format!(
+                    "the task spins on {:#010x}, the last word of the kept series; what follows needs {}",
+                    r.words[r.k], r.missing[r.k]
+                );
+                return refuse(r, why);
+            }
+            r.k += 1;
+            self.log.push(format!(
+                "0x{:04x}: a spin on word {} moved to word {} {:#010x} ({})",
+                index * 4,
+                r.k - 1,
+                r.k,
+                r.words[r.k],
+                r.cite
+            ));
+            return Some(Ok((r.words[r.k], Source::Replay)));
+        }
+        match &r.prov {
+            Some(p) if p.at != at => {
+                let why = format!(
+                    "a second read before the first was proven a spin; when word {} ends needs {}",
+                    r.k, r.missing[r.k]
+                );
+                refuse(r, why)
+            }
+            Some(_) => Some(Ok((r.words[r.k], Source::Replay))),
+            None => {
+                r.prov = Some(Provisional { at, effects, key: None });
+                Some(Ok((r.words[r.k], Source::Replay)))
+            }
         }
     }
 
@@ -174,6 +379,7 @@ impl HwModel {
     /// advances the served-event count; anything else makes it unknown (E009 ran ticks only).
     pub fn on_event(&mut self, ir0: Option<u32>, ir1: u32) {
         let tick = ir0.is_some_and(|v| v & 2 != 0) && ir1 & 0x00ff_ffff == 0;
+        self.kicked |= !tick;
         if let Some(c) = &mut self.event_idle
             && c.lost.is_none()
             && !tick
@@ -218,7 +424,10 @@ impl HwModel {
 
     /// Answer a read of `index`; `written` is what the run wrote there, if anything.
     pub fn read(&mut self, index: u32, written: Option<u32>) -> Result<(u32, Source), Error> {
-        let r = self.answer(index, written);
+        let r = match self.replayed(index) {
+            Some(r) => r,
+            None => self.answer(index, written),
+        };
         match &r {
             Ok((_, s)) => *self.answered.entry(s.name()).or_default() += 1,
             Err(_) => *self.refused.entry(index).or_default() += 1,
@@ -288,6 +497,123 @@ mod tests {
 
     fn refused_naming(r: Result<(u32, Source), Error>, reg: &str) -> bool {
         matches!(r, Err(Error::Unsupported { ref why, .. }) if why.contains(reg))
+    }
+
+    fn replayed() -> HwModel {
+        // the kick's CR_CACHE_CTRL write arms a replay of CR_EVENT_STATUS in the measured order
+        let mut hw = HwModel::default();
+        hw.idle_event_status(0x2000_0000, "E1115").unwrap();
+        hw.replay(
+            EVENT_STATUS,
+            (CACHE_CTRL, 0x1000_ffff),
+            &[0x2000_0000, 0x2400_0000, 0x2000_0000],
+            &["bit 26's rise against the read", "bit 26's fall against the read", "after the fall"],
+            "E1115, E1120, E1123",
+        )
+        .unwrap();
+        hw
+    }
+
+    #[test]
+    fn a_replay_rule_cites_a_record_and_names_what_decides_each_word() {
+        let mut hw = HwModel::default();
+        assert!(hw.replay(EVENT_STATUS, (CACHE_CTRL, 1), &[1, 2], &["a", "b"], "measured").is_err());
+        assert!(hw.replay(EVENT_STATUS, (CACHE_CTRL, 1), &[1, 2], &["a"], "E1115").is_err());
+        assert!(hw.replay(EVENT_STATUS, (CACHE_CTRL, 1), &[], &[], "E1115").is_err());
+        hw.replay(EVENT_STATUS, (CACHE_CTRL, 1), &[1, 2], &["a", "b"], "E1115").unwrap();
+    }
+
+    #[test]
+    fn a_replay_is_armed_only_by_its_trigger_written_after_a_kick() {
+        let mut hw = replayed();
+        // before a kick the trigger arms nothing: the idle rule answers
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        hw.at(0x100, 4);
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap(), (0x2000_0000, Source::Rule("E1115")));
+        hw.on_event(Some(0), 0x0200_0100);
+        // after the kick, before the trigger: the strict rule refuses as before
+        assert!(refused_naming(hw.read(EVENT_STATUS, None), "0x012c"));
+        hw.on_write(CACHE_CTRL, 0x0000_1234);
+        assert!(refused_naming(hw.read(EVENT_STATUS, None), "0x012c"));
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap(), (0x2000_0000, Source::Replay));
+    }
+
+    #[test]
+    fn a_proven_spin_moves_the_replay_to_the_next_word_and_the_read_after_it_is_definite() {
+        let mut hw = replayed();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        let key = vec![1, 2, 3];
+        hw.at(0x100, 4);
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap().0, 0x2000_0000);
+        assert_eq!(hw.waits_at(), Some((0x100, 4)));
+        // the second arrival takes the state, the third finds it again: a fixed point
+        hw.arrive(0x100, 4, || key.clone());
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap().0, 0x2000_0000);
+        hw.arrive(0x100, 4, || key.clone());
+        assert_eq!(hw.read(EVENT_STATUS, None).unwrap(), (0x2400_0000, Source::Replay));
+        // the read the spin moved on is definite: the pass may act on it
+        assert_eq!(hw.waits_at(), None);
+        hw.effect().unwrap();
+        assert_eq!(hw.replay_log().len(), 1);
+    }
+
+    #[test]
+    fn a_state_that_changes_between_reads_is_no_spin() {
+        let mut hw = replayed();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        hw.at(0x100, 4);
+        for n in 0..5u32 {
+            hw.arrive(0x100, 4, || vec![n]);
+            assert_eq!(hw.read(EVENT_STATUS, None).unwrap().0, 0x2000_0000);
+        }
+    }
+
+    #[test]
+    fn an_effect_after_a_read_no_spin_proved_stops_naming_the_measurement() {
+        let mut hw = replayed();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        hw.at(0x100, 4);
+        hw.read(EVENT_STATUS, None).unwrap();
+        let r = hw.effect();
+        assert!(matches!(r, Err(Error::Unsupported { ref why, .. })
+            if why.contains("0x012c") && why.contains("bit 26's rise against the read")));
+        // a pass that ends there stops the same way
+        let mut hw = replayed();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        hw.at(0x100, 4);
+        hw.read(EVENT_STATUS, None).unwrap();
+        assert!(hw.task_end().is_err());
+        // and so does a read elsewhere before the spin is proved
+        let mut hw = replayed();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        hw.at(0x100, 4);
+        hw.read(EVENT_STATUS, None).unwrap();
+        hw.at(0x100, 9);
+        assert!(refused_naming(hw.read(EVENT_STATUS, None), "bit 26's rise"));
+    }
+
+    #[test]
+    fn a_spin_past_the_last_kept_word_stops_naming_it() {
+        let mut hw = replayed();
+        hw.on_event(Some(0), 0x0200_0100);
+        hw.on_write(CACHE_CTRL, 0x1000_ffff);
+        hw.at(0x100, 4);
+        let mut got = vec![];
+        let r = loop {
+            hw.arrive(0x100, 4, || vec![7]);
+            match hw.read(EVENT_STATUS, None) {
+                Ok((v, _)) => got.push(v),
+                Err(e) => break e,
+            }
+        };
+        assert!(matches!(r, Error::Unsupported { ref why, .. } if why.contains("after the fall")));
+        assert!(got.contains(&0x2400_0000) && got.last() == Some(&0x2000_0000));
     }
 
     #[test]

@@ -17,8 +17,12 @@ values, never instruction text; facts.txt holds counts and values only.
 
     tools/fwsim/fwsim.py idle --ticks 1000 --power --out $RESGX545_DATA_PRIVATE/firmware/fwsim/m1-idle
     tools/fwsim/fwsim.py kick --session r9-c-off --out $RESGX545_DATA_PRIVATE/firmware/fwsim/m2-kick
+    tools/fwsim/fwsim.py kick --replay --out $RESGX545_DATA_PRIVATE/firmware/fwsim/m2-kick-replay
 
 The kick scenario (M2) places one kept render job as our kernel built it (kick.py) and kicks it.
+`--replay` (explicit per run; the strict read rules are the default) adds the kept series of
+replay.toml: a register reads the words a kept series shows, in their measured order, moving on
+only at a proven spin (crates/sgx-sim/src/hw.rs HwModel::replay); a fact resting on it is [infer].
 """
 from __future__ import annotations
 
@@ -50,6 +54,7 @@ import kept  # noqa: E402
 import load  # noqa: E402
 
 SEEDS = HERE / "seeds.toml"
+REPLAY = HERE / "replay.toml"
 # The start indices of PDS #13's four slots (E146; E003's CODE_WORD targets of buffer 4).
 SLOTS = {6: 0, 1434: 1, 2766: 2, 3594: 3}
 # HostCtl dwords (hw_spec 12): the init status, the timer clock, the host clock, the ticks.
@@ -124,6 +129,24 @@ def load_seeds(path: pathlib.Path = SEEDS) -> dict:
     return d
 
 
+# the replay kinds the simulator has landed (HwModel::replay): (kind, register)
+LANDED_REPLAYS = {("spin_order", 0x012C)}
+
+
+def load_replay(path: pathlib.Path = REPLAY) -> dict:
+    """replay.toml, every row checked: an E-number in its citation, a landed kind for its
+    register, and a measurement named for each word."""
+    d = tomllib.loads(pathlib.Path(path).read_text())
+    for r in d.get("replay", []):
+        if not E_NUMBER.search(str(r.get("cite", ""))):
+            raise Refused(f"{path}: a replay row cites no record (E-number): {r}")
+        if (r.get("kind"), r.get("reg")) not in LANDED_REPLAYS:
+            raise Refused(f"{path}: no replay kind {r.get('kind')!r} landed for register {r.get('reg')}")
+        if not r.get("words") or len(r.get("missing", [])) != len(r["words"]) or not all(r["missing"]):
+            raise Refused(f"{path}: a replay row names no measurement for each word: {r.get('name')}")
+    return d
+
+
 def layout() -> fwload.Layout:
     import test_sgx_boot
     return test_sgx_boot.layout()
@@ -134,9 +157,11 @@ class Run:
     "memory" (kept in memory, `events()`), or a path under <private>/firmware/fwsim/."""
 
     def __init__(self, fw: pathlib.Path, data: pathlib.Path, *, seeds: dict | None = None,
-                 trace: str | pathlib.Path | None = None, private: pathlib.Path | None = None):
+                 trace: str | pathlib.Path | None = None, private: pathlib.Path | None = None,
+                 replay: dict | None = None):
         self.pysgx = load.pysgx()
         self.seeds = seeds if seeds is not None else load_seeds()
+        self.replay = replay
         self.fw = fw
         self.lay = layout()
         self.boot_data = fwload.load(fwformat.unpack(fw.read_bytes()), self.lay)
@@ -161,6 +186,9 @@ class Run:
                 s.hw_idle_event_status(r["value"], r["cite"])
             else:
                 s.hw_idle_cache_ctrl(r["value"], r["cite"])
+        for r in (replay or {}).get("replay", []):
+            s.hw_replay(r["reg"] // 4, r["trigger_reg"] // 4, r["trigger_value"], r["words"], r["missing"],
+                        r["cite"])
         s.alu_specials_in_movs = True       # PDS #13 passes ir1.l and tim.l on with movs (R5)
         for i, image in self.boot_data.images.items():
             s.map(self.lay.addr[i], image)
@@ -298,6 +326,11 @@ def summary(run: Run, evs: list[dict], phases: list[tuple[str, int, int, list[in
         out.append(f"seed 0x{r['reg']:04x} {r['name']} = 0x{r['value']:08x} ({r['cite']})")
     for r in run.seeds.get("rule", []):
         out.append(f"rule 0x{r['reg']:04x} {r['name']} {r['kind']} from 0x{r['value']:08x} ({r['cite']}) [infer]")
+    for r in (run.replay or {}).get("replay", []):
+        out.append(f"replay 0x{r['reg']:04x} {r['name']} {r['kind']} after 0x{r['trigger_reg']:04x} = "
+                   f"0x{r['trigger_value']:08x}: words {', '.join(f'0x{w:08x}' for w in r['words'])} ({r['cite']}) "
+                   "[infer]")
+    out += [f"replay: {line} [infer]" for line in run.s.hw_replay_log()]
     c = run.seeds["carry"]
     out.append(f"carry at the first tick entry: pclink 0x{c['pclink']:x}, p {c['p']} ({c['cite']})")
     for name, lo, hi, before, after in phases:
@@ -321,6 +354,9 @@ def summary(run: Run, evs: list[dict], phases: list[tuple[str, int, int, list[in
     out.append("answered reads by source: " + ", ".join(f"{k} {v}" for k, v in sorted(run.s.hw_answered().items())))
     if refusal:
         out.append(f"stopped: {refusal}")
+        why = [e for e in evs if e["ev"] == "refusal"]
+        if why:     # the simulator's reason, as traced (no instruction text, FW-7)
+            out.append(f"stopped at: {why[-1]['why']}" + (f" (register {why[-1]['reg']})" if why[-1].get("reg") else ""))
     return out
 
 
@@ -388,7 +424,7 @@ def idle(ticks: int, out: pathlib.Path, power: bool, data: pathlib.Path, fw: pat
 
 
 def render_kick(session: str, ticks: int, out: pathlib.Path, data: pathlib.Path, fw: pathlib.Path,
-                private: pathlib.Path) -> list[str]:
+                private: pathlib.Path, replay: dict | None = None) -> list[str]:
     """The M2 kick scenario (P3): boot, arm, `ticks` tick passes, then one render job of a kept
     session as our kernel built it (kick.build: the session's fork and tool commits), its
     structures placed at their device addresses and the kernel's TA command kicked. Writes the
@@ -398,7 +434,7 @@ def render_kick(session: str, ticks: int, out: pathlib.Path, data: pathlib.Path,
     built = kick.build(s, data)
     out = checked_out(out, private)
     out.mkdir(parents=True, exist_ok=True)
-    run = Run(fw, data, trace=out / "trace.jsonl", private=private)
+    run = Run(fw, data, trace=out / "trace.jsonl", private=private, replay=replay)
     phases = [("boot", run.boot, 1), ("arm", run.arm, 2),
               (f"ticks x{ticks}", lambda: [run.tick() for _ in range(ticks)], ticks),
               ("map", lambda: run.map_render(built), 0), ("render kick", run.kick_render, 1)]
@@ -410,14 +446,17 @@ def render_kick(session: str, ticks: int, out: pathlib.Path, data: pathlib.Path,
              f"TA data 0x{a['tadata']:08x} (0x{a['td_size']:x} bytes)",
              f"kick: TA command data [0, 0x{a['ctx']:08x}], cache control 0x{KICK_CACHE_CONTROL:x}"]
     meta = {"scenario": "render-kick", "session": session, "fork": s.fork, "tool": s.tool,
-            "ticks": ticks, "data": str(data.name)}
+            "ticks": ticks, "data": str(data.name), "replay": replay is not None}
+    if replay is not None:
+        meta["replay_sha256"] = hashlib.sha256(REPLAY.read_bytes()).hexdigest()
     log = scenario(out, run, phases, meta, facts)
     refused = ", ".join(f"0x{i * 4:04x}" for i in sorted(run.s.hw_refused())) or "none"
     reached = "render kick: ok" in log
     with open(out / "facts.txt", "a") as f:
         f.write(f"M2 checks K1-K8 (plan-fwsim.md): {'run to the end of the kick pass' if reached else 'not reached'}"
                 f"; the kick pass {'ended' if reached else 'stopped'} with refused reads {refused} (R1; "
-                "a unit's reading no kept job gives is the replay package's, FW-5 a)\n")
+                + ("replay of replay.toml on, R4: what rests on it is [infer])\n" if replay is not None else
+                   "a unit's reading no kept job gives is the replay package's, FW-5 a)\n"))
     return log
 
 
@@ -444,6 +483,8 @@ def main(argv: list[str] | None = None) -> int:
     k = sub.add_parser("kick", help="boot, arm, N ticks, one kept render job's kick (M2)")
     k.add_argument("--session", default="r9-c-off")
     k.add_argument("--ticks", type=int, default=3)
+    k.add_argument("--replay", action="store_true",
+                   help="replay the kept series of replay.toml (explicit; strict read rules by default)")
     k.add_argument("--out", type=pathlib.Path, required=True)
     args = ap.parse_args(argv)
     private, fw, data = private_dir(), find_fw(), kept.data_dir()
@@ -453,7 +494,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "idle":
         lines = idle(args.ticks, args.out, args.power, data, fw, private)
     else:
-        lines = render_kick(args.session, args.ticks, args.out, data, fw, private)
+        lines = render_kick(args.session, args.ticks, args.out, data, fw, private,
+                            load_replay() if args.replay else None)
     for line in lines:
         print(line)
     return 0

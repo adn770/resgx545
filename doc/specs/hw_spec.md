@@ -514,7 +514,11 @@ firmware's BIF invalidation for cache-control bits 0 and 1, then its own `CACHE_
 paths no job takes], so the hardware does not set bit 28 at the kick. sgx-sim's hardware model
 answers `EVENT_STATUS` with its idle word until a kick is served and refuses it after; it
 answers `CACHE_CTRL` with the reset word until a kick and after it until the run writes the
-register, then the run's write, 0x1000ffff only (crates/sgx-sim/src/hw.rs).
+register, then the run's write, 0x1000ffff only (crates/sgx-sim/src/hw.rs). With the kept order
+replayed after that write (0x20000000, 0x24000000, 0x20000000; explicit per run, moving on only at
+a proven spin), the stock kick pass waits on `MADD_CACHE_INVALCOMPLETE` with no count and, after
+the read that shows it, writes 0x04000000 to `EVENT_HOST_CLEAR` and emits PDS #14 (E1130 [RE,
+infer]): the firmware clears bit 26 itself; whether that write ends the bit is not measured.
 
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
 OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and
