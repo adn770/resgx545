@@ -634,6 +634,12 @@ stays with what a session must do around it.
   only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
   and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
   outside them changes that test first.
+- an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
+  the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
+  the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
+  kit has no own-task job kind: a session runs `emitsa` through `tools/fwtask/fwtask_run.py`
+  (`arm` with `slots=0x1 entry=0`, then `run` jobs of `n` 1 with `slots` [2, 3, 4], the reader's
+  `pa0`-`pa3`, `sa0`-`sa3` and its marker), as phases 11.29 to 11.33 ran own tasks.
 
 ## Simulator coverage baseline
 

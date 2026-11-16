@@ -525,6 +525,18 @@ lets a reviewer check that they stay clean-room; each check is a test.
      kernel's KUnit run the same crafted blobs and compare the reason of each refusal, and
      `test_host_verifier.py` runs the kernel's verifier on the host against the tool's over every
      single-bit change of several blobs and random words of the canonical forms.
+     One `emitpds` form is allowed since round 33 (the user's decision N3 b, 2026-11-16), to
+     measure where an emitted PDS program's `douta` land: exactly the word `emitpds.tasks.taske
+     #0, r2, r3, r4, #0x0`, when on every path r2, r3 and r4 hold the kernel's `pds0`, `pds1` and
+     `pds2` patches (patch kind 3: the control word `(2 << 23) | 0x100`, the address >> 4 of the
+     kernel's PDS image, and 0), at most one in a blob, never reached again from itself or from
+     the blob's entry 1, which a blob with it must have (reasons `EMIT_ARGS`, `EMIT_ONCE`,
+     `EMIT_ENTRY`); every other `emitpds` is an unknown form. The image is ours
+     (`asm/fwtask/pds/emit.s`, written into the fork as `sgx_own_pds.h` by `gen_verify.py pds`):
+     `douta` of TA3DCtl dwords 0 and 2 (the values `sa0` and `sa2` hold) to attributes 0 and 2,
+     PDS #14's targets (E146), then a `doutu` of the blob's entry 1, in a read-only page beside
+     the code page that only the arm writes. Where the writes land changes no value the firmware
+     reads. `test_emitpds.py` holds the rule, the image's disassembly and the generated header.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
@@ -785,6 +797,12 @@ stays with what a session must do around it.
   only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
   and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
   outside them changes that test first.
+- an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
+  the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
+  the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
+  kit has no own-task job kind: a session runs `emitsa` through `tools/fwtask/fwtask_run.py`
+  (`arm` with `slots=0x1 entry=0`, then `run` jobs of `n` 1 with `slots` [2, 3, 4], the reader's
+  `pa0`-`pa3`, `sa0`-`sa3` and its marker), as phases 11.29 to 11.33 ran own tasks.
 
 ## Markdown
 
