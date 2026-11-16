@@ -9642,6 +9642,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   passed, and the frozen Q010 rule printed 'one job hypothesis, H-TRI: RETIRE-CAPABLE'.
   *texture; HW; data: `render-closing-r34-q010:out/20261116-231015/c/`,
   `render-closing-r34-q010:fold/`.*
+- `E1135` r34-q044 on module 7CE8E38E (Q044), stages s0, p1 and pw, colour form (o0 0x80ff8040 over
+  0xff203040), every control passed: bit 25 of the word that loads CR_REG_0400 changes the stored
+  image in pack modes 4, 5 and 6 only (xor 0x80008000, 0xf000f000 and 0xff00ff00: the alpha field of
+  ARGB1555, ARGB4444 and A8 with RGB332) and nothing in modes 7 to 13, 15 to 21, 23 to 33 and 35 to
+  63, the 40 ARGB8888-like modes other than 0 among them (H-SUBSET 51 held, 1 FAILED of 52 held out,
+  the failure mode 6; H-INV25 not supported, 9 held, 43 FAILED), so with E268 it acts in exactly
+  modes 0, 1, 2, 4, 5 and 6; modes 22 and 34 change on 3 of 4091 and 0 of 4092 repeating dwords;
+  every 0x80 reference repeats E031's kept image (55 of 55 and 2 of 2).
+  *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r34_q044.rs`,
+  `render-closing-r34-q044:out/20261116-232915/s0/`,
+  `render-closing-r34-q044:out/20261116-232915/p1/`,
+  `render-closing-r34-q044:out/20261116-232915/pw/`, `render-closing-r34-q044:fold/`.*
+- `E1136` r34-q044 on module 7CE8E38E (Q044), stage p2, E385's alpha ramp, every control passed: the
+  stored one-bit alpha of pack mode 4 is set where the alpha is at or above the low byte of the word
+  that loads CR_REG_0400 (H-GE 9 of 9 held out at low bytes 0x02 to 0xfc equal to a ramp alpha, 2 to
+  40 pixels each; H-GT refuted 9 of 9); the low byte at 0x00, 0x40, 0xc0 and 0xff changes no stored
+  pixel in modes 5 to 8 and at 0x40 and 0xc0 none in 1, 2, 9, 10 and 11 (H-THR1 26 of 26), and bits
+  11:8 (0xf80) none in modes 1, 2, 3, 5 to 11, 15, 20, 24, 26 and 27 (H-NULL 15 of 15).
+  *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r34_q044.rs`,
+  `render-closing-r34-q044:out/20261116-232915/p2/`, `render-closing-r34-q044:fold/`.*
 
 ## By unit
 
@@ -9693,7 +9713,7 @@ E348, E418, E419, E1060, E1066.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387, E429, E999, E1028, E1034.
+E383, E385, E386, E387, E429, E999, E1028, E1034, E1135, E1136.
 
 ### pds
 

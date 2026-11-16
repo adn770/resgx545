@@ -109,7 +109,7 @@ def test_pbe_emit_has_the_64_pack_modes_and_the_ten_colours_of_mode_0():
     by = {v["id"]: v for v in vs}
     modes = [v for v in vs if v["id"].startswith("pbe-emit__packmode-")]
     assert len(modes) == 64
-    # modes 0 to 3 carry the stored values, 22 and 34 are refused under Q012, the rest under Q044
+    # modes 0 to 3 carry the stored values, 22 and 34 are refused under Q012, the rest under Q302
     for m, stored in [(0, ["0xff203040", "0x80ff8040"]), (1, ["0xff403020", "0x804080ff"]),
                       (2, ["0x403020ff", "0x4080ff80"]), (3, ["0x2188", "0xfc08"])]:
         v = by["pbe-emit__packmode-%02d" % m]
@@ -117,7 +117,7 @@ def test_pbe_emit_has_the_64_pack_modes_and_the_ten_colours_of_mode_0():
         assert v["init"]["sideband"] == "0x%x" % (0x200 | m)
     assert by["pbe-emit__packmode-22"]["expect"]["refuse"] == ["Q012"]
     assert by["pbe-emit__packmode-34"]["expect"]["refuse"] == ["Q012"]
-    assert by["pbe-emit__packmode-14"]["expect"]["refuse"] == ["Q044"]
+    assert by["pbe-emit__packmode-14"]["expect"]["refuse"] == ["Q302"]
     colours = [v for v in vs if v["id"].startswith("pbe-emit__colours-mode0-")]
     assert len(colours) == 10
     for v in colours:  # pack mode 0 stores the colour unchanged

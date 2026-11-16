@@ -84,7 +84,7 @@ fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() 
     };
     assert_eq!((c.matched, c.fitted, c.mismatch), (14 + 9, 0, 0));
     assert_eq!(rep.items_matched["pbe"], 4 * 2 + 10 + 23);
-    assert_eq!((c.refused["Q012"], c.refused["Q044"]), (2, 49));
+    assert_eq!((c.refused["Q012"], c.refused["Q302"]), (2, 49));
     assert_eq!(c.refused_vectors, 51);
 }
 

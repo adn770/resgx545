@@ -63,7 +63,7 @@ fn the_other_planned_kinds_refuse_naming_their_questions() {
     }
     // listing every question of the unit makes it a refused vector
     let all = r#"{"id": "x", "init": {"task": "pbe-emit"},
-                  "expect": {"refuse": ["Q012", "Q040", "Q044", "Q046", "Q074", "Q054", "Q183"]}}"#;
+                  "expect": {"refuse": ["Q012", "Q040", "Q302", "Q046", "Q074", "Q054", "Q183"]}}"#;
     assert!(matches!(verdict(all), Verdict::Refused(_)));
     assert!(replay(&parse(r#"{"id": "x", "init": {"task": "no-such-kind"}}"#), &ctx()).is_err());
     // zls-load models the load (12.4): a vector without a control word is malformed, not refused
@@ -94,7 +94,7 @@ fn pbe_emit_vectors_check_the_value_stored_for_each_colour() {
         Verdict::Refused(vec!["Q012".into()])
     );
     assert_eq!(
-        verdict(&v("0x204", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q044"]"#)),
-        Verdict::Refused(vec!["Q044".into()])
+        verdict(&v("0x204", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q302"]"#)),
+        Verdict::Refused(vec!["Q302".into()])
     );
 }

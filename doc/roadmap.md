@@ -247,8 +247,8 @@ reading and records.
   0x0a78 changes no image and its effect on time is unsettled (E045, E141; Q024); 0x0abc hangs every
   job when its bits 4:1 are 0, and our reading is a count of PDS task slots (E134, E140).
 - **Per-job register words.** `CR_REG_0148` (Q043), and `CR_REG_0400` with the render details and
-  transfer command words that load it: bit 25 inverts byte 3 of every pixel (E029), the other bits
-  are Q044.
+  transfer command words that load it: bit 25 inverts the alpha in pack modes 0 to 2 and 4 to 6
+  (E029, E268, E1135), bits 7:0 are ARGB1555's alpha threshold (E385, E1136).
 - **Render flags.** Bit 10's only test in the firmware adds one to the RT data set's executed count
   (E164, E166), and no image changes with it (E051, E052); bit 2 keeps its owner through a
   later live context's job (E451); through a gone context bit 2 alone keeps it and the next
