@@ -12,6 +12,11 @@ the rest:
                the tables (knobs, tools, options, controls)
   prepare KP   write run/session.env, run/required.tsv (the scorer's REQUIRED) and run/staged.lst
                (the one list of laptop files: what stage copies and the runner checks)
+  lint    KP   the controls' premises (round 34): WARN a constant frozen for a register the kit
+               snapshots (use "@snap0" or "@snap0:ROW") or for a sample interval (use "@cal:STAGE",
+               a calibration stage of the same register set that runs first); exit 1 on an @snap0
+               or @cal form that names no row or stage, a stage not before, or another register
+               set. freeze prints the warnings and refuses the errors
   freeze  KP   write PREDICTIONS.sha256, FROZEN.sha256 and FROZEN.commits; refuses a kit copy
                that is not its blob at the pinned commit, a guard finding, an unreadable control,
                an existing freeze
@@ -623,13 +628,24 @@ def control_problems(kp):
     return out
 
 
+def lint_premises(kp):
+    """(warnings, errors) of sessioncheck.lint_predictions on the session's tables and
+    predictions, in run order."""
+    import kitscore
+    order = stages(config(kp))
+    tables = {s: kitscore.table(str(kp), s) for s in order}
+    preds = {s: kitscore.predictions(str(kp), s) for s in order}
+    return sessioncheck.lint_predictions(tables, preds, order)
+
+
 def freeze(kp):
     kp = pathlib.Path(kp)
     if (kp / "FROZEN.sha256").exists():
         raise Stop(1, "FROZEN.sha256 exists: a freeze is never rewritten")
     c = config(kp)
     prepare(kp)
-    probs = guard(kp) + control_problems(kp)
+    warns, lint_errs = lint_premises(kp)
+    probs = guard(kp) + control_problems(kp) + [f"lint: {e}" for e in lint_errs]
     commits = _commits(c)
     if "resgx545" not in commits:
         probs.append("session.toml [freeze] names no resgx545 commit")
@@ -674,7 +690,8 @@ def freeze(kp):
     (kp / "FROZEN.sha256").write_text("".join(f"{h}  {f}\n" for h, f in rel + bins + pins))
     (kp / "FROZEN.commits").write_text(COMMITS_HEADER + "".join(
         f"{h}  {cm}  {repo}:{path}\n" for h, cm, repo, path in lines) + "".join(built))
-    return f"frozen: {len(rel)} session files, {len(pins)} pins, {len(lines)} lines by commit"
+    return "\n".join(warns + [f"frozen: {len(rel)} session files, {len(pins)} pins, "
+                             f"{len(lines)} lines by commit"])
 
 
 def _repo_of(abspath, dirs):
@@ -1361,7 +1378,7 @@ def mock(kp, worlds=None, say=print):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for n in ("guard", "prepare", "freeze", "verify", "stage"):
+    for n in ("guard", "prepare", "lint", "freeze", "verify", "stage"):
         sub.add_parser(n).add_argument("kp")
     s = sub.add_parser("run")
     s.add_argument("--from", dest="frm")
@@ -1380,6 +1397,10 @@ def main(argv=None):
             bad = guard(a.kp)
             print("\n".join(bad) if bad else "guard: clean")
             return 1 if bad else 0
+        if a.cmd == "lint":
+            warns, errs = lint_premises(a.kp)
+            print("\n".join(warns + [f"FAIL {e}" for e in errs]) or "lint: clean")
+            return 1 if errs else 0
         if a.cmd == "prepare":
             prepare(a.kp)
             print("prepared: " + ", ".join(GENERATED))

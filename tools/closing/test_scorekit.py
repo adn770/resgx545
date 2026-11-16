@@ -323,3 +323,117 @@ def test_missing_files_no_row_is_not_complete(tmp_path):
     # a stage with per-row files and no row kept has kept nothing a scorer can read
     (tmp_path / "cases.tsv").write_text("")
     assert K.missing_files((".txt",), tmp_path, []) == ["(no row)"]
+
+
+# ---- a control's idle register value: the row's own snap0, never a constant (round 34, T1) ---
+# r30-evst froze CR_CACHE_CTRL at 0x1000ffff, read mid-session; the post-reset value is
+# 0x0000ffff, and three stages failed on it (E1116).
+def test_reg_expect_a_constant_is_itself():
+    assert K.reg_expect("0x1000ffff", "0x0a60", "r1", {}) == (0x1000FFFF, None)
+
+
+def test_reg_expect_snap0_is_the_rows_own_value():
+    snaps = {"r1": {0x0A60: 0x0000FFFF}, "r2": {0x0A60: 0x1000FFFF}}
+    assert K.reg_expect("@snap0", "0x0a60", "r1", snaps) == (0x0000FFFF, None)
+    assert K.reg_expect("@snap0", "0x0a60", "r2", snaps) == (0x1000FFFF, None)
+
+
+def test_reg_expect_snap0_of_a_named_reference_row():
+    snaps = {"r1": {0x0A60: 0x0000FFFF}, "ref": {0x0A60: 0x0000FFFF}}
+    assert K.reg_expect("@snap0:ref", "0x0a60", "r1", snaps) == (0x0000FFFF, None)
+
+
+def test_reg_expect_mask_keeps_only_the_named_bits():
+    snaps = {"r1": {0x0A60: 0x1000FFFF}}
+    assert K.reg_expect("@snap0&0xffff", "0x0a60", "r1", snaps) == (0xFFFF, None)
+    assert K.reg_expect("@snap0:r1&0xffff", "0x0a60", "r1", snaps) == (0xFFFF, None)
+
+
+def test_reg_expect_without_a_snapshot_is_cannot_tell_with_the_reason():
+    v, why = K.reg_expect("@snap0", "0x0a60", "r1", {})
+    assert v is None and "r1" in why and "snap0" in why
+    v, why = K.reg_expect("@snap0:ref", "0x0a60", "r1", {"r1": {0x0A60: 1}})
+    assert v is None and "ref" in why
+    v, why = K.reg_expect("@snap0", "0x0a60", "r1", {"r1": {0x0804: 1}})
+    assert v is None and "0x0a60" in why
+
+
+def test_reg_expect_refuses_a_spec_of_no_form():
+    for bad in ("@snap9", "@snap0:", "@snap0&", "@cal:s0", "snap0", "", "0xzz"):
+        with pytest.raises(ValueError):
+            K.reg_expect(bad, "0x0a60", "r1", {"r1": {0x0A60: 1}})
+
+
+def test_reg_control_passes_fails_and_cannot_tell():
+    snaps = {"r1": {0x0A60: 0x0000FFFF}}
+    assert K.reg_control(0x0000FFFF, "@snap0", "0x0a60", "r1", snaps) is True
+    # r30-evst's mid-session constant fails against the post-reset value (E1116)
+    assert K.reg_control(0x0000FFFF, "0x1000ffff", "0x0a60", "r1", snaps) is False
+    assert K.reg_control(0x1000FFFF, "@snap0", "0x0a60", "r1", snaps) is False
+    assert K.reg_control(None, "@snap0", "0x0a60", "r1", snaps) is None
+    assert K.reg_control(0x0000FFFF, "@snap0", "0x0a60", "r2", snaps) is None
+
+
+def test_reg_control_a_premise_failure_is_cannot_tell_never_a_verdict():
+    # no snap0 of the row: the premise cannot be read, so the gate says cannot tell
+    g = K.gate({"c1": K.reg_control(5, "@snap0", "0x0a60", "r1", {})})
+    assert not g.ok and not g.failed
+
+
+# ---- the sample interval of a job window, calibrated (round 34, T1) --------------------------
+# r33-tim froze ~1.2 us / 540 ns from idle spacing; the job read 4897 and 3696 ns with 0x0acc
+# (E1131). A register set is calibrated in a job first, and later controls cite that.
+def test_read_cost_notes_are_per_register():
+    assert K.READ_COST_NS[0x0748] == 1700 and K.READ_COST_NS[0x0ACC] == 3700
+    assert K.read_cost_ns([0x012C]) == 541
+    assert K.read_cost_ns([0x0748, 0x0ACC]) == 1700 + 3700
+
+
+def test_read_cost_of_an_unknown_register_is_none_so_it_is_calibrated():
+    assert K.read_cost_ns([0x012C, 0x0804]) is None
+
+
+def test_calibration_is_the_median_of_the_job_window_intervals():
+    c = K.calibration([4897, 3696, 4200])
+    assert c.ns == 4200 and c.rows == 3 and not c.problems
+    assert c.window == (3150, 5250)
+
+
+def test_calibration_needs_two_measured_rows():
+    c = K.calibration([4000, None])
+    assert c.problems and c.window is None
+    assert K.calibration([]).problems
+
+
+def test_calibration_rows_that_disagree_give_no_window():
+    c = K.calibration([1700, 4900, 1800], tol=0.25)
+    assert c.window is None and any("disagree" in p for p in c.problems)
+
+
+def test_calibration_window_is_median_within_tol():
+    c = K.calibration([1000, 1000], tol=0.3)
+    assert c.window == (700, 1300)
+
+
+def test_ivl_expect_cal_gives_the_stages_window():
+    cals = {"cal": K.calibration([4000, 4100], tol=0.25)}
+    assert K.ivl_expect("@cal:cal", cals)[0] == cals["cal"].window
+    assert K.ivl_expect("3500..6500", cals) == ((3500, 6500), None)
+
+
+def test_ivl_expect_a_missing_or_failed_calibration_is_cannot_tell():
+    w, why = K.ivl_expect("@cal:cal", {})
+    assert w is None and "cal" in why
+    w, why = K.ivl_expect("@cal:cal", {"cal": K.calibration([4000])})
+    assert w is None and why
+    with pytest.raises(ValueError):
+        K.ivl_expect("@snap0", {})
+
+
+def test_ivl_control_is_the_job_window_against_the_calibrated_one():
+    cals = {"cal": K.calibration([4000, 4100], tol=0.25)}
+    assert K.ivl_control(4897, "@cal:cal", cals) is True
+    # idle spacing in a job window (r33-tim's 1.2 us for 4.9 us) fails the premise
+    assert K.ivl_control(1200, "@cal:cal", cals) is False
+    assert K.ivl_control(None, "@cal:cal", cals) is None
+    assert K.ivl_control(4000, "@cal:cal", {}) is None

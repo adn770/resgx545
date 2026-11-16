@@ -576,8 +576,8 @@ srcversion, fork tip, laptop tools.
   a2788bd8
 - module srcversion 230E0EF50FFFD606C53AE3C: last named 2026-11-10, 3 sessions
 - module srcversion B21FDA82BD5E5CB5A627E3B: last named 2026-11-10, 9 sessions
-- `tools/closing/scorekit.py` sha256 a10bcec039edeefe
-- `tools/closing/sessioncheck.py` sha256 0cd65f53056b31e5
+- `tools/closing/scorekit.py` sha256 d27010b698c7d622
+- `tools/closing/sessioncheck.py` sha256 50fd40eadf67ff6a
 
 ## Known tool weaknesses
 
