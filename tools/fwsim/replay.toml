@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Kept series a fwsim run may replay (tools/fwsim/fwsim.py --replay; crates/sgx-sim/src/hw.rs
+# HwModel::replay). Replay is explicit per run: without it the strict read rules of seeds.toml
+# answer alone. A row gives the words a register takes after a trigger the run writes after a
+# served kick, in the order the kept rows show them, and for each word the measurement that would
+# place its end against a read. Nothing here is read from the firmware, and no row holds a time:
+# the simulator has no clock inside a pass, so it moves to the next word only at a proven spin
+# (the task's state the same at two reads, nothing written between them), and stops, naming the
+# word's measurement, where a read it answered was acted on otherwise. Every row cites the
+# records whose readings give its words; a row without an E-number is refused at load.
+
+# CR_EVENT_STATUS after the kick's CR_CACHE_CTRL write of 0x1000ffff (E1120, E1122, E1123: the
+# change the firmware's write makes). The word after the change is the idle word, 0x20000000:
+# the change comes before every CR_EVENT_STATUS event of the job (E1123 14 of 14, E1120 19 of
+# 19), bit 26 at least 19.6 us after it. Then 0x24000000: whenever bit 26 is set the word is
+# exactly 0x24000000 (E1115, 19 episodes in 13 rows; once 0xa4004000 with SW_EVENT, E1120), its
+# first rise before bit 18 or 0 (E1115 8 of 8). Then 0x20000000 again: bit 26 falls before the
+# render end (E1115 8 of 8). That bit 26 shows in only some jobs at 541 ns a sample (E1115 8 of
+# 14) and is 4.2 to 93 us wide is why a word's end needs the measurement named for it.
+[[replay]]
+reg = 0x012c
+name = "CR_EVENT_STATUS"
+kind = "spin_order"
+trigger_reg = 0x0804
+trigger_value = 0x1000ffff
+words = [0x20000000, 0x24000000, 0x20000000]
+missing = [
+    "bit 26's rise against the read (E1120: 19.6 to 48.3 us after the CR_CACHE_CTRL change in 5 of 6 rows, 106.6 us in one, not frozen; no row times the EDM's reads)",
+    "bit 26's fall against the read (E1115: episodes 4.2 to 93 us, E1120: 5.0 to 15.7 us; no row orders the fall against a firmware write)",
+    "the word after bit 26's fall up to the job's next event bit, against the read (no row orders it)",
+]
+cite = "E1115, E1120, E1123"

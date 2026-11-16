@@ -7,7 +7,7 @@ value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
             "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
-            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123"]
+            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -185,3 +185,9 @@ the change's sample [infer: the firmware's BIF invalidation, then its own `| 0x1
 so bit 26 (MADD_CACHE_INVALCOMPLETE) follows the firmware's data-cache invalidation request, and
 a fill's kick sets the bit as a triangle's does. Open as before: which event sets each other bit,
 a pulse or a level for them, their clears and order.
+
+Narrowed 2026-11-16 (fwsim with the kept order replayed, E1130; offline, the firmware's side
+only; not retired). After its CR_CACHE_CTRL write the kick pass waits on bit 26 with no count
+[RE], and after the read that shows it writes bit 26 to CR_EVENT_HOST_CLEAR [infer: on the
+replayed word], so the firmware clears bit 26 itself; whether that write is what ends the bit's
+episode, and its timing, stay hardware questions. Open as before for every other bit.

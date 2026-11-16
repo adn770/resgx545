@@ -9554,6 +9554,16 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   median 722.5 us, within the load's noise.
   *pds; HW, infer; data: `render-closing-r31-kreg2:out/20261116-145122/s0/`,
   `render-closing-r31-kreg2:out/20261116-145122/k2/`, `render-closing-r31-kreg2:fold/`.*
+- `E1130` fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1 c-off kicked as
+  our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the kick's
+  CR_CACHE_CTRL write (0x20000000, 0x24000000, 0x20000000; E1115, E1120, E1123): the kick pass reads
+  CR_EVENT_STATUS again and again with its task state the same at every read while the word is
+  0x20000000 (a wait with no count, so how long the hardware holds the word changes nothing) [RE];
+  given 0x24000000 it writes 0x04000000 (bit 26) to CR_EVENT_HOST_CLEAR and emits PDS #14 with
+  request mask 0x00020000 [RE, infer: on the replayed word]; PDS #14 reads the counter tim, which no
+  run input gives for a program a task emits, and the run stops there (R1, R3); no register read is
+  refused.
+  *edm; RE, infer; data: `tools/fwsim/replay.toml`, `crates/pysgx/tests/test_fwsim_m2.py`.*
 
 ## By unit
 
@@ -9580,7 +9590,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130.
 
 ### firmware
 

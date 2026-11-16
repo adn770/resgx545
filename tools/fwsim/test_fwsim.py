@@ -77,3 +77,33 @@ def test_outputs_go_only_under_the_private_fwsim_directory(tmp_path):
                 private / "firmware" / "fwsim" / "out" / "x"):
         with pytest.raises(fwsim.Refused):
             fwsim.checked_out(bad, private)
+
+
+def test_the_replay_rows_load_each_citing_a_record_and_naming_what_decides_each_word():
+    d = fwsim.load_replay()
+    [r] = d["replay"]
+    assert (r["reg"], r["kind"], r["trigger_reg"], r["trigger_value"]) == (0x012C, "spin_order", 0x0804, 0x1000FFFF)
+    assert r["words"] == [0x20000000, 0x24000000, 0x20000000]
+    assert len(r["missing"]) == len(r["words"]) and all(r["missing"])
+
+
+@pytest.mark.parametrize("old,new,match", [
+    ('cite = "E1115, E1120, E1123"', 'cite = "the laptop"', "cites no record"),
+    ('kind = "spin_order"', 'kind = "by_time"', "no replay kind"),
+    ('reg = 0x012c', 'reg = 0x0118', "no replay kind"),
+])
+def test_a_replay_row_without_a_record_or_of_another_kind_is_refused(tmp_path, old, new, match):
+    text = fwsim.REPLAY.read_text()
+    assert old in text
+    p = tmp_path / "replay.toml"
+    p.write_text(text.replace(old, new, 1))
+    with pytest.raises(fwsim.Refused, match=match):
+        fwsim.load_replay(p)
+
+
+def test_a_replay_row_needs_what_decides_each_word(tmp_path):
+    d = fwsim.REPLAY.read_text()
+    p = tmp_path / "replay.toml"
+    p.write_text(d.replace("words = [0x20000000, 0x24000000, 0x20000000]", "words = [0x20000000, 0x24000000]"))
+    with pytest.raises(fwsim.Refused, match="each word"):
+        fwsim.load_replay(p)

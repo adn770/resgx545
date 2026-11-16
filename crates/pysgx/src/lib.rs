@@ -565,6 +565,30 @@ impl Sgx {
         self.hw()?.idle_cache_ctrl(value, cite).map_err(PyValueError::new_err)
     }
 
+    /// A kept series of register `index` replayed in its measured order `words` once the run
+    /// writes `trigger_value` to `trigger_index` after a served kick (sgx_sim::hw::HwModel::replay;
+    /// explicit per run). `missing[k]` names what would place the end of `words[k]` against a
+    /// read; refused without an E-number in `cite`.
+    fn hw_replay(
+        &mut self,
+        index: u32,
+        trigger_index: u32,
+        trigger_value: u32,
+        words: Vec<u32>,
+        missing: Vec<String>,
+        cite: &str,
+    ) -> PyResult<()> {
+        let missing: Vec<&str> = missing.iter().map(String::as_str).collect();
+        self.hw()?
+            .replay(index, (trigger_index, trigger_value), &words, &missing, cite)
+            .map_err(PyValueError::new_err)
+    }
+
+    /// What the replays did, in order (each word a proven spin moved on to).
+    fn hw_replay_log(&mut self) -> PyResult<Vec<String>> {
+        Ok(self.hw()?.replay_log().to_vec())
+    }
+
     fn hw_note_open(&mut self, index: u32, note: &str) -> PyResult<()> {
         self.hw()?.note_open(index, note);
         Ok(())
