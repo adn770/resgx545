@@ -961,6 +961,46 @@ def test_the_replay_creates_every_debugfs_file_the_session_declares_and_no_other
     assert not bad, (bad, m.stdout)
 
 
+
+LARGE_KNOBS = ('vm_pde_addr = { default = "0", values = ["0", "0x60000000"] }\n'
+               'vm_pde_size = { default = "0", values = ["0", "3"] }\n'
+               'vm_pde_layout = { default = "0", values = ["0", "1"] }\n')
+LARGE_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: sgxfive-test [--mock [--mock-knob NAME=V]...] COMMAND" >&2
+    exit 2; }
+shift
+addr=0; size=0
+while [ "$1" = --mock-knob ]; do
+    case "$2" in vm_pde_addr=*) addr=${2#*=} ;; vm_pde_size=*) size=${2#*=} ;; esac; shift 2; done
+dir=$(printf '%s\\n' "$@" | sed -n '/^--large-copy$/{n;p;}')
+[ -z "$dir" ] || { mkdir -p "$dir" && echo "mock: vm_large not modelled: vm_pde_addr $addr \\
+vm_pde_size $size" > "$dir/vm_large.txt"; } || exit 1
+[ -f "${SGXFIVE_DEBUGFS:-/nonexistent}/vm_large" ] || { echo "no vm_large" >&2; exit 1; }
+echo "job: ok"; echo "diff: 0 of 4096 pixels"
+"""
+
+
+def test_a_large_page_row_replays_with_its_knobs_and_its_read_out(repos):
+    """Q109's rows (the linux fork's debugfs vm_pde_*): the three knobs declared in [knobs] at
+    default 0, debugfs vm_large in debugfs, --large-copy in outdir_opts. The guard takes them, the
+    replay gives the tool the row's knob words and vm_large's file, and the read-out's directory
+    is the tool's to make."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=LARGE_SRC)
+    toml = kp / "session.toml"
+    toml.write_text(toml.read_text().replace("[knobs]\n", "[knobs]\n" + LARGE_KNOBS, 1)
+                    .replace("debugfs = []", 'debugfs = ["vm_large"]', 1)
+                    .replace("outdir_opts = []", 'outdir_opts = ["--large-copy"]', 1))
+    row = ("l1|fit|safe|dbg:vm_pde_addr=0x60000000 dbg:vm_pde_size=3 dbg:vm_pde_layout=1|t4|"
+           "copy --width 1024 --height 4 --src-addr 0x603fc000 --large-copy $W/large\n")
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    base = (kp / "tables/s0.txt").read_text()
+    m, bad = replay_findings(repos, kp, base, row)
+    assert not bad, (bad, m.stdout)
+    assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
+
+
 UNKNOWN_SRC = """#!/bin/sh
 [ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
 shift

@@ -136,7 +136,11 @@ Key registers:
   `0x003FF000`), page offset (`SGX_MMU_PAGE_SHIFT` 12).
 - **PDE** (`sgxmmu.h:45-52`): bit 0 `VALID`; bits 1-3 the page size (4K, 16K, 64K, 256K, 1M,
   4M); address mask `0xFFFFF000`. The 36-bit layout does not apply (§2). No record shows a run
-  with a size other than the smallest (Q109).
+  with a size other than the smallest (Q109). The round 30 kernel's debugfs `vm_pde_addr`,
+  `vm_pde_size` and `vm_pde_layout` (fork branch r30-kernel a8c89868592a, 8bc0877e8603; not
+  landed, not booted) map one client 4 MiB slot through a PDE of a chosen code over a region the
+  driver owns, every 4 KiB of it tagged, read back by `vm_large` (HACKING.md, "Known tool
+  weaknesses"); nothing is measured with it yet.
 - **PTE** (`sgxmmu.h:65-69`): `VALID` `0x1`, `WRITEONLY` `0x2`, `READONLY` `0x4`,
   `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`. A write to a
   read-only page faults (E021, E319). The round 8 kernel's debugfs `vm_pte_flags` puts the

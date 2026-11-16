@@ -53,6 +53,13 @@ struct sgxfive_mock_config {
 	 */
 	const char *debugfs_dir;
 	uint32_t kept_park_ms;
+	/*
+	 * the kernel's debugfs vm_pde_addr, vm_pde_size and vm_pde_layout (Q109): a VM_MAP at
+	 * vm_pde_addr (0: off) must be exactly 4 MiB with a size code and layout the kernel makes a
+	 * region for (codes 1-4 any layout, 0 and 5 dense or pt4k, 6 and 7 dense), else -EINVAL;
+	 * the mock then maps the buffer as ever (the large page is not modelled)
+	 */
+	uint32_t vm_pde_addr, vm_pde_size, vm_pde_layout;
 };
 
 struct sgxfive_mock_stats {

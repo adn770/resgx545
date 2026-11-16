@@ -16,10 +16,22 @@
  *                                 how long the chain is waited for (default 5000), a
  *                                 job that does not complete reported as such
  *   fill  [--width W --height H --x X --y Y --stride S --colour C] [--kpoke-job 1:SPEC]
- *         [JOB OPTIONS]
+ *         [--dst-addr ADDR] [--large-copy DIR] [JOB OPTIONS]
  *   copy  [--width W --height H --sx X --sy Y --src-stride S --dx X --dy Y --dst-stride S]
  *         [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
- *         [JOB OPTIONS]
+ *         [--src-addr ADDR] [--large-copy DIR] [JOB OPTIONS]
+ *                                 --src-addr ADDR (copy) and --dst-addr ADDR (fill): the
+ *                                 source or destination at ADDR (a page), in a buffer of
+ *                                 its own mapped one VM_MAP per 4 MiB slot from ADDR's slot
+ *                                 to the surface's end (two at most), so the slot at the
+ *                                 kernel's debugfs vm_pde_addr takes its large-page path
+ *                                 (Q109) and the next is mapped as ever; the copy reports
+ *                                 each 4 KiB of the source it read (a `tags:` line: its first
+ *                                 dword, the kernel's tag 0xa0000000 | slab << 24 | page << 12
+ *                                 | dword decoded, how many dwords follow it, how many are the
+ *                                 pattern); --large-copy DIR: debugfs vm_large (the large
+ *                                 mapping's PDE, table and tags) to DIR/vm_large.txt after the
+ *                                 job (the mock writes what its knobs say)
  *   isolation                     VM separation, faults, lost contexts, read-only maps
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--aa4] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
@@ -338,6 +350,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -494,6 +507,9 @@ struct opts {
 	uint32_t ramp_base;		/* ... the other channels' values (--ramp-base) */
 	bool print_addrs;		/* copy: print where the buffers are (--print-addrs) */
 	bool page_before;		/* copy: a counting page before the source */
+	uint32_t src_addr;		/* copy --src-addr: the source there, in slots of its own */
+	uint32_t dst_addr;		/* fill --dst-addr: the destination there, likewise */
+	const char *large_dir;		/* fill, copy --large-copy: debugfs vm_large there */
 	/* job options (fill, copy, tri) */
 	struct sgxfive_poke pokes[SGXFIVE_POKE_MAX];
 	const char *poke_args[SGXFIVE_POKE_MAX];
@@ -518,11 +534,12 @@ static int usage(void)
 		"                    [--device PATH] [--programs=asm|fake] <command>\n"
 		"       commands: query, dummy [-n N --kpoke-job N:SPEC --wait-ms MS], isolation,\n"
 		"                 regaccess,\n"
-		"                 fill [--width W --height H --x X --y Y --stride S --colour C],\n"
+		"                 fill [--width W --height H --x X --y Y --stride S --colour C\n"
+		"                       --dst-addr ADDR],\n"
 		"                 copy [--width W --height H --sx X --sy Y --src-stride S\n"
 		"                       --dx X --dy Y --dst-stride S --every-value | --ramp CH=START\n"
-		"                       [--ramp-base V] --print-addrs --page-before],\n"
-		"                 (fill, copy) [--emit-scene FILE]\n"
+		"                       [--ramp-base V] --print-addrs --page-before --src-addr ADDR],\n"
+		"                 (fill, copy) [--emit-scene FILE] [--large-copy DIR]\n"
 		"                 tri [--width W --height H -n N --max-width W --max-height H\n"
 		"                      --aa4 --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --scratch-file FILE\n"
@@ -891,6 +908,48 @@ static uint32_t pages_for(uint32_t stride, uint32_t rows)
 	return (uint32_t)((bytes + SGXFIVE_PAGE_SIZE - 1) / SGXFIVE_PAGE_SIZE) + 1;
 }
 
+/* ---- fixed addresses in 4 MiB slots (Q109: the kernel's debugfs vm_pde_*) ------------------ */
+
+#define SLOT_SIZE	0x400000u	/* one page directory entry's span */
+
+/*
+ * --src-addr / --dst-addr: a CPU-visible surface of `pages` pages at addr (a page), in one
+ * buffer covering the 4 MiB slots from addr's slot to the surface's end, two at most, each
+ * slot its own VM_MAP of 4 MiB at the buffer's offset k * 4 MiB: the slot at debugfs
+ * vm_pde_addr takes the kernel's large-page path, the next is mapped as ever. Set to
+ * SENTINEL; *map points at addr. -EINVAL past two slots.
+ */
+static int slot_surface(struct tool *t, struct sgxfive_vm *vm, const char *what, uint64_t addr,
+			uint32_t pages, uint32_t flags, struct sgxfive_bo **bo, uint32_t **map)
+{
+	const uint64_t base = addr & ~(uint64_t)(SLOT_SIZE - 1);
+	const uint64_t end = addr + pages * (uint64_t)SGXFIVE_PAGE_SIZE;
+	const uint32_t nslots = (uint32_t)((end - base + SLOT_SIZE - 1) / SLOT_SIZE);
+	void *p = NULL;
+	int ret;
+
+	if (addr % SGXFIVE_PAGE_SIZE || nslots > 2)
+		return -EINVAL;
+	ret = sgxfive_bo_create(t->dev, nslots * (uint64_t)SLOT_SIZE,
+				DRM_SGXFIVE_BO_ALLOW_CPU_ACCESS, bo);
+	if (!ret)
+		ret = sgxfive_bo_mmap(*bo, &p);
+	for (uint32_t k = 0; !ret && k < nslots; k++)
+		ret = sgxfive_vm_map(vm, base + k * (uint64_t)SLOT_SIZE, *bo, k * (uint64_t)SLOT_SIZE,
+				     SLOT_SIZE, flags);
+	if (ret)
+		return ret;
+	for (uint64_t i = 0; i < nslots * (uint64_t)SLOT_SIZE / 4; i++)
+		((uint32_t *)p)[i] = SENTINEL;
+	*map = (uint32_t *)p + (addr - base) / 4;
+	printf("%s in %u slot%s of 4 MiB at 0x%08llx, the surface at +0x%06llx\n", what, nslots,
+	       nslots > 1 ? "s" : "", (unsigned long long)base, (unsigned long long)(addr - base));
+	return 0;
+}
+
+/* --large-copy DIR: debugfs vm_large to DIR/vm_large.txt (below, with debugfs_copy). */
+static int large_copy(const struct tool *t, const char *dir, const char *cmd);
+
 /* ---- dummy -------------------------------------------------------------------------- */
 
 static int kpoke_write(const char *spec);	/* below, with the tri command's */
@@ -1024,8 +1083,12 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 	struct side s;
 	int ret = side_init(t, &s);
 
-	if (!ret)
+	if (!ret && o->dst_addr) {
+		addr = o->dst_addr;
+		ret = slot_surface(t, s.vm, "fill: destination", addr, pages, 0, &bo, &p);
+	} else if (!ret) {
 		ret = surface(t, s.vm, pages, 0, &addr, &bo, &p);
+	}
 	dst = (struct sgxfive_surface){ addr, o->stride / 4, rows, o->stride };
 	if (!ret) {
 		struct emit em = {
@@ -1048,11 +1111,16 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 		t0 = now_ns();
 		if (!ret)
 			ret = xfer_job(&s, sgxfive_xfer_fill(s.x, &dst, &r, o->colour, 0), t0);
+		/* a missing vm_large is a failure, never a reading: no diff line then */
+		const int lret = !ret && o->large_dir ? large_copy(t, o->large_dir, "fill") : 0;
+
 		print_regs(t, o);
-		print_target(&(struct target){ o->width, o->height, o->stride / 4,
-					       p + (uint64_t)o->y * (o->stride / 4) + o->x,
-					       fill_ok, &o->colour, NULL },
-			     outside_rect(p, pages * 1024, o->stride / 4, &r), o->pixels);
+		if (!lret)
+			print_target(&(struct target){ o->width, o->height, o->stride / 4,
+						       p + (uint64_t)o->y * (o->stride / 4) + o->x,
+						       fill_ok, &o->colour, NULL },
+				     outside_rect(p, pages * 1024, o->stride / 4, &r), o->pixels);
+		ret = ret ? ret : lret;
 	}
 	for (uint32_t i = 0; !ret && i < pages * 1024; i++) {
 		uint32_t x = i % (o->stride / 4), y = i / (o->stride / 4);
@@ -1104,6 +1172,55 @@ static bool copy_ok(const void *ctx, uint32_t x, uint32_t y, uint32_t v, uint32_
 
 #define PAGE_BEFORE_FILL	0xB0000000u	/* --page-before: dword i of the page is this | i */
 
+/*
+ * One page of the source: its first dword read as the kernel's tag of a large mapping's dword
+ * (sgx_mmu_large_tag: 0xa0000000 | slab << 24 | page << 12 | dword; the buffer's own pattern
+ * can look like one, its count says which it is), how many dwords follow it as the next tags of
+ * that page, how many are the pattern.
+ */
+static void tags_line(uint64_t va, uint32_t first, uint32_t n, uint32_t follow, uint32_t pat)
+{
+	printf("tags: va +0x%06llx: first 0x%08x (slab %u page %u dword %u), %u/%u follow it, "
+	       "%u/%u pattern\n", (unsigned long long)va, first, first >> 24 & 0xf,
+	       first >> 12 & 0x3ff, first & 0x3ff, follow, n, pat, n);
+}
+
+/*
+ * copy --src-addr: what the copy read from each 4 KiB page of the source, by the destination,
+ * VA offsets from the source's slot. A large mapping's tags (debugfs vm_pde_*) name the physical
+ * page each 4 KiB came from: the page's first dword decoded, and how many of its dwords follow
+ * it (the next tags of that page, in order) and how many are the buffer's own pattern.
+ */
+static void print_tags(const struct opts *o, const uint32_t *d, uint32_t dw, uint64_t saddr)
+{
+	const uint64_t base = saddr & ~(uint64_t)(SLOT_SIZE - 1);
+	uint64_t cur = UINT64_MAX, va0 = 0;
+	uint32_t first = 0, n = 0, follow = 0, pat = 0;
+
+	for (uint32_t y = 0; y < o->height; y++) {
+		for (uint32_t x = 0; x < o->width; x++) {
+			const uint64_t va = saddr + (uint64_t)(o->sy + y) * o->src_stride +
+					    (uint64_t)(o->sx + x) * 4;
+			const uint32_t v = d[(uint64_t)(o->y + y) * dw + o->x + x];
+
+			if (va / SGXFIVE_PAGE_SIZE != cur) {
+				if (n)
+					tags_line(cur * SGXFIVE_PAGE_SIZE - base, first, n, follow, pat);
+				cur = va / SGXFIVE_PAGE_SIZE;
+				va0 = va;
+				first = v;
+				n = follow = pat = 0;
+			}
+			n++;
+			follow += v == (first & ~0x3ffu) + (uint32_t)(((first & 0x3ff) +
+								      (va - va0) / 4) & 0x3ff);
+			pat += v == pattern(o, o->sx + x, o->sy + y);
+		}
+	}
+	if (n)
+		tags_line(cur * SGXFIVE_PAGE_SIZE - base, first, n, follow, pat);
+}
+
 static int cmd_copy(struct tool *t, const struct opts *o)
 {
 	const struct sgxfive_rect r = { o->x, o->y, o->x + o->width, o->y + o->height };
@@ -1120,9 +1237,14 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 	struct side sd;
 	int ret = side_init(t, &sd);
 
-	if (!ret)
+	if (!ret && o->src_addr) {
+		saddr = o->src_addr;
+		ret = slot_surface(t, sd.vm, "copy: source", saddr, spages,
+				   DRM_SGXFIVE_VM_MAP_READ_ONLY, &sbo, &s);
+	} else if (!ret) {
 		ret = surface(t, sd.vm, before + spages, DRM_SGXFIVE_VM_MAP_READ_ONLY, &saddr, &sbo,
 			      &s);
+	}
 	if (!ret)
 		ret = surface(t, sd.vm, dpages, 0, &daddr, &dbo, &d);
 	/* the page before the source counts: dword i holds PAGE_BEFORE_FILL | i */
@@ -1156,10 +1278,18 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 			sgxfive_xfer_set_hook(sd.x, sgxfive_poke_hook, &em.pk);
 		t0 = now_ns();
 		ret = xfer_job(&sd, sgxfive_xfer_copy(sd.x, &src, o->sx, o->sy, &dst, &r, 0), t0);
+		if (!ret && o->src_addr)
+			print_tags(o, d, dw, saddr);
+		/* a missing vm_large is a failure, never a reading: no diff line then */
+		const int lret = !ret && o->large_dir ? large_copy(t, o->large_dir, "copy") : 0;
+
 		print_regs(t, o);
-		print_target(&(struct target){ o->width, o->height, dw,
-					       d + (uint64_t)o->y * dw + o->x, copy_ok, o, NULL },
-			     outside_rect(d, dpages * 1024, dw, &r), o->pixels);
+		if (!lret)
+			print_target(&(struct target){ o->width, o->height, dw,
+						       d + (uint64_t)o->y * dw + o->x, copy_ok, o,
+						       NULL },
+				     outside_rect(d, dpages * 1024, dw, &r), o->pixels);
+		ret = ret ? ret : lret;
 	}
 	for (uint32_t i = 0; !ret && i < dpages * 1024; i++) {
 		uint32_t x = i % dw, y = i / dw;
@@ -2780,7 +2910,11 @@ struct mock_knobs {
 	bool layer_given, src_given;
 	bool layer;
 	uint64_t src;
+	uint32_t pde_addr, pde_size, pde_layout;	/* debugfs vm_pde_* */
 };
+
+/* --mock-knob vm_pde_*: the mock's VM_MAP checks them, --large-copy writes them */
+static struct mock_knobs mock_pde;
 
 static bool knob_text(const char *name, bool mock, char *buf, size_t n)
 {
@@ -2819,7 +2953,10 @@ static void bg_knobs_read(bool mock, const struct mock_knobs *mk, struct bg_knob
 		k->src = strtoull(buf, NULL, 16);
 }
 
-/* --mock-knob NAME=V: render_bg_layer (1, 0, Y, N) and render_bg_src; others are noted. */
+/*
+ * --mock-knob NAME=V: render_bg_layer (1, 0, Y, N), render_bg_src, and vm_pde_addr, vm_pde_size
+ * and vm_pde_layout (numbers); others are noted.
+ */
 static int mock_knob_parse(const char *arg, struct mock_knobs *mk)
 {
 	const char *eq = strchr(arg, '=');
@@ -2840,6 +2977,16 @@ static int mock_knob_parse(const char *arg, struct mock_knobs *mk)
 		if (errno || *end)
 			return -1;
 		mk->src_given = true;
+	} else if (!strcmp(name, "vm_pde_addr") || !strcmp(name, "vm_pde_size") ||
+		   !strcmp(name, "vm_pde_layout")) {
+		unsigned long long v;
+
+		errno = 0;
+		v = strtoull(eq + 1, &end, 0);
+		if (errno || *end || v > UINT32_MAX)
+			return -1;
+		*(name[7] == 'a' ? &mk->pde_addr : name[7] == 's' ? &mk->pde_size :
+		  &mk->pde_layout) = (uint32_t)v;
 	} else {
 		fprintf(stderr, "mock: debugfs %s not modelled\n", name);
 	}
@@ -3219,6 +3366,39 @@ static int debugfs_copy(const char *name, const char *path, long long *size)
 		ret = -errno;
 	close(out);
 	close(in);
+	return ret;
+}
+
+/*
+ * --large-copy DIR: debugfs vm_large (the live large mapping's PDE, table entries and tags) to
+ * DIR/vm_large.txt after the job; the mock, which does not model the large page, writes what
+ * its knobs say instead.
+ */
+static int large_copy(const struct tool *t, const char *dir, const char *cmd)
+{
+	char path[4096];
+	long long size = 0;
+	int ret = 0;
+
+	if (mkdir(dir, 0755) && errno != EEXIST)
+		ret = -errno;
+	snprintf(path, sizeof(path), "%s/vm_large.txt", dir);
+	if (!ret && t->mock) {
+		FILE *f = fopen(path, "w");
+
+		if (!f)
+			ret = -errno;
+		else if (fprintf(f, "mock: vm_large not modelled: vm_pde_addr 0x%08x vm_pde_size %u "
+				 "vm_pde_layout %u\n", mock_pde.pde_addr, mock_pde.pde_size,
+				 mock_pde.pde_layout) < 0 || fclose(f))
+			ret = -EIO;
+	} else if (!ret) {
+		ret = debugfs_copy("vm_large", path, &size);
+	}
+	printf("%s: vm_large: %s", cmd, ret ? strerror(-ret) : path);
+	if (!ret && !t->mock)
+		printf(" (%lld bytes)", size);
+	printf("\n");
 	return ret;
 }
 
@@ -4164,6 +4344,15 @@ static bool parse_tri_v(const char *s, int32_t v[3][2])
 	return true;
 }
 
+/* Whether name is one of the arguments (an option whose value 0 means unset, given as 0). */
+static bool has_opt(int argc, char **argv, const char *name)
+{
+	for (int i = 0; i < argc; i++)
+		if (!strcmp(argv[i], name))
+			return true;
+	return false;
+}
+
 static int parse_opts(int argc, char **argv, struct opts *o)
 {
 	static const char *const fills[] = {
@@ -4181,6 +4370,8 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		{ "--dst-stride", offsetof(struct opts, dst_stride) },
 		{ "--src-stride", offsetof(struct opts, src_stride) },
 		{ "--sx", offsetof(struct opts, sx) }, { "--sy", offsetof(struct opts, sy) },
+		{ "--src-addr", offsetof(struct opts, src_addr) },
+		{ "--dst-addr", offsetof(struct opts, dst_addr) },
 		{ "--colour", offsetof(struct opts, colour) },
 		{ "-n", offsetof(struct opts, n) },
 		{ "--max-width", offsetof(struct opts, max_width) },
@@ -4473,6 +4664,10 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		}
 		if (!strcmp(argv[i], "--kept-copy") && i + 1 < argc) {
 			o->kept_dir = argv[i + 1];
+			continue;
+		}
+		if (!strcmp(argv[i], "--large-copy") && i + 1 < argc) {
+			o->large_dir = argv[i + 1];
 			continue;
 		}
 		if (!strcmp(argv[i], "--bg-pds") && i + 1 < argc) {
@@ -5326,6 +5521,19 @@ int main(int argc, char **argv)
 			"--every-value\n");
 		return 2;
 	}
+	if ((o.src_addr && (strcmp(cmd, "copy") || o.page_before)) ||
+	    (o.dst_addr && strcmp(cmd, "fill")) || (o.src_addr | o.dst_addr) % SGXFIVE_PAGE_SIZE ||
+	    (o.large_dir && strcmp(cmd, "fill") && strcmp(cmd, "copy"))) {
+		fprintf(stderr, "sgxfive-test: --src-addr ADDR is for copy (without --page-before), "
+			"--dst-addr ADDR for fill, each a page's address; --large-copy DIR for fill "
+			"and copy\n");
+		return 2;
+	}
+	if ((has_opt(argc, argv, "--src-addr") && !o.src_addr) ||
+	    (has_opt(argc, argv, "--dst-addr") && !o.dst_addr)) {
+		fprintf(stderr, "sgxfive-test: --src-addr and --dst-addr take a page's address, not 0\n");
+		return 2;
+	}
 
 	/*
 	 * Q190's layered background, tri and probe --tri: the option and the knobs (read here,
@@ -5382,6 +5590,10 @@ int main(int argc, char **argv)
 	}
 
 	mcfg.render_final_pb_pages = o.final_pb;	/* the mock's debugfs (tri writes the kernel's) */
+	mock_pde = mknobs;
+	mcfg.vm_pde_addr = mknobs.pde_addr;
+	mcfg.vm_pde_size = mknobs.pde_size;
+	mcfg.vm_pde_layout = mknobs.pde_layout;
 	if (use_mock)
 		t.mock = sgxfive_mock_create(&mcfg);
 	ret = sgxfive_dev_open(use_mock ? sgxfive_mock_backend(t.mock) : NULL, device, &t.dev);

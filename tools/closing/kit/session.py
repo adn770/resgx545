@@ -923,9 +923,11 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
 
 # ---- the library mock ------------------------------------------------------------------------
 LIBMOCK_TREES = ("userspace/libsgxfive", "include/uapi")
-# the debugfs files sgxfive-test copies (tri and probe --tri --dump-render, --kept-copy, --words),
-# which the replay gives it empty: the kernel's dumps, read only, never a knob
-LIBMOCK_DUMPS = ("render_param", "render_tadata", "render_kept", "render_words", "buf09")
+# the debugfs files sgxfive-test copies (tri and probe --tri --dump-render, --kept-copy, --words,
+# fill and copy --large-copy), which the replay gives it empty: the kernel's dumps, read only,
+# never a knob
+LIBMOCK_DUMPS = ("render_param", "render_tadata", "render_kept", "render_words", "buf09",
+                 "vm_large")
 
 
 def libmock_build(kp, c, t):

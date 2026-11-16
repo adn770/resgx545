@@ -103,6 +103,7 @@ struct sgxfive_mock {
 	uint32_t final_pb;		/* debugfs render_final_pb_pages: the next one's, once */
 	bool bg_layer;			/* debugfs render_bg_layer: the one-layer background */
 	uint32_t bg_src;		/* debugfs render_bg_src */
+	uint32_t pde_addr, pde_size, pde_layout;	/* debugfs vm_pde_* */
 	char *debugfs_dir;		/* kept_park_ms: render_kept's directory */
 	uint32_t kept_park_ms;		/* a render context's park after its close (E1085) */
 	struct mbo *bos[MAX_OBJS];
@@ -459,6 +460,22 @@ static const struct drm_sgxfive_heap *user_heap(struct sgxfive_mock *m, uint64_t
 	return NULL;
 }
 
+/*
+ * debugfs vm_pde_*: what the kernel's VM_MAP at vm_pde_addr takes (sgxfive_vm_large_wanted):
+ * exactly 4 MiB, a size code 0-7 and a layout 0-3 it makes a region for (misalign and the
+ * decoy need two blocks of a named size above 4 KiB, codes 6 and 7 only the dense layout).
+ */
+static bool pde_takes(const struct sgxfive_mock *m, uint64_t size)
+{
+	const uint32_t c = m->pde_size, l = m->pde_layout;
+
+	if (size != 0x400000 || c > 7 || l > 3)
+		return false;
+	if ((c == 0 || c == 5) && l > 1)
+		return false;
+	return c < 6 || l == 0;
+}
+
 static int m_vm_map(struct sgxfive_mock *m, int fd, struct drm_sgxfive_vm_map_args *a)
 {
 	struct mvm *vm = FIND(m->vms, fd, a->vm_context_handle);
@@ -472,6 +489,8 @@ static int m_vm_map(struct sgxfive_mock *m, int fd, struct drm_sgxfive_vm_map_ar
 	if (!bo || !bo->open)
 		return -ENOENT;
 	if (a->offset > bo->size || a->size > bo->size - a->offset || !vm || !vm->open)
+		return -EINVAL;
+	if (m->pde_addr && a->device_addr == m->pde_addr && !pde_takes(m, a->size))
 		return -EINVAL;
 	for (uint32_t i = 0; i < vm->nmaps; i++)
 		if (a->device_addr < vm->maps[i].addr + vm->maps[i].size &&
@@ -1543,6 +1562,9 @@ struct sgxfive_mock *sgxfive_mock_create(const struct sgxfive_mock_config *cfg)
 	/* As the kernel's debugfs: the default for anything out of range. */
 	m->bg_layer = cfg->bg_layer;
 	m->bg_src = cfg->bg_src;
+	m->pde_addr = cfg->vm_pde_addr;
+	m->pde_size = cfg->vm_pde_size;
+	m->pde_layout = cfg->vm_pde_layout;
 	m->pb_pages = cfg->render_pb_pages >= 0x23 && cfg->render_pb_pages <= 0x422 ?
 		      cfg->render_pb_pages : 0x422;
 	m->final_pb = cfg->render_final_pb_pages >= 0x23 && cfg->render_final_pb_pages <= 0x422 ?
