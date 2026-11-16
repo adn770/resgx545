@@ -819,7 +819,7 @@ of the firmware toolchain's second requests: 678 client pixel jobs (compares, pr
 high word of `ima32` with repeated registers, narrow memory) and 124 jobs in firmware tasks of ours
 (test immediates, predicates, one `wdf` over many loads, registers r0 to r123), the predictions
 hashed before the first run, 15 of 19 rows run (the other four not run) and one failed (the control
-of E602, Q194). The client results hold on every case run (E595 to E599); in a firmware task the
+of E602, Q146). The client results hold on every case run (E595 to E599); in a firmware task the
 test immediate is exact for n = 0 to 127 (E600), `p0 mov r, #n` and `p0 br` follow p0 (E601), loads,
 one `wdf` and stores is sufficient for 2 to 100 loads without the `wdf` being shown to wait or to be
 needed (E602), and every register r0 to r123 is storage for `ldad` and `stad` (E603). The simulator

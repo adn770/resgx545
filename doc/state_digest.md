@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-135 open: 125 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+134 open: 124 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -180,8 +180,6 @@ list.
   reset and across a firmware reload and boot (E536's ... (E537, E809, E810)
 - `Q168` edm, low: what limits the temporaries of a firmware task above TRC 48 (E540 predicted a
   hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and ... (E540, E550, E603)
-- `Q194` edm, low: does a load that is not waited for land by itself in a firmware (EDM) task, at
-  what distance, and is that a property of the task, of the ... (E517, E602)
 - `Q196` edm, low: do the client results of 11.36 for the compare and the high word of ima32 (E595,
   E597), the predicated register moves and ba (E596) and the ... (E599, E600, E601)
 - `Q290` edm, low: what does a write to CR_EVENT_KICK with the kicker word unchanged start in the
@@ -253,7 +251,7 @@ list.
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
   0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
-  the loaded value after 40, 100 and 128 `nop` but not after ... (E517)
+  the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
   read, per instance, and what clears it (a power cycle, a ... (E484, E485, E593)
 - `Q195` usse, low: what do the narrow memory forms do that the 11.36 fills did not run: a register
