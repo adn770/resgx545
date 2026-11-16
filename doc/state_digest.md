@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-136 open: 126 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+135 open: 125 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -212,8 +212,6 @@ list.
   job (the TA finishes and the 3D takes the render: E361, ... (E304, E361, E435)
 - `Q099` render, low: what do bits 25, 8 and 19:12 of 0x04c4 (render details dword 18) hold, which
   move with a texture target and the parameter buffer's size in ... (E326, E408)
-- `Q160` ta, low: how does the TA split an index list of several lines into objects and regions: two
-  lines at 128 x 128 give two objects of 2 vertices (the ... (E543)
 - `Q161` ta, low: what does a point do at the edges of its size field: sizes under 1/16 pixel (1/32
   draws one pixel), zero (tiles listed, no pixel), negative ... (E346, E544)
 - `Q162` ta, low: what do OUTSEL bits 10, 11 and 15 select, which fault (bits 8 without a size row,

@@ -511,7 +511,7 @@ pipe's, the task runs until it hands its outputs to the vertex cache), puts the 
 through the viewport (`mte`) and writes the object, the region headers and the streams (`ta`). The
 TA's rules (E541, E542, E651, E652) and the 1/w replacement (E197) are fitted, so every result is
 `fitted`, never `matched`. Refused by question: stream words and state words nobody flipped (Q047,
-Q042, Q094, Q112; the history-dependent values Q163), lines and points (Q159, Q160, Q161),
+Q042, Q094, Q112; the history-dependent values Q163), lines and points (Q159, Q161),
 other output selects and state blocks (Q069, Q162), TE words other than the library's tiling (Q100,
 Q139, Q086, Q142), a triangle the clip removes or cuts or no target region lists (Q230), command
 words 10 to 25 that no stage reads (6.7 leaves the ones the pixel side reads to it), the state's

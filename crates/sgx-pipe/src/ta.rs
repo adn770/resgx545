@@ -12,7 +12,7 @@ use crate::mte::{State, Vertex};
 use std::collections::BTreeMap;
 
 pub const OPEN: &[&str] =
-    &["Q070", "Q100", "Q139", "Q086", "Q159", "Q160", "Q161", "Q164", "Q165", "Q068", "Q230", "Q231"];
+    &["Q070", "Q100", "Q139", "Q086", "Q159", "Q161", "Q164", "Q165", "Q068", "Q230", "Q231"];
 
 /// The unit as a whole, for a vector kind the replay has no inputs for.
 pub fn refuse() -> Outcome {

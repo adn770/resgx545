@@ -45,7 +45,7 @@ RULES = [
     Rule(r"ta/objects/", "ta-object", "unit-ready", "E176 E181 E306", "Q070", "12.2",
          "one object per state-word setting"),
     Rule(r"ta/object-words/", "ta-object", "unit-ready", "E306 E308", "Q070", "12.2", "random words"),
-    Rule(r"ta/(line-point|points)/", "te-region", "unit-ready", "E543 E544", "Q159 Q160 Q161", "12.2",
+    Rule(r"ta/(line-point|points)/", "te-region", "unit-ready", "E543 E544", "Q159 Q161", "12.2",
          "lines and points; rules in recompute_p1131.py, not coded"),
     Rule(r"ta/mtile-", "te-macrotile", "unit-blocked", "E174 E175 E331", "Q100 Q139 Q086", "12.2",
          "fitted table (tiling3d.py); other words refuse"),

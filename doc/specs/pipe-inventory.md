@@ -59,7 +59,7 @@ model), `scene-only` (a whole job only), `exists` (vectors already in the data r
 | ta-object | unit-ready | 28 | 56 | E176 E181 E306 | Q070 | 12.2 |
 | ta-object | unit-ready | 2 | 62 | E306 E308 | Q070 | 12.2 |
 | te-region | unit-ready | 37 | 74 | E177 E180 E305 | Q070 | 12.2 |
-| te-region | unit-ready | 2 | 591 | E543 E544 | Q159 Q160 Q161 | 12.2 |
+| te-region | unit-ready | 2 | 591 | E543 E544 | Q159 Q161 | 12.2 |
 | zls-store | unit-ready | 1 | 22 | E466 E490 | Q120 | 12.4 |
 | bif-walk | unit-blocked | 2 | 118 | E457 E573 E592 | Q076 Q108 | 12.5 |
 | dpm | unit-blocked | 5 | 229 | E200 E456 E464 | Q191 | 12.7 |

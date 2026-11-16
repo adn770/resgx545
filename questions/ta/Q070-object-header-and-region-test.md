@@ -57,8 +57,8 @@ lines run (ISP word 0 + 0x8000, topology 1) and their regions are a thickened se
 are those of the old points question, whose size and footprint E544 answers for our program
 and whose closed-driver clause is Q161. What is open of this question: the format word's bits
 other than 18 (none changed in 56 completed jobs; OUTSEL bit 12 clears the word, E544), the line
-region rule (Q159) and several lines (Q160), and that the ISP walks the headers [infer].
-Status: narrowed; the line rule moved to Q159 and Q160.
+region rule and several lines (Q159), and that the ISP walks the headers [infer].
+Status: narrowed; the line rule moved to Q159 (Q160, several lines, folded into it since).
 
 Note 2026-11-10 (a post hoc reading of the 41 objects of S1 and S1b's g-e3, a fit and not a test,
 made before the round 2 runs; see the note of E181). [infer] The primitive list's 5-bit fields are
@@ -78,5 +78,5 @@ the stored vertices with bit 4 set for a boundary edge and the 4-bit stored inde
 (2, 17, 19) for 4 vertices and (16, 17, 18) for 3, in 5 of 5, controls passing. So "vertex numbers
 16 to 31" (E181, whose list entries E546 compares) is read as an index plus an edge flag, held out
 once; the stored vertex order is E777's (Q230). What stays open here is unchanged: the format word
-beyond 18, the set masks, the line and point region rules (Q159, Q160) and that the ISP walks the
+beyond 18, the set masks, the line and point region rules (Q159, Q161) and that the ISP walks the
 headers.

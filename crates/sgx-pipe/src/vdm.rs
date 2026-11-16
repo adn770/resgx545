@@ -117,10 +117,10 @@ fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
 /// faults it (E737) and is not a 32-bit index width (E756), lines and points are open (E543, E544).
 fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
     // bits 27:26 of the header are the topology: 1 lines (E543), 2 points (E544); the TA's rules for
-    // their regions are Q159, Q160 and Q161
+    // their regions are Q159 (one line or several) and Q161
     if w[0] >> 22 == 0x213 || w[0] >> 22 == 0x223 {
         let (kind, ids): (_, &[&str]) =
-            if w[0] >> 26 & 3 == 1 { ("lines", &["Q159", "Q160"]) } else { ("points", &["Q161"]) };
+            if w[0] >> 26 & 3 == 1 { ("lines", &["Q159"]) } else { ("points", &["Q161"]) };
         return Err(refuse_ids(
             format!(
                 "index list header {:#010x}: {kind}: the regions of their objects are open (E543, E544)",
@@ -492,7 +492,7 @@ mod tests {
     #[test]
     fn a_lines_or_points_header_is_refused_under_the_questions_of_their_regions() {
         // E543: topology 1 runs lines; E544: points
-        for (hdr, ids) in [(0x84c0_0002u32, vec!["Q159", "Q160"]), (0x88c0_0003, vec!["Q161"])] {
+        for (hdr, ids) in [(0x84c0_0002u32, vec!["Q159"]), (0x88c0_0003, vec!["Q161"])] {
             match poked(2, hdr) {
                 Err(Outcome::Unsupported { ids: got, .. }) => assert_eq!(got, ids, "{hdr:#x}"),
                 r => panic!("{r:?}"),
