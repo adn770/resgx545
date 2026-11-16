@@ -453,6 +453,21 @@ def test_every_command_the_readme_gives_names_its_interpreter_and_runs_at_mode_6
     assert g.returncode != 0 and "README.md" in g.stdout and "interpreter" in g.stdout, g.stdout
 
 
+def test_a_scaffolded_sessions_run_all_leaves_no_cache_directory(repos):
+    """Builders cannot delete a __pycache__ or .pytest_cache inside a scratch session and folds
+    must exclude them: run_all.sh and the kit write no bytecode and no pytest cache, even when
+    the caller's environment would allow them."""
+    kp = scaffold(repos)
+    env = {k: v for k, v in dict(env_for(repos), PY=PY).items() if k != "PYTHONDONTWRITEBYTECODE"}
+    r = subprocess.run(["bash", "tests/run_all.sh"], cwd=kp, capture_output=True, text=True,
+                       env=env, timeout=600)
+    assert r.returncode == 0 and "RUN_ALL PASSED" in r.stdout, r.stdout + r.stderr
+    assert "PYTHONDONTWRITEBYTECODE=1" in (kp / "tests/run_all.sh").read_text()
+    left = [str(p.relative_to(kp)) for p in kp.rglob("*")
+            if p.name in ("__pycache__", ".pytest_cache") or p.suffix == ".pyc"]
+    assert left == [], left
+
+
 def test_a_hook_keeps_its_count_across_rows(repos):
     """r7-geo's needhash: the SECOND row without a hash stops the stage, so hook_check runs in
     the runner's shell (a count survives from row to row), and its reason stops the stage with

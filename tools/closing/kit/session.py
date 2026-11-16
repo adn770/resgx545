@@ -55,6 +55,7 @@ import tempfile
 import time
 import tomllib
 
+sys.dont_write_bytecode = True     # no __pycache__ beside the kit (scratch dirs cannot be cleaned)
 KITDIR = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(KITDIR))
 import sessioncheck  # noqa: E402
@@ -1276,7 +1277,7 @@ def mock(kp, worlds=None, say=print):
                    KIT_KMSG=str(m / "kmsg"), KIT_SRCV_PATH=str(m / "srcv"), FAKE_SRCV=c["srcversion"],
                    KIT_PY=sys.executable, KIT_FAKE=str(fakebin), KIT_WORLD=str(world_py),
                    KIT_TOOL_NAMES=" ".join(names), FAKE_WORLD=w, RESET_WAIT="0", HEALTH_WAIT="0",
-                   IDLE_WAIT="0",
+                   IDLE_WAIT="0", PYTHONDONTWRITEBYTECODE="1",
                    KIT_WRAPPERS=" ".join(t for t, d in c["tools"].items() if d.get("wraps")),
                    TEE_GRACE="30", SGX_TARGET_HOST="u@mock", PY=_py(c))
         ENV, SSH = env, [sys.executable, str(fakebin / "ssh.py")]

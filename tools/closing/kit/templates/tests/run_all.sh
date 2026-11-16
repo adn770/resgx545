@@ -6,6 +6,8 @@
 #   3. the mock: the staged tree on a fake laptop under env -i, every world of mock/world.py;
 #   4. the freeze, once frozen (pins checked at their commits).
 cd "$(dirname "$0")/.." || exit 1
+# no __pycache__ or .pytest_cache in a scratch session dir (a builder cannot delete them)
+export PYTHONDONTWRITEBYTECODE=1
 # the repo's .venv has pytest and numpy, never a scratch one
 PY=${PY:-$HOME/src/resgx545/.venv/bin/python}
 [ -x "$PY" ] || PY=python3

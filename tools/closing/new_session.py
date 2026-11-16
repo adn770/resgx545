@@ -27,6 +27,7 @@ import re
 import subprocess
 import sys
 
+sys.dont_write_bytecode = True     # no __pycache__ beside the kit (scratch dirs cannot be cleaned)
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "kit"))
 import session as S  # noqa: E402

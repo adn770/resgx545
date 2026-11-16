@@ -22,7 +22,8 @@ def main(argv):
         return 255
     cmd = " ".join(a[1:])
     home = os.environ["KIT_FAKE_HOME"]
-    env = {"HOME": home, "PATH": os.environ["KIT_LAPTOP_PATH"]}
+    # no bytecode in the mock tree: a scratch session dir cannot be cleaned of __pycache__
+    env = {"HOME": home, "PATH": os.environ["KIT_LAPTOP_PATH"], "PYTHONDONTWRITEBYTECODE": "1"}
     env.update({k: v for k, v in os.environ.items() if k.startswith(KEEP) or k in NAMES})
     os.chdir(home)
     os.execve("/bin/bash", ["bash", "-c", cmd], env)
