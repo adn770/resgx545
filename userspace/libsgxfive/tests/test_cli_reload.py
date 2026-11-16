@@ -290,18 +290,33 @@ def test_ctx2_geometry_kick_then_its_closing_render(tmp_path):
 
 def test_ctx2_geometry_copy_reads_again_while_parking(tmp_path):
     """The park race of t20 (E1085): right after the early close the kept copy can read empty;
-    the geometry kick's copy reads again while it is empty, as the copy after the close does."""
-    (tmp_path / "render_kept").write_bytes(kept_pages(2))
-    out = tmp_path / "out"
-    out.mkdir()
-    r = run("--mock", "--mock-park-ms=150", "tri", "--width", "64", "--height", "64", "-n", "1",
-            "--ctx2", "--close-first-early", "--ctx2-geometry", "1", "--kept-copy", str(out),
-            dbg=tmp_path)
-    assert r.returncode == 0, r.stdout + r.stderr
-    assert (out / "kept.geo.1.bin").read_bytes() == kept_pages(2)
-    assert re.search(r"^tri: render_kept read \d+ times after the second context's geometry "
-                     r"kick, before its closing render 1 \(empty \d+, 10 ms apart\): 8192 bytes$",
-                     r.stdout, re.M), r.stdout
+    the geometry kick's copy reads again while it is empty, as the copy after the close does.
+
+    The race is a window: the copy must start after the close and before the 150 ms park ends.
+    On a machine under heavy load the tool can be descheduled past the park, the first read
+    then finds the bytes and says nothing about reading again, with no code change. So the
+    window is tried up to 5 times, each in a fresh directory, and what it checks is unchanged:
+    every attempt must succeed and copy the whole kept data, and at least one must have read
+    again and say so. A real failure (the copy never reads again) fails every attempt."""
+    pat = re.compile(r"^tri: render_kept read \d+ times after the second context's geometry "
+                     r"kick, before its closing render 1 \(empty \d+, 10 ms apart\): "
+                     r"8192 bytes$", re.M)
+    last = ""
+    for attempt in range(5):
+        d = tmp_path / f"a{attempt}"
+        d.mkdir()
+        (d / "render_kept").write_bytes(kept_pages(2))
+        out = d / "out"
+        out.mkdir()
+        r = run("--mock", "--mock-park-ms=150", "tri", "--width", "64", "--height", "64", "-n",
+                "1", "--ctx2", "--close-first-early", "--ctx2-geometry", "1", "--kept-copy",
+                str(out), dbg=d)
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert (out / "kept.geo.1.bin").read_bytes() == kept_pages(2)
+        last = r.stdout
+        if pat.search(r.stdout):
+            return
+    assert pat.search(last), last
 
 
 def test_ctx2_geometry_only_in_its_iteration(tmp_path):

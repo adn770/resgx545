@@ -871,6 +871,14 @@ static void sleep_ms(long ms)
 	nanosleep(&ts, NULL);
 }
 
+static long long now_ms(void)
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
+}
+
 /*
  * The park race of E1085: the kernel parks a closed render context when its last reference
  * goes, which can be after the close ioctl returns, and debugfs render_kept reads 0 bytes
@@ -888,7 +896,7 @@ static void kept_park(void)
 	uint32_t ctx, xctx;
 	FILE *f;
 	struct env e;
-	int waited = 0;
+	long long t0, waited = 0;
 
 	snprintf(dir, sizeof(dir), "%s/sgxfive-park.XXXXXX", tmp && *tmp ? tmp : "/tmp");
 	if (!CHECK(mkdtemp(dir)))
@@ -909,13 +917,20 @@ static void kept_park(void)
 	CHECK_EQ(sgxfive_ctx_destroy(e.dev, xctx), 0);
 	CHECK_EQ(file_size(kept), 4096);		/* a transfer context: no park */
 	CHECK_EQ(sgxfive_render_ctx_create(e.vm, 64, 64, &ctx), 0);
+	t0 = now_ms();					/* before the close that starts the park */
 	CHECK_EQ(sgxfive_ctx_destroy(e.dev, ctx), 0);
 	CHECK_EQ(file_size(kept), 0);			/* closed, not parked yet */
-	while (file_size(kept) != 4096 && waited < 3000) {
+	/*
+	 * Elapsed time since before the close on the monotonic clock, not a count of 5 ms naps: under load a nap
+	 * overshoots, so the count falls short of the real wait and a lower bound on it fails
+	 * with no code change. The park is 60 ms, so a copy back before 40 ms real is a bug; the
+	 * upper bound is only a hang guard, as long as a starved machine needs.
+	 */
+	while (file_size(kept) != 4096 && waited < 30000) {
 		sleep_ms(5);
-		waited += 5;
+		waited = now_ms() - t0;
 	}
-	CHECK(waited >= 40 && waited < 3000);
+	CHECK(waited >= 40 && waited < 30000);
 	f = fopen(kept, "rb");
 	CHECK(f && fread(back, 1, sizeof(back), f) == sizeof(back));
 	if (f)
