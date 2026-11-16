@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-133 open: 123 hw (high 15, medium 63, low 45, unrated 0), 9 fw, 1 kernel.
+132 open: 122 hw (high 15, medium 62, low 45, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -164,9 +164,8 @@
 ### vdm
 
 - `Q036` (phase 10, hw, medium): what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463, E574, E626, E630, E631, E1019, E1032, E1044, E1057)
-- `Q042` (phase 11, hw, medium): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308, E414)
+- `Q042` (phase 11, hw, medium): what do bits 31:24 of the index list's first trailing word (VDM_INDEX2) do: bits 27:24, when its low bits move the list's first index and 0x0f000000 drops two of five triangles, and (folded from Q092) what do bits 31:28 count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E188, E300, E307, E308, E414, E346, E348, E546)
 - `Q047` (phase 11, hw, high): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299, E414, E427, E440, E545)
-- `Q092` (phase 11, hw, medium): what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E346, E348, E414, E546)
 - `Q112` (phase 11, hw, medium): what do bits 25:24 of the index list header do, which are clear in all 1888 captured lists, and does the TA take indices wider than the 16 bits the captured lists use? (E188, E346, E414, E737, E756, E1075)
 - `Q163` (phase 11, hw, medium): what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8; held out for v 3 to 7 by E1021; E1035: it survives 60 s idle, a fill job and the health fill and triangle, a reset that follows no hang clears it, and it holds for a 128 x 128 one-block job), what makes the job right before a block-2 v = 1 job decide it (E1113: it completes iff that job, no reset between, completed with a block at v 1 or 6, held out 3 of 3, and hangs after v 5 and v 3 jobs at c = 3 and 1), and what does v = 0 in block 1 below c = 4 do, given that the rule held on streams of 24 and 48 vertices, one and two objects and 8 and 16 temporaries (E1076) (E545, E413, E700, E701, E060, E185, E299, E1021, E1035, E1076, E1113)
 - `Q272` (phase 11, hw, low): what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7, ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 pixels of the render differ), one job change its render by 260 pixels with every vertex identity present and its vertices split 15, 15, 15, 15, 15, 15, 15, 9 and 12 (a = 12), and one job hang (N = 2, 16 vertices, 32 attribute rows), and are these and E546's lost vertex at 33 with 8 rows the same kind of event (E702, E546, E738, E755)

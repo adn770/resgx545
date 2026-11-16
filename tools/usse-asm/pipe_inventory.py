@@ -54,7 +54,7 @@ RULES = [
     Rule(r"(followup/)?vdm/(state1|state1-split|state-units|state2-)", "vdm-stream", "unit-blocked",
          "E185 E191", "Q047 Q042", "12.2", "state word fields"),
     Rule(r"vdm/(index-list|index-trailing|index2)/", "vdm-stream", "unit-blocked",
-         "E188 E300 E346 E414", "Q112 Q092", "12.2", "index list words"),
+         "E188 E300 E346 E414", "Q112 Q042", "12.2", "index list words"),
     Rule(r"vdm/(vtask-capacity|vertex-tasks)", "vdm-stream", "unit-blocked", "E189 E190 E571",
          "Q094 Q163", "12.2", "vertices per task"),
     Rule(r"mte/", "mte", "unit-blocked", "E061 E063 E194 E287", "Q069 Q162", "12.2",

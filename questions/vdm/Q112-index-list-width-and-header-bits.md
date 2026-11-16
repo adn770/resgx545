@@ -16,8 +16,8 @@ fans run on our job (E414). The captured index buffers hold 16-bit indices (E346
 trailing word, 0x003fffff in every list, acts on the indices (E188).
 
 Open: whether header bits 25:24 select the index width (16 or 32 bit) or something else, what
-indices above 16 bits do when the list names them. The first trailing word's own bits are Q042 and
-Q092. The geometry the simulator takes from indexed draws depends on the width.
+indices above 16 bits do when the list names them. The first trailing word's own bits are Q042.
+The geometry the simulator takes from indexed draws depends on the width.
 
 To settle it: `probe --tri` with `--vdm N^=V` flipping the index list header's bits 25:24 over an
 index buffer of 16-bit and of 32-bit values, the object's vertices and the primitive list

@@ -292,7 +292,7 @@ what the captures leave open is a question:
   vertex-side programs (E344); the pixel-side programs the MTE state names (E345).
 - **render:** the render context (E323), the closing kick of each frame (E324), the RT data set
   (E325), a one-triangle job against ours (E326; answered later by E408, the rest in Q099).
-- **vdm:** index lists and vertex tasks (E346; Q092, Q094); block types (E349).
+- **vdm:** index lists and vertex tasks (E346; Q042, Q094); block types (E349).
 - **mte:** the presence word and `DOUTD1` (E347); region clip, viewport and cull (E348).
 - **isp:** ISP words under depth, stencil and colour mask (E332); the background object (E334);
   the render details' 3D registers (E330); polygon offset (E338); 4x multisampling (E339; Q089);
@@ -695,7 +695,7 @@ move the marks of a block together and a job's completion is not a function of i
 at 33 by program (E546); the short pulses of the event bits are 4.2 to 6.1 microseconds, held by the
 firmware's acknowledgement [infer], and seven of them raised a host interrupt of their own in a
 triangle (E547, E548). The points question is folded into Q161 and retired (E544 answers its size
-and footprint for our program; the closed driver's row is Q161); Q070, Q047, Q092, Q094 and Q111 are
+and footprint for our program; the closed driver's row is Q161); Q070, Q047, Q042, Q094 and Q111 are
 narrowed; eight questions open (Q159 to Q165 and the one on `CR_EVENT_HOST_CLEAR`, answered later by
 E857; hw: medium, low, low, low, medium, low, low for Q159 to Q165, and that one kernel, parked: it
 needs a kernel change). The TA and VDM models of the simulator

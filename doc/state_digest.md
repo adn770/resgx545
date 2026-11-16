@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-133 open: 123 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+132 open: 122 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -156,10 +156,8 @@ list.
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
 - `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
   high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1032, E1044, E1057)
-- `Q042` vdm, medium: what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do,
-  when its low bits move the list's first index and 0x0f000000 ... (E307, E308, E414)
-- `Q092` vdm, medium: what do bits 31:28 of the index list's first trailing word count, which the
-  closed driver writes as 0xf on 1886 captured lists and 0xd on a ... (E348, E414, E546)
+- `Q042` vdm, medium: what do bits 31:24 of the index list's first trailing word (VDM_INDEX2) do:
+  bits 27:24, when its low bits move the list's first index and ... (E348, E414, E546)
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
   captured lists, and does the TA take indices wider than the 16 ... (E737, E756, E1075)
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1

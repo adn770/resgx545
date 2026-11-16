@@ -70,7 +70,7 @@ model), `scene-only` (a whole job only), `exists` (vectors already in the data r
 | te-macrotile | unit-blocked | 4 | 348 | E174 E175 E331 | Q100 Q139 Q086 | 12.2 |
 | te-region | unit-blocked | 1 | 49 | E507 E511 | Q086 Q003 | 12.8 |
 | vdm-stream | unit-blocked | 37 | 693 | E185 E191 | Q047 Q042 | 12.2 |
-| vdm-stream | unit-blocked | 16 | 192 | E188 E300 E346 E414 | Q112 Q092 | 12.2 |
+| vdm-stream | unit-blocked | 16 | 192 | E188 E300 E346 E414 | Q112 Q042 | 12.2 |
 | vdm-stream | unit-blocked | 4 | 252 | E189 E190 E571 | Q094 Q163 | 12.2 |
 | isp-tile | scene-only | 8 | 16 | E210 E211 E1010 | Q089 | 12.8 |
 | isp-tile | scene-only | 1 | 66 | E281 | Q089 Q089 | 12.8 |

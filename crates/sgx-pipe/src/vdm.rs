@@ -6,7 +6,7 @@ use crate::Outcome;
 use crate::mem::Mem;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q047", "Q042", "Q092", "Q112", "Q163", "Q231"];
+pub const OPEN: &[&str] = &["Q047", "Q042", "Q112", "Q163", "Q231"];
 
 /// A state block of the stream: the PDS program that fetches the MTE state, and whether it is the
 /// stream's last (the end of scene).
@@ -150,7 +150,7 @@ fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
     if w[3] != INDEX3_LIBRARY {
         return Err(refuse_ids(
             format!("VDM_INDEX3 {:#010x}: other values wrap, remove or hang (E188)", w[3]),
-            &["Q042", "Q092"],
+            &["Q042"],
         ));
     }
     // task word 1: output rows (31:24), vertex size 4 (23:22 = 3), bit 7, the data rows. The rows
@@ -482,6 +482,11 @@ mod tests {
         refused(poked(0, 0x0), "Q112"); // a block type nobody saw
         refused(poked(4, 0xf000_0003), "Q042"); // VDM_INDEX2 low bits: an offset in indices (E414)
         refused(poked(5, 0x1), "Q042"); // VDM_INDEX3 other than 0x003fffff
+        // under the trailing words' question alone (bits 31:28 of the first folded into Q042)
+        match poked(5, 0x1) {
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q042"]),
+            r => panic!("{r:?}"),
+        }
         refused(poked(7, 0x01c0_0100 | 2), "Q094"); // the vertex task's output size and data
         // VDM_INDEX2 values that left the TA's output byte for byte the same (E414) are accepted
         for w in [0, 0x1000_0000, 0x7000_0000, 0x8000_0000, 0xf000_0000] {
