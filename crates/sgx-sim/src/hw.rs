@@ -5,7 +5,7 @@
 //!
 //! The sources, in the order they are asked (`Source`):
 //! 1. a landed rule that claims the register (a value that moves with the events served, E009;
-//!    the idle word of CR_EVENT_STATUS until a kick, E1115);
+//!    the idle words of CR_EVENT_STATUS and CR_CACHE_CTRL until a kick, E1115, E1120);
 //! 2. a value the run wrote (the firmware's `str`, the host's writes);
 //! 3. a seed, each citing the record whose reading gives it (an E-number, refused without one);
 //! 4. a reset value from a kept snapshot (the caller passes only the registers the kept
@@ -55,6 +55,13 @@ pub const USE0_SERV_EVENT: u32 = 0x0b14 / 4;
 /// tick a read is refused.
 pub const EVENT_STATUS: u32 = 0x012c / 4;
 
+/// `CR_CACHE_CTRL` (0x0804): 0x0000ffff after a reset, through the ticks (E1120: the first sample
+/// of 24 of 24 rows; the kit's snapshots after its reset). From a change that comes before bit 26
+/// of CR_EVENT_STATUS to the end of the run it reads 0x1000ffff (24 of 24 rows); when that change
+/// comes after the kick or after the firmware's own write is not measured, so after a served
+/// event other than a tick a read is refused, even over a run write.
+pub const CACHE_CTRL: u32 = 0x0804 / 4;
+
 #[derive(Clone, Debug)]
 struct Counted {
     value: u32,
@@ -71,6 +78,7 @@ pub struct HwModel {
     seeds: BTreeMap<u32, (u32, String)>,
     serv_event: Option<Counted>,
     event_idle: Option<Counted>,
+    cache_idle: Option<Counted>,
     open: BTreeMap<u32, String>,
     /// The reads refused, by register: what a run lists (offsets and counts).
     pub refused: BTreeMap<u32, u32>,
@@ -129,6 +137,16 @@ impl HwModel {
         Ok(())
     }
 
+    /// The E1120 rule for `CR_CACHE_CTRL`: `value` (the word after a reset) until a served event
+    /// other than a tick. Refused without an E-number.
+    pub fn idle_cache_ctrl(&mut self, value: u32, cite: &str) -> Result<(), String> {
+        if !cites_a_record(cite) {
+            return Err(format!("the cache control word cites no record: {cite:?}"));
+        }
+        self.cache_idle = Some(Counted { value, cite: cite.to_string(), lost: None });
+        Ok(())
+    }
+
     /// What a refusal of `index` says beside the register (the open questions that block it).
     pub fn note_open(&mut self, index: u32, note: &str) {
         self.open.insert(index, note.to_string());
@@ -144,8 +162,21 @@ impl HwModel {
         {
             c.lost = Some(format!(
                 "a job is running (ir0 {}, ir1 {ir1:#010x} served): {} gives the idle word outside a job only; \
-                 in a plain triangle bit 26 shows as 0x24000000 before the render end, not in every job, \
-                 and when it shows after the CR_CACHE_CTRL write is not measured",
+                 in a plain triangle bit 26 shows as 0x24000000 (once 0xa4004000, with SW_EVENT; E1120) \
+                 before the render end, not in every job, and when it shows after the CR_CACHE_CTRL \
+                 write is not measured",
+                ir0.map_or("unknown".to_string(), |v| format!("{v:#x}")),
+                c.cite
+            ));
+        }
+        if let Some(c) = &mut self.cache_idle
+            && c.lost.is_none()
+            && !tick
+        {
+            c.lost = Some(format!(
+                "a kick was served (ir0 {}, ir1 {ir1:#010x}): {} reads 0x1000ffff from a change 19.5 to 106.6 us \
+                 before bit 26 (10 of 12 rows; 5 and 18 ms in two) of CR_EVENT_STATUS until a reset; when that change comes after the kick or \
+                 the firmware's write is not measured",
                 ir0.map_or("unknown".to_string(), |v| format!("{v:#x}")),
                 c.cite
             ));
@@ -158,7 +189,8 @@ impl HwModel {
             } else {
                 c.lost = Some(format!(
                     "an event other than a tick was served (ir0 {}, ir1 {ir1:#010x}): whether it counts is \
-                     not measured ({} ran ticks only)",
+                     not measured ({} ran ticks only; E1120: a plain triangle adds 9 to 11 counts beyond \
+                     the ticks, which events count is not measured)",
                     ir0.map_or("unknown".to_string(), |v| format!("{v:#x}")),
                     c.cite
                 ));
@@ -194,6 +226,14 @@ impl HwModel {
         {
             return match &c.lost {
                 None => Ok((c.value, Source::Rule("E1115"))),
+                Some(why) => refuse(format!("reads register 0x{:04x}: {why}", index * 4)),
+            };
+        }
+        if index == CACHE_CTRL
+            && let Some(c) = &self.cache_idle
+        {
+            return match &c.lost {
+                None => Ok((c.value, Source::Rule("E1120"))),
                 Some(why) => refuse(format!("reads register 0x{:04x}: {why}", index * 4)),
             };
         }
@@ -286,6 +326,31 @@ mod tests {
         hw.on_event(Some(2), 0x0300_0000);
         assert!(refused_naming(hw.read(EVENT_STATUS, None), "0x012c"));
         assert!(hw.idle_event_status(0x2000_0000, "the idle word").is_err());
+    }
+
+    #[test]
+    fn cache_ctrl_reads_its_reset_word_through_ticks_and_is_refused_after_a_kick() {
+        // E1120: 0x0000ffff after the reset through the ticks of the lead (24 of 24 rows' first
+        // samples); from a change before bit 26 to the end of the run 0x1000ffff (24 of 24), when
+        // that change comes after the kick or the run's own write is not measured: refused, even
+        // over a run write, since the hardware moves the register
+        let mut hw = HwModel::default();
+        hw.idle_cache_ctrl(0x0000_ffff, "E1120").unwrap();
+        assert_eq!(hw.read(CACHE_CTRL, None).unwrap(), (0x0000_ffff, Source::Rule("E1120")));
+        hw.on_event(Some(2), 0x0200_0000);
+        assert_eq!(hw.read(CACHE_CTRL, Some(0xffff)).unwrap().0, 0x0000_ffff);
+        hw.on_event(Some(0), 0x0200_0100);
+        let r = hw.read(CACHE_CTRL, Some(0x0000_0008));
+        assert!(refused_naming(r.clone(), "0x0804") && refused_naming(r, "0x1000ffff"));
+        assert!(hw.idle_cache_ctrl(0xffff, "after the reset").is_err());
+    }
+
+    #[test]
+    fn the_served_event_count_is_refused_after_a_kick_naming_the_triangle_counts() {
+        let mut hw = HwModel::default();
+        hw.count_serv_events(0x0001_0003, "E009, E1120").unwrap();
+        hw.on_event(Some(0), 0x0200_0100);
+        assert!(refused_naming(hw.read(USE0_SERV_EVENT, None), "9 to 11"));
     }
 
     #[test]

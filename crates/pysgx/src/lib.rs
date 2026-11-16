@@ -559,6 +559,12 @@ impl Sgx {
         self.hw()?.idle_event_status(value, cite).map_err(PyValueError::new_err)
     }
 
+    /// CR_CACHE_CTRL's E1120 rule: `value` (the word after a reset) until a served event other
+    /// than a tick.
+    fn hw_idle_cache_ctrl(&mut self, value: u32, cite: &str) -> PyResult<()> {
+        self.hw()?.idle_cache_ctrl(value, cite).map_err(PyValueError::new_err)
+    }
+
     fn hw_note_open(&mut self, index: u32, note: &str) -> PyResult<()> {
         self.hw()?.note_open(index, note);
         Ok(())

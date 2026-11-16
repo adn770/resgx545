@@ -73,15 +73,18 @@ def test_the_render_kick_is_one_slot_0_entry_with_the_count_and_the_kick_bit(kic
         (SLOT0, ["0x00000000", f"0x{K << 24 | 0x100:08x}"])]
 
 
-def test_the_kick_with_the_data_bit_writes_cache_ctrl_then_stops_on_event_status(kicked):
-    """The kernel's cache control on a render kick carries INVAL_DATA (bit 3): the firmware
-    writes CR_CACHE_CTRL (E013). What CR_EVENT_STATUS reads after it while the invalidation
-    runs is a unit's reading no kept job gives (R1, R2; Q111): the run stops there, refused.
-    E1115's idle word answers it only until a kick is served; the refusal names it."""
+def test_the_kick_stops_on_its_cache_ctrl_read_before_the_write(kicked):
+    """The kernel's cache control on a render kick carries INVAL_DATA (bit 3); in this run the
+    firmware reads CR_CACHE_CTRL after the kick, before it writes it (E013 places the write).
+    The hardware reads 0x0000ffff after a reset and 0x1000ffff from a change before bit 26
+    until a reset (E1120); whether a read after the kick and before the firmware's write sees
+    the change is a unit's reading no kept job gives (R1, R2), so the run stops there, refused,
+    before CR_EVENT_STATUS (whose idle word E1115 gives outside a job only). Before E1120 the
+    boot's write answered it: a read-back the hardware does not give after a kick."""
     r, evs, stop = kicked
-    assert any(e["ev"] == "wr" and not e["host"] and int(e["reg"], 16) == CACHE_CTRL * 4 for e in evs)
-    assert "0x012c" in str(stop) and "E1115" in str(stop)
-    assert r.s.hw_refused() == {EVENT_STATUS: 1}
+    assert not any(e["ev"] == "wr" and not e["host"] and int(e["reg"], 16) == CACHE_CTRL * 4 for e in evs)
+    assert "0x0804" in str(stop) and "E1120" in str(stop)
+    assert r.s.hw_refused() == {CACHE_CTRL: 1}
 
 
 def test_the_kick_scenario_writes_its_run_directory_without_instruction_text(tmp_path, built):
@@ -92,7 +95,7 @@ def test_the_kick_scenario_writes_its_run_directory_without_instruction_text(tmp
     assert sorted(p.name for p in out.iterdir()) == ["facts.txt", "output.txt", "run.toml", "trace.jsonl.gz"]
     assert log[:5] == ["boot: ok", "arm: ok", "ticks x1: ok", "map: ok", "render kick: stopped"]
     text = (out / "facts.txt").read_text()
-    assert "refused reads: 0x012c x1" in text and "job render/closing-r9-k1 c-off" in text
+    assert "refused reads: 0x0804 x1" in text and "job render/closing-r9-k1 c-off" in text
     mnemonics = {"mov", "ldr", "str", "stad", "ldad", "emitpds", "nop", "wdf", "movs", "halt", "lapc"}
     for src in (text, gzip.open(out / "trace.jsonl.gz", "rt").read()):
         words = set(src.replace('"', " ").replace(",", " ").split())

@@ -7,7 +7,7 @@ value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
             "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
-            "E1115", "E1116"]
+            "E1115", "E1116", "E1120", "E1121"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -165,3 +165,13 @@ episodes are 4 to 93 us; bits 6, 9 and 20 stay under 541 ns (14 of 14). Post hoc
 frozen controls failed on a wrong frozen value): CR_CACHE_CTRL bit 28 sets about 35 us before bit
 26 and stays until a reset, and with that register sampled bit 26 shows 5 to 13 us wide. Open as
 before: which event sets each bit, a pulse or a level, the other bits' order and clears.
+
+Narrowed 2026-11-16 (round 30 session r30-evst2, E1120, E1121; every control passed, every row
+held out; not retired). The rerun with the right control premises: CR_CACHE_CTRL reads
+0x0000ffff after a reset and 0x1000ffff from a change that comes before every event bit of a
+kicked job until a reset (19 of 19), bit 26 following it by 19.5 to 48.3 us in 9 of 12 rows and
+106.6 us in one; the word while bit 26 is set is the idle word with bit 26 and any other pending
+bit (once 0xa4004000 with SW_EVENT); bit 26 is again absent from about half the one-render jobs
+at 541 ns, its width depends on what else is sampled (about 6 us with four registers), and in
+`-n 3` a later render can show it, short. Retiring needs every clause decided: which event sets
+each other bit, a pulse or a level for them, their clears and order stay open.

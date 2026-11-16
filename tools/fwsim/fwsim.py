@@ -106,7 +106,7 @@ def checked_out(path: pathlib.Path, private: pathlib.Path) -> pathlib.Path:
 
 
 # the rules the simulator has landed (crates/sgx-sim/src/hw.rs): (kind, register)
-LANDED_RULES = {("count_ticks", 0x0B14), ("idle_until_event", 0x012C)}
+LANDED_RULES = {("count_ticks", 0x0B14), ("idle_until_event", 0x012C), ("idle_until_event", 0x0804)}
 
 
 def load_seeds(path: pathlib.Path = SEEDS) -> dict:
@@ -157,8 +157,10 @@ class Run:
         for r in self.seeds.get("rule", []):
             if r["kind"] == "count_ticks":
                 s.hw_count_serv_events(r["value"], r["cite"])
-            else:
+            elif r["reg"] == 0x012C:
                 s.hw_idle_event_status(r["value"], r["cite"])
+            else:
+                s.hw_idle_cache_ctrl(r["value"], r["cite"])
         s.alu_specials_in_movs = True       # PDS #13 passes ir1.l and tim.l on with movs (R5)
         for i, image in self.boot_data.images.items():
             s.map(self.lay.addr[i], image)

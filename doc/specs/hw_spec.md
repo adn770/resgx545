@@ -497,8 +497,14 @@ At 541 ns a sample with `EVENT_STATUS` read alone (E1115), a plain 64 x 64 trian
 alone, 88 to 119 us before the render end in a one-render job and fallen before it, in 8 of 14
 jobs (4 to 93 us wide). Post hoc (E1116): `CACHE_CTRL` reads 0x0000ffff after a reset and
 0x1000ffff from a kick on, its bit 28 set about 35 us before bit 26; sampled beside it, bit 26
-shows 5 to 13 us wide. sgx-sim's hardware model answers `EVENT_STATUS` with the idle word until
-a kick is served and refuses it after (crates/sgx-sim/src/hw.rs).
+shows 5 to 13 us wide. Held out with the right premises (E1120, E1121): `CACHE_CTRL` 0x0000ffff
+after a reset and
+0x1000ffff from a change ahead of every event of a kicked job until a reset (19 of 19 rows), bit
+26 19.5 to 48.3 us after it in 9 of 12 rows and 106.6 us in one; the word while bit 26 is set is
+the idle word with bit 26 and any other pending bit (once 0xa4004000); a plain triangle adds 9
+to 11 counts to `USE0_SERV_EVENT` beyond the ticks. sgx-sim's hardware model answers
+`EVENT_STATUS` and `CACHE_CTRL` with their idle words until a kick is served and refuses them
+after (crates/sgx-sim/src/hw.rs).
 
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
 OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and

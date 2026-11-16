@@ -9457,6 +9457,32 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, infer; data: `render-closing-r30-evst:out/20261116-123552/e2/`,
   `render-closing-r30-evst:out/20261116-123552/e3/`,
   `render-closing-r30-evst:out/20261116-123552/e4/`, `render-closing-r30-evst:fold/`.*
+- `E1120` r30-evst2 on module 7CE8E38E (Q111, the fwsim read rules), stages e2, e3, e4
+  (CR_EVENT_STATUS with CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27
+  registers), every control passed, every row held out: CR_CACHE_CTRL reads 0x0000ffff after the
+  reset (24 of 24 first samples) and 0x1000ffff from one change to the end of the run (19 of 19
+  rows; H-CC-FLAT refuted), the change coming before every event bit of the job and 19.6 to 48.3 us
+  before bit 26 in 5 of 6 read leads but 106.6 us in one (H-CC-KICK's timing clause refuted as
+  frozen); CR_USE0_SERV_EVENT counts 9 to 11 beyond the ticks over a plain triangle (H-SE-EVENTS 19
+  of 19, H-SE-TICKS refuted); bit 26's first episode is 5.0 to 7.2 us with four registers sampled
+  (H-NARROW4 7 of 7) and 11.9 and 15.7 us with 27 (H-NARROW27 2 of 2); bit 26 is seen in 2 of 8 rows
+  with 27 registers against 4 of 8 with CR_EVENT_STATUS alone (H-DENSITY held at 0.25, on its 0.2
+  bound); once bit 26 shows together with SW_EVENT and MASTER_INTERRUPT (0xa4004000; H-ALONE refuted
+  once); CR_EVENT_STATUS reads 0x20000000 outside the job (19 of 19).
+  *platform; HW, infer; data: `render-closing-r30-evst2:out/20261116-132348/e2/`,
+  `render-closing-r30-evst2:out/20261116-132348/e3/`,
+  `render-closing-r30-evst2:out/20261116-132348/e4/`, `render-closing-r30-evst2:fold/`.*
+- `E1121` r30-evst2 on module 7CE8E38E (Q111), stages e1 and e5 (CR_EVENT_STATUS alone at 539 to 548
+  ns a sample, every control passed, every row held out against E1115): CR_EVENT_STATUS reads
+  0x20000000 outside the job (13 of 13 rows) and 0x24000000 whenever bit 26 is set (9 rows); bit 26
+  is seen in 4 of 8 e1 jobs (H-PART held, H-EVERY refuted), its first episode 63.3 to 80.3 us in the
+  three e1 rows with a render end and 4.2 us in one without (H-WIDE1 refuted once), rising 92.3 to
+  109.2 us before the render end where seen (H-BEFORE 3 of 3); bits 6, 9 and 20 never show in e1
+  (H-SUB 8 of 8); in -n 3 jobs four of five show bit 26 twice or more and one three times (H-ONCE
+  and H-EACH both refuted), the first render's 53.5 to 76.5 us wide and the later ones 4.1 to 5.9
+  us.
+  *platform; HW, infer; data: `render-closing-r30-evst2:out/20261116-132348/e1/`,
+  `render-closing-r30-evst2:out/20261116-132348/e5/`, `render-closing-r30-evst2:fold/`.*
 
 ## By unit
 
@@ -9521,7 +9547,7 @@ E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116.
+E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121.
 
 ### render
 

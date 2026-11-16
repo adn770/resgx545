@@ -50,6 +50,17 @@ kind = "idle_until_event"
 value = 0x20000000
 cite = "E1115, E547"
 
+# CR_CACHE_CTRL: 0x0000ffff after a reset, through the ticks (E1120: the first sample of 24 of 24
+# rows; the kit's snapshots after its reset). From a change before bit 26 to the end of the run it
+# reads 0x1000ffff, and when that change comes after the kick or the firmware's write is not
+# measured: after a served event other than a tick a read is refused, even over a run write.
+[[rule]]
+reg = 0x0804
+name = "CR_CACHE_CTRL"
+kind = "idle_until_event"
+value = 0x0000ffff
+cite = "E1120"
+
 # The task state that outlives a firmware task (E536), at the first tick entry after the boot:
 # pclink 0x98 and p0, p1 set, as the reader of a plain tick read them (E791 A0, E809 S0). The
 # rest (p2, p3, r20, r21, i0, i1) no plain tick entry read: unknown, so a read of them stops.
