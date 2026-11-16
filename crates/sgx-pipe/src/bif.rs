@@ -99,8 +99,9 @@ pub struct PteEnd {
 /// Alone on a mapping that is only read (E1071, r18-flag, held out): WRITEONLY faults the ZLS load
 /// (0x80200) and a texture read of the probe's scratch (0x80002) at the mapping's first page
 /// (`SB` 0) before anything is drawn, and EDMPROTECT lets both through (the load stores E1046's
-/// store byte for byte, the texture read gives E1047's image). Any other flag and access is
-/// refused (Q108).
+/// store byte for byte, the texture read gives E1047's image). Both together (0x12) on those two
+/// reads fault as WRITEONLY alone (0x80200, 0x80002, the first page; E1108, r29-flag, held out),
+/// not with EDMPROTECT's type as a write does (E965). Any other flag and access is refused (Q108).
 pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
     use FaultPage::*;
     use PteAccess::*;
@@ -118,13 +119,15 @@ pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
         (0x2, ZlsStore) => fault(0x80200, LastWritten, 0),
         (0x8, StreamRead) | (0xc, TextureRead) | (0x10, StreamRead) | (0x14, TextureRead) => clean,
         (0x8, ZlsLoad) | (0x10, ZlsLoad) | (0x10, TextureRead) => clean,
-        (0x2, ZlsLoad) => fault(0x80200, First, 0),
-        (0x2, TextureRead) => fault(0x80002, First, 0),
+        (0x2, ZlsLoad) | (0x12, ZlsLoad) => fault(0x80200, First, 0),
+        (0x2, TextureRead) | (0x12, TextureRead) => fault(0x80002, First, 0),
         (0x10, PixelWrite) | (0x12, PixelWrite) => fault(0xa0020, First, 0),
         (0x10, ZlsStore) => fault(0xa0200, First, 0),
         _ => {
             return Err(Outcome::unsupported(
-                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965, E1046, E1071)"),
+                &format!(
+                    "PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965, E1046, E1071, E1108)"
+                ),
                 &["Q108"],
             ));
         }
@@ -253,6 +256,19 @@ mod tests {
     }
 
     #[test]
+    fn both_flags_fault_a_read_as_writeonly_alone_as_the_r29_flag_rows() {
+        // E1108 (r29-flag stage f1, frozen, held out): WRITEONLY with EDMPROTECT (0x12) on the
+        // same two reads faults as WRITEONLY alone, not with EDMPROTECT's type as on a write
+        use PteAccess::*;
+        let first = |int_stat| {
+            Ok(PteEnd { written: false, fault: Some(PteFault { int_stat, page: FaultPage::First, sb: 0 }) })
+        };
+        assert_eq!(pte_access(0x12, ZlsLoad), first(0x80200), "q108-both-load");
+        assert_eq!(pte_access(0x12, TextureRead), first(0x80002), "q108-both-tex");
+        assert!(pte_access(0x12, ZlsStore).is_err());
+    }
+
+    #[test]
     fn pte_flags_no_row_ran_are_refused() {
         use PteAccess::*;
         let refused = |p, a| matches!(pte_access(p, a), Err(Outcome::Unsupported { .. }));
@@ -260,8 +276,10 @@ mod tests {
         assert!(refused(0x12, StreamRead), "two knob flags together on a read: not run");
         assert!(refused(0x1a, PixelWrite), "three flags together: not run");
         assert!(refused(0x8, ZlsStore), "CACHED on the ZLS store: not run");
-        assert!(refused(0x12, ZlsLoad), "WO and EDMPROT together on the ZLS load: not run");
-        assert!(refused(0x12, TextureRead), "WO and EDMPROT together on a texture read: not run");
+        assert!(
+            refused(0x12, ZlsStore),
+            "WO and EDMPROT together on the ZLS store: not run (E1108 ran the load)"
+        );
         assert!(refused(0x4, StreamRead), "READONLY on a read: not in these rows");
         assert!(refused(0x1, PixelWrite), "VALID is no flag");
     }

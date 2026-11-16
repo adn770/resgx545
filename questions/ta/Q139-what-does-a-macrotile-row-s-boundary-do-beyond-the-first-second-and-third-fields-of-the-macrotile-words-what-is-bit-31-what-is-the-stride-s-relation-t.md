@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "what is the stride's relation to the RT data, and what places the TA's region header write of a macrotile word with an axis whose bounds are all 0 at TA data page 0x20008 (E1074: 0x90004 there at 384 x 256, E509's page at 256 x 256 on another module, not the first page past the kernel's TA data), given that a faulting word's kind follows its bounds (E1073, held out by E1074: such a word faults the TA's write, the others the 3D's read at page 0x10000)?"
+question = "what is the stride's relation to the RT data, and what places the TA's region header write of a macrotile word with an axis whose bounds are all 0 at TA data page 0x20008 (E1074: 0x90004 there at 384 x 256, two pages past the kernel's TA data; E1109: there for an empty x and an empty y axis at 512 x 512, the first page past it; E509's y page 0x20010 on another module), and what TA state does an empty y axis leave that makes a later job's TA fault alike (E1109), given that a faulting word's kind follows its bounds (E1073, held out by E1074: such a word faults the TA's write, the others the 3D's read at page 0x10000)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011", "E1048", "E1073", "E1074"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011", "E1048", "E1073", "E1074", "E1109"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -159,3 +159,16 @@ faulting words the 3D's read at the parameter heap's first page, 0x90100; 162 of
 fell on TA data page 0x20008, E509's page at 256 x 256 on another module, not the first page past
 the kernel's TA data (0x20006): the page form failed. Open: what places that write, the stride's
 relation to the RT data, and the kind at four macrotiles a side.
+
+Narrowed 2026-11-16 (round 29, session r29-flag stage f2, E1109; the question line is reworded,
+the question is not retired). It read "what is the stride's relation to the RT data, and what
+places the TA's region header write of a macrotile word with an axis whose bounds are all 0 at TA
+data page 0x20008 (E1074: 0x90004 there at 384 x 256, E509's page at 256 x 256 on another module,
+not the first page past the kernel's TA data), given that a faulting word's kind follows its
+bounds (E1073, held out by E1074: such a word faults the TA's write, the others the 3D's read at
+page 0x10000)?". At 512 x 512 (TA data 0x8000 bytes) an empty x and an empty y word both faulted
+0x90004 at page 0x20008 (the kind held out 2 of 2; the frozen page forms H-AXIS 1 of 2, H-SIZE 0
+of 2). After the y word a plain 64 x 64 triangle in a new context faulted the same write at the
+same page twice, past the kit's debugfs reset and a fill, with every boot up; after the x word it
+drew. Open: what places that write, what state the empty y word leaves and what clears it, the
+stride's relation to the RT data, and the kind at four macrotiles a side.

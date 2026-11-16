@@ -9377,12 +9377,34 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   agrees says the sim models what the hardware printed, not more [infer].
   *pds; HW, infer; data: `vectors-closing-r25-sa64-pds`, `vectors-closing-r25-csc-texture`.*
 
+### 2026-11-16
+
+- `E1108` r29-flag stage f1 (2 jobs, t14, the debugfs knobs vm_pte_addr and vm_pte_flags = 0x12,
+  WRITEONLY and EDMPROTECT together, on a mapping only read, held out; 2 planned faults): r14-bif's
+  ZLS load of the depth buffer faulted with BIF fault 0x80200 at 0x3e001001 and E566's texture read
+  of the probe's scratch with 0x80002 at 0x3e003001, at each mapping's first page, as WRITEONLY
+  alone does (E1071) and not with EDMPROTECT's type as a write does (E965); frozen 'H-WO-READ ... (2
+  of 2 rows decided)', H-EDM-TYPE and H-PASS '0 held, 2 FAILED'; the references rf-c-depth and
+  f1-ref-a passed.
+  *bif; HW, infer; data: `render-closing-r29-flag:out/20261116-055520/f1/`,
+  `render-closing-r29-flag:fold/`, `vectors-closing-r29-flag-pte`.*
+- `E1109` r29-flag stage f2 (2 jobs, t10, E1074's form at 512 x 512 (n = 2, TA data 32768 bytes by
+  the kernel's layout, c-512's reading), the size's own CR_TE_MTILE1 and CR_TE_MTILE2 with B2
+  cleared, words never run; 2 planned faults): both faulted with 0x90004, the TA's region header
+  write, at TA data page 0x20008 (0x20008021 for the empty x axis, 0x20008061 for the empty y axis),
+  so E1073's kind held 2 of 2 and the y page is not E509's 0x20010; frozen 'H-KIND ... (2 of 2 rows
+  decided)', 'H-AXIS ... 1 held, 1 FAILED', 'H-SIZE ... 0 held, 2 FAILED'; after the y row the kit's
+  strict health failed: the fill drew and the 64 x 64 health triangle faulted 0x90004 at 0x20008062
+  twice, no recovery failed, so the session stopped (rc 5) before its hang stages.
+  *ta; HW, infer; data: `render-closing-r29-flag:out/20261116-055520/f2/`,
+  `render-closing-r29-flag:fold/`.*
+
 ## By unit
 
 ### bif
 
 Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
-E945, E946, E964, E965, E980, E1046, E1071.
+E945, E946, E964, E965, E980, E1046, E1071, E1108.
 
 ### dpm
 
@@ -9455,7 +9477,7 @@ E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E5
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
 E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007, E1011,
-E1048, E1073, E1074.
+E1048, E1073, E1074, E1109.
 
 ### texture
 

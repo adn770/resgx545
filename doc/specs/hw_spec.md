@@ -163,8 +163,9 @@ Key registers:
   - Alone on a mapping that is only read (E1071, held out): `WRITEONLY` faults a ZLS depth load
     (0x80200) and a texture read of a probe's scratch (0x80002) at the mapping's first page, `SB`
     0, before anything is read; `EDMPROTECT` lets both through (the load and the texture read
-    exact).
-  The rest (the flags on the TA's writes or the EDM's buffers, the flags together on a read,
+    exact). Together (0x12) on those reads they fault as `WRITEONLY` alone, not with
+    `EDMPROTECT`'s type (E1108, held out).
+  The rest (the flags on the TA's writes or the EDM's buffers,
   `CACHECONSISTENT` on data cached within one render or by other units) is Q108.
 - **BIF.** The bus interface is the MMU's front end. With 16 directory lists and multiple
   memory contexts, `BIF_DIR_LIST_BASE0..15` hold up to 16 page directories at once, and
@@ -250,7 +251,7 @@ belongs to is read from the access each record set up, not from a source [infer]
 |---|---|---|---|
 | 0x90002 | 1 | texture fetch past the probe's scratch (page 0x3e017) | E765, E826 |
 | 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
-| 0x90004 | 2 | TA header write of a macrotile word whose axis bounds are all 0 (page 0x20008 at 384 x 256) | E1073, E1074 |
+| 0x90004 | 2 | TA header write of a macrotile word whose axis bounds are all 0 (page 0x20008 at 384 x 256 and, x or y, at 512 x 512) | E1073, E1074, E1109 |
 | 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
 | 0x80020 | 5 | transfer write to a read-only alias | E766 |
 | 0x80020 | 5 | fill or render colour write to a `WRITEONLY` page, after the image was written (`SB` 31, the image's last page) | E945, E946 |
@@ -265,6 +266,7 @@ belongs to is read from the access each record set up, not from a source [infer]
 | 0x90200 | 9 | ZLS store reaching a page nothing maps, at that page (a mapped page past its buffer takes it) | E1070 |
 | 0x80200 | 9 | ZLS load of a `WRITEONLY` depth buffer, the first page, nothing read | E1071 |
 | 0x80002 | 1 | texture read of a `WRITEONLY` scratch, the first page | E1071 |
+| 0x80200, 0x80002 | 9, 1 | the same reads with `WRITEONLY` and `EDMPROTECT` together (0x12) | E1108 |
 | 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
 | 0xd0400 | 10 | ISP word 0 bit 18, at page 0, on the library triangle and a depth-buffered ramp | E1072 |
 | 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
