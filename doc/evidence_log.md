@@ -9701,6 +9701,27 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   both replicates, E496's first-job mixture count for count; nothing post hoc decides: the corrected
   rerun r34-sa0b freezes it.
   *usse; HW; data: `render-closing-r34-sa0:out/20261117-001613/s/`, `render-closing-r34-sa0:fold/`.*
+- `E1141` r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every control passed):
+  0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1 ran (d1s skipped);
+  held: H-B4-ONE (10 of 10, H-B4-PR refuted 8 of 8), H-B4-LEN (10 of 10), H-B3-LONG (6 of 6,
+  H-B3-SHORT refuted 4 of 4), H-B0-N (10 of 10), H-B1-PR's counts (10 of 10; its width rows cannot
+  tell, a misnamed frozen quantity), H-B2PR's stage sum (6 clears in 8 rows, H-B2-NONE refuted; its
+  width rows cannot tell, the same slip); 0x0748 bit 2 clears 0 times at PR 0, 1 and 2 (6 rows) and
+  1 to 3 times at PR 4 and 7, each 3.89 to 4.05 us; CR_DPM_3D_PAGE_COUNTS alone: H-PC-ONCE (10 of
+  10, H-PC-RENDER refuted 8 of 8) and H-PC-FIN (12 of 12): one write a job, the low half P - 0x22
+  after an overflow, the high half 7, 6, 4, 2, 1 at 0x422, 0x2b6, 0x1c2, 0xe2, 0x82.
+  *dpm; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/c0/`,
+  `render-closing-r34-ev2:out/20261117-004223/d1/`,
+  `render-closing-r34-ev2:out/20261117-004223/p0/`,
+  `render-closing-r34-ev2:out/20261117-004223/p1/`, `render-closing-r34-ev2:fold/`.*
+- `E1142` r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs, CR_EVENT_STATUS alone at 3.1 to
+  3.9 us; every control passed): frozen H-OOM-SMALL (bit 1 at 0xe2 and 0x82 in every row, at 0x2b6
+  and 0x1c2 in none) not supported (11 held, 6 FAILED), its rival H-OOM-CHANCE held (4 of 8 rows at
+  0x2b6 and 0x1c2 show bit 1); bit 1 at 0x2b6 1 of 4, 0x1c2 3 of 4, 0xe2 3 of 4, 0x82 4 of 4;
+  H-C18-LARGE not supported (0 of 2), H-C18-ANY held (2 of 2: bit 18 in 5 of 6 plain and 4 of 6
+  large copies); H-COPY-NO0 (12 of 12), H-THR-NEVER (18 of 18), H-IMG (16 of 16) held.
+  *platform; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/e0/`,
+  `render-closing-r34-ev2:out/20261117-004223/e1/`, `render-closing-r34-ev2:fold/`.*
 
 ## By unit
 
@@ -9718,7 +9739,7 @@ E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E8
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
 E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087, E1089, E1091,
-E1092, E1099, E1100, E1138.
+E1092, E1099, E1100, E1138, E1141.
 
 ### edm
 
@@ -9767,7 +9788,7 @@ E1129.
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
 E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
-E1122, E1123, E1126, E1127, E1131, E1133, E1137.
+E1122, E1123, E1126, E1127, E1131, E1133, E1137, E1142.
 
 ### render
 

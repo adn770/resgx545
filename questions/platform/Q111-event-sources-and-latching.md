@@ -7,7 +7,7 @@ value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
             "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921",
-            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130", "E1126", "E1127", "E1137"]
+            "E1115", "E1116", "E1120", "E1121", "E1122", "E1123", "E1130", "E1126", "E1127", "E1137", "E1142"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -214,3 +214,11 @@ its word through an overflow (3 of 3, H-S2-SET refuted). A copy, plain or 256 x 
 and in 10 of 14 rows one PIXELBE_END_RENDER (bit 18) episode of 60 to 206 us, which E547's copies
 never showed. Open as before: what sets each bit, why the smaller PBs raise bit 1, which copies end
 with bit 18, the order of the bits, and the host-clear clause.
+
+Narrowed 2026-11-17 (round 34 session r34-ev2, E1142; every control passed; not retired). E1137's
+split by PB size, frozen as a held-out rule, does not hold: bit 1 shows at every overflowing size,
+1 of 4 rows at 0x2b6, 3 of 4 at 0x1c2 and 0xe2, 4 of 4 at 0x82 (with E1137: 1 of 7, 3 of 6, 6 of
+7, 7 of 7), more often the smaller the buffer, and the rival "by chance at any size" held. A
+copy's long bit 18 does not follow its form (5 of 6 plain, 4 of 6 large); no copy shows bit 0 and
+no row bit 3. Open as before: what sets bit 1 (whether a missing one is a pulse under the 3.8 us
+sample), which copies end with bit 18, the order of the bits, and the host-clear clause.

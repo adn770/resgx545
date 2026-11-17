@@ -168,6 +168,24 @@ pub fn state_page_list_pages(raised: bool, thr0: u32, last_peak: u32) -> u32 {
 /// labelled partial renders and none at PR 0, E1057; Q036).
 pub const STATUS2_HIGH_HALF: u32 = 0;
 
+/// The low half of `CR_DPM_3D_PAGE_COUNTS` (0x0660) after a job that overflowed a buffer of
+/// `pb_pages` pages: its first threshold, P - 0x22 (E1032's words, held out by E1141 at 0x2b6,
+/// 0x1c2, 0xe2 and 0x82 on 7CE8E38E). Refused (None) outside the PB sizes measured (0x82 to
+/// 0x2b6): a job that does not overflow reads its pages used (0x305 at 0x422, E1032), and the high
+/// half (7, 6, 4, 2, 1 from 0x422 down) is a reading no rule was frozen for (Q036).
+pub fn page_counts_3d_low_after_overflow(pb_pages: u32) -> Option<u32> {
+    (0x82..=0x2b6).contains(&pb_pages).then(|| first_threshold(pb_pages))
+}
+
+/// `CR_DPM_3D_PAGE_COUNTS` changes at most once a job, partial renders or not: one write a job,
+/// not a word a render (E1141, H-PC-ONCE 10 of 10 held out, H-PC-RENDER refuted; E1032 8 of 8).
+pub const PAGE_COUNTS_3D_WRITES_PER_JOB: u32 = 1;
+
+/// 0x0748 bit 4 clears once a job (while the TA takes pages, E358), at every PB size, with or
+/// without partial renders (E1141: 10 of 10 held out at about 3.8 us, H-B4-PR refuted 8 of 8).
+/// What the other bits mark is not modelled (Q036).
+pub const BIT4_0748_CLEARS_PER_JOB: u32 = 1;
+
 /// How a 4x job of the tool's full-screen triangle (`--tri-full --aa4`, `CR_TE_AA` 0xe0000000) on a
 /// context made for 4x targets (four region-header arrays) ends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1282,6 +1300,29 @@ mod tests {
         // 0x071c bits 31:16 in 1594 after-reads, global lists up to 18 pages: always 0
         assert_eq!(STATUS2_HIGH_HALF, 0);
         assert!(OPEN.contains(&"Q036"));
+    }
+
+    #[test]
+    fn the_3d_page_counts_word_of_an_overflow_is_written_once_with_the_first_threshold_e1141() {
+        // E1141 [HW, held out] H-PC-ONCE 10 of 10, H-PC-FIN 12 of 12: CR_DPM_3D_PAGE_COUNTS
+        // (0x0660) sampled alone through E1032's probe changes at most once a job and its low half
+        // after an overflow is the first threshold, P - 0x22 (r13-dpm's words held out on 7CE8E38E,
+        // 0x82 new); its high half (7, 6, 4, 2, 1 here) is a reading, not modelled
+        let kept: [(u32, u32); 4] = [(0x2b6, 0x60294), (0x1c2, 0x401a0), (0xe2, 0x200c0), (0x82, 0x10060)];
+        for (p, word) in kept {
+            assert_eq!(page_counts_3d_low_after_overflow(p), Some(word & 0xffff), "P {p:#x}");
+        }
+        assert_eq!(PAGE_COUNTS_3D_WRITES_PER_JOB, 1);
+        // a buffer the job does not overflow keeps no rule here (0x422 read 0x305, the pages used)
+        assert_eq!(page_counts_3d_low_after_overflow(0x422), None);
+        assert!(OPEN.contains(&"Q036"));
+    }
+
+    #[test]
+    fn bit_4_of_0x0748_clears_once_a_job_e1141() {
+        // E1141 [HW, held out] H-B4-ONE 10 of 10 (0x0748 alone at about 3.8 us), H-B4-PR refuted 8
+        // of 8: one clear a job at every PB size, 20.3 ms at PR 0 to 189 ms at PR 7
+        assert_eq!(BIT4_0748_CLEARS_PER_JOB, 1);
     }
 
     #[test]
