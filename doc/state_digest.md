@@ -245,7 +245,7 @@ list.
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
   when it is 0 or 196 to 252, whatever the task was started ... (E535, E540, E594)
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
-  0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496, E1139)
+  0xff203040 mixture that pa0 reads in the first jobs of a ... (E496, E1139, E1140)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
@@ -279,7 +279,7 @@ list.
 
 ## Recent records
 
-31 records of 2026-11-16 to 2026-11-17 (the last 2 days to the newest record's date), newest first;
+32 records of 2026-11-16 to 2026-11-17 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1142` platform, 2026-11-17: r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs,
@@ -288,6 +288,9 @@ the claims are cut at 200 characters.
 - `E1141` dpm, 2026-11-17: r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every
   control passed): 0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1
   ran (d1s skipped); held: ...
+- `E1140` usse, 2026-11-17: r34-sa0b stage s (54 jobs, t30 probe fills whose readers output the
+  value read, module 7CE8E38E), the corrected rerun of r34-sa0 (E1139), every control passed (16 sa0
+  writers read their marker back ...
 - `E1139` usse, 2026-11-17: r34-sa0 stage s (60 jobs, t30 probe fills, module 7CE8E38E): every
   control passed (18 sa0 writers read their marker M back in dword 0 with K1 their most frequent
   colour, 6 colour fills K3), but the ...
@@ -378,9 +381,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-105 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+106 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r34-sa0b`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r34-sa0`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
 - `render/closing-r34-ev2`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
@@ -538,7 +543,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-17, 13 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-17, 14 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

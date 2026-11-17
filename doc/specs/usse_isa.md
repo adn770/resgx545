@@ -241,12 +241,15 @@ marked.
   value as their colour (Q129). Job 8 of a table read 0x79 in `sa0`, written by `ima32.u` in job 7,
   which is also the colour job 7 output (2048 of 2048 pixels, E496), so one job's persistence of an
   `sa0` written by `ima32` is not separated from the colour rule; the job after that read it in
-  `pa0`, which is also the colour the job before output (Q136). r34-sa0 (E1139) read the rest
-  post hoc only, because its readers' xored outputs aliased into what later instances read:
-  - `sa0` kept the written value to the next job, across a debugfs reset and 120 s idle, and a
-    job between replaced it with that job's colour;
-  - `pa0` read the colour of the job before, after the health triangle 0xff00ff00 in 1536 and
-    0xff203040 in 512 pixels, E496's first-job mixture.
+  `pa0`, which is also the colour the job before output (Q136). Separated since **[HW]** (E1140,
+  held out after E1139's post hoc reading):
+  - an `sa0` written by `iaddu32` is read by the next job (2048 of 2048 pixels), across a debugfs
+    reset and 120 s idle with no job between, and any job between (a fill writing no `sa`, the
+    health fill or triangle) replaces it with that job's colour: it lasts one job;
+  - `pa0` reads the colour of the job before, across a reset too, and after the health triangle
+    0xff00ff00 in 1536 and 0xff203040 in 512 pixels, E496's first-job mixture.
+  A reader that outputs anything but the value it read sees that output come back: its later
+  instances read what its earlier ones wrote to `o0` (E1139 [infer]).
   In an end-of-tile task `sa0`-`sa127` are the tile buffer the task's emit sends: one
   instance of the task covers 16 x 8 pixels, `sa(4q + i)` pixel `i` (top left, top right,
   bottom left, bottom right) of the block's 2 x 2 quad `q` in raster order, and what the task

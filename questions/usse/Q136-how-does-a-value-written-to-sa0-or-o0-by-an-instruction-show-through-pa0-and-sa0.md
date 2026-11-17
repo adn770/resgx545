@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E496", "E484", "E1139"]
+evidence = ["E496", "E484", "E1139", "E1140"]
 terms = ["Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -44,3 +44,8 @@ Read post hoc, not decided:
   0xff00ff00 in 1536 and 0xff203040 in 512 pixels, E496's first-job mixture.
 
 The corrected rerun (readers that output the value read, E496's form) is r34-sa0b.
+
+Answered 2026-11-17 (round 34, E1140): r34-sa0b's frozen rule printed RETIRE-CAPABLE with every
+control passing. An sa0 write lasts one job, across a debugfs reset and 120 s idle, and a job
+between replaces it with its colour (16 of 16 held-out rows). pa0 reads the colour of the job
+before (4 of 4, a reset between too), and after the t10 triangle that is the 1536/512 mixture.

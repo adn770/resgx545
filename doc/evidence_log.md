@@ -9701,6 +9701,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   both replicates, E496's first-job mixture count for count; nothing post hoc decides: the corrected
   rerun r34-sa0b freezes it.
   *usse; HW; data: `render-closing-r34-sa0:out/20261117-001613/s/`, `render-closing-r34-sa0:fold/`.*
+- `E1140` r34-sa0b stage s (54 jobs, t30 probe fills whose readers output the value read, module
+  7CE8E38E), the corrected rerun of r34-sa0 (E1139), every control passed (16 sa0 writers read their
+  marker back in dword 0, K1 their most frequent colour; 6 colour fills K3): an sa0 value written by
+  iaddu32 in a fill's pixel task is read by the next job in 2048 of 2048 pixels with no job between,
+  across a debugfs reset and 10, 60 and 120 s idle (10 of 10 rows), and a job between (a colour
+  fill, the t10 fill, the t10 triangle) replaces it with that job's colour (6 of 6): 'Q136 RULE (a):
+  ... R rows decided 16 of 16; holding on every row: H-ONEJOB ... DECIDED, H-ONEJOB' (H-PERSIST 6
+  FAILED, H-COLOUR 10 FAILED, H-RESET 2 and H-IDLE 6 FAILED); pa0 reads the colour the job before
+  output, after a colour fill and the t10 fill (4 of 4 held out, a reset between too, 2 of 2) and
+  after the t10 triangle 0xff00ff00 in 1536 and 0xff203040 in 512 pixels (both fits, as the sa0
+  readers after the triangle), E496's first-job mixture: 'Q136 RULE (b): ... H-PREV 4 held ...
+  H-FIXED 0 held, 4 FAILED ...: DECIDED, H-PREV'; 'Q136 RULE: RETIRE-CAPABLE (both clauses
+  decided)'; H-ONEJOB and H-PREV were formed post hoc from E1139 and are held out here on new rows.
+  *usse; HW; data: `render-closing-r34-sa0b:out/20261117-005911/s/`,
+  `render-closing-r34-sa0b:fold/`.*
 - `E1141` r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every control passed):
   0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1 ran (d1s skipped);
   held: H-B4-ONE (10 of 10, H-B4-PR refuted 8 of 8), H-B4-LEN (10 of 10), H-B3-LONG (6 of 6,
@@ -9835,7 +9850,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062, E1098, E1102, E1106, E1139.
+E1061, E1062, E1098, E1102, E1106, E1139, E1140.
 
 ### vdm
 

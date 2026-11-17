@@ -337,8 +337,9 @@ pub struct Machine {
     pub o: [u32; 128],
     pub pa: [u32; 128],
     /// The secondary attributes. What a job finds in an sa it does not write (and in pa0) is carried
-    /// from the job before (E484); r34-sa0 read it post hoc only, the readers' own o0 writes aliased
-    /// in (E1139). One job is modelled alone: the carried value is session state, not modelled (Q136).
+    /// from the job before: an sa0 write lasts one job, a job between leaves its colour (E484,
+    /// E1139, E1140). One job is modelled alone: the carried value is session state, refused here
+    /// (a per-job vector would carry it as an input, not a model).
     pub sa: [u32; 128],
     pub p: [bool; 4],
     /// The predicates the task has set (a bit each): p0-p3 are not reset between jobs, so one the
