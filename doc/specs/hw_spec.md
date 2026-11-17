@@ -521,7 +521,9 @@ every job at the two smallest parameter buffers (0xe2 and 0x82 pages, 6 of 6) an
 and 0x1c2 (0 of 5); `DPM_OUT_OF_MEMORY_GBL` (bit 2) only at 0xe2, 31 us after a bit 1 episode (2
 of 3); `DPM_REACHED_MEM_THRESH` never (14 of 14); `EVENT_STATUS2` keeps its word. A copy, 64 x 32
 or 256 x 256, shows no `DPM_3D_MEM_FREE` and in 10 of 14 jobs one `PIXELBE_END_RENDER` episode
-of 60 to 206 us, as a fill's.
+of 60 to 206 us, as a fill's. Held out (E1142), bit 1 shows at every overflowing size, more often
+the smaller the buffer (1 of 4 rows at 0x2b6 to 4 of 4 at 0x82), not by a split at a size, and
+the copy's bit 18 does not follow its size (5 of 6 plain, 4 of 6 large).
 sgx-sim's hardware model
 answers `EVENT_STATUS` with its idle word until a kick is served and refuses it after; it
 answers `CACHE_CTRL` with the reset word until a kick and after it until the run writes the

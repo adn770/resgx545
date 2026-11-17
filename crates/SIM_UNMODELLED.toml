@@ -52,3 +52,4 @@ E1129 = "pds: refused: no simulator keeps a clock (r32-kreg3 kl10 render times o
 E1131 = "platform: refused: readings only, every frozen control failed on the sample interval; no simulator keeps a clock, so CR_EVENT_TIMER's count is not modelled (r33-tim t1, t1d; no vectors table)"
 E1137 = "platform: refused: event-bit timelines of overflowing renders and copies (r34-ev e1, e2); hw.rs answers CR_EVENT_STATUS by E1115 until a kick and refuses it after, no vectors table"
 E1138 = "dpm: refused: readings only, d1 not run (its gate shut on the measured interval); no simulator models 0x0748 or CR_DPM_3D_PAGE_COUNTS timing, no vectors table"
+E1142 = "platform: refused: event-bit timelines of overflowing renders by PB size and of copies by form (r34-ev2 e1); hw.rs answers CR_EVENT_STATUS by E1115 until a kick and refuses it after, no vectors table"

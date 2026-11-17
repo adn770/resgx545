@@ -36,7 +36,7 @@ list.
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
   tag-5 OR that of lane 0 of the quad in a job whose words ... (E878, E880, E905)
 - `Q111` platform, high: which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2
-  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1127, E1130, E1137)
+  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1130, E1137, E1142)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
@@ -155,7 +155,7 @@ list.
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
 - `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
-  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1044, E1057, E1138)
+  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1057, E1138, E1141)
 - `Q042` vdm, medium: what do bits 31:24 of the index list's first trailing word (VDM_INDEX2) do:
   bits 27:24, when its low bits move the list's first index and ... (E348, E414, E546)
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
@@ -279,9 +279,15 @@ list.
 
 ## Recent records
 
-28 records of 2026-11-16 to 2026-11-17 (the last 2 days to the newest record's date), newest first;
+30 records of 2026-11-16 to 2026-11-17 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1142` platform, 2026-11-17: r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs,
+  CR_EVENT_STATUS alone at 3.1 to 3.9 us; every control passed): frozen H-OOM-SMALL (bit 1 at 0xe2
+  and 0x82 in every row, at 0x2b6 and 0x1c2 ...
+- `E1141` dpm, 2026-11-17: r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every
+  control passed): 0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1
+  ran (d1s skipped); held: ...
 - `E1138` dpm, 2026-11-17: r34-ev on module 7CE8E38E (Q036), stage d0 (calibration of 0x0660 +
   0x0748, 2 jobs of the overflow probe at 0x422, both controls passed: 0x0660's first sample =
   snap0, 0x0748's = 0x1f, the kept ...
@@ -369,9 +375,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-103 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+104 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r34-ev2`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r34-ev`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
 - `render/closing-r34-q044`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -525,7 +533,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-17, 11 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-17, 12 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -597,4 +605,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-49 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+50 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
