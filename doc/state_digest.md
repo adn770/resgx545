@@ -555,6 +555,8 @@ stays with what a session must do around it.
   only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
   and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
   outside them changes that test first.
+- `pds=crumb` arms only with the fork's branch `r37-kernel` (own_arm's image choice); the
+  module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The

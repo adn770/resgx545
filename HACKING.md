@@ -402,38 +402,40 @@ does, its kernel line in the log; its world tokens `miscinfobad` (a MISMATCH) an
 control; the word's command is a second one, with whatever cache control is pending then (none
 is set between the two in the kernel's code at the fork pin).
 
-One kind of stage runs one of our own firmware (EDM) tasks (round 36, the kit job of the
-round-33 design of the one `emitpds` form, its section 5): an owntask stage, declared on
-the stage in session.toml as `owntask = { blob = "emitsa", arm = "slots=0x1 entry=0" }`. The
-kit carries the phase 11.29 runner `tools/fwtask/fwtask_run.py` as `kit/fwtask_run.py` (a byte
-copy pinned by commit, as every kit file) and drives it, never a copy of its logic. The session
-holds the blob as `owntask/emitsa.blob` (`tools/fwtask/fwtask.py OUTDIR asm/fwtask/emitsa.s`
-writes it), whose sha256 must be the one `asm/fwtask/fwtask.map` gives `emitsa` at the freeze's
-resgx545 commit (the freeze pins the map). Its rows are `name|set|risk|-|owntask|{"cmd": 1,
-"params": {}, "timeout_ms": 100}`: one command a job, `params` dwords 6 to 1023 of the results
-page (0-5 are the protocol's), `timeout_ms` up to `job_timeout`; the knobs are `-` and `reads:K`
-only. An owntask stage is a planned firmware break if wrong, so it must be `class = "flagged"`,
-as a kreg row's stage. `session.py lint` (and the guard, so the freeze) refuses a missing blob,
-a blob that is not the map's, a name the map lacks, an arm line that is not `slots=0xMASK
-entry=E[,E...]` with one entry a slot and an optional `trc=T` below 32 (the hazard word is
-never armed), a stage that is not flagged, a malformed job, any other knob, a non-owntask row
-in the stage, an owntask row elsewhere, a tool named `owntask` and a `res:I` prediction outside
-an owntask stage or past dword 1023. `prepare` writes `run/owntask.tsv` (the stage's `arm`
-line with the map's sha256, each row's `job` with its run id), which the runner reads. The
-runner arms once after the stage's first reset and health (`arm`, kept as `owntask.arm.json`;
-not ok: rc 26), runs each row with no reset before it (a reset disarms): `run` with its one
-job (its JSON kept as `NAME.txt`, a runner stop's dump as `NAME.stopI-*`), then `page`, the
-results page as `NAME.own_res.json` whatever the end, then after a row that ended ok `gate`
-(`NAME.gate.json`; not ok: recovery and rc 16); at the stage's end `reset` disarms
-(`owntask.reset.json`; not ok: rc 13) in place of the kit's last reset. Its ok is read at the
-top of fwtask_run.py's object (`sessioncheck.py ownok`: arm and reset nest a health ok). The
-python line is lib_kit.sh's `owntask_call` alone, never in a hook; the preflight wants the
-debugfs files fwtask_run.py uses. A scorer reads a result by dword index:
-`kitscore.own_dword(d, NAME, I)`, the frozen quantity `res:I` (`kitscore.res_index`), and
-`own_slot` the four dwords of a result slot. The fake laptop answers `fwtask_run.py` with
-`kit/fake/fwtask.py` (a fake task state a reset disarms, the world's optional
-`own_res(cmd, params, world)` giving the task's stores); its world tokens `ownarmbad`,
-`ownstop` and `owngatebad` stop the stage with rc 26, 4 and 16.
+One kind of stage runs one of our own firmware (EDM) tasks (round 36, the kit job of the round-33
+design of the one `emitpds` form, its section 5): an owntask stage, declared on the stage in
+session.toml as `owntask = { blob = "emitsa", arm = "slots=0x1 entry=0" }`. The kit carries the
+phase 11.29 runner `tools/fwtask/fwtask_run.py` as `kit/fwtask_run.py` (a byte copy pinned by
+commit, as every kit file) and drives it, never a copy of its logic. The session holds the blob as
+`owntask/emitsa.blob` (`tools/fwtask/fwtask.py OUTDIR asm/fwtask/emitsa.s` writes it), whose sha256
+must be the one `asm/fwtask/fwtask.map` gives `emitsa` at the freeze's resgx545 commit (the freeze
+pins the map). Its rows are `name|set|risk|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}`:
+one command a job, `params` dwords 6 to 1023 of the results page (0-5 are the protocol's),
+`timeout_ms` up to `job_timeout`, and an optional `"ticks": true` (a bool only, round 37), with
+which the runner reads HostCtl dword 12 right before the command write and 30 ms after the window
+and records `ticks`, `ticks_expected` and `window_ms`, kept on a stop too; the knobs are `-` and
+`reads:K` only. An owntask stage is a planned firmware break if wrong, so it must be `class =
+"flagged"`, as a kreg row's stage. `session.py lint` (and the guard, so the freeze) refuses a
+missing blob, a blob that is not the map's, a name the map lacks, an arm line that is not
+`slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the hazard word
+is never armed) and an optional `pds=crumb` last (the kernel's second PDS image, below; with no
+`pds=` word the kernel arms the v1 image), a stage that is not flagged, a malformed job, any other
+knob, a non-owntask row in the stage, an owntask row elsewhere, a tool named `owntask` and a
+`res:I` prediction outside an owntask stage or past dword 1023. `prepare` writes `run/owntask.tsv`
+(the stage's `arm` line with the map's sha256, each row's `job` with its run id), which the runner
+reads. The runner arms once after the stage's first reset and health (`arm`, kept as
+`owntask.arm.json`; not ok: rc 26), runs each row with no reset before it (a reset disarms): `run`
+with its one job (its JSON kept as `NAME.txt`, a runner stop's dump as `NAME.stopI-*`), then
+`page`, the results page as `NAME.own_res.json` whatever the end, then after a row that ended ok
+`gate` (`NAME.gate.json`; not ok: recovery and rc 16); at the stage's end `reset` disarms
+(`owntask.reset.json`; not ok: rc 13) in place of the kit's last reset. Its ok is read at the top
+of fwtask_run.py's object (`sessioncheck.py ownok`: arm and reset nest a health ok). The python
+line is lib_kit.sh's `owntask_call` alone, never in a hook; the preflight wants the debugfs files
+fwtask_run.py uses. A scorer reads a result by dword index: `kitscore.own_dword(d, NAME, I)`, the
+frozen quantity `res:I` (`kitscore.res_index`), and `own_slot` the four dwords of a result slot.
+The fake laptop answers `fwtask_run.py` with `kit/fake/fwtask.py` (a fake task state a reset
+disarms, the world's optional `own_res(cmd, params, world)` giving the task's stores); its world
+tokens `ownarmbad`, `ownstop` and `owngatebad` stop the stage with rc 26, 4 and 16.
 
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
@@ -592,6 +594,15 @@ lets a reviewer check that they stay clean-room; each check is a test.
      PDS #14's targets (E146), then a `doutu` of the blob's entry 1, in a read-only page beside
      the code page that only the arm writes. Where the writes land changes no value the firmware
      reads. `test_emitpds.py` holds the rule, the image's disassembly and the generated header.
+     Since round 37 (N3b, the user's approval of step B) own_arm names the image: `pds=v1`, the
+     default, is the one above; `pds=crumb` (`asm/fwtask/pds/crumb.s`, `sgx_own_pds_crumb` in
+     the same header) is it with three `movs tim` breadcrumbs, T1 = 0 first, T2 = 0x200 after
+     both `douta`, T3 = 0x005a3305 (dword 7) after the `doutu`. `tim` is `EVENT_TIMER` (0x0acc),
+     which the host reads in every register snapshot; each value has bit 24 clear, so the timer
+     holds it and counts nothing: the EDM tick stops at T1 by design, until the next GPU reset.
+     Same data rows, control word and kernel fills as v1. The blob `emitsb` is `emitsa` with two
+     store breadcrumbs: X0 = 0x5a5a3303 in slot 1 dword 2 (page dword 70) right after the
+     `emitpds`, and S1 = 0x5a5a3304 in slot 5 dword 0 (page dword 84) as entry 1's first work.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
@@ -852,6 +863,8 @@ stays with what a session must do around it.
   only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
   and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
   outside them changes that test first.
+- `pds=crumb` arms only with the fork's branch `r37-kernel` (own_arm's image choice); the
+  module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
