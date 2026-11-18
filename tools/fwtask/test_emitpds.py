@@ -174,6 +174,60 @@ def test_the_kernel_header_carries_the_image_and_its_dword_roles():
         assert f"0x{w:08x}" in h
 
 
+V1_IMAGE = [0, 0, 0, 0, 0, 0, 0x200, 0, 0x07040606, 0x07042CA6, 0x07000305, 0xAF000000]
+
+
+def dis(tmp_path, words):
+    f = tmp_path / "image.bin"
+    f.write_bytes(b"".join(w.to_bytes(4, "little") for w in words))
+    r = subprocess.run([str(pds_dis()), str(f), "8"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return [ln.split("\t", 1)[1] for ln in r.stdout.splitlines()]
+
+
+def test_the_v1_image_is_unchanged_by_the_crumb_image():
+    assert gen_verify.pds_image() == V1_IMAGE
+    assert gen_verify.pds_image("v1") == V1_IMAGE
+
+
+def test_the_crumb_image_adds_three_tim_breadcrumbs_and_nothing_else(tmp_path):
+    """N3b step B: T1 (tim <- dword 3, 0), the two douta, T2 (tim <- dword 6, 0x200), the doutu,
+    T3 (tim <- dword 7, 0x005a3305), halt. No doutd, no load or store, no branch."""
+    img = gen_verify.pds_image("crumb")
+    assert len(img) == 15
+    assert dis(tmp_path, img) == ["data"] * 8 + [
+        "movs tim, ds1[1], ds1[1], ds1[1], ds1[1]",
+        "movs douta, ds0[2], ds1[1], ds0[2], ds0[2]",
+        "movs douta, ds0[3], ds1[2], ds0[3], ds0[3]",
+        "movs tim, ds1[2], ds1[2], ds1[2], ds1[2]",
+        "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]",
+        "movs tim, ds1[3], ds1[3], ds1[3], ds1[3]",
+        "halt"]
+
+
+def test_the_crumb_markers_are_stopped_values_and_the_rows_are_v1_s():
+    img = gen_verify.pds_image("crumb")
+    # ds1[1], ds1[2], ds1[3] are dwords 3, 6 and 7 (the banks interleave by pairs of dwords)
+    assert [img[3], img[6], img[7]] == [0, 0x200, 0x005A3305]
+    for d in (3, 6, 7):
+        assert not img[d] & 1 << 24, d          # bit 24 clear: tim holds the value, no count
+    assert img[:7] == V1_IMAGE[:7]              # U0-U2, the douta controls, V0, V2 as v1
+    assert img[8 + 1:8 + 3] == V1_IMAGE[8:10] and img[8 + 4] == V1_IMAGE[10]
+    assert img[-1] == V1_IMAGE[-1]
+
+
+def test_the_kernel_header_carries_both_images():
+    h = gen_verify.render_pds()
+    assert "#define SGX_OWN_PDS_WORDS\t12" in h and "#define SGX_OWN_PDS_CRUMB_WORDS\t15" in h
+    assert "static const u32 sgx_own_pds_image[SGX_OWN_PDS_WORDS]" in h
+    assert "static const u32 sgx_own_pds_crumb[SGX_OWN_PDS_CRUMB_WORDS]" in h
+    assert "asm/fwtask/pds/crumb.s" in h
+    crumb = h[h.index("sgx_own_pds_crumb["):]
+    for w in gen_verify.pds_image("crumb"):
+        assert f"0x{w:08x}" in crumb
+    assert "0x005a3305" in crumb
+
+
 def test_the_committed_kernel_pds_header_is_current():
     p = gen_verify.SGXFIVE / "sgx_own_pds.h"
     if not p.is_file():
