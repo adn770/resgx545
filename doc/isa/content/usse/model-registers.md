@@ -56,7 +56,8 @@ marked.
   model had every destination take the result, and `ima32.u` writes `sa0`, `o0`, `i1`, `i2` and the
   six r-bank destinations run, r0, r9, r18, r28, r30 and r31): an unwritten `pa0` read 0xff00ff00 in
   1536 pixels and 0xff203040 in 512 in the first seven jobs of that table, each job outputting the
-  colour it read (Q098, Q136).
+  colour it read (Q098); the first value was the colour of the health triangle before the table
+  (E1140).
 - **Secondary attributes [CAP/RE].** Shared by the instances of a task and written by a
   secondary PDS program. The firmware keeps its base pointers there (`sa0`-`sa2`, DMAed from
   the TA/3D control block at boot) and some of its state (`sa8`, `sa9`, `sa19`), and it does
@@ -68,7 +69,7 @@ marked.
   value as their colour (Q129). Job 8 of a table read 0x79 in `sa0`, written by `ima32.u` in job 7,
   which is also the colour job 7 output (2048 of 2048 pixels, E496), so one job's persistence of an
   `sa0` written by `ima32` is not separated from the colour rule; the job after that read it in
-  `pa0`, which is also the colour the job before output (Q136). Separated since **[HW]** (E1140,
+  `pa0`, which is also the colour the job before output. Separated since **[HW]** (E1140,
   held out after E1139's post hoc reading):
   - an `sa0` written by `iaddu32` is read by the next job (2048 of 2048 pixels), across a debugfs
     reset and 120 s idle with no job between, and any job between (a fill writing no `sa`, the

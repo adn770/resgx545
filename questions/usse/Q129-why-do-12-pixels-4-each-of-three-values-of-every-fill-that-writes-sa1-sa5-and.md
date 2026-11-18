@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E484"]
+evidence = ["E484", "E1140"]
 terms = []
 +++
 
@@ -19,3 +19,14 @@ written by instances of one task sharing a bank that the output of the last inst
 and whether an sa survives a job that writes only other registers (the gap job wrote nothing). To
 settle it: the pixel positions of the odd 12 kept (probe --pixels), sa written by 1 to 16
 instances, and a gap job that writes an sa other than the probed one.
+
+Note 2026-11-17 (Q136 retired, answered by E1140). An sa0 written by every instance of a fill is
+read by the next job in 2048 of 2048 pixels, and a job between that writes no sa (a fill, the
+health fill or triangle) replaces it with that job's colour. That answers this body's "whether an
+sa survives a job that writes only other registers" for sa0 [HW]. Kept here as notes from Q136's
+rule, not new clauses:
+- which instance reads which slot, and why the health triangle's 64 x 64 render reads as 1536 and
+  512 pixels of a 64 x 32 fill;
+- E1139 [infer]: a reader's later instances read what its earlier ones wrote to o0.
+
+An o destination, other operands and the other registers of the banks were not run.

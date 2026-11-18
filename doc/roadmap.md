@@ -498,8 +498,8 @@ programs and jobs apart where one program ran twice. E469 to E473, E475 and E476
 with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
 Q098, the lapc index question (answered by E1098 and E1102 since), Q125, the iaddu32 extension
 question (answered by E1106 since) and Q127 are narrowed,
-none retired; Q136, the ima32 high-word question (folded into Q127 since) and the test-field
-question (answered since by E1062) are new.
+none retired; the sa0 lifetime question (answered by E1140 since), the ima32 high-word question
+(folded into Q127 since) and the test-field question (answered since by E1062) are new.
 
 Sub-phase 11.26 ran seven script tables on the laptop (the identity maps of multisampling, the TA
 output under the TE anti-aliasing bits, the macrotile words at six sizes, the 4x render of our stack

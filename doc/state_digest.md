@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-132 open: 122 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+131 open: 121 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -239,13 +239,11 @@ list.
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
 - `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
-  sa7 show those sa values as their output, and how long ... (E484)
+  sa7 show those sa values as their output, and how long ... (E484, E1140)
 - `Q130` usse, low: when does a load on one counter land while a wdf waits on another: why four ldad
   on drc0 issued after a wdf drc1 that waited for four ldad ... (E479)
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
   when it is 0 or 196 to 252, whatever the task was started ... (E535, E540, E594)
-- `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
-  0xff203040 mixture that pa0 reads in the first jobs of a ... (E496, E1139, E1140)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
