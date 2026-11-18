@@ -188,8 +188,8 @@ list.
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
 - `Q241` isp, low: what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle;
   E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E1045, E1056, E1072)
-- `Q302` pbe, low: what do pack modes 4 to 6, 9 to 14 and the 40 ARGB8888-like modes other than 0
-  store for colours other than E031's two (how each narrows or ... (E385, E1135, E1136)
+- `Q302` pbe, low: where do pack modes 9, 10, 12 and 13 put each pixel's whole colour (the layout in
+  the target and what 12 and 13 write past it), why does ... (E1135, E1136, E1146)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change the render time of a sub-millisecond load of many
@@ -277,12 +277,15 @@ list.
 
 ## Recent records
 
-8 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
+9 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1147` isp, 2026-11-18: r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected
   rerun of r35-o0 (E1143), every control passed: at the start of an opaque pass's pixel shader, on
   the pixels that keep a value, ...
+- `E1146` pbe, 2026-11-18: r35-pk on module 7CE8E38E (Q302), every control passed, a colour ramp
+  whose channels take every byte value on the 64 x 64 triangle (each pixel's colour unique): RGB565
+  (pack mode 3) and pack modes 4 ...
 - `E1143` isp, 2026-11-18: r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the
   frozen rule printed NARROW with nothing decided, because the three A' controls at 128 x 128 failed
   and the frozen gate put the 128 ...
@@ -307,9 +310,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-108 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+109 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r35-pk`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r35-o0b`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r35-o0`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r34-sa0b`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
@@ -471,7 +475,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 16 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 17 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

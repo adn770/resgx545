@@ -86,6 +86,11 @@ fn pbe_emit_vectors_check_the_value_stored_for_each_colour() {
     // E268: bit 25 of the word that loads CR_REG_0400 inverts the alpha, not in RGB565
     assert_eq!(verdict(&v("0x200", "0x2000080", r#"["0x00203040", "0x7fff8040"]"#, "")), Verdict::Matched);
     assert_eq!(verdict(&v("0x203", "0x2000080", r#"["0x2188", "0xfc08"]"#, "")), Verdict::Matched);
+    // E031, E1146: modes 4 to 6 truncate, the ARGB8888-like modes store mode 0's colour
+    assert_eq!(verdict(&v("0x204", "0x80", r#"["0x90c8", "0xfe08"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x205", "0x80", r#"["0xf234", "0x8f84"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x206", "0x80", r#"["0xff25", "0x80f1"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x22a", "0x80", r#"["0xff203040", "0x80ff8040"]"#, "")), Verdict::Matched);
     // a value the hardware did not store is a mismatch, one colour each
     assert!(matches!(verdict(&v("0x203", "0x80", r#"["0x2188", "0xfc09"]"#, "")), Verdict::Mismatch(_)));
     // modes the records do not give are refused under their questions, and 22 and 34 under Q012
@@ -94,7 +99,7 @@ fn pbe_emit_vectors_check_the_value_stored_for_each_colour() {
         Verdict::Refused(vec!["Q012".into()])
     );
     assert_eq!(
-        verdict(&v("0x204", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q302"]"#)),
+        verdict(&v("0x209", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q302"]"#)),
         Verdict::Refused(vec!["Q302".into()])
     );
 }

@@ -611,7 +611,7 @@ fn kind_ta_object(v: &Json) -> Modelled {
     }
 }
 
-/// pbe-emit (E031, E268, E383, E999): the value the end-of-tile emit stores for each shader colour
+/// pbe-emit (E031, E268, E383, E999, E1146): the value the end-of-tile emit stores for each shader colour
 /// in a modelled pack mode. A vector without a sideband is the stub's (the whole unit refuses). A
 /// vector of a pixel smaller than a dword records E031's histogram of the target (`mixed`,
 /// "0xVALUExCOUNT", the most frequent values only): each value but the 0xdeadbeef fill must be
@@ -636,7 +636,7 @@ fn kind_pbe_emit(v: &Json) -> Modelled {
             .get("colours")
             .arr()
             .iter()
-            .map(|c| pbe::pack_pixel(pack, c.hex().unwrap_or(0) as u32, reg >> 25 & 1 != 0) & mask)
+            .map(|c| pbe::pack_pixel_word(pack, c.hex().unwrap_or(0) as u32, reg) & mask)
             .collect();
         for m in e.get("mixed").arr() {
             let s = m.str().unwrap_or("");
@@ -661,10 +661,7 @@ fn kind_pbe_emit(v: &Json) -> Modelled {
     let want: Vec<Option<u64>> = e.get("stored").arr().iter().map(|j| j.hex()).collect();
     for (k, c) in i.get("colours").arr().iter().enumerate() {
         let o0 = c.hex().unwrap_or(0) as u32;
-        if pack == pbe::Pack::Rgb565 && !pbe::rgb565_known(o0) {
-            return Modelled::refusing(pbe::rgb565_unknown());
-        }
-        let got = pbe::pack_pixel(pack, o0, reg >> 25 & 1 != 0) as u64;
+        let got = pbe::pack_pixel_word(pack, o0, reg) as u64;
         if want.get(k).copied().flatten() == Some(got) {
             seen.matched += 1;
         } else {

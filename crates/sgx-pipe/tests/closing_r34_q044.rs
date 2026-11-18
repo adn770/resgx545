@@ -7,8 +7,8 @@
 //! and form come from the session's frozen tables: the colour form (o0 = 0x80ff8040 over the
 //! background 0xff203040, the triangle's pixels read from E031's mode 0 image) and the ramp form
 //! (E385's: alpha per pixel from the session's predictions/p2/alpha.txt, RGB 0x00ff8040). Rows
-//! the model refuses (modes 4 to 6, 9 to 13, the ARGB8888-like modes but 0, 22, 26, 34) are
-//! counted, never replayed.
+//! the model refuses (modes 9, 10, 12, 13, 22, 26, 34) are counted, never replayed; since E1146
+//! modes 4 to 6 and the ARGB8888-like modes replay too, a held-out check of r35-pk's model.
 
 use sgx_pipe::data::Ctx;
 use sgx_pipe::mem::Mem;
@@ -106,6 +106,8 @@ fn every_modelled_row_of_r34_q044_is_the_models() {
     assert_eq!((done.len(), refused), (EXPECT_DONE, 198 - EXPECT_DONE), "{done:?}");
 }
 
-/// s0 3 (mode 0) + 1 (mode 8 ramp); p1 1 + 18 (7, 8, 15, 18, 20, 24, 25, 27, 28: reference and
-/// bit 25); p2 1 (mode 0) + 8 (1, 2) + 12 (7, 8) + 10 (3, 15, 20, 24, 27); pw 1
-const EXPECT_DONE: usize = 55;
+/// s0 3 (mode 0) + 1 (mode 8 ramp) + 3 (mode 4, E1146); p1 1 + 18 (7, 8, 15, 18, 20, 24, 25,
+/// 27, 28: reference and bit 25) + 6 (4, 5, 6) + 80 (the 40 ARGB8888-like modes, E1146); p2 1
+/// (mode 0) + 8 (1, 2) + 12 (7, 8) + 10 (3, 15, 20, 24, 27) + 11 (mode 4) + 12 (5, 6) + 4 (11);
+/// pw 1. Refused: 9, 10, 12, 13 (their layout), 22, 26, 34
+const EXPECT_DONE: usize = 170;
