@@ -128,5 +128,5 @@ until on_target -o ConnectTimeout=4 -o BatchMode=yes \
 done
 # Every test boot runs with the safety net armed: panic and lockup reboots,
 # netconsole to the listener (tools/bringup/test-session.sh, netconsole-listen.py).
-on_target "sudo ./test-session.sh $NC_HOST $NC_PORT >/dev/null"
+on_target "sudo ./test-session.sh $NC_HOST $NC_PORT $(date +%s) >/dev/null"
 on_target 'sudo dmesg | grep -E "# gma500_[a-z_]+: pass|^\[[ 0-9.]+\] (not )?ok [0-9]+ gma500"'

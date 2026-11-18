@@ -202,6 +202,60 @@ def test_session_falls_back_to_broadcast_without_a_neighbour(tmp_path):
     assert log.strip().endswith("6666@10.42.0.1/")
 
 
+# ---- the laptop clock (its CMOS battery is flat: it boots in 2011 after a power-off) ------
+
+def clock_session(tmp_path: pathlib.Path, now: int, *epoch: str):
+    """Run test-session.sh on a stub laptop whose clock reads NOW; date -s/hwclock log."""
+    env = stub_laptop(tmp_path, "10.42.0.1 dev enp5s8 src 10.42.0.2 uid 1000", "")
+    bin_dir = tmp_path / "bin"
+    for name, body in {
+        "date": f'case "$*" in\n"+%s") echo {now} ;;\n'
+                f'*) echo "date $*" >> "{tmp_path}/clock.log" ;;\nesac\n',
+        "hwclock": f'echo "hwclock $*" >> "{tmp_path}/clock.log"\n',
+    }.items():
+        (bin_dir / name).write_text("#!/bin/bash\n" + body)
+        (bin_dir / name).chmod(0o755)
+    out = subprocess.run(["bash", str(SESSION), "10.42.0.1", "6666", *epoch], env=env,
+                         capture_output=True, text=True, timeout=30)
+    log = tmp_path / "clock.log"
+    return out, log.read_text() if log.exists() else ""
+
+
+def test_session_sets_a_clock_that_is_off_from_the_host(tmp_path):
+    out, log = clock_session(tmp_path, 1300000000, "1795000000")
+    assert out.returncode == 0, out.stderr
+    assert "date -u -s @1795000000" in log and "hwclock --systohc" in log
+    assert "clock set" in out.stdout and "1300000000" in out.stdout
+
+
+def test_session_leaves_a_clock_within_five_seconds(tmp_path):
+    for now in (1795000003, 1794999997):
+        run = tmp_path / str(now)
+        run.mkdir()
+        out, log = clock_session(run, now, "1795000000")
+        assert out.returncode == 0, out.stderr
+        assert log == "" and "clock set" not in out.stdout
+
+
+def test_session_without_an_epoch_leaves_the_clock(tmp_path):
+    out, log = clock_session(tmp_path, 1300000000)
+    assert out.returncode == 0, out.stderr
+    assert log == ""
+
+
+def test_session_refuses_an_epoch_that_is_not_a_number(tmp_path):
+    out, log = clock_session(tmp_path, 1300000000, "soon")
+    assert out.returncode != 0 and "EPOCH" in out.stderr
+    assert log == "" and not (tmp_path / "modprobe.log").exists()
+
+
+def test_push_passes_the_host_clock_to_the_session():
+    out = push(SGX_NETCONSOLE_HOST="10.1.2.3", SGX_NETCONSOLE_PORT="7777")
+    line = next(l for l in out.splitlines() if "test-session.sh" in l and "sudo" in l)
+    epoch = line.split("test-session.sh 10.1.2.3 7777 ")[1].split()[0]
+    assert epoch.isdigit() and abs(int(epoch) - time.time()) < 60
+
+
 def free_udp_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(("127.0.0.1", 0))
