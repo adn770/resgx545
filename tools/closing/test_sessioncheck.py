@@ -240,3 +240,123 @@ def test_premise_cli_no_reading_declared(tmp_path):
     r = subprocess.run([sys.executable, SCRIPT, "premise", "c", "", "-"], input="x=1\n",
                        capture_output=True, text=True)
     assert r.returncode == 2
+
+
+# ---- the freeze lint: constants for registers the kit snapshots, calibrated intervals --------
+# r30-evst (E1116) and r33-tim (E1131) froze premises from a mid-session reading and from idle
+# spacing; each voided whole stages.
+def row(name, sset="control", knobs="reads:diff", args="tri --width 64 --height 64", tool="t10"):
+    return dict(name=name, set=sset, knobs=knobs.split(), args=args, tool=tool,
+                reads=tuple(k[6:].split(",") for k in knobs.split() if k.startswith("reads:"))[0]
+                if "reads:" in knobs else ())
+
+
+def pred(**q):
+    """{case: {quantity: {model: value}}} from case=(quantity, value) pairs."""
+    out = {}
+    for case, (qty, val) in q.items():
+        out.setdefault(case, {}).setdefault(qty, {})["H"] = val
+    return out
+
+
+def lint(tables, preds, order=None):
+    return C.lint_predictions(tables, preds, order or list(tables))
+
+
+def test_the_kit_snapshot_register_list_holds_the_registers_of_a_real_snap0():
+    assert {0x0A60, 0x0ACC, 0x0C04, 0x0804, 0x012C} <= C.SNAP_REGS
+    assert 0x0748 not in C.SNAP_REGS
+
+
+def test_a_control_constant_for_a_snapshotted_register_warns():
+    warns, errs = lint({"s0": [row("c1", knobs="reads:reg")]},
+                       {"s0": pred(c1=("reg:0x0a60", "0x1000ffff"))})
+    assert not errs
+    assert len(warns) == 1 and "c1" in warns[0] and "0x0a60" in warns[0]
+    assert "@snap0" in warns[0]
+
+
+def test_a_snap0_form_control_does_not_warn():
+    for v in ("@snap0", "@snap0:ref", "@snap0&0xffff"):
+        tables = {"s0": [row("ref"), row("c1", knobs="reads:reg")]}
+        assert lint(tables, {"s0": pred(c1=("reg:0x0a60", v))}) == ([], [])
+
+
+def test_a_constant_for_a_register_the_kit_does_not_snapshot_is_not_warned():
+    tables = {"s0": [row("c1", knobs="reads:reg")]}
+    assert lint(tables, {"s0": pred(c1=("reg:0x0748", "0x1"))}) == ([], [])
+
+
+def test_a_held_row_constant_is_not_a_control_premise():
+    tables = {"s0": [row("h1", sset="held", knobs="-")]}
+    assert lint(tables, {"s0": pred(h1=("reg:0x0a60", "0x5"))}) == ([], [])
+
+
+def test_a_snap0_reference_to_an_unknown_row_is_an_error():
+    tables = {"s0": [row("c1", knobs="reads:reg")]}
+    _, errs = lint(tables, {"s0": pred(c1=("reg:0x0a60", "@snap0:nope"))})
+    assert len(errs) == 1 and "nope" in errs[0]
+
+
+def test_a_snap0_form_that_is_no_form_is_an_error():
+    tables = {"s0": [row("c1", knobs="reads:reg")]}
+    _, errs = lint(tables, {"s0": pred(c1=("reg:0x0a60", "@snap9"))})
+    assert len(errs) == 1 and "@snap9" in errs[0]
+
+
+RT = 'rt'
+
+
+def rt(name, regs, sset="control", knobs="reads:diff,ivl"):
+    return row(name, sset=sset, knobs=knobs, tool=RT,
+               args=f'0.06 0.005 {regs} -- "$HOME/sgxfive-test-t10" tri --width 64 --height 64')
+
+
+def test_a_control_interval_constant_warns_to_calibrate():
+    tables = {"t1": [rt("c1", "0x012c,0x0acc")]}
+    warns, errs = lint(tables, {"t1": pred(c1=("ivl", "1100..1500"))})
+    assert not errs and len(warns) == 1 and "calibrat" in warns[0] and "c1" in warns[0]
+
+
+def test_a_calibrated_interval_control_is_clean():
+    tables = {"cal": [rt("k1", "0x012c,0x0acc"), rt("k2", "0x012c,0x0acc")],
+              "t1": [rt("c1", "0x012c,0x0acc")]}
+    assert lint(tables, {"t1": pred(c1=("ivl", "@cal:cal"))}, ["cal", "t1"]) == ([], [])
+
+
+def test_a_calibration_stage_must_come_first():
+    tables = {"cal": [rt("k1", "0x0acc"), rt("k2", "0x0acc")], "t1": [rt("c1", "0x0acc")]}
+    _, errs = lint(tables, {"t1": pred(c1=("ivl", "@cal:cal"))}, ["t1", "cal"])
+    assert len(errs) == 1 and "before" in errs[0]
+
+
+def test_a_calibration_of_another_register_set_is_an_error():
+    tables = {"cal": [rt("k1", "0x012c"), rt("k2", "0x012c")], "t1": [rt("c1", "0x012c,0x0acc")]}
+    _, errs = lint(tables, {"t1": pred(c1=("ivl", "@cal:cal"))}, ["cal", "t1"])
+    assert len(errs) == 1 and "register set" in errs[0]
+
+
+def test_a_register_set_is_compared_as_a_set_not_as_text():
+    tables = {"cal": [rt("k1", "0x0acc,0x012c"), rt("k2", "0x012c,0x0acc")],
+              "t1": [rt("c1", "0x012c,0x0acc")]}
+    assert lint(tables, {"t1": pred(c1=("ivl", "@cal:cal"))}, ["cal", "t1"]) == ([], [])
+
+
+def test_a_calibration_stage_that_reads_no_interval_or_has_one_row_is_an_error():
+    tables = {"cal": [rt("k1", "0x0acc", knobs="reads:diff")], "t1": [rt("c1", "0x0acc")]}
+    _, errs = lint(tables, {"t1": pred(c1=("ivl", "@cal:cal"))}, ["cal", "t1"])
+    assert any("ivl" in e for e in errs)
+    tables["cal"] = [rt("k1", "0x0acc")]
+    _, errs = lint(tables, {"t1": pred(c1=("ivl", "@cal:cal"))}, ["cal", "t1"])
+    assert any("two" in e for e in errs)
+
+
+def test_a_calibration_of_an_unknown_stage_is_an_error():
+    tables = {"t1": [rt("c1", "0x0acc")]}
+    _, errs = lint(tables, {"t1": pred(c1=("ivl", "@cal:zz"))})
+    assert len(errs) == 1 and "zz" in errs[0]
+
+
+def test_regtimeline_register_sets_are_parsed_from_the_args():
+    assert C.timeline_regs('0.06 0.005 0x012c,0x0acc -- "$HOME/t" tri') == {0x012C, 0x0ACC}
+    assert C.timeline_regs("tri --width 64") is None

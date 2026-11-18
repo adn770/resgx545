@@ -1,0 +1,9 @@
+title = "laptop session r35-o0 of the question-closing pass, round 35 (what o0 holds at the start of an opaque pass, Q073), built on the session kit, safe class: 27 jobs in one stage o, t10 probe triangles at 64 x 64 and 128 x 128 (A' storing the pixel's own place, K a constant colour, P the pass-through) around a debugfs reset and the t10 fill, the kit's health fill and triangle; the three A' controls at 128 x 128 failed, with the freeze, the kit copy, the generator, predictions, scorer, mock and tests, the pre-run README and PREFLIGHT, the kept outputs, the driver logs and the fold's notes, post hoc reading and reproduction"
+repo = "data"
+paths = ["render/closing-r35-o0/"]
+method = "the session kit (kit/ = resgx545 eea6d2a's tools/closing/kit, scorekit.py and sessioncheck.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over ssh to the laptop at home (192.168.12.234), kit/run_stage.sh with run/hooks.sh on it, every file under ~/scratch/r35o/, 2026-11-18, kernel 7.3.0-resgx545, module srcversion 7CE8E38EDB97FC5EA4F6C90 (installed and loaded alike), stock firmware, tool ~/sgxfive-test-t10 (t10, sha256 9bedc2d6db70b2691698478572e311cf2b9b54acfaf8d714ed4db47852e322eb, resgx545 a581c06); all 27 rows replayed on the library mock built from the tool's source before the freeze, none refused; one attempt (out/20261118-085126), rc 0, no stop, fault or lead decision, 13 of 16 controls passed; scored by the frozen score/score.py, reproduced byte for byte at the fold (fold/reproduce.out), the frozen Q073 rule in fold/q073-rule.out, the post hoc reading fold/posthoc.out (fold/posthoc.py); fold/lead-run.log and fold/lead-stage.log the lead's driver logs. debug/ (the library-mock builds, mock trees) and the bytecode caches are not in the copy"
+date = "2026-11-18"
+files = 206
+size = 610416
+sha256 = "1387b26454bae319f17995b95bc29ea0fb49b4daa30516f7560929ff50af5a87"
+recipe = "kit/session.py"

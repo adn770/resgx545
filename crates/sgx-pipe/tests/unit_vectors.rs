@@ -73,7 +73,10 @@ fn fitted_rules_are_never_reported_matched() {
 /// (4 modes, 2 colours) and mode 0 the ten shader colours unchanged; E383, E999: modes 7, 8, 15,
 /// 18, 20, 24, 25, 27 and 28 store the channels their field picks, and each dword of E031's
 /// histogram is made of the two colours' packed values (9 modes, 23 dword values; every pixel in
-/// tests/pbe_pack_images.rs); the other 51 modes refuse. Measured rules: nothing here is fitted.
+/// tests/pbe_pack_images.rs); E1146: modes 4, 5 and 6 (3 modes, 9 dword values) and the 40
+/// ARGB8888-like modes (80 colours) store the two colours as the model packs them; the other 8
+/// modes refuse (22 and 34 under Q012; 9, 10, 12, 13, 14, 26 under Q302). Measured rules: nothing
+/// here is fitted.
 #[test]
 fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() {
     let Some(rep) = replay_all() else { return };
@@ -82,10 +85,10 @@ fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() 
         eprintln!("SKIPPED: no pbe vectors in the set");
         return;
     };
-    assert_eq!((c.matched, c.fitted, c.mismatch), (14 + 9, 0, 0));
-    assert_eq!(rep.items_matched["pbe"], 4 * 2 + 10 + 23);
-    assert_eq!((c.refused["Q012"], c.refused["Q044"]), (2, 49));
-    assert_eq!(c.refused_vectors, 51);
+    assert_eq!((c.matched, c.fitted, c.mismatch), (14 + 9 + 3 + 40, 0, 0));
+    assert_eq!(rep.items_matched["pbe"], 4 * 2 + 10 + 23 + 9 + 40 * 2);
+    assert_eq!((c.refused["Q012"], c.refused["Q302"]), (2, 6));
+    assert_eq!(c.refused_vectors, 8);
 }
 
 #[test]

@@ -201,9 +201,12 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks). In firmware (EDM) tasks of ours `r20` and `r21` written
-  by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
-  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). After a
+  pair of fills, not EDM tasks). An unwritten `r20` read right after the fill that wrote it showed
+  the marker in 2024 of 2048 pixels and another value in 24, against a control frozen at 2048, so
+  that session decided nothing on which job an unwritten temporary reads (E1145, Q193). In
+  firmware (EDM) tasks of ours `r20` and `r21` written by one task were read by the next at the next
+  event and after 1200 ms (6 of 6) and replaced by a client fill (0 of 6 kept), and `i0` and `i1`
+  also after a fill (6 of 6) **[HW]** (E536). After a
   firmware reload, and after a reset and a reload, `i0`, `i1` and `r21` kept the markers and `r20`
   and `sa63` read 0 (6 of 6; after a fill `r21` read 0x1000 to 0x3000 and `sa63` kept its marker)
   **[HW]** (E810). The registers sampled up to `r123` are separate storage in a fill started with up
@@ -229,7 +232,8 @@ marked.
   model had every destination take the result, and `ima32.u` writes `sa0`, `o0`, `i1`, `i2` and the
   six r-bank destinations run, r0, r9, r18, r28, r30 and r31): an unwritten `pa0` read 0xff00ff00 in
   1536 pixels and 0xff203040 in 512 in the first seven jobs of that table, each job outputting the
-  colour it read (Q098, Q136).
+  colour it read (Q098); the first value was the colour of the health triangle before the table
+  (E1140).
 - **Secondary attributes [CAP/RE].** Shared by the instances of a task and written by a
   secondary PDS program. The firmware keeps its base pointers there (`sa0`-`sa2`, DMAed from
   the TA/3D control block at boot) and some of its state (`sa8`, `sa9`, `sa19`), and it does
@@ -241,7 +245,21 @@ marked.
   value as their colour (Q129). Job 8 of a table read 0x79 in `sa0`, written by `ima32.u` in job 7,
   which is also the colour job 7 output (2048 of 2048 pixels, E496), so one job's persistence of an
   `sa0` written by `ima32` is not separated from the colour rule; the job after that read it in
-  `pa0`, which is also the colour the job before output (Q136).
+  `pa0`, which is also the colour the job before output. Separated since **[HW]** (E1140,
+  held out after E1139's post hoc reading):
+  - an `sa0` written by `iaddu32` is read by the next job (2048 of 2048 pixels), across a debugfs
+    reset and 120 s idle with no job between, and any job between (a fill writing no `sa`, the
+    health fill or triangle) replaces it with that job's colour: it lasts one job;
+  - `pa0` reads the colour of the job before, across a reset too, and after the health triangle
+    0xff00ff00 in 1536 and 0xff203040 in 512 pixels, E496's first-job mixture.
+  - an `sa5` write is replaced by the next job's output also when that job writes another `sa`
+    (`sa1`), so it lasts one job whatever the job between writes (E1144);
+  - a fill writing `sa_n` (n = 0 to 15) with `iaddu32` shows the value at exactly 4 pixels, the
+    same 4 in every run, one per 16 x 8 block of the top-left 32 x 16, and three writes show the
+    union; post hoc [infer] (x, y) = ((n & 1) + 2 (n >> 2) + {0, 16}, ((n >> 1) & 1) + {0, 8})
+    (E1144, Q129).
+  A reader that outputs anything but the value it read sees that output come back: its later
+  instances read what its earlier ones wrote to `o0` (E1139 [infer]).
   In an end-of-tile task `sa0`-`sa127` are the tile buffer the task's emit sends: one
   instance of the task covers 16 x 8 pixels, `sa(4q + i)` pixel `i` (top left, top right,
   bottom left, bottom right) of the block's 2 x 2 quad `q` in raster order, and what the task
@@ -9154,8 +9172,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   turn a set of zeros into the conversion, zeros turn the conversion into black, and a later fill
   without the flag keeps the loaded set (E1103, held out, formats 28 and 29) **[HW]**. A copy
   without the flag reads zeros after the kit's health fill and triangle, with or without a
-  recovered hang before them, while a debugfs reset alone keeps the set (E1112; which job of the
-  pair clears it is open, Q010) **[HW]**.
+  recovered hang before them, while a debugfs reset alone keeps the set (E1112) **[HW]**. Of the
+  pair it is the triangle: a copy without the flag reads zeros after the health triangle (t10
+  `tri`, a 64 x 64 render) and keeps the loaded set after the health fill, a plain copy, a debugfs
+  reset and 60 s or 120 s of idle (E1134, held out, both replicates) **[HW]**; which part of a
+  render clears it is not measured.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,
@@ -9511,8 +9532,7 @@ open driver:
    immediates with
    the extra operand, its selector 3 and what bit 46 does, and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
-   (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost
-   (Q098).
+   (Q127); why a write to `pa0` is lost (Q098).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -9523,8 +9543,9 @@ open driver:
    E534, and its other registers and the register-index forms are Q154); when another reader sees
    an unfenced store and what an `idf` is needed for beyond an instance's own store (Q143), and when
    a load not waited for lands (Q146); why a client `emitpds` faults the job and why its addend
-   0xFFF to 0x2000 leaves the fill's value (Q128); the 12 pixels of an `sa` writer that show the
-   `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
+   0xFFF to 0x2000 leaves the fill's value (Q128); why 4 pixels of an `sa` writer show the `sa`
+   and the rule placing them (Q129); where a write past the allocation goes (Q132); what bounds a
+   `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
    `sa`, `r`, `i` and p (E809, E810; Q158), whether a task that ends a skipped slot 3 pass and

@@ -332,10 +332,17 @@ pub struct Machine {
     /// A vertex task's instance (11.33, q053-vtx): (the vertex's sequence number in the draw, the
     /// vertices a task holds, the vertices of the draw); the g bank's per-vertex registers depend on it.
     pub vertex: Option<(u32, u32, u32)>,
+    /// The temporaries. One the task does not write holds what an earlier job left (E484, E593);
+    /// which job, per instance, is session state and not measured (E1145: its reader control
+    /// failed), refused here as the sa carry is.
     pub r: [u32; 128],
     pub i: [u32; 4],
     pub o: [u32; 128],
     pub pa: [u32; 128],
+    /// The secondary attributes. What a job finds in an sa it does not write (and in pa0) is carried
+    /// from the job before: an sa write lasts one job, a job between leaves its colour, also one
+    /// that writes another sa (E484, E1139, E1140, E1144). One job is modelled alone: the carried value is session state, refused here
+    /// (a per-job vector would carry it as an input, not a model).
     pub sa: [u32; 128],
     pub p: [bool; 4],
     /// The predicates the task has set (a bit each): p0-p3 are not reset between jobs, so one the
@@ -416,7 +423,8 @@ pub struct Machine {
     pub csc_unloaded: bool,
     /// The words colour-space set 0 holds for this job, where known: the last load before it in
     /// its batch (init.job.csc; E1097, E1103: a job without the load flag reads the last load's
-    /// set). The YUV formats convert through it (tex::Sample::csc).
+    /// set; the kit's health triangle, a 64 x 64 render, between leaves zeros, E1134). The YUV
+    /// formats convert through it (tex::Sample::csc).
     pub csc: Option<[u32; 5]>,
     /// The registers holding a value the hardware may not have (bank, number), with why:
     /// reading one stops the program.

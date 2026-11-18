@@ -31,16 +31,18 @@ sits, the reading, and the evidence records it rests on.
 - `G0436` `CR_REG_0374` (0x0374): context store/resume state of an interrupted TA: a 32-bit resume
   task word. Measured: TA command word; 0 in captures [infer]. Evidence: E030, E056, E071, E072,
   E159, E182, E183.
-- `G0152` `CR_REG_0400` (0x0400): a pixel output conversion control: bit 25 inverts the alpha
-  channel of every pixel stored, wherever the pack mode puts it (CR_REG_0400.INVERT_BYTE3); bits 7:0
-  are the threshold of the one-bit alpha of ARGB1555 (pack mode 4) and change no pixel in pack modes
-  0 to 3, bits 11:8 change no pixel in modes 0 to 4 (E385), 0x80 the default of the other
-  conversions. Measured: per-render word from the render details or transfer command; 0x80 in
-  captures [infer]. Evidence: E028, E029, E330, E385.
+- `G0152` `CR_REG_0400` (0x0400): a pixel output conversion control: bit 25 inverts the stored alpha
+  in pack modes 0 to 2 and 4 to 6 and changes nothing in the other modes run
+  (CR_REG_0400.INVERT_BYTE3, E1135); bits 7:0 are the threshold of the one-bit alpha of ARGB1555
+  (pack mode 4: set at or above the low byte, E1136) and change no pixel in any other mode run, bits
+  11:8 change no pixel in any class run (E385, E1136). Measured: per-render word from the render
+  details or transfer command; 0x80 in captures [infer]. Evidence: E028, E029, E330, E385, E1135,
+  E1136.
 - `G1030` `CR_REG_0400.BITS11_0` (0x0400[11:0]): twelve bits the register takes (0x80 as the library
   and the closed stack write them) of which bits 7:0 are the threshold of ARGB1555's one-bit alpha
-  (pack mode 4, E385) and change no stored pixel in pack modes 0 to 3, and bits 11:8 change no
-  stored pixel in pack modes 0 to 4 [infer]. Evidence: E385.
+  (pack mode 4: alpha at or above the low byte stores 1, E385, E1136) and change no stored pixel in
+  any other pack mode run, and bits 11:8 change no stored pixel in any class run (E1136; one at a
+  time only in modes 0 and 4) [infer]. Evidence: E385, E1136.
 - `G0154` `CR_REG_0800` (0x0800): an on-chip resource limit (bits 5:0 = 48, bits 23:8) for work
   other than pixel tasks (vertex or state tasks, context switches); pixel-bound renders ignore it
   (E136). Measured: set by the init script and per render; 0x30 everywhere [infer]. Evidence: E006,

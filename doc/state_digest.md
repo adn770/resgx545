@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-132 open: 122 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+130 open: 120 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -36,7 +36,7 @@ list.
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
   tag-5 OR that of lane 0 of the quad in a job whose words ... (E878, E880, E905)
 - `Q111` platform, high: which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2
-  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1126, E1127, E1130)
+  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E1130, E1137, E1142)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
@@ -55,8 +55,8 @@ list.
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
   20 to 23, 27 to 31) do, alone and set together, what does ... (E1069, E1088, E1093)
-- `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
-  E757)
+- `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader after a job of
+  another target size? (E757, E1143, E1147)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
@@ -68,7 +68,7 @@ list.
 - `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and
   why does the viewport's z offset (state-block word 10) scale ... (E981, E987, E1066)
 - `Q012` pbe, medium: what float formats are pack modes 22 and 34, given that both read o0 as an
-  IEEE single (sign, NaN and exponent) and store it at some of the ... (E387, E406, E429)
+  IEEE single (sign, NaN and exponent) and store it at some of the ... (E406, E429, E1135)
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
 - `Q046` pbe, medium: what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc,
@@ -155,7 +155,7 @@ list.
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
 - `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
-  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1032, E1044, E1057)
+  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1057, E1138, E1141)
 - `Q042` vdm, medium: what do bits 31:24 of the index list's first trailing word (VDM_INDEX2) do:
   bits 27:24, when its low bits move the list's first index and ... (E348, E414, E546)
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
@@ -188,8 +188,8 @@ list.
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
 - `Q241` isp, low: what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle;
   E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E1045, E1056, E1072)
-- `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
-  changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
+- `Q302` pbe, low: where do pack modes 9, 10, 12 and 13 put each pixel's whole colour (the layout in
+  the target and what 12 and 13 write past it), why does ... (E1135, E1136, E1146)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
   copy unchanged and changes a few pixels of the fill and the ... (E043, E046, E388)
 - `Q024` pds, low: does CR_PDS_REG_0A78 change the render time of a sub-millisecond load of many
@@ -218,8 +218,6 @@ list.
   and no record explains do: the command's CR_MTE_CTRL ... (E180, E650, E652)
 - `Q008` texture, low: how is the luma compared at the luma key's high cut, where five colours with
   the weighted sum 1000 to 1016 above the cut are outside the ... (E039, E275, E426)
-- `Q010` texture, low: which job clears colour-space set 0 between jobs, given that a copy that does
-  not load it converts with the last loaded words across a ... (E1097, E1103, E1112)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: which dword do texture types 1, 3 and 4 read, each byte halved, in u address
@@ -238,18 +236,16 @@ list.
   of the instances that do not read the last job's value, ... (E477, E484, E500)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
-- `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
-  sa7 show those sa values as their output, and how long ... (E484)
+- `Q129` usse, low: why do exactly 4 pixels of a fill that writes sa_n show the written value
+  instead of the colour, and what rule places them (E1144: the same ... (E484, E1140, E1144)
 - `Q130` usse, low: when does a load on one counter land while a wdf waits on another: why four ldad
   on drc0 issued after a wdf drc1 that waited for four ldad ... (E479)
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
   when it is 0 or 196 to 252, whatever the task was started ... (E535, E540, E594)
-- `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
-  0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
-  read, per instance, and what clears it (a power cycle, a ... (E484, E485, E593)
+  read, per instance, and what clears it (a power cycle, a ... (E485, E593, E1145)
 - `Q195` usse, low: what do the narrow memory forms do that the 11.36 fills did not run: a register
   or negative offset, the pre- and post-increment forms, ... (E598, E599)
 - `Q275` usse, low: why do g20, g41 and g42 read 0 in the end-of-tile task's per-tile stores of E708
@@ -279,144 +275,64 @@ list.
 
 ## Recent records
 
-43 records of 2026-11-15 to 2026-11-16 (the last 2 days to the newest record's date), newest first;
+11 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
-- `E1133` platform, 2026-11-16: r33-tim2 on module 7CE8E38E (fwsim's tim, E1130; the rerun of
-  E1131), stages t1 (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER
-  alone), regtimeline over plain 64x64 ...
-- `E1131` platform, 2026-11-16: r33-tim on module 7CE8E38E (fwsim's tim, E1130), stages t1
-  (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER alone), regtimeline
-  over plain 64x64 triangles: every control ...
-- `E1130` edm, 2026-11-16: fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1
-  c-off kicked as our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the
-  kick's CR_CACHE_CTRL write ...
-- `E1129` pds, 2026-11-16: r32-kreg3 on module 7CE8E38E (Q024), stage kl10, H0 held for all 64
-  values: CR_PDS_REG_0A78 at each value 0x00-0x3f on two shuffled passes leaves the render time of
-  500 triangles (t30 probe --tri ...
-- `E1128` pds, 2026-11-16: r32-kreg3 on module 7CE8E38E (Q024), stage s0, a safe calibration of the
-  many-triangles load (t30 probe --tri --vertices 1500, the triangle and 499 copies, no register
-  write): eight references a ...
-- `E1127` platform, 2026-11-16: r32-misc on module 7CE8E38E (Q111), stage m2 (pre:miscinfo, then
-  t10's 64x64 triangle under regtimeline on CR_CACHE_CTRL and CR_USE0_SERV_EVENT at 852 to 856 ns a
-  sample), every control passed, the ...
-- `E1126` platform, 2026-11-16: r32-misc on module 7CE8E38E (Q111, a served kick without
-  INVAL_DATA), stage m1 (the kit word pre:miscinfo: one debugfs miscinfo read, a GETMISCINFO command
-  with no cache control pending, after the ...
-- `E1125` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k2, cannot tell by its frozen
-  premise: CR_PDS_REG_0A78 at each of its 64 values on two shuffled passes before a job of six
-  renders of 500 small triangles ...
-- `E1124` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k1: CR_PDS_REG_0A78 written to
-  each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256 triangle job of six
-  renders; by the frozen rule (the ...
-- `E1123` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
-  after a kick), stages c4 (CR_EVENT_STATUS, CR_CACHE_CTRL, CR_DMS_CTRL, CR_USE0_SERV_EVENT and
-  CR_BIF_CTRL at 1766 to 1789 ns a sample, ...
-- `E1122` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
-  after a kick), stages c1, c2, c3 (CR_CACHE_CTRL alone at 540 to 542 ns a sample, with
-  CR_USE0_SERV_EVENT, with CR_BIF_CTRL, both at ...
-- `E1121` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111), stages e1 and e5
-  (CR_EVENT_STATUS alone at 539 to 548 ns a sample, every control passed, every row held out against
-  E1115): CR_EVENT_STATUS reads 0x20000000 ...
-- `E1120` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111, the fwsim read rules), stages
-  e2, e3, e4 (CR_EVENT_STATUS with CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with
-  27 registers), every control ...
-- `E1119` bif, 2026-11-16: r30-pde stage f67 (Q109, a size field the BIF does not take; every s0
-  control passed): a client directory entry with the unnamed size codes 6 and 7 is walked as 4 KiB
-  entries like codes 0 to 5: four ...
-- `E1118` bif, 2026-11-16: r30-pde stages f2 and f45 (Q109, the table's layout and address bits,
-  every s0 control passed): over codes 1 to 4 a table laid out with each entry 4 KiB past its block
-  (misalign) and a table at + ...
-- `E1117` bif, 2026-11-16: r30-pde stages s0, f1 and f45 (Q109, module 7CE8E38E, every control
-  passed): a client page directory entry whose size field (bits 3:1) names 16 KiB, 64 KiB, 256 KiB,
-  1 MiB or 4 MiB (codes 1 to 5), ...
-- `E1116` platform, 2026-11-16: r30-evst on module E0CC4027, stages e2, e3, e4 (CR_EVENT_STATUS with
-  CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27 registers), readings only, no
-  verdict: every frozen headline ...
-- `E1115` platform, 2026-11-16: r30-evst on module E0CC4027 (Q111), stages e1 and e5
-  (CR_EVENT_STATUS alone at 541 ns a sample, every control passed): in plain 64x64 triangles
-  CR_EVENT_STATUS reads 0x20000000 in every sample ...
-- `E1114` pds, 2026-11-16: r29-kreg on module E0CC4027 (Q024), readings only, no verdict:
-  CR_PDS_REG_0A78 written to each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256
-  triangle job of six renders; the mean ...
-- `E1113` vdm, 2026-11-16: r29-flag2 stage h2 (Q163, 9 rows of E700's two-block stream on t10 in
-  three triples from a reset, the kit's noreset, 2 planned hangs): a block-2 v = 1 job completed at
-  c = 8 after (6,2) (h2-a3) and ...
-- `E1112` texture, 2026-11-16: r29-flag2 stage h1 and h2's first row (Q010, 7 copies on t22 and
-  E737's bit-24 hang twice on t10, 2 planned hangs, both recovered): a copy without the load read
-  black 0xd3522437a14b6325 after each ...
-- `E1109` ta, 2026-11-16: r29-flag stage f2 (2 jobs, t10, E1074's form at 512 x 512 (n = 2, TA data
-  32768 bytes by the kernel's layout, c-512's reading), the size's own CR_TE_MTILE1 and CR_TE_MTILE2
-  with B2 cleared, words ...
-- `E1108` bif, 2026-11-16: r29-flag stage f1 (2 jobs, t14, the debugfs knobs vm_pte_addr and
-  vm_pte_flags = 0x12, WRITEONLY and EDMPROTECT together, on a mapping only read, held out; 2
-  planned faults): r14-bif's ZLS load of ...
-- `E1107` pds, 2026-11-15: sgx-sim replays the kept vectors of two published sessions exactly:
-  r25-sa64's 58 jobs (E1104; stages pk64 and q019, one vector a job) replay 58 of 58 with each set's
-  sixteen markers read exactly at ...
-- `E1106` usse, 2026-11-15: r26-sa0 stages uc and us (8 jobs, t24 `probe --coords`) on module
-  E0CC4027: a single writer alone writes iaddu32's value into sa0 and it is the zero-extended one:
-  eight (r1, source 2) pairs a ...
-- `E1105` texture, 2026-11-15: r26-vol on module E0CC4027 (Q114): with each of 19 sampler-word bits
-  flipped one at a time on E567's twiddled 16 x 16 format 12 texture (T0 bits 14, 15, 16, 27, 28,
-  29, 30; T3 bits 8, 9, 10, 11, 12, ...
-- `E1104` pds, 2026-11-15: r25-sa64 stages pk64 and q019 (58 jobs) on t24, whose probe
-  --scratch-show 64 prints all 64 scratch dwords sa64_dump.s stores: E391's 40 jobs and 16 held-out
-  jobs at 3 and 6 rows read the markers of ...
-- `E1103` texture, 2026-11-15: r25-csc stage csc (16 jobs): a fill's transfer command loads
-  colour-space set 0 when its load flag is set (xfer:17 bit 0, the set's words xfer:18 to 22), and a
-  fill without the flag keeps the set the ...
-- `E1102` usse, 2026-11-15: r25-q123 stages q123s and q123w (21 jobs), held out and frozen before
-  the run: E492's read and jump programs placed at four new offsets (0x0c3010, 0x2ca7f8, 0x3d0100,
-  0x1c8008) read the links the ...
-- `E1101` zls, 2026-11-15: r23-dpm stage zn (Q088, 5 jobs): after a geometry kick that overflowed
-  without a raised abort (P 0x2e, 0x30, 0x32, 0x34), a moved final with the load bits (0x0017510e)
-  and the host's 0.75 refill of ...
-- `E1100` dpm, 2026-11-15: r23-dpm stage og (Q191, 6 jobs): with the second context's render 1 split
-  into a geometry kick and a closing render (t22b --ctx2-geometry 1), the kept 64x64 owner's words
-  0x00200047, 0x04000417, ...
-- `E1099` dpm, 2026-11-15: r23-dpm stage rl (Q038, 10 jobs): with E442's reload background (a pixel
-  shader fetching the target at the pixel) in every render of a geometry kick and a moved final on
-  its own PB, and the target ...
-- `E1098` usse, 2026-11-15: r23-pk stages q123 and q123h (10 jobs): in placed programs whose every
-  word outside the code ends the task with its own number, the instruction index counts as an 18-bit
-  counter across the ...
-- `E1097` texture, 2026-11-15: r23-pk stage q181 (8 jobs) and pk-e568 gave no frozen verdict: the
-  control c-copy-none (E037's UYVY copy, load flag clear) read 0xb6067a95fa98de2d, the hash of
-  c-copy-csc that ran just before it with ...
-- `E1096` pds, 2026-11-15: r23-pk stages pk and q019 (44 jobs) on t22, whose probe echoes every poke
-  as sent: bg:1 left the library as 0x00130000 (4 rows) and reached the fill's job as poked in every
-  poked job (0x30000, ...
-- `E1095` zls, 2026-11-15: r21-zls stage zz (Q107, 4 jobs): on E629's ramp with the final on its own
-  PB the final's G 33 store (depth.2) holds 184320 zero window dwords in tile rows 0-11 after a
-  raised kick (0x24, 0x38) and ...
-- `E1094` zls, 2026-11-15: r21-zls stage zw (Q088, 3 jobs): during the partial renders CR_ISP_ZLSCTL
-  (0x0480) reads the render details' word rd:11 with bits 14, 18 and 19 ORed in (rd:11 | 0x000c4000)
-  in every sample, on E336's ...
-- `E1093` zls, 2026-11-15: r21-zls stages zc and zl (Q088, 9 jobs): with the host's 0.75 refill of
-  the load buffer between an overflowing geometry kick and a moved final on its own PB, after a
-  raised kick (0x24, 0x28, 0x2c ...
-- `E1092` dpm, 2026-11-15: r20-own stage owp (5 jobs, t18b under regtimeline, render_keep armed, a
-  1024x768 owner closed early after its overflowing render, the second context drawing the default
-  triangle): the kept owner's ...
-- `E1091` dpm, 2026-11-15: r20-own stages ow and owt (6 jobs, t18b under regtimeline, render_keep
-  armed, a 1024x768 owner at P 0x422 closed early, the second context drawing the library's default
-  triangle): with the owner's ...
-- `E1090` zls, 2026-11-15: r20-zls stage zq (Q107, 4 jobs): on E629's ramp at P 0x44 and 0x4c the
-  kick overflows once without a raise (TA3DCtl dword 38 0, E625 with U 49) and the final render on
-  its own PB still keeps the zero ...
-- `E1089` dpm, 2026-11-15: r20-zls stage zm (Q038, 3 jobs): a final render on its own PB without a
-  depth buffer, its triangle moved 96 px right, painted every target pixel after a raised kick
-  (H-REPAINT 2 of 2 at 0x28 and ...
-- `E1088` zls, 2026-11-15: r20-zls stages zc and zr (Q088, Q038, 11 jobs): after a host refill of
-  the load buffer with 0.25 between an overflowing geometry kick and a moved final on its own PB, no
-  frozen form of the separate ...
+- `E1147` isp, 2026-11-18: r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected
+  rerun of r35-o0 (E1143), every control passed: at the start of an opaque pass's pixel shader, on
+  the pixels that keep a value, ...
+- `E1146` pbe, 2026-11-18: r35-pk on module 7CE8E38E (Q302), every control passed, a colour ramp
+  whose channels take every byte value on the 64 x 64 triangle (each pixel's colour unique): RGB565
+  (pack mode 3) and pack modes 4 ...
+- `E1145` usse, 2026-11-18: r35-sa stage t (23 jobs, t30 probe fills with --pixels, module
+  7CE8E38E): every kit control passed, but the frozen reader form control (a fill that reads r20
+  without writing it, right after a fill ...
+- `E1144` usse, 2026-11-18: r35-sa stage a (40 jobs, t30 probe fills with --pixels, module
+  7CE8E38E): every control passed, the position decode on K3 and on --coords' (y << 16) | x and the
+  sa5 reader form included; a fill whose ...
+- `E1143` isp, 2026-11-18: r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the
+  frozen rule printed NARROW with nothing decided, because the three A' controls at 128 x 128 failed
+  and the frozen gate put the 128 ...
+- `E1142` platform, 2026-11-17: r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs,
+  CR_EVENT_STATUS alone at 3.1 to 3.9 us; every control passed): frozen H-OOM-SMALL (bit 1 at 0xe2
+  and 0x82 in every row, at 0x2b6 and 0x1c2 ...
+- `E1141` dpm, 2026-11-17: r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every
+  control passed): 0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1
+  ran (d1s skipped); held: ...
+- `E1140` usse, 2026-11-17: r34-sa0b stage s (54 jobs, t30 probe fills whose readers output the
+  value read, module 7CE8E38E), the corrected rerun of r34-sa0 (E1139), every control passed (16 sa0
+  writers read their marker back ...
+- `E1139` usse, 2026-11-17: r34-sa0 stage s (60 jobs, t30 probe fills, module 7CE8E38E): every
+  control passed (18 sa0 writers read their marker M back in dword 0 with K1 their most frequent
+  colour, 6 colour fills K3), but the ...
+- `E1138` dpm, 2026-11-17: r34-ev on module 7CE8E38E (Q036), stage d0 (calibration of 0x0660 +
+  0x0748, 2 jobs of the overflow probe at 0x422, both controls passed: 0x0660's first sample =
+  snap0, 0x0748's = 0x1f, the kept ...
+- `E1137` platform, 2026-11-17: r34-ev on module 7CE8E38E (Q111), stages e0, e1, e2c, e2 (32 jobs:
+  calibrations of CR_EVENT_STATUS alone and with CR_EVENT_STATUS2, every control passed with
+  premises read from snap0 and the ...
 
 ## Closing sessions
 
-100 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+110 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r35-sa`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
+- `render/closing-r35-pk`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
+- `render/closing-r35-o0b`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
+- `render/closing-r35-o0`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
+- `render/closing-r34-sa0b`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
+- `render/closing-r34-sa0`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
+- `render/closing-r34-ev2`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
+- `render/closing-r34-ev`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
+- `render/closing-r34-q044`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
+- `render/closing-r34-q010`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r33-tim2`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r33-tim`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r32-misc`: 2026-11-16; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -565,7 +481,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-16, 8 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -576,8 +492,8 @@ srcversion, fork tip, laptop tools.
   a2788bd8
 - module srcversion 230E0EF50FFFD606C53AE3C: last named 2026-11-10, 3 sessions
 - module srcversion B21FDA82BD5E5CB5A627E3B: last named 2026-11-10, 9 sessions
-- `tools/closing/scorekit.py` sha256 a10bcec039edeefe
-- `tools/closing/sessioncheck.py` sha256 0cd65f53056b31e5
+- `tools/closing/scorekit.py` sha256 d27010b698c7d622
+- `tools/closing/sessioncheck.py` sha256 50fd40eadf67ff6a
 
 ## Known tool weaknesses
 
@@ -643,4 +559,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-47 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044", "E1057"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044", "E1057", "E1138", "E1141"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -174,3 +174,22 @@ failed again, 7 of 8 rows, and R-RARE's total (1 to 8) failed at 17: no ranking.
 a pulse of about 4 us, at about half a partial render [infer; the label is not read back];
 whether the other half is missed or never happens, what the clear marks, the other bits of
 0x0748, the owner words, CR_DMS_CTRL and the builder-fault clause stay open.
+
+Round 34 attempt (r34-ev stage d, E1138; no verdict): 0x0660 and 0x0748 sampled together in E1032's
+overflow probe read 4095 and 4168 ns a sample in the calibration, above the 3500 ns bound that
+E1057's 4 us bit 2 pulse needs, so the gated stage of five PB sizes did not run. The two PR 0
+calibration jobs repeat E1057's and E1032's readings (no bit 2 clear, bit 4 clear once for 20.3 ms,
+CR_DPM_3D_PAGE_COUNTS 0x70305 kept across a reset). A rerun samples 0x0748 alone (1.7 us) and
+CR_DPM_3D_PAGE_COUNTS in a stage of its own. Open as before.
+
+Narrowed 2026-11-17 (round 34 session r34-ev2, E1141; every control passed; not retired). With
+0x0748 sampled alone (3762 ns median, under E1057's 3890 ns pulse) through the same five PB sizes:
+bit 4 clears once a job (10 of 10; once a render refuted), for 20.3 ms at no partial render to 189
+ms at seven; bit 3 has a 30 us clear only with 4 and 7 partial renders (6 of 6; under 10 us
+refuted); bit 1's clears grow with the partial renders (2 to 21); bit 2 clears in pulses of 3.9 to
+4.1 us only at the two smallest PBs here (6 in 4 rows, none in 6 rows at PR 0 to 2), fewer than the
+partial renders. CR_DPM_3D_PAGE_COUNTS sampled alone is written once a job (10 of 10; a word a
+render refuted), its low half after an overflow the first threshold P - 0x22, its high half 7, 6,
+4, 2, 1 at 0x422, 0x2b6, 0x1c2, 0xe2, 0x82 (12 of 12 kept words held out) [infer, post hoc: ceil(low
+/ 0x70)]. Open: what the bits mark (bit 2 at partial renders, bit 3's long clear), what the high
+half counts, the owner words, CR_DMS_CTRL, the settle registers and the builder-fault clause.

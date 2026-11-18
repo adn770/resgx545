@@ -184,7 +184,7 @@ mod tests {
     #[test]
     fn a_refused_vector_counts_once_in_the_vectors_column() {
         let mut r = Report::default();
-        r.add(&rep("pbe", Verdict::Refused(vec!["Q012".into(), "Q040".into(), "Q044".into()])));
+        r.add(&rep("pbe", Verdict::Refused(vec!["Q012".into(), "Q040".into(), "Q302".into()])));
         let line = r.render().lines().nth(1).unwrap().to_string();
         assert!(line.split_whitespace().nth(1) == Some("1"), "{line}");
         assert_eq!(r.units["pbe"].refused_vectors, 1);

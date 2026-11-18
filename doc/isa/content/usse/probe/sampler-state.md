@@ -75,8 +75,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   turn a set of zeros into the conversion, zeros turn the conversion into black, and a later fill
   without the flag keeps the loaded set (E1103, held out, formats 28 and 29) **[HW]**. A copy
   without the flag reads zeros after the kit's health fill and triangle, with or without a
-  recovered hang before them, while a debugfs reset alone keeps the set (E1112; which job of the
-  pair clears it is open, Q010) **[HW]**.
+  recovered hang before them, while a debugfs reset alone keeps the set (E1112) **[HW]**. Of the
+  pair it is the triangle: a copy without the flag reads zeros after the health triangle (t10
+  `tri`, a 64 x 64 render) and keeps the loaded set after the health fill, a plain copy, a debugfs
+  reset and 60 s or 120 s of idle (E1134, held out, both replicates) **[HW]**; which part of a
+  render clears it is not measured.
 - **Conversion (T3 bits 17:16, normalization bit 15; `texture-sampler-smp-convert`).** 1 gives
   **c10**: the
   B, G, R channels in the 10-bit fields of the first register (the 8-bit value unscaled,

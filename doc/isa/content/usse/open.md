@@ -59,8 +59,7 @@ open driver:
    immediates with
    the extra operand, its selector 3 and what bit 46 does, and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
-   (Q127); how long an `sa0` written by `ima32` lasts (Q136) and why a write to `pa0` is lost
-   (Q098).
+   (Q127); why a write to `pa0` is lost (Q098).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -71,8 +70,9 @@ open driver:
    E534, and its other registers and the register-index forms are Q154); when another reader sees
    an unfenced store and what an `idf` is needed for beyond an instance's own store (Q143), and when
    a load not waited for lands (Q146); why a client `emitpds` faults the job and why its addend
-   0xFFF to 0x2000 leaves the fill's value (Q128); the 12 pixels of an `sa` writer that show the
-   `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
+   0xFFF to 0x2000 leaves the fill's value (Q128); why 4 pixels of an `sa` writer show the `sa`
+   and the rule placing them (Q129); where a write past the allocation goes (Q132); what bounds a
+   `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
    `sa`, `r`, `i` and p (E809, E810; Q158), whether a task that ends a skipped slot 3 pass and

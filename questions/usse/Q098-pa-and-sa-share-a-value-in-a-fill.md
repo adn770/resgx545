@@ -27,7 +27,8 @@ is also the colour job 7 output, so one job's persistence of an sa0 written by `
 separated from the colour rule; the job after it read the same value in pa0, which is also job 8's
 colour, so that does not separate the two either; a pa0 nobody wrote read 0xff00ff00 in 1536 pixels
 and 0xff203040 in 512 in the first seven jobs of that table, each outputting what it read, the first
-value unchecked (Q136). Not shown: that a destination of pa1 to pa4 or an `o` or `g` write is lost
+value the colour of the health triangle run before the table (E1140). Not shown: that a destination
+of pa1 to pa4 or an `o` or `g` write is lost
 or kept.
 
 What is open: why a mov to pa is lost in a fill (a fill's task with no primary attributes, or

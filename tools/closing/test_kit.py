@@ -2298,3 +2298,98 @@ def test_the_fake_regs_show_cache_ctrl_set_by_a_job_and_cleared_by_a_reset(repos
         s9 = gzip.decompress((kept / f"{n}.snap9.regs.gz").read_bytes()).decode()
         assert "reg 0x0804 0x0000ffff" in s0.splitlines(), s0
         assert "reg 0x0804 0x1000ffff" in s9.splitlines(), s9
+
+
+# ---- round 34 (T1): premises read from the session's own snap0, intervals from a calibration --
+def kept_dir(tmp_path, rows, snaps=None, readings=None):
+    """A kept stage directory: cases.tsv for `rows`, NAME.snap0.regs.gz where `snaps` has one
+    ({name: {offset: value}}), readings.tsv of `readings` ({name: 'k=v ...'})."""
+    import gzip
+    d = tmp_path / "kept"
+    d.mkdir()
+    (d / "cases.tsv").write_text(
+        "\t".join(("name", "stage", "set", "risk", "knobs", "tool", "args", "rc", "class",
+                   "fault_int", "fault_word", "free_kb")) + "\n"
+        + "".join(f"{n}\ts\tcontrol\tsafe\t-\trt\ta\t0\tok\t-\t-\t1\n" for n in rows))
+    for n, regs in (snaps or {}).items():
+        body = "sgxfive regs 1\nstate loaded 1\n" + "".join(
+            f"reg {o:#06x} {v:#010x}\n" for o, v in regs.items()) + "dwords 0x00 0x00000001\n"
+        with gzip.open(d / f"{n}.snap0.regs.gz", "wb") as f:
+            f.write(body.encode())
+    if readings:
+        (d / "readings.tsv").write_text("name\treads\treading\n" + "".join(
+            f"{n}\tdiff,ivl\t{r}\n" for n, r in readings.items()))
+    return d
+
+
+def test_kitscore_reads_a_kept_snap0_register_table(tmp_path):
+    sys.path.insert(0, str(KIT))
+    import kitscore
+    d = kept_dir(tmp_path, ["r1", "r2"], snaps={"r1": {0x0A60: 0x5, 0x0ACC: 0x01003574}})
+    assert kitscore.snap_regs(str(d), "r1") == {0x0A60: 0x5, 0x0ACC: 0x01003574}
+    assert kitscore.snap_regs(str(d), "r2") == {}
+    # the debugfs file also lists dword tables after the regs: only `reg` lines are registers
+    assert kitscore.snaps0(str(d)) == {"r1": {0x0A60: 0x5, 0x0ACC: 0x01003574}}
+
+
+def test_kitscore_snaps_feed_scorekit_reg_control(tmp_path):
+    sys.path.insert(0, str(KIT))
+    import kitscore
+    import scorekit
+    d = kept_dir(tmp_path, ["r1"], snaps={"r1": {0x0A60: 0x0000FFFF}})
+    snaps = kitscore.snaps0(str(d))
+    assert scorekit.reg_control(0x0000FFFF, "@snap0", "0x0a60", "r1", snaps) is True
+    assert scorekit.reg_control(0x1000FFFF, "@snap0", "0x0a60", "r1", snaps) is False
+
+
+def test_kitscore_calibration_is_the_readings_ivl_of_the_stages_rows(tmp_path):
+    sys.path.insert(0, str(KIT))
+    import kitscore
+    d = kept_dir(tmp_path, ["k1", "k2", "k3"],
+                 readings={"k1": "diff=0 ivl=4897", "k2": "diff=0 ivl=3696", "k3": "diff=0"})
+    c = kitscore.calibration(str(d))
+    assert c.rows == 2 and c.ns == (4897 + 3696) / 2 and c.window is not None
+    c = kitscore.calibration(str(d), names=["k1"])
+    assert c.window is None and c.problems
+
+
+def test_kitscore_calibration_of_a_stage_that_has_not_run_is_empty(tmp_path):
+    sys.path.insert(0, str(KIT))
+    import kitscore
+    c = kitscore.calibration(str(tmp_path / "none"))
+    assert c.rows == 0 and c.window is None
+
+
+def lint_session(repos, tables, preds):
+    kp = scaffold(repos)
+    (kp / "tables/s0.txt").write_text(tables)
+    (kp / "predictions/s0.tsv").write_text(
+        "case\tquantity\tvalue\tmodel\tset\tsource\n" + preds)
+    return kp
+
+
+T_REG = ("#stage s0\n#limit 0\n"
+         "ref|control|safe|reads:diff|t4|tri --width 64 --height 64\n"
+         "c1|control|safe|reads:diff|t4|tri --width 64 --height 64\n")
+
+
+def test_the_lint_command_and_the_freeze_warn_on_a_constant_for_a_snapshotted_register(repos):
+    kp = lint_session(repos, T_REG, "c1\treg:0x0a60\t0x1000ffff\tH\tcontrol\tE258\n")
+    li = kit(kp, repos, "lint")
+    assert li.returncode == 0 and "WARN" in li.stdout and "0x0a60" in li.stdout, li.stdout
+    f = kit(kp, repos, "freeze")
+    assert f.returncode == 0 and "WARN" in f.stdout and "@snap0" in f.stdout, f.stdout
+
+
+def test_the_freeze_is_quiet_on_the_snap0_form(repos):
+    kp = lint_session(repos, T_REG, "c1\treg:0x0a60\t@snap0:ref\tH\tcontrol\tthe row's snap0\n")
+    f = kit(kp, repos, "freeze")
+    assert f.returncode == 0 and "WARN" not in f.stdout, f.stdout
+
+
+def test_the_freeze_refuses_a_snap0_reference_to_an_unknown_row(repos):
+    kp = lint_session(repos, T_REG, "c1\treg:0x0a60\t@snap0:nope\tH\tcontrol\tx\n")
+    li = kit(kp, repos, "lint")
+    assert li.returncode == 1 and "nope" in li.stdout
+    f = kit(kp, repos, "freeze")
+    assert f.returncode != 0 and "nope" in f.stdout and not (kp / "FROZEN.sha256").exists()

@@ -423,6 +423,28 @@ session.toml (regtimeline, args `TOTAL LEAD REGS -- "$HOME/TOOL" ...`) must run 
 after `--` (the guard refuses any `$HOME/PATH` that is not one: the preflight pins only those),
 and the mock runs the wrapped tool's fake and prints a timeline after it, with its status.
 
+Control premises are read, not remembered (round 34, T1; r30-evst and r33-tim voided whole
+stages on a frozen premise, E1116 and E1131). `session.py lint` (and `freeze`, which prints the
+same and refuses its errors) checks the controls' predictions of the session:
+
+- A register: quantity `reg:0xOFF`, value a constant or `@snap0` (the row's own snap0, kept as
+  `NAME.snap0.regs`: the state right after the runner's reset) or `@snap0:ROW` (a named reference
+  row of the same stage), each with an optional `&0xMASK`. The scorer reads it with
+  `kitscore.snaps0(d)` and `scorekit.reg_control(got, spec, off, row, snaps)`; a missing snap0 or
+  register is cannot tell, never a verdict. A control that freezes a constant for a register in
+  `sessioncheck.SNAP_REGS` (the registers of the kit's snapshot) is a WARN: freeze `@snap0`.
+  Registers the kit does not snapshot (0x0748) keep their constants and need a record.
+- An interval: quantity `ivl`, value `LO..HI` or `@cal:STAGE`. A calibration stage is an ordinary
+  safe stage of at least two control rows (`reads:diff,ivl`, hook_reading prints `ivl`) running
+  regtimeline over the EXACT register set (the set is compared as a set) during a job, before the
+  stage that cites it; `kitscore.calibration(d)` takes the median of their job-window `ivl` and a
+  +-25 % window that every row must lie in (rows that disagree give no window), and
+  `scorekit.ivl_control(got, "@cal:STAGE", cals)` scores later controls against it (cannot tell
+  when the calibration did not run or failed). Gate the later stage on the calibration stage
+  (`GATES`, `gate = true`) as r32-kreg3's s0 did. A constant interval is a WARN. Per-register read
+  cost (`scorekit.READ_COST_NS`, a note and a lower bound, not a premise): 0x012c about 541 ns,
+  0x0748 about 1.7 us, 0x0acc about 3.7 us; no 0x0acc in a fine timeline.
+
 Readings a scorer or a hook takes from the kept files, and the slips they have cost:
 
 - A param buffer dump is compared bounded by its streams, never whole: `kitscore.param_hash(b)`

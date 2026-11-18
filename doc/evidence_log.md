@@ -9632,6 +9632,182 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, RE, infer; data: `tools/fwsim/seeds.toml`, `crates/pysgx/tests/test_fwsim_m2.py`,
   `render-closing-r33-tim2:out/20261116-213803/t1/`,
   `render-closing-r33-tim2:out/20261116-213803/t1d/`, `render-closing-r33-tim2:fold/`.*
+- `E1134` r34-q010 stage c (Q010, 32 jobs, safe): the kit's health triangle clears colour-space set
+  0 and the health fill does not: after a BT.601 load, a copy without the load read black
+  0xd3522437a14b6325 after a t10 `tri` (t2a-rd, t2b-rd) and after the fill-then-triangle pair
+  (t6-rd), and E037's 0xb6067a95fa98de2d after a t10 `fill` (t1a-rd, t1b-rd), a plain copy (t3a-rd,
+  t3b-rd), 60 s and 120 s idle (t4-rd, t5-rd) and a debugfs reset alone (t0a-rd, t0b-rd, controls);
+  frozen 'H-TRI ... (9 of 9 rows decided)', H-FILL '5 held, 4 FAILED', H-BOTH '7 held, 2 FAILED',
+  H-NONE '6 held, 3 FAILED', H-IDLE and H-COPYNL '0 held, 2 FAILED', every one of 15 controls
+  passed, and the frozen Q010 rule printed 'one job hypothesis, H-TRI: RETIRE-CAPABLE'.
+  *texture; HW; data: `render-closing-r34-q010:out/20261116-231015/c/`,
+  `render-closing-r34-q010:fold/`.*
+- `E1135` r34-q044 on module 7CE8E38E (Q044), stages s0, p1 and pw, colour form (o0 0x80ff8040 over
+  0xff203040), every control passed: bit 25 of the word that loads CR_REG_0400 changes the stored
+  image in pack modes 4, 5 and 6 only (xor 0x80008000, 0xf000f000 and 0xff00ff00: the alpha field of
+  ARGB1555, ARGB4444 and A8 with RGB332) and nothing in modes 7 to 13, 15 to 21, 23 to 33 and 35 to
+  63, the 40 ARGB8888-like modes other than 0 among them (H-SUBSET 51 held, 1 FAILED of 52 held out,
+  the failure mode 6; H-INV25 not supported, 9 held, 43 FAILED), so with E268 it acts in exactly
+  modes 0, 1, 2, 4, 5 and 6; modes 22 and 34 change on 3 of 4091 and 0 of 4092 repeating dwords;
+  every 0x80 reference repeats E031's kept image (55 of 55 and 2 of 2).
+  *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r34_q044.rs`,
+  `render-closing-r34-q044:out/20261116-232915/s0/`,
+  `render-closing-r34-q044:out/20261116-232915/p1/`,
+  `render-closing-r34-q044:out/20261116-232915/pw/`, `render-closing-r34-q044:fold/`.*
+- `E1136` r34-q044 on module 7CE8E38E (Q044), stage p2, E385's alpha ramp, every control passed: the
+  stored one-bit alpha of pack mode 4 is set where the alpha is at or above the low byte of the word
+  that loads CR_REG_0400 (H-GE 9 of 9 held out at low bytes 0x02 to 0xfc equal to a ramp alpha, 2 to
+  40 pixels each; H-GT refuted 9 of 9); the low byte at 0x00, 0x40, 0xc0 and 0xff changes no stored
+  pixel in modes 5 to 8 and at 0x40 and 0xc0 none in 1, 2, 9, 10 and 11 (H-THR1 26 of 26), and bits
+  11:8 (0xf80) none in modes 1, 2, 3, 5 to 11, 15, 20, 24, 26 and 27 (H-NULL 15 of 15).
+  *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r34_q044.rs`,
+  `render-closing-r34-q044:out/20261116-232915/p2/`, `render-closing-r34-q044:fold/`.*
+
+### 2026-11-17
+
+- `E1137` r34-ev on module 7CE8E38E (Q111), stages e0, e1, e2c, e2 (32 jobs: calibrations of
+  CR_EVENT_STATUS alone and with CR_EVENT_STATUS2, every control passed with premises read from
+  snap0 and the calibrations): 0x012c alone samples at 3.1 to 3.9 us in these job windows; frozen
+  H-IMG (11 of 11), H-PR0-QUIET (3 of 3), H-THR-NEVER (14 of 14), H-S2-NONE (3 of 3) and
+  H-S2-COPYIDLE (2 of 2) held; H-OOM-SET against H-OOM-NONE split (e1 4 held 4 FAILED, e2 2 held 1
+  FAILED), H-OOM-MT (e1 6 of 8, e2 3 of 3), H-SHORT (14 of 16) and H-COPY (e1 8 of 12, e2 2 of 4)
+  not supported, H-S2-SET refuted (0 of 3); post hoc the out-of-memory bit follows the PB size: bit
+  1 in 6 of 6 rows at 0xe2 and 0x82, none in 5 at 0x2b6 and 0x1c2, bit 2 31 us after a bit 1 episode
+  at 0xe2 in 2 of 3; a copy shows bit 18 as one 60 to 206 us episode in 10 of 14 copy rows and bit 0
+  in none.
+  *platform; HW, infer; data: `render-closing-r34-ev:out/20261117-001058/e0/`,
+  `render-closing-r34-ev:out/20261117-001058/e1/`, `render-closing-r34-ev:out/20261117-001058/e2c/`,
+  `render-closing-r34-ev:out/20261117-001058/e2/`, `render-closing-r34-ev:fold/`.*
+- `E1138` r34-ev on module 7CE8E38E (Q036), stage d0 (calibration of 0x0660 + 0x0748, 2 jobs of the
+  overflow probe at 0x422, both controls passed: 0x0660's first sample = snap0, 0x0748's = 0x1f, the
+  kept image) and d1 not run: its gate closed on the measured interval, 4131.5 ns median (4095 and
+  4168), above the frozen 3500 ns bound for E1057's 4 us bit 2 pulse; readings only: no bit 2 clear
+  (2 of 2), bit 4 clear once for 20.3 ms, bit 3 clears at most 4.4 us, CR_DPM_3D_PAGE_COUNTS ends at
+  0x70305 (one change from 0x2, none from 0x70305).
+  *dpm; HW; data: `render-closing-r34-ev:out/20261117-001058/d0/`, `render-closing-r34-ev:fold/`.*
+- `E1139` r34-sa0 stage s (60 jobs, t30 probe fills, module 7CE8E38E): every control passed (18 sa0
+  writers read their marker M back in dword 0 with K1 their most frequent colour, 6 colour fills
+  K3), but the frozen reader decode (each pixel = the value read xor a key) did not hold: every
+  reader's pixels came in pairs {x, x ^ key}, about 1904 and 144 of 2048, so 18 of 20 sa0 readers
+  and every pa0 row read cannot tell and the frozen rule printed 'Q136 RULE: NARROW: neither clause
+  decided' (a builder error: the reader form had no control on a known value; the 'held' H-RESET 2
+  of 2, H-IDLE 6 of 6 and the two rr-r2 rows are artefacts of that decode); post hoc [infer], taking
+  the more frequent member of each pair as the value read before the job's own o0 writes (a reader's
+  read aliases what earlier instances of the job wrote to o0): sa0 read its marker after the writer
+  with no job between, across a debugfs reset and 10, 60 and 120 s idle (14 of 14 rows), and the
+  output of a job between (a colour fill, the t10 fill, the t10 triangle, a reader; 8 of 8),
+  H-ONEJOB's pattern on 20 of 20; pa0 read the colour of the job before on 8 of 8 rows, a reset
+  between included, and after the t10 triangle 0xff00ff00 in 1536 and 0xff203040 in 512 pixels in
+  both replicates, E496's first-job mixture count for count; nothing post hoc decides: the corrected
+  rerun r34-sa0b freezes it.
+  *usse; HW; data: `render-closing-r34-sa0:out/20261117-001613/s/`, `render-closing-r34-sa0:fold/`.*
+- `E1140` r34-sa0b stage s (54 jobs, t30 probe fills whose readers output the value read, module
+  7CE8E38E), the corrected rerun of r34-sa0 (E1139), every control passed (16 sa0 writers read their
+  marker back in dword 0, K1 their most frequent colour; 6 colour fills K3): an sa0 value written by
+  iaddu32 in a fill's pixel task is read by the next job in 2048 of 2048 pixels with no job between,
+  across a debugfs reset and 10, 60 and 120 s idle (10 of 10 rows), and a job between (a colour
+  fill, the t10 fill, the t10 triangle) replaces it with that job's colour (6 of 6): 'Q136 RULE (a):
+  ... R rows decided 16 of 16; holding on every row: H-ONEJOB ... DECIDED, H-ONEJOB' (H-PERSIST 6
+  FAILED, H-COLOUR 10 FAILED, H-RESET 2 and H-IDLE 6 FAILED); pa0 reads the colour the job before
+  output, after a colour fill and the t10 fill (4 of 4 held out, a reset between too, 2 of 2) and
+  after the t10 triangle 0xff00ff00 in 1536 and 0xff203040 in 512 pixels (both fits, as the sa0
+  readers after the triangle), E496's first-job mixture: 'Q136 RULE (b): ... H-PREV 4 held ...
+  H-FIXED 0 held, 4 FAILED ...: DECIDED, H-PREV'; 'Q136 RULE: RETIRE-CAPABLE (both clauses
+  decided)'; H-ONEJOB and H-PREV were formed post hoc from E1139 and are held out here on new rows.
+  *usse; HW; data: `render-closing-r34-sa0b:out/20261117-005911/s/`,
+  `render-closing-r34-sa0b:fold/`.*
+- `E1141` r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every control passed):
+  0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1 ran (d1s skipped);
+  held: H-B4-ONE (10 of 10, H-B4-PR refuted 8 of 8), H-B4-LEN (10 of 10), H-B3-LONG (6 of 6,
+  H-B3-SHORT refuted 4 of 4), H-B0-N (10 of 10), H-B1-PR's counts (10 of 10; its width rows cannot
+  tell, a misnamed frozen quantity), H-B2PR's stage sum (6 clears in 8 rows, H-B2-NONE refuted; its
+  width rows cannot tell, the same slip); 0x0748 bit 2 clears 0 times at PR 0, 1 and 2 (6 rows) and
+  1 to 3 times at PR 4 and 7, each 3.89 to 4.05 us; CR_DPM_3D_PAGE_COUNTS alone: H-PC-ONCE (10 of
+  10, H-PC-RENDER refuted 8 of 8) and H-PC-FIN (12 of 12): one write a job, the low half P - 0x22
+  after an overflow, the high half 7, 6, 4, 2, 1 at 0x422, 0x2b6, 0x1c2, 0xe2, 0x82.
+  *dpm; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/c0/`,
+  `render-closing-r34-ev2:out/20261117-004223/d1/`,
+  `render-closing-r34-ev2:out/20261117-004223/p0/`,
+  `render-closing-r34-ev2:out/20261117-004223/p1/`, `render-closing-r34-ev2:fold/`.*
+- `E1142` r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs, CR_EVENT_STATUS alone at 3.1 to
+  3.9 us; every control passed): frozen H-OOM-SMALL (bit 1 at 0xe2 and 0x82 in every row, at 0x2b6
+  and 0x1c2 in none) not supported (11 held, 6 FAILED), its rival H-OOM-CHANCE held (4 of 8 rows at
+  0x2b6 and 0x1c2 show bit 1); bit 1 at 0x2b6 1 of 4, 0x1c2 3 of 4, 0xe2 3 of 4, 0x82 4 of 4;
+  H-C18-LARGE not supported (0 of 2), H-C18-ANY held (2 of 2: bit 18 in 5 of 6 plain and 4 of 6
+  large copies); H-COPY-NO0 (12 of 12), H-THR-NEVER (18 of 18), H-IMG (16 of 16) held.
+  *platform; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/e0/`,
+  `render-closing-r34-ev2:out/20261117-004223/e1/`, `render-closing-r34-ev2:fold/`.*
+
+### 2026-11-18
+
+- `E1143` r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the frozen rule printed
+  NARROW with nothing decided, because the three A' controls at 128 x 128 failed and the frozen gate
+  put the 128 x 128 control in front of every row: 'Q073 RULE CONTROLS: 13 of 16 passed: c0a-a128
+  FAILED, h2a-a FAILED, h2b-a FAILED'; 'Q073 RULE: NARROW: nothing decided; open: controls, (a),
+  (b)'. A shader storing (pa0 & 0xffff0000) | (pa1 >> 16) stored that value of its own pixel on 1062
+  of 1062 pixels at 64 x 64 in 10 of 10 rows, and on 4269, 4254 and 4283 of 4284 pixels at 128 x
+  128: the other pixels, in 4 x 4 blocks (x 100-103, y 44-47 in all three), hold the value of
+  another triangle pixel (40 of 46) or of none (6); the pass-through after the constant 0xff00ff00
+  kept it on 426 of 1062 pixels twice (E417's count). Post hoc, not frozen: at 64 x 64 the
+  pass-through's kept pixels read the previous job's o0 at the same pixel (148 of 188 in three
+  rows), 32 rows lower (36) or 32 columns right and 16 rows up (4); a debugfs reset between keeps
+  the same 188, the t10 fill between replaces all with its colour (651), and after a 128 x 128 job a
+  64 x 64 pass-through keeps nothing (2 of 2).
+  *isp; HW; data: `render-closing-r35-o0:out/20261118-085126/o/`, `render-closing-r35-o0:fold/`.*
+- `E1144` r35-sa stage a (40 jobs, t30 probe fills with --pixels, module 7CE8E38E): every control
+  passed, the position decode on K3 and on --coords' (y << 16) | x and the sa5 reader form included;
+  a fill whose pixel task writes sa_n (n = 0 to 15) with iaddu32 outputs the written value at
+  exactly 4 pixels and K1 at the other 2044 (H-FOUR 21 of 21 held-out rows), the same 4 pixels in
+  both replicates (H-VAR 0 of 6), and a writer of sa1, sa5 and sa7 shows the union of the three
+  single writers' 12 pixels (H-UNION 2 of 2); the frozen position rules failed (H-FIXED4 and
+  H-SHIFT, S0 + n d with S0 [0, 16, 512, 528] and d 1 fitted on sa1, 0 of 19); an sa5 written by one
+  job and read after a job that wrote sa1 reads that job's output (H-ONEJOB 2 of 2, H-UNTILWRITE 0
+  of 2; E484's form reproduced), so an sa lasts one job also across a job that writes another sa;
+  the frozen rule printed 'Q129 RULE: NARROW: clause (b) decided, clause (a) open'; post hoc
+  [infer]: sa_n's 4 pixels are (x, y) = ((n & 1) + 2 (n >> 2) + {0, 16}, ((n >> 1) & 1) + {0, 8}),
+  29 of 29 position sets.
+  *usse; HW, infer; data: `render-closing-r35-sa:out/20261118-085610/a/`,
+  `render-closing-r35-sa:fold/`.*
+- `E1145` r35-sa stage t (23 jobs, t30 probe fills with --pixels, module 7CE8E38E): every kit
+  control passed, but the frozen reader form control (a fill that reads r20 without writing it,
+  right after a fill that wrote a marker to r20, frozen to read the marker in 2048 of 2048 pixels
+  after E484 and E593) failed on both rows, 2024 pixels at the marker and 24 at 0x0000200f, so every
+  held-out reader is cannot tell and the frozen rule decided no group ('Q193 RULE: NARROW: clause
+  (a) decided for no group of t1, t2, t3, t4'); not a decode error (each reader's pixels agree with
+  its o0 line, the decode passed its controls in stage a): the frozen premise did not hold; post hoc
+  [infer]: every reader read the last r20 writer's marker in 2023 to 2025 pixels, after a colour
+  fill, the t10 triangle and a debugfs reset alike, and values 0x0000n00f or 0x0000n02f in 23 or 24
+  pixels at even coordinates in two 16 x 8 blocks, at positions that differ from row to row; after a
+  --temps 8 writer of r0-r5, 1388 pixels read its r4 marker and 637 the r20 marker.
+  *usse; HW, infer; data: `render-closing-r35-sa:out/20261118-085610/t/`,
+  `render-closing-r35-sa:fold/`.*
+- `E1146` r35-pk on module 7CE8E38E (Q302), every control passed, a colour ramp whose channels take
+  every byte value on the 64 x 64 triangle (each pixel's colour unique): RGB565 (pack mode 3) and
+  pack modes 4 (ARGB1555), 5 (ARGB4444) and 6 (A8 with RGB332) truncate every narrowed channel (H-RZ
+  on every dword of 2 of 2 rows in each mode; H-RN, H-RNE and H-SCALE not supported, 0 held, 2
+  FAILED in each); the 40 ARGB8888-like modes other than 0 and mode 11 store mode 0's image (H-AS0
+  40 of 40 and 2 of 2, H-AS0-PART refuted); modes 9, 10, 12 and 13 store whole colours of the image
+  in the target and, 12 and 13, in the scratch past it (H-WHOLE 2 of 2 each); bit 25 with the low
+  bytes 0x40 and 0xc0 inverts the alpha field in modes 0, 5 and 6 (H-1136 4 of 4 each) but not as
+  frozen in mode 4 (H-LOWDEP 4 of 4): there post hoc the alpha bit is set where 255 - alpha is at or
+  above the low byte, the threshold taking the inverted alpha.
+  *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r35_pk.rs`,
+  `render-closing-r35-pk:out/20261118-090046/s0/`, `render-closing-r35-pk:out/20261118-090046/r1/`,
+  `render-closing-r35-pk:out/20261118-090046/r2/`, `render-closing-r35-pk:out/20261118-090046/r3/`,
+  `render-closing-r35-pk:out/20261118-090046/pw/`, `render-closing-r35-pk:fold/`.*
+- `E1147` r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected rerun of r35-o0
+  (E1143), every control passed: at the start of an opaque pass's pixel shader, on the pixels that
+  keep a value, o0 holds the o0 an earlier job's shader wrote at the same pixel (130 to 287 pixels a
+  row), 32 rows lower (36 or 85) or 32 columns right and 16 rows up (0 or 4), or a value of a job
+  further back (36 in one row), the background elsewhere, 4 of 4 held-out rows at 64 x 64: 'Q073
+  RULE (a) same size: controls passed; h1 rows decided 4 of 4; H-OFFSETS 4 held, 0 FAILED ...:
+  DECIDED, H-OFFSETS' (H-SAMEPIX 4 FAILED on h1, H-OTHER 4 FAILED); a debugfs reset between keeps it
+  (2 of 2) and the t10 fill between replaces every kept pixel with its colour (2 of 2); after a job
+  of another size it is not decided: a 64 x 64 pass-through after a 128 x 128 job kept 0 and 12
+  pixels (the 12 at 80 rows lower), a 128 x 128 one after a 64 x 64 job 0 and 6 (same pixel): 'Q073
+  RULE (b) other size: ... not decided'; 'Q073 RULE: NARROW: (a) decided; open: (b)'; the offsets
+  were formed post hoc from E1143 and are held out here.
+  *isp; HW; data: `render-closing-r35-o0b:out/20261118-091726/o/`, `render-closing-r35-o0b:fold/`.*
 
 ## By unit
 
@@ -9649,7 +9825,7 @@ E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E8
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
 E1019, E1032, E1044, E1057, E1077, E1078, E1079, E1080, E1084, E1085, E1086, E1087, E1089, E1091,
-E1092, E1099, E1100.
+E1092, E1099, E1100, E1138, E1141.
 
 ### edm
 
@@ -9673,7 +9849,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072.
+E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072, E1143, E1147.
 
 ### mte
 
@@ -9683,7 +9859,7 @@ E348, E418, E419, E1060, E1066.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387, E429, E999, E1028, E1034.
+E383, E385, E386, E387, E429, E999, E1028, E1034, E1135, E1136, E1146.
 
 ### pds
 
@@ -9698,7 +9874,7 @@ E1129.
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
 E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837, E1115, E1116, E1120, E1121,
-E1122, E1123, E1126, E1127, E1131, E1133.
+E1122, E1123, E1126, E1127, E1131, E1133, E1137, E1142.
 
 ### render
 
@@ -9723,7 +9899,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
 E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
-E1067, E1097, E1103, E1105, E1112.
+E1067, E1097, E1103, E1105, E1112, E1134.
 
 ### transfer
 
@@ -9745,7 +9921,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062, E1098, E1102, E1106.
+E1061, E1062, E1098, E1102, E1106, E1139, E1140, E1144, E1145.
 
 ### vdm
 

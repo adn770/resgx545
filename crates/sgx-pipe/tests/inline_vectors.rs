@@ -63,7 +63,7 @@ fn the_other_planned_kinds_refuse_naming_their_questions() {
     }
     // listing every question of the unit makes it a refused vector
     let all = r#"{"id": "x", "init": {"task": "pbe-emit"},
-                  "expect": {"refuse": ["Q012", "Q040", "Q044", "Q046", "Q074", "Q054", "Q183"]}}"#;
+                  "expect": {"refuse": ["Q012", "Q040", "Q302", "Q046", "Q074", "Q054", "Q183"]}}"#;
     assert!(matches!(verdict(all), Verdict::Refused(_)));
     assert!(replay(&parse(r#"{"id": "x", "init": {"task": "no-such-kind"}}"#), &ctx()).is_err());
     // zls-load models the load (12.4): a vector without a control word is malformed, not refused
@@ -86,6 +86,11 @@ fn pbe_emit_vectors_check_the_value_stored_for_each_colour() {
     // E268: bit 25 of the word that loads CR_REG_0400 inverts the alpha, not in RGB565
     assert_eq!(verdict(&v("0x200", "0x2000080", r#"["0x00203040", "0x7fff8040"]"#, "")), Verdict::Matched);
     assert_eq!(verdict(&v("0x203", "0x2000080", r#"["0x2188", "0xfc08"]"#, "")), Verdict::Matched);
+    // E031, E1146: modes 4 to 6 truncate, the ARGB8888-like modes store mode 0's colour
+    assert_eq!(verdict(&v("0x204", "0x80", r#"["0x90c8", "0xfe08"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x205", "0x80", r#"["0xf234", "0x8f84"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x206", "0x80", r#"["0xff25", "0x80f1"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x22a", "0x80", r#"["0xff203040", "0x80ff8040"]"#, "")), Verdict::Matched);
     // a value the hardware did not store is a mismatch, one colour each
     assert!(matches!(verdict(&v("0x203", "0x80", r#"["0x2188", "0xfc09"]"#, "")), Verdict::Mismatch(_)));
     // modes the records do not give are refused under their questions, and 22 and 34 under Q012
@@ -94,7 +99,7 @@ fn pbe_emit_vectors_check_the_value_stored_for_each_colour() {
         Verdict::Refused(vec!["Q012".into()])
     );
     assert_eq!(
-        verdict(&v("0x204", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q044"]"#)),
-        Verdict::Refused(vec!["Q044".into()])
+        verdict(&v("0x209", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q302"]"#)),
+        Verdict::Refused(vec!["Q302".into()])
     );
 }

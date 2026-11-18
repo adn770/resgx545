@@ -32,12 +32,23 @@ cannot pass a gate by being truthy.
 - premise_stops(controls, readings): the run side. A control with no reading of a key it
   declared (None, "" or "-"), or that did not run, STOPS the session at the premise stage; it
   never reaches a gate to shut it silently.
+- reg_expect(spec, off, row, snaps) / reg_control(got, spec, off, row, snaps): a control's
+  expected register value is a constant ("0x0000ffff") or read from a snapshot of the same
+  session: "@snap0" (the row's own snap0 of the register), "@snap0:ROW" (a named reference row
+  of the same session), each with an optional "&MASK". A premise that cannot be read (no
+  snapshot, no register) is cannot tell, never a verdict (r30-evst froze a mid-session value
+  and voided three stages, E1116).
+- calibration(ivls) / ivl_expect(spec, cals) / ivl_control(got, spec, cals): a sample interval
+  premise is measured in the job window of a calibration stage of the same register set
+  ("@cal:STAGE"), never frozen from idle spacing (r33-tim, E1131). READ_COST_NS and
+  read_cost_ns(regs) note the per-register read cost.
 - missing_files(required, kept_dir, rows): the files a scorer reads (its REQUIRED: ".suffix"
   per row that ended ok, "CLASS:.suffix" per row that ended CLASS (ok, fault or hang) and
   "any:.suffix" per row, any other name once) that the kept directory lacks, kept plain or
   gzipped; rows a list of names (each ended ok) or {name: class} (the runner's cases.tsv).
 """
 import os
+import re
 from dataclasses import dataclass, field
 
 PASS_STATES = {True, "PASS"}
@@ -270,6 +281,112 @@ def premise_stops(controls, readings):
         out += [f"STOP: premise: control {name} has no reading of {k}"
                 for k in keys if k not in r or r[k] in NO_READING]
     return out
+
+
+# ---- a control's expected register value ------------------------------------------------------
+_SNAP = re.compile(r"^@snap0(?::([A-Za-z0-9_.-]+))?(?:&(0x[0-9a-fA-F]+))?$")
+
+
+def reg_expect(spec, off, row, snaps):
+    """(value, None) of a control's frozen register value, or (None, why) when its premise cannot
+    be read. spec: an int text, "@snap0", "@snap0:REFROW", each with an optional "&0xMASK";
+    snaps: {row: {offset: value}} of the session's kept snap0 files; off: the register (int or
+    "0x0a60"). A spec of no form raises ValueError."""
+    if not isinstance(spec, str) or not spec:
+        raise ValueError(f"register expectation {spec!r} is not a constant or an @snap0 form")
+    if not spec.startswith("@"):
+        try:
+            return int(spec, 0), None
+        except ValueError:
+            raise ValueError(f"register expectation {spec!r} is not a number") from None
+    m = _SNAP.match(spec)
+    if not m:
+        raise ValueError(f"register expectation {spec!r} is not @snap0[:ROW][&MASK]")
+    off = int(off, 0) if isinstance(off, str) else off
+    ref = m.group(1) or row
+    snap = snaps.get(ref)
+    if snap is None:
+        return None, f"no snap0 of {ref}: premise unread"
+    if off not in snap:
+        return None, f"snap0 of {ref} has no register {off:#06x}: premise unread"
+    v = snap[off]
+    return (v & int(m.group(2), 16) if m.group(2) else v), None
+
+
+def reg_control(got, spec, off, row, snaps):
+    """A register control's state: True or False, None (cannot tell) when the reading or the
+    premise is absent."""
+    want, _ = reg_expect(spec, off, row, snaps)
+    if got is None or want is None:
+        return None
+    return got == want
+
+
+# ---- the sample interval of a job window -----------------------------------------------------
+# ns of one register read in regtimeline's loop, measured alone: the interval of a set is at
+# least their sum, never extrapolated (E1115/E1121, E1057, E1131); a register not here has no
+# note, so its set is calibrated in a job first
+READ_COST_NS = {0x012C: 541, 0x0748: 1700, 0x0ACC: 3700}
+
+
+def read_cost_ns(regs):
+    """The sum of the noted read costs of `regs`, None when one has no note."""
+    if any(r not in READ_COST_NS for r in regs):
+        return None
+    return sum(READ_COST_NS[r] for r in regs)
+
+
+@dataclass(frozen=True)
+class Calibration:
+    ns: float | None            # the median interval of the calibration rows' job windows
+    rows: int                   # rows that measured one
+    window: tuple | None        # (lo, hi) ns a later control's interval may read, or None
+    problems: tuple = ()
+
+
+def calibration(ivls, tol=0.25, minrows=2):
+    """The calibration of a register set from its job-window intervals (ns, None where a row
+    read none): the median, and a window of +-tol around it that every measured row must lie in
+    (rows that disagree give no window); fewer than minrows measured rows give none."""
+    got = sorted(v for v in ivls if v is not None)
+    if len(got) < minrows:
+        return Calibration(None, len(got), None,
+                           (f"only {len(got)} of {len(ivls)} rows measured an interval "
+                            f"(at least {minrows})",))
+    n = len(got)
+    med = got[n // 2] if n % 2 else (got[n // 2 - 1] + got[n // 2]) / 2
+    win = (round(med * (1 - tol)), round(med * (1 + tol)))
+    if got[0] < win[0] or got[-1] > win[1]:
+        return Calibration(med, n, None,
+                           (f"the rows disagree: {got[0]} to {got[-1]} ns is wider than "
+                            f"{tol:.0%} around the median {med:g}",))
+    return Calibration(med, n, win)
+
+
+def ivl_expect(spec, cals):
+    """((lo, hi), None) of a control's interval premise, or (None, why): spec is "LO..HI" ns or
+    "@cal:STAGE" (that calibration stage's window); cals: {stage: Calibration}."""
+    m = re.match(r"^@cal:([A-Za-z0-9_.-]+)$", spec or "")
+    if m:
+        c = cals.get(m.group(1))
+        if c is None:
+            return None, f"calibration {m.group(1)} has not run: premise unread"
+        if c.window is None:
+            return None, f"calibration {m.group(1)}: " + "; ".join(c.problems)
+        return c.window, None
+    m = re.match(r"^([0-9]+)\.\.([0-9]+)$", spec or "")
+    if not m:
+        raise ValueError(f"interval expectation {spec!r} is not LO..HI or @cal:STAGE")
+    return (int(m.group(1)), int(m.group(2))), None
+
+
+def ivl_control(got, spec, cals):
+    """An interval control's state: True inside the window, False outside, None (cannot tell)
+    without a reading or a calibration."""
+    win, _ = ivl_expect(spec, cals)
+    if got is None or win is None:
+        return None
+    return win[0] <= got <= win[1]
 
 
 # ---- files a scorer reads --------------------------------------------------------------------

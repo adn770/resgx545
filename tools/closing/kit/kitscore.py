@@ -19,6 +19,16 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           another written 00000000, so each stream ends at its first terminate
                           word and the words past it (stale, r19-k0) are not compared;
                           lib_kit.sh param_hash FILE is its twin (r19-k0b's pmask, E1077)
+  snap_regs(d, name)      {offset: value} of the `reg` lines of the kept NAME.snap0.regs (the
+                          kit's register snapshot before the job; {} when absent); snaps0(d) is
+                          {row: that} of every row of cases.tsv that has one. A control's idle
+                          register value is read from here (scorekit.reg_expect, "@snap0"),
+                          never frozen from a mid-session reading (E1116)
+  calibration(d, names, tol)
+                          scorekit.calibration of the `ivl` readings (readings.tsv) of the named
+                          rows (default: every row) of a kept calibration stage: the sample
+                          interval of a register set in the job window, for scorekit.ivl_control
+                          ("@cal:STAGE", E1131)
   miscinfo(d, name)       the kept NAME.miscinfo of a pre:miscinfo row (None when absent): text,
                           served (the kernel's "GETMISCINFO answered after N us" and "all
                           values match" lines, no MISMATCH line: the kick was served) and us
@@ -126,6 +136,37 @@ def readings(d):
             r = f[2] if len(f) > 2 else ""
             out[f[0]] = dict(w.split("=", 1) for w in r.split() if "=" in w)
     return out
+
+
+def snap_regs(d, name):
+    out = {}
+    for ln in text(d, name + ".snap0.regs").splitlines():
+        p = ln.split()
+        if len(p) >= 3 and p[0] == "reg":
+            try:
+                out[int(p[1], 16)] = int(p[2], 16)
+            except ValueError:
+                pass
+    return out
+
+
+def snaps0(d):
+    out = {}
+    for n in rows(d):
+        regs = snap_regs(d, n)
+        if regs:
+            out[n] = regs
+    return out
+
+
+def calibration(d, names=None, tol=0.25):
+    rd = readings(d)
+    names = list(rd) if names is None else names
+    ivls = []
+    for n in names:
+        v = rd.get(n, {}).get("ivl")
+        ivls.append(int(v) if v is not None and v.isdigit() else None)
+    return scorekit.calibration(ivls, tol=tol)
 
 
 def controls(kp, stage):
