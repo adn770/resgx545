@@ -2647,6 +2647,10 @@ def test_an_owntask_stage_arms_once_runs_each_job_without_a_reset_and_disarms(re
     own = ["gate" if x.startswith("gate") else x for x in own]
     assert own[:8] == ["arm slots=0x1 entry=0", "run o1 n=1 runid=1", "page", "gate",
                        "run o2 n=1 runid=2", "page", "gate", "reset"], log
+    # an owntask row names no tool of [tools]: the stage must not look one up (laptop r36-n3:
+    # "lib_kit.sh: line 78: !v: unbound variable" before the first row)
+    logs = "".join(p.read_text(errors="replace") for p in mm.rglob("*.log"))
+    assert "unbound variable" not in m.stdout + m.stderr + logs, logs[-2000:]
     kept = mm / "out/model/own"
     page = json.loads(gzip.decompress((kept / "o2.own_res.json.gz").read_bytes()))
     page = page["page"] if isinstance(page, dict) else page

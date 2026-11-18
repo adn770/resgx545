@@ -251,7 +251,8 @@ EOF
 	fi
 	njob=$((njob + 1))
 	JW=$WROOT/$njob-$name; W=$JW/w; mkdir -p "$W"
-	TT=$(tool_path "$tool")
+	TT=""   # an owntask row runs the kit's fwtask_run.py, no tool of [tools]
+	[ -n "$OWN_BLOB" ] || TT=$(tool_path "$tool")
 	echo "== $name set=$sset risk=$risk tool=$tool knobs=[$knobs]"
 	fk=$(free_kb); space_ok || { echo "## STOP: $fk KiB free on ~ before $name (at least $MIN_FREE_MB MiB)"; exit 22; }
 	if [ -n "$OWN_BLOB" ]; then
