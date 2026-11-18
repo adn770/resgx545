@@ -45,6 +45,12 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   in E520 (37 faults, 2 hangs), each recovered by the driver with no reload** (Q128): a client emit
   is a hang risk, not a tool, and the model's start of a PDS program is not the whole of it. What
   `.tasks`/`.taske` do is **[open]** (Q054).
+- **From an EDM task of ours [HW].** The firmware's own form (`emitpds.tasks.taske #0, r2, r3,
+  r4, #0x0`, the kernel's control word 0x01000100, its PDS image's address >> 4 and 0; the image
+  `douta` to attributes 0 and 2, `doutu` our entry 1) did not fault the bus, but the started
+  entry left no write within 200 ms and the EDM's tick stopped in that window, recovered by a
+  reset, in its one job (E1148, Q128). Whether the image ran, and where an emitted `douta` lands,
+  is **[open]**.
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

@@ -1,0 +1,9 @@
+title = "laptop session r36-n3 of the question-closing pass, round 36 (where an emitted PDS program's douta lands, N3 of the round-33 design; Q128), built on the session kit, flagged class: stage own (our own firmware task emitsa armed on slot 0, one command a job, 10 rows planned) and stage post (the t30 triangle and fill), stopped at own's first row, with the freeze, the kit copy, the generator, the blob, predictions, scorer, mock and tests, the pre-run README and PREFLIGHT, the kept outputs, the driver logs and the fold's notes, reproduction and post hoc reading"
+repo = "data"
+paths = ["render/closing-r36-n3/"]
+method = "the session kit (kit/ = resgx545 b9098a4's tools/closing/kit, scorekit.py, sessioncheck.py and tools/fwtask/fwtask_run.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over ssh to the laptop at home, kit/run_stage.sh with run/hooks.sh on it, every file under ~/scratch/r36n/, 2026-11-18, kernel 7.3.0-resgx545, module srcversion C01FB3203FDA4FEF01E4891 (installed and loaded alike; linux fork c78059370315), stock firmware, our task owntask/emitsa.blob (sha256 3dc8152d846cc7a100cc2224e28d2ad83c71fd978206aac82f7b1486940579e1, asm/fwtask/fwtask.map at b9098a4) armed slots=0x1 entry=0, health tool ~/sgxfive-test-t30 (t30, sha256 b5ea288d273f0da50884bbeec38f784a5d19773b8ed20efc7937dd455c1b87a5, resgx545 42c4de7); post's two rows replayed on the library mock before the freeze, none refused; the user present; one attempt (out/20261118-152130): stage own stopped at e1-a (no done within 200 ms, runner rc 1, stage rc 4), post did not run; scored by hand with the frozen score/score.py (fold/reproduce-own.out), the post hoc reading fold/posthoc.py (fold/posthoc.out). debug/ (the library-mock builds, mock trees) and the bytecode caches are not in the copy"
+date = "2026-11-18"
+files = 74
+size = 351333
+sha256 = "eff04f00a63f76c69c2ca1aa335e74a4b78f5e5b797553feed475e8850bbfed8"
+recipe = "kit/session.py"

@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520"]
+evidence = ["E488", "E513", "E520", "E1148"]
 terms = []
 +++
 
@@ -33,6 +33,28 @@ Noted 2026-11-09: near duplicate of Q145, not merged (Q128's question includes w
 word's addend of an emitpds does (E520), which is Q145's). A merge or a fold decides which text
 survives.
 
-**Correction 2026-11-11:** Q145 is merged into this question (retired as folded into Q128; a fold is not an answer), and its question is now a clause of the one above. Its question was: why does the control word's addend of an emitpds, from 0xFFF to 0x2000, leave the fill's own dword 0x403 where 0x100 gives 3 or 2, and what 0x800 does.
+**Correction 2026-11-11:** Q145 is merged into this question (retired as folded into Q128; a fold is
+not an answer), and its question is now a clause of the one above. Its question was: why does the
+control word's addend of an emitpds, from 0xFFF to 0x2000, leave the fill's own dword 0x403 where
+0x100 gives 3 or 2, and what 0x800 does.
 
-Its text: E520: 3 or 2 at 0 to 0x400 and at 0x4000 and above (24 of 27 probes outside the window), 0x403 at 0xFFF, 0x1000, 0x1001, 0x1010, 0x1100 and 0x2000 (12 of 12), 0x401 and 0x400 at 0x800 (2 probes) and 0x400 at 0x10 in one of its two probes, the 10 base probes interleaved among them reading 3 or 2; every job faulted or hung. What is open: what the addend is (an offset the PDS adds to an address, [infer]), the values between those run, what the 0x400 bit of the stored dword marks (it was also read at the addend 0x10 once), and whether the 0x800 and 0x10 readings repeat. To settle it: the addends 0x7FF to 0x801, 0x1FFF to 0x2001, 0x3FFF; a PDS program that stores more than one input word. Q145's evidence (E520) and terms (none) were already in this question. Both files noted on 2026-11-09 that a merge decides which text survives; this is that merge.
+Its text: E520: 3 or 2 at 0 to 0x400 and at 0x4000 and above (24 of 27 probes outside the window),
+0x403 at 0xFFF, 0x1000, 0x1001, 0x1010, 0x1100 and 0x2000 (12 of 12), 0x401 and 0x400 at 0x800 (2
+probes) and 0x400 at 0x10 in one of its two probes, the 10 base probes interleaved among them
+reading 3 or 2; every job faulted or hung. What is open: what the addend is (an offset the PDS adds
+to an address, [infer]), the values between those run, what the 0x400 bit of the stored dword marks
+(it was also read at the addend 0x10 once), and whether the 0x800 and 0x10 readings repeat. To
+settle it: the addends 0x7FF to 0x801, 0x1FFF to 0x2001, 0x3FFF; a PDS program that stores more than
+one input word. Q145's evidence (E520) and terms (none) were already in this question. Both files
+noted on 2026-11-09 that a merge decides which text survives; this is that merge.
+
+Narrowed 2026-11-18 (E1148, r36-n3, flagged): the firmware's own emitpds form (`.tasks.taske`, the
+kernel's control word 0x01000100, its image's address >> 4 and 0), run from an EDM task of ours with
+the kernel's PDS image (douta to attributes 0 and 2 with the values sa0 and sa2 hold, doutu our
+entry 1), left no write of the started entry 1 within 200 ms in its one job, and the EDM's tick
+stopped within that window with no BIF fault (post hoc); the kit's reset restored exact draws. So
+from an EDM task the form neither faulted the bus as a client's did (E488) nor started our task
+visibly. Not shown: whether the emitted program ran at all, or ran and its doutu did not start our
+task (the design's [infer] U1 = U2 = 0, TRC 8 and code index in U0), or started it and entry 1
+stopped before its first store; what stopped the tick; where an emitted douta lands (pa or sa) stays
+open.

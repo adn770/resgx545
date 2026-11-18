@@ -143,7 +143,7 @@ list.
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
-  the s0, s1 and s2 operands of the started PDS program become ... (E488, E513, E520)
+  the s0, s1 and s2 operands of the started PDS program become ... (E513, E520, E1148)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
   (does it land in the register whose index is the register's ... (E486, E519, E535)
 - `Q134` usse, medium: which register does a client str change (the order of a client str then ldr
@@ -275,9 +275,12 @@ list.
 
 ## Recent records
 
-11 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
+12 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1148` edm, 2026-11-18: r36-n3 stage own (module C01FB320, fork c78059370315, flagged, user
+  present): our EDM task emitsa, armed on slot 0, ran the one allowed emitpds form (the firmware's
+  `.tasks.taske` word, the kernel's ...
 - `E1147` isp, 2026-11-18: r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected
   rerun of r35-o0 (E1143), every control passed: at the start of an opaque pass's pixel shader, on
   the pixels that keep a value, ...
@@ -314,9 +317,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-110 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+111 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r36-n3`: 2026-11-18; module C01FB3203FDA4FEF01E4891; tools ~/sgxfive-test-t30
 - `render/closing-r35-sa`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
 - `render/closing-r35-pk`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -481,6 +485,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): c78059370315
+- module srcversion C01FB3203FDA4FEF01E4891: last named 2026-11-18, 1 sessions
 - module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
@@ -559,4 +564,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+53 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
