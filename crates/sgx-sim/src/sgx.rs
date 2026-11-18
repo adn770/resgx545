@@ -325,6 +325,9 @@ impl Carry {
 /// The longest program read from a code base, in instructions.
 const MAX_CODE: usize = 0x4000;
 
+/// The first instruction of our own tasks' page in the EDM code base (tools/fwtask OWN_INDEX).
+const OWN_INDEX: usize = 0x4000;
+
 impl Sgx {
     /// A register value known from the hardware, readable before anything writes it.
     pub fn seed(&mut self, index: u32, value: u32) {
@@ -507,7 +510,7 @@ impl Sgx {
             self.st.regs.get(&reg::EVENT_TIMER).filter(|v| *v >> 24 & 1 == 0).map(|v| v & 0x01ff_ffff)
         });
         self.pds.ifs = [None; 2];
-        let mut bus = Unit { st: &mut self.st, bank, pa: [0; 128], written: 0 };
+        let mut bus = Unit { st: &mut self.st, bank, pa: [0; 128], written: 0, own: false };
         // Pds::run, one step at a time so that each instruction can be traced
         let limit = max - self.steps;
         self.pds.start(&prog);
@@ -571,7 +574,8 @@ impl Sgx {
         if let Some(c) = &self.carry {
             c.enter(&mut m);
         }
-        let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0 };
+        let own = pc >= OWN_INDEX;
+        let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0, own };
         // Machine::run, one step at a time so that each instruction can be traced
         let limit = max - self.steps;
         let r = loop {
@@ -711,6 +715,8 @@ struct Unit<'a> {
     /// The primary attributes a PDS program has written for the task it starts.
     pa: [u32; 128],
     written: u128,
+    /// The work is a task of ours: one started at `OWN_INDEX` or later.
+    own: bool,
 }
 
 impl Unit<'_> {
@@ -756,6 +762,13 @@ impl Bus for Unit<'_> {
     fn emit(&mut self, text: &str, s: [u32; 3]) -> Result<(), Error> {
         if !text.starts_with("emitpds") {
             return Err(why(format!("{text}: no unit for this emit")));
+        }
+        // E1148, E1149, E1150 (Q128): from our own task the issuer went on past the emit, the
+        // started entry never stored and the EDM's tick stopped; the crumb image's first `movs
+        // tim` never reached 0x0acc, so the program never ran [infer]. Not a model: refused.
+        if self.own {
+            let tail = "the emitted program did not start [infer], the tick stopped";
+            return Err(why(format!("emitpds from our own task: {tail} (E1148-E1150, Q128)")));
         }
         self.st.effect()?;
         let data = (s[0] >> 23 & 31) as usize * 4;
@@ -1374,6 +1387,34 @@ mod tests {
         task_at(&mut s, 0x4000);
         s.run(100).unwrap();
         assert_eq!(s.st.regs[&65], 5);
+    }
+
+    #[test]
+    fn an_emitpds_from_our_own_tasks_page_is_refused() {
+        // E1148, E1149, E1150 (Q128): from our own task (instruction 0x4000 on) the firmware's
+        // emitpds form went on in the issuer, the started entry never stored, the EDM's tick
+        // stopped, and the crumb image's first `movs tim` never showed: the emitted program
+        // did not run [infer]. The simulator would run it and start the task, so it refuses.
+        let emit = "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
+                    emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nnop.end";
+        let go = |own: bool| {
+            let mut s = sgx();
+            s.st.mem.map(DATA, &[0; 16]);
+            s.st.mem.map(CODE + 0x100000, &pds(&[0, 0, 0, 0], "halt"));
+            let pc = if own { 0x4000 } else { 0 };
+            if own {
+                s.st.mem.map(CODE, &vec![0; 0x20000]);
+            }
+            s.st.mem.map(CODE + 8 * pc as u32, &usse(emit));
+            s.code_len = Some(0x4000 + 8);
+            let mut pa = [0; 128];
+            (pa[0], pa[2], pa[4]) = (1 << 23, (CODE + 0x100000) >> 4, 7);
+            s.st.queue.push_back(Work::Task { base: CODE, pc, temps: 8, pa: Box::new(pa), written: 0b10101 });
+            s.run(10_000)
+        };
+        go(false).unwrap();
+        assert!(matches!(go(true), Err(Error::Unsupported { ref why, .. })
+            if why.contains("E1150") && why.contains("own task")));
     }
 
     #[test]
