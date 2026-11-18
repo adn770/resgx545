@@ -9738,6 +9738,23 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/e0/`,
   `render-closing-r34-ev2:out/20261117-004223/e1/`, `render-closing-r34-ev2:fold/`.*
 
+### 2026-11-18
+
+- `E1146` r35-pk on module 7CE8E38E (Q302), every control passed, a colour ramp whose channels take
+  every byte value on the 64 x 64 triangle (each pixel's colour unique): RGB565 (pack mode 3) and
+  pack modes 4 (ARGB1555), 5 (ARGB4444) and 6 (A8 with RGB332) truncate every narrowed channel (H-RZ
+  on every dword of 2 of 2 rows in each mode; H-RN, H-RNE and H-SCALE not supported, 0 held, 2
+  FAILED in each); the 40 ARGB8888-like modes other than 0 and mode 11 store mode 0's image (H-AS0
+  40 of 40 and 2 of 2, H-AS0-PART refuted); modes 9, 10, 12 and 13 store whole colours of the image
+  in the target and, 12 and 13, in the scratch past it (H-WHOLE 2 of 2 each); bit 25 with the low
+  bytes 0x40 and 0xc0 inverts the alpha field in modes 0, 5 and 6 (H-1136 4 of 4 each) but not as
+  frozen in mode 4 (H-LOWDEP 4 of 4): there post hoc the alpha bit is set where 255 - alpha is at or
+  above the low byte, the threshold taking the inverted alpha.
+  *pbe; HW, infer; data: `crates/sgx-pipe/tests/closing_r35_pk.rs`,
+  `render-closing-r35-pk:out/20261118-090046/s0/`, `render-closing-r35-pk:out/20261118-090046/r1/`,
+  `render-closing-r35-pk:out/20261118-090046/r2/`, `render-closing-r35-pk:out/20261118-090046/r3/`,
+  `render-closing-r35-pk:out/20261118-090046/pw/`, `render-closing-r35-pk:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9788,7 +9805,7 @@ E348, E418, E419, E1060, E1066.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387, E429, E999, E1028, E1034, E1135, E1136.
+E383, E385, E386, E387, E429, E999, E1028, E1034, E1135, E1136, E1146.
 
 ### pds
 

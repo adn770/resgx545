@@ -1,11 +1,11 @@
 +++
 id = "Q302"
-question = "what do pack modes 4 to 6, 9 to 14 and the 40 ARGB8888-like modes other than 0 store for colours other than E031's two (how each narrows or rounds its channels, what 9 to 13 write past the target, why 14 faults), how does RGB565 round a channel where truncation and rounding differ, and do CR_REG_0400 words no record ran in a mode (bit 25 with another low byte, another sideband field) store as E1135 and E1136 read?"
+question = "where do pack modes 9, 10, 12 and 13 put each pixel's whole colour (the layout in the target and what 12 and 13 write past it), why does mode 14 fault, and what do modes 4 to 6 and the ARGB8888-like modes store at sideband bits 8:6 other than 0?"
 unit = "pbe"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E031", "E268", "E385", "E1135", "E1136"]
+evidence = ["E031", "E268", "E385", "E1135", "E1136", "E1146"]
 terms = ["SIDEBAND.PACKMODE", "CR_REG_0400"]
 +++
 
@@ -20,3 +20,12 @@ admits only those words in the modes it models (`reg0400_known`).
 To settle it: E031's form with colours whose channels differ between truncation and rounding at
 4, 5 and 6 bits, every pixel, in modes 3 to 6 and 9 to 13; the scratch past the target for 9 to
 13.
+
+Narrowed 2026-11-18 by E1146 (r35-pk, a colour ramp over every byte value): RGB565 and modes 4
+to 6 truncate every narrowed channel (rounding half up, half to even and scaling refuted), the 40
+ARGB8888-like modes and 11 store mode 0's image, modes 9, 10, 12 and 13 store whole colours (in
+the target and, 12 and 13, past it), and bit 25 with the low bytes 0x40 and 0xc0 inverts the
+alpha before it is packed in modes 0, 4, 5 and 6, mode 4's threshold then reading 255 - alpha.
+sgx-pipe models those clauses. Open: the layout of 9, 10, 12 and 13 (E1146 kept every pixel's
+colour unique, fold/posthoc.txt; no raster map fits), mode 14's fault (a flagged row, R35-4 (a)),
+and the other fields of sideband bits 8:6 in modes 4 to 6 and the ARGB8888-like modes.
