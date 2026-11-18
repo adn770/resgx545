@@ -9738,6 +9738,23 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/e0/`,
   `render-closing-r34-ev2:out/20261117-004223/e1/`, `render-closing-r34-ev2:fold/`.*
 
+### 2026-11-18
+
+- `E1143` r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the frozen rule printed
+  NARROW with nothing decided, because the three A' controls at 128 x 128 failed and the frozen gate
+  put the 128 x 128 control in front of every row: 'Q073 RULE CONTROLS: 13 of 16 passed: c0a-a128
+  FAILED, h2a-a FAILED, h2b-a FAILED'; 'Q073 RULE: NARROW: nothing decided; open: controls, (a),
+  (b)'. A shader storing (pa0 & 0xffff0000) | (pa1 >> 16) stored that value of its own pixel on 1062
+  of 1062 pixels at 64 x 64 in 10 of 10 rows, and on 4269, 4254 and 4283 of 4284 pixels at 128 x
+  128: the other pixels, in 4 x 4 blocks (x 100-103, y 44-47 in all three), hold the value of
+  another triangle pixel (40 of 46) or of none (6); the pass-through after the constant 0xff00ff00
+  kept it on 426 of 1062 pixels twice (E417's count). Post hoc, not frozen: at 64 x 64 the
+  pass-through's kept pixels read the previous job's o0 at the same pixel (148 of 188 in three
+  rows), 32 rows lower (36) or 32 columns right and 16 rows up (4); a debugfs reset between keeps
+  the same 188, the t10 fill between replaces all with its colour (651), and after a 128 x 128 job a
+  64 x 64 pass-through keeps nothing (2 of 2).
+  *isp; HW; data: `render-closing-r35-o0:out/20261118-085126/o/`, `render-closing-r35-o0:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9778,7 +9795,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072.
+E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072, E1143.
 
 ### mte
 

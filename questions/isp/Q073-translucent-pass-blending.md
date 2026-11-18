@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E077", "E283", "E417", "E739", "E757"]
+evidence = ["E077", "E283", "E417", "E739", "E757", "E1143"]
 terms = ["ISP0.PASS_TYPE"]
 +++
 
@@ -43,3 +43,14 @@ same), depth order and pass order are refuted in 2 of 4 each. E739's reading tha
 pass order both fit is therefore corrected for the compare always. The translucent pass's images are
 still the shader's colour, with no blend seen, which says nothing about what o0 holds at the start
 of an opaque pass.
+
+Narrowed 2026-11-18 (r35-o0, E1143; the frozen rule decided nothing). A pass-through after a shader
+that stores a value unique per pixel: the three 128 x 128 controls of that shader failed (1 to 30
+of 4284 pixels, in 4 x 4 blocks, held another pixel's value), and the frozen gate put them in front
+of every row, so every hypothesis was cannot tell: NARROW. The pass-through after a constant colour
+kept it on 426 of 1062 pixels (2 of 2, E417's count). Post hoc, not decided: at 64 x 64 the kept
+pixels read the previous job's o0 at the same pixel (148 of 188 in three rows) or at fixed offsets
+of 32 rows, of 32 columns and 16 rows, or of 16 rows; a debugfs reset between keeps them, the t10
+fill between replaces them with its colour, and after a 128 x 128 job a 64 x 64 pass-through kept
+no pixel (2 of 2). The corrected rerun r35-o0b freezes those readings as its fit. Status: narrowed,
+not answered.
