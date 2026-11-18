@@ -134,3 +134,48 @@ def test_the_gate_runs_the_health_tool_the_environment_names(monkeypatch):
 def test_every_health_tool_call_goes_through_the_one_name():
     src = (pathlib.Path(FR.__file__)).read_text()
     assert src.count("/home/jtorra/sgxfive-test") == 1, "a call names the tool past health_tool()"
+
+
+def stopped_run(tmp_path, monkeypatch, advancing):
+    """cmd_run with a job that never reports done; alive() after the stop says `advancing`."""
+    import json as _json
+    monkeypatch.setattr(FR, "dmesg_len", lambda: 0)
+    monkeypatch.setattr(FR, "dmesg_new", lambda n0: [])
+    monkeypatch.setattr(FR, "kreg_all", lambda: {o: 0 for o in FR.REGS_WRITABLE})
+    monkeypatch.setattr(FR, "hang_dump", lambda outdir, tag: None)
+    class ClosingRes(FakeRes):
+        def close(self):
+            pass
+    monkeypatch.setattr(FR, "Res", lambda: ClosingRes(fill=()))
+    monkeypatch.setattr(FR, "one_cmd", lambda *a, **k: {"done": False})
+    ticks = [2467, 2467, 2467] if not advancing else [10, 20, 30]
+    monkeypatch.setattr(FR, "alive", lambda: {"ticks": ticks, "serv_event": [1, 1, 1],
+                                              "advancing": advancing, "serv_moves": False})
+    lines = []
+    monkeypatch.setattr(FR, "emit", lambda obj: lines.append(_json.dumps(obj)))
+    rc = FR.cmd_run({"name": "o1", "outdir": str(tmp_path), "jobs": [{"n": 1}]})
+    return rc, lines[0], _json.loads(lines[0])
+
+
+def test_a_stop_reads_the_tick_and_names_a_stopped_firmware_hung(tmp_path, monkeypatch):
+    # r36-n3: no done, the EDM tick frozen; the kit classes a job by the word `hung` in its output
+    rc, text, out = stopped_run(tmp_path, monkeypatch, advancing=False)
+    assert rc == 1 and out["alive_at_stop"]["ticks"] == [2467, 2467, 2467]
+    assert "firmware hung" in out["stop"] and "no done" in out["stop"]
+
+
+def test_a_stop_with_the_tick_advancing_is_not_called_hung(tmp_path, monkeypatch):
+    rc, text, out = stopped_run(tmp_path, monkeypatch, advancing=True)
+    assert rc == 1 and out["alive_at_stop"]["advancing"] is True
+    assert "hung" not in text
+
+
+def test_a_stop_whose_tick_cannot_be_read_says_so(tmp_path, monkeypatch):
+    rc, text, out = stopped_run(tmp_path, monkeypatch, advancing=False)
+    def dead():
+        raise OSError("debugfs gone")
+    monkeypatch.setattr(FR, "alive", dead)
+    lines = []
+    monkeypatch.setattr(FR, "emit", lambda obj: lines.append(obj))
+    assert FR.cmd_run({"name": "o1", "outdir": str(tmp_path), "jobs": [{"n": 1}]}) == 1
+    assert "debugfs gone" in lines[0]["alive_at_stop"]["error"]

@@ -2668,6 +2668,7 @@ def test_an_owntask_stage_arms_once_runs_each_job_without_a_reset_and_disarms(re
 @pytest.mark.parametrize("world,rc,word", [
     ("ownarmbad", 26, "## STOP: the own-task arm of emitsa"),
     ("ownstop", 4, "## STOP: unexplained failure in o1"),
+    ("ownhang", 4, "## STOP: unexpected hang in o1"),
     ("owngatebad", 16, "## STOP: the gate after o1 failed"),
 ])
 def test_an_owntask_stage_stops_on_a_bad_arm_a_runner_stop_or_a_failed_gate(repos, world, rc,
@@ -2678,8 +2679,11 @@ def test_an_owntask_stage_stops_on_a_bad_arm_a_runner_stop_or_a_failed_gate(repo
     mm = next(kp.glob(f"debug/mock.*/{world}"))
     runner = (mm / f"out/{world}/own/runner.log").read_text()
     assert word in runner, runner
-    if world == "ownstop":
+    if world in ("ownstop", "ownhang"):
         assert (mm / f"out/{world}/own/o1.stop0-own_res.json.gz").exists()
+    if world == "ownhang":      # r36-n3: a stop with the tick frozen is a hang, not a failure
+        cases = (mm / f"out/{world}/own/cases.tsv").read_text()
+        assert cases.split("\n")[-2].split("\t")[8] == "hang", cases
 
 
 def test_the_scorer_reads_a_result_slot_by_dword_index(tmp_path):

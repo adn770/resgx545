@@ -11,7 +11,9 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          reset in between disarms it: the job never reports done); the task stores what the
          world's optional own_res(cmd, params, world) gives ({dword: value}), the run id echo and
          state 2. World ownstop: the first job never reports done, the runner's stop dump is
-         written to OUTDIR (stopI-own_res.json, -regs.txt, -status.txt, -dmesg.txt), rc 1
+         written to OUTDIR (stopI-own_res.json, -regs.txt, -status.txt, -dmesg.txt), rc 1;
+         world ownhang: the same with the tick frozen after the stop, the real runner's
+         "firmware hung" stop (r36-n3)
   page   the results page, {"page": [1024 dwords]}
   gate   the fill and triangle, ok unless the world has owngatebad
   reset  disarm; ok
@@ -113,7 +115,7 @@ def run(a):
             return usage(f"job {j!r}")
         log(f"run {a['name']} n={j['n']} runid={j.get('runid', i + 1)}")
         p = page()
-        done = armed() and "ownstop" not in w
+        done = armed() and not w & {"ownstop", "ownhang"}
         if done:
             for k, v in j.get("params", {}).items():
                 vals = v if isinstance(v, list) else [v]
@@ -137,7 +139,12 @@ def run(a):
             break
     out = {"name": a["name"], "records": records, "stop": stop, "n_jobs": len(a["jobs"]),
            "ran": len(records)}
-    if not stop:
+    if stop:
+        hung = "ownhang" in w
+        out["alive_at_stop"] = {"ticks": [7, 7, 7] if hung else [7, 8, 9], "advancing": not hung}
+        if hung:
+            out["stop"] = stop + "; firmware hung: the tick stopped"
+    else:
         out.update(alive=alive(), health=health(), log_bad=[], kreg_after={})
     emit(out)
     return 1 if stop else 0

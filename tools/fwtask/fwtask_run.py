@@ -370,7 +370,16 @@ def cmd_run(a):
             break
     res.close()
     out = {"name": name, "records": records, "stop": stop, "n_jobs": len(jobs), "ran": len(records)}
-    if not stop:
+    if stop:
+        # the tick after a stop: a frozen one is a hung firmware, and the kit classes a job by the
+        # word `hung` in its output (r36-n3 stopped with the tick frozen and was classed a failure)
+        try:
+            out["alive_at_stop"] = alive()
+        except Exception as e:      # a dead debugfs file is itself a result
+            out["alive_at_stop"] = {"error": str(e)}
+        if out["alive_at_stop"].get("advancing") is False:
+            out["stop"] = stop + "; firmware hung: the tick stopped"
+    else:
         out["alive"] = alive()
         out["health"] = health()
         out["log_bad"] = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
