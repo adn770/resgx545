@@ -189,3 +189,66 @@ def test_the_emitsa_source_has_one_emit_its_patches_and_two_entries():
     assert sorted(p.kind for p in blob.patches if p.kind.startswith("pds")) == ["pds0", "pds1", "pds2"]
     assert len(blob.entries) == 2
     assert fwtask.refusal(fwtask.blob_of("emitsa"), REGS) is None
+
+
+# ---- emitsb: emitsa with two breadcrumbs (round 37, N3b) ----------------------------------------
+def emitsb_lines():
+    import gen_blobs
+    return gen_blobs.gen_emitsb().splitlines()
+
+
+def test_the_emitsb_source_has_one_emit_its_patches_and_two_entries():
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsb"))
+    kinds = [fwtask.classify(w)[0] for w in blob.words]
+    assert kinds.count("EMITPDS") == 1
+    assert sorted(p.kind for p in blob.patches if p.kind.startswith("pds")) == ["pds0", "pds1", "pds2"]
+    assert len(blob.entries) == 2
+    assert fwtask.refusal(fwtask.blob_of("emitsb"), REGS) is None
+    assert fwtask.lint((fwtask.ASM / "emitsb.s").read_text()) == []
+
+
+def test_emitsb_x0_is_the_first_store_after_the_emit_at_slot_1_dword_2():
+    """X0: right after the emit, 0x5a5a3303 to res+280 (slot 1 dword 2, page dword 70) through
+    r9 = res+272, fenced, then the tail call."""
+    raw = emitsb_lines()
+    i = next(k for k, ln in enumerate(raw) if ln.strip().startswith("emitpds"))
+    after = [ln.strip() for ln in raw[i + 1:]]
+    assert after[:5] == ["mov r7, #0x5a5a3303", "stad [r9,+#2], r7", "idf drc0, bif", "wdf drc0",
+                         "br @tail"]
+    base = [ln for ln in raw[:i] if ln.strip().startswith("mov r9,")]
+    assert base[-1].endswith("@patch res+272")
+    assert 272 + 4 * 2 == 4 * 70
+
+
+def test_emitsb_s1_is_entry_1_s_first_store_before_any_attribute_read():
+    """S1: entry 1 starts with 0x5a5a3304 to res+336 (slot 5 dword 0, page dword 84), fenced,
+    before any pa or sa read; the rest of entry 1 is emitsa's."""
+    raw = emitsb_lines()
+    e1 = [ln.strip() for ln in raw[next(k for k, ln in enumerate(raw) if ln == "@entry 1") + 1:]]
+    e1 = [ln for ln in e1 if not ln.endswith(":")]
+    assert e1[0].startswith("mov r9, #0xdeadbeef") and e1[0].endswith("@patch res+336")
+    assert e1[1:5] == ["mov r7, #0x5a5a3304", "stad [r9,+#0], r7", "idf drc0, bif", "wdf drc0"]
+    first_attr = next(k for k, ln in enumerate(e1) if " pa" in ln or " sa" in ln)
+    first_store = next(k for k, ln in enumerate(e1) if ln.startswith("stad"))
+    assert first_store < first_attr
+    assert 336 == 4 * 84
+
+
+def test_emitsb_is_emitsa_plus_the_two_breadcrumbs():
+    import gen_blobs
+    a = [ln for ln in gen_blobs.gen_emitsa().splitlines() if not ln.startswith(";")]
+    b = [ln for ln in gen_blobs.gen_emitsb().splitlines() if not ln.startswith(";")]
+    import collections
+    extra = collections.Counter(b) - collections.Counter(a)
+    assert collections.Counter(a) - collections.Counter(b) == collections.Counter()
+    assert sorted(ln.strip() for ln in extra.elements()) == sorted([
+        "mov r7, #0x5a5a3303", "stad [r9,+#2], r7", "idf drc0, bif", "wdf drc0",
+        "mov r9, #0xdeadbeef                ; @patch res+336", "mov r7, #0x5a5a3304",
+        "stad [r9,+#0], r7", "idf drc0, bif", "wdf drc0"])
+
+
+def test_emitsb_is_in_the_map_and_the_kernel_s_accepted_list():
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m["emitsb"]["source"] == "emitsb.s"
+    assert "emitsb" in gen_verify.OK_BLOBS

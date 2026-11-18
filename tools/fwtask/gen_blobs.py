@@ -546,6 +546,7 @@ TRCP_STAIRS = [32, 36, 40, 44, 48]          # 11.33
 
 
 EMIT_MARK, READ_MARK = 0x5a5a3301, 0x5a5a3302
+PAST_MARK, ENTRY_MARK = 0x5a5a3303, 0x5a5a3304     # emitsb's breadcrumbs X0 and S1 (round 37)
 
 
 def gen_emitsa():
@@ -557,6 +558,28 @@ def gen_emitsa():
     s = Src("emitsa", "round 33 (N3): one emitpds of the kernel's image (cmd 1) and the task it "
             "starts (entry 1), which stores pa0 to pa3 and sa0 to sa3", phase="r33",
             emit="one emitpds (the owned form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=False)
+
+
+def gen_emitsb():
+    """Round 37 (N3b): emitsa with two breadcrumbs, each fenced. X0, right after the emitpds:
+    0x5a5a3303 in slot 1 dword 2 (the issuing task went on past the emit). S1, entry 1's first
+    work: 0x5a5a3304 in slot 5 dword 0 (the started task ran its first store), before any pa or
+    sa read. Everything else is emitsa's."""
+    s = Src("emitsb", "round 37 (N3b): emitsa (one emitpds of the kernel's image, cmd 1, and the "
+            "task it starts) with breadcrumbs past the emit (slot 1 dword 2) and at entry 1's "
+            "start (slot 5)", phase="r37",
+            emit="one emitpds (the owned form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=True)
+
+
+def crumb(s, mark, j):
+    s("mov r7, #0x%08x" % mark)
+    store(s, j, "r7")
+    s("idf drc0, bif", "wdf drc0")
+
+
+def emit_reader(s, crumbs):
     prologue(s)
     dispatch(s, [1])
     s("c1:")
@@ -573,11 +596,16 @@ def gen_emitsa():
       "mov r2, #0xdeadbeef                 ; @patch pds0",
       "mov r3, #0xdeadbeef                 ; @patch pds1",
       "mov r4, #0xdeadbeef                 ; @patch pds2",
-      "emitpds.tasks.taske #0, r2, r3, r4, #0x0",
-      "br @tail")
+      "emitpds.tasks.taske #0, r2, r3, r4, #0x0")
+    if crumbs:
+        crumb(s, PAST_MARK, 2)                  # X0: r9 is still slot 1
+    s("br @tail")
     s("@entry 1",
-      "reader:",
-      "mov r1, #0xdeadbeef                 ; @patch res+0")
+      "reader:")
+    if crumbs:
+        result_base(s, 5)
+        crumb(s, ENTRY_MARK, 0)                 # S1
+    s("mov r1, #0xdeadbeef                 ; @patch res+0")
     result_base(s, 2)
     s("mov r4, pa0", "mov r5, pa1", "mov r6, pa2", "mov r7, pa3")
     for j, r in enumerate(("r4", "r5", "r6", "r7")):
@@ -606,7 +634,7 @@ def all_sources():
          "x9b_r1": gen_9b("R1"), "x9b_r2": gen_9b("R2"),
          "state": gen_state(), "events": gen_events(), "slow": gen_slow(),
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
-         "oomring2": gen_oomring2(), "emitsa": gen_emitsa()}
+         "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

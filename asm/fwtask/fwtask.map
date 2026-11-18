@@ -6,6 +6,13 @@
   "source": "emitsa.s",
   "source_sha256": "8059d7404b968c8a973b6758c105cd4dee4dad88c51352d0de907cbe7873729c"
  },
+ "emitsb": {
+  "bytes": 644,
+  "insns": 67,
+  "sha256": "83c25ac3cfc0a87473649979a41b8ddd0b49441d52a8eb9a7f405bb2866d7c2c",
+  "source": "emitsb.s",
+  "source_sha256": "2fdeb75282516ce1bea290d5d24e6e9091f9d82c4c97a9f9f156858a35a4aeb0"
+ },
  "events": {
   "bytes": 600,
   "insns": 64,
