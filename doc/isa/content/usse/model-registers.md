@@ -28,9 +28,12 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks). In firmware (EDM) tasks of ours `r20` and `r21` written
-  by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
-  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). After a
+  pair of fills, not EDM tasks). An unwritten `r20` read right after the fill that wrote it showed
+  the marker in 2024 of 2048 pixels and another value in 24, against a control frozen at 2048, so
+  that session decided nothing on which job an unwritten temporary reads (E1145, Q193). In
+  firmware (EDM) tasks of ours `r20` and `r21` written by one task were read by the next at the next
+  event and after 1200 ms (6 of 6) and replaced by a client fill (0 of 6 kept), and `i0` and `i1`
+  also after a fill (6 of 6) **[HW]** (E536). After a
   firmware reload, and after a reset and a reload, `i0`, `i1` and `r21` kept the markers and `r20`
   and `sa63` read 0 (6 of 6; after a fill `r21` read 0x1000 to 0x3000 and `sa63` kept its marker)
   **[HW]** (E810). The registers sampled up to `r123` are separate storage in a fill started with up
@@ -76,6 +79,12 @@ marked.
     health fill or triangle) replaces it with that job's colour: it lasts one job;
   - `pa0` reads the colour of the job before, across a reset too, and after the health triangle
     0xff00ff00 in 1536 and 0xff203040 in 512 pixels, E496's first-job mixture.
+  - an `sa5` write is replaced by the next job's output also when that job writes another `sa`
+    (`sa1`), so it lasts one job whatever the job between writes (E1144);
+  - a fill writing `sa_n` (n = 0 to 15) with `iaddu32` shows the value at exactly 4 pixels, the
+    same 4 in every run, one per 16 x 8 block of the top-left 32 x 16, and three writes show the
+    union; post hoc [infer] (x, y) = ((n & 1) + 2 (n >> 2) + {0, 16}, ((n >> 1) & 1) + {0, 8})
+    (E1144, Q129).
   A reader that outputs anything but the value it read sees that output come back: its later
   instances read what its earlier ones wrote to `o0` (E1139 [infer]).
   In an end-of-tile task `sa0`-`sa127` are the tile buffer the task's emit sends: one

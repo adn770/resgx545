@@ -238,8 +238,8 @@ list.
   of the instances that do not read the last job's value, ... (E477, E484, E500)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
-- `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
-  sa7 show those sa values as their output, and how long ... (E484, E1140)
+- `Q129` usse, low: why do exactly 4 pixels of a fill that writes sa_n show the written value
+  instead of the colour, and what rule places them (E1144: the same ... (E484, E1140, E1144)
 - `Q130` usse, low: when does a load on one counter land while a wdf waits on another: why four ldad
   on drc0 issued after a wdf drc1 that waited for four ldad ... (E479)
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
@@ -247,7 +247,7 @@ list.
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
-  read, per instance, and what clears it (a power cycle, a ... (E484, E485, E593)
+  read, per instance, and what clears it (a power cycle, a ... (E485, E593, E1145)
 - `Q195` usse, low: what do the narrow memory forms do that the 11.36 fills did not run: a register
   or negative offset, the pre- and post-increment forms, ... (E598, E599)
 - `Q275` usse, low: why do g20, g41 and g42 read 0 in the end-of-tile task's per-tile stores of E708
@@ -277,7 +277,7 @@ list.
 
 ## Recent records
 
-9 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
+11 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1147` isp, 2026-11-18: r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected
@@ -286,6 +286,12 @@ the claims are cut at 200 characters.
 - `E1146` pbe, 2026-11-18: r35-pk on module 7CE8E38E (Q302), every control passed, a colour ramp
   whose channels take every byte value on the 64 x 64 triangle (each pixel's colour unique): RGB565
   (pack mode 3) and pack modes 4 ...
+- `E1145` usse, 2026-11-18: r35-sa stage t (23 jobs, t30 probe fills with --pixels, module
+  7CE8E38E): every kit control passed, but the frozen reader form control (a fill that reads r20
+  without writing it, right after a fill ...
+- `E1144` usse, 2026-11-18: r35-sa stage a (40 jobs, t30 probe fills with --pixels, module
+  7CE8E38E): every control passed, the position decode on K3 and on --coords' (y << 16) | x and the
+  sa5 reader form included; a fill whose ...
 - `E1143` isp, 2026-11-18: r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the
   frozen rule printed NARROW with nothing decided, because the three A' controls at 128 x 128 failed
   and the frozen gate put the 128 ...
@@ -310,9 +316,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-109 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+110 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r35-sa`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r35-pk`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r35-o0b`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r35-o0`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
@@ -475,7 +483,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 17 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

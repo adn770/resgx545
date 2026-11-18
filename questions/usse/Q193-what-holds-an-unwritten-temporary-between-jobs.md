@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E484", "E485", "E593"]
+evidence = ["E484", "E485", "E593", "E1145"]
 terms = []
 +++
 
@@ -23,3 +23,12 @@ write distinct markers to that register, with a reset, a context close, a module
 cycle between them; the stored dwords (every instance with `--pixels` and the coordinates) name the
 earlier job and the instance slot each read comes from. A power cycle is not allowed by the safety
 rules of the batches so far; a module reload needs a kernel batch.
+
+Note 2026-11-18 (E1145, r35-sa stage t: nothing decided). Its reader form control (r20 read
+right after its writer, frozen at 2048 of 2048) read the marker in 2024 pixels and 0x0000200f in
+24, so every held-out reader is cannot tell. Post hoc [infer], not frozen: an unwritten r20 read
+the last r20 write in about 2024 pixels after a colour fill, the t10 triangle and a debugfs reset;
+23-24 pixels at even coordinates read small values 0x0000n00f/0x0000n02f at positions that change
+between runs; after a fill with 8 temporaries 1388 pixels read that fill's r4. A rerun needs a
+reader control that tolerates (or explains) the small values; the power cycle and module reload
+stay open (R35-5a).
