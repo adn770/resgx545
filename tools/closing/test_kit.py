@@ -2502,6 +2502,25 @@ def test_prepare_writes_the_arm_and_each_job_for_the_runner(repos):
     assert all(ln[1] == "own" for ln in lines)
 
 
+def test_a_ticks_row_prepares_to_a_job_with_ticks(repos):
+    """N3b (round 37): "ticks": true passes through, so the runner reads HostCtl dword 12 right
+    before the command write and after the window."""
+    import json
+    kp, r = own_session(repos, rows=OWN_ROWS.replace('"timeout_ms": 100}\no2',
+                                                     '"timeout_ms": 100, "ticks": true}\no2'))
+    S.ENV = env_for(r)
+    try:
+        tsv = S.generated(kp)["run/owntask.tsv"]
+    finally:
+        S.ENV = None
+    jobs = {ln.split("\t")[2]: json.loads(ln.split("\t")[3]) for ln in tsv.splitlines()
+            if ln.startswith("job\t")}
+    assert jobs["o1"] == {"n": 1, "params": {}, "runid": 1, "timeout_ms": 100, "ticks": True}
+    assert "ticks" not in jobs["o2"], jobs
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+
+
 def test_a_session_without_owntask_has_an_empty_job_table(repos):
     kp = scaffold(repos)
     tsv = S.generated(kp)["run/owntask.tsv"]
@@ -2510,7 +2529,9 @@ def test_a_session_without_owntask_has_an_empty_job_table(repos):
 
 BAD_ARMS = ["slots=0x1", "slots=0x0 entry=0", "slots=0x1 entry=0 trc_hazard=1",
             "slots=0x3 entry=0", "entry=0 slots=0x1", "slots=0x1 entry=0 trc=32",
-            "slots=0x1 entry=0;reboot", "slots=1 entry=0"]
+            "slots=0x1 entry=0;reboot", "slots=1 entry=0", "slots=0x1 entry=0 pds=other",
+            "slots=0x1 entry=0 pds=", "slots=0x1 entry=0 pds=crumb trc=8",
+            "slots=0x1 entry=0 pds=crumb pds=crumb"]
 
 
 @pytest.mark.parametrize("arm", BAD_ARMS)
@@ -2522,7 +2543,8 @@ def test_lint_refuses_a_bad_arm_string(repos, arm):
 
 
 def test_lint_accepts_the_arm_forms_of_the_runner(repos):
-    for arm in ("slots=0xf entry=0,1,2,3", "slots=0x1 entry=0 trc=31"):
+    for arm in ("slots=0xf entry=0,1,2,3", "slots=0x1 entry=0 trc=31",
+                "slots=0x1 entry=0 pds=crumb", "slots=0x1 entry=0 trc=8 pds=crumb"):
         kp, r = own_session(dict(repos, tmp=repos["tmp"] / arm.replace(" ", "_")),
                             stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
         li = kit(kp, r, "lint")
@@ -2572,6 +2594,9 @@ def test_an_owntask_stage_must_be_flagged(repos):
     ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 999999}', "timeout_ms"),
     ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "regs": {}}', "regs"),
     ('o3|fit|flagged|-|owntask|cmd=1', "JSON"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "ticks": 1}', "ticks"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "ticks": "yes"}',
+     "ticks"),
     ('o3|fit|flagged|kreg:0x0a78=0x01|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}',
      "kreg"),
     ('o3|fit|flagged|expectfault|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}',
@@ -2663,6 +2688,22 @@ def test_an_owntask_stage_arms_once_runs_each_job_without_a_reset_and_disarms(re
     order = [kmsg.index(s) for s in ("resgx545 r8t owntask-arm own emitsa ", "resgx545 case o1 ",
                                      "resgx545 case o2 ", "resgx545 r8t owntask-disarm own ")]
     assert order == sorted(order), kmsg
+
+
+def test_the_mock_arms_the_crumb_image_and_keeps_a_ticks_record(repos):
+    """N3b: the fake runner takes a job's ticks as the real one does and records the count."""
+    import gzip
+    kp, r = own_session(repos, stage=OWN_STAGE.replace("entry=0", "entry=0 pds=crumb"),
+                        rows=OWN_ROWS.replace('"timeout_ms": 100}\no2',
+                                              '"timeout_ms": 100, "ticks": true}\no2'))
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert "arm slots=0x1 entry=0 pds=crumb" in own_log(mm)
+    o1 = gzip.decompress((mm / "out/model/own/o1.txt.gz").read_bytes()).decode()
+    assert '"ticks": ' in o1 and '"window_ms": ' in o1, o1[-2000:]
+    o2 = gzip.decompress((mm / "out/model/own/o2.txt.gz").read_bytes()).decode()
+    assert '"window_ms": ' not in o2, o2[-2000:]
 
 
 @pytest.mark.parametrize("world,rc,word", [
@@ -2791,3 +2832,13 @@ def test_the_runner_refuses_an_owntask_table_that_breaks_the_rules(tmp_path, row
 def test_the_runner_takes_a_valid_owntask_table(tmp_path):
     r = own_runner_tree(tmp_path, OWN_ROW)
     assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+def test_the_runner_takes_the_crumb_image_and_refuses_another(tmp_path):
+    """N3b step B: own_arm's pds=crumb is an arm line the kit arms; any other pds= is not."""
+    r = own_runner_tree(tmp_path / "a", OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 pds=crumb"))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+    r = own_runner_tree(tmp_path / "b", OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 pds=other"))
+    assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)

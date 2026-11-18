@@ -155,11 +155,13 @@ OWNTASK_MAP = "asm/fwtask/fwtask.map"
 OWNTASK_KEYS = ("blob", "arm")
 # own_arm's line as the phase 11.29-11.33 runner writes it (run_stage.py): one entry per slot of
 # the mask; trc 32 and up need the hazard word (run_stage.py TRC_HAZARD_FROM, E540), never armed
-# from the kit
+# from the kit; pds=crumb names the kernel's second emitpds image (round 37, N3b step B: three
+# tim breadcrumbs), none the first (v1)
 OWNTASK_ARM = re.compile(r"slots=0x([0-9a-f]{1,2}) entry=([0-9]{1,2}(?:,[0-9]{1,2})*)"
-                         r"(?: trc=([0-9]{1,2}))?")
+                         r"(?: trc=([0-9]{1,2}))?(?: pds=(crumb))?")
 OWNTASK_TRC_MAX = 31
-OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms")
+# ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window
+OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks")
 # the results page (tools/fwtask/layout.py): 1024 dwords, 0-5 the protocol's (magic, cmd, state,
 # run id, overlap, run id echo), which a job's params never write
 OWNTASK_PAGE = 1024
@@ -659,7 +661,7 @@ def owntask_arm_problem(arm):
     m = OWNTASK_ARM.fullmatch(arm) if isinstance(arm, str) else None
     if m is None:
         return (f"arm {arm!r} is not `slots=0xMASK entry=E[,E...]` with an optional `trc=T` "
-                "(lower-case hex mask, decimal entries)")
+                "and an optional `pds=crumb` (lower-case hex mask, decimal entries)")
     mask, entries, trc = int(m[1], 16), m[2].split(","), m[3]
     if mask == 0:
         return f"arm {arm!r} arms no slot (slots=0x0)"
@@ -672,8 +674,8 @@ def owntask_arm_problem(arm):
 
 
 def owntask_job(args, job_timeout):
-    """(the job fwtask_run.py run takes: {n, params, timeout_ms}, []) of an owntask row's args,
-    or (None, [what is wrong])."""
+    """(the job fwtask_run.py run takes: {n, params, timeout_ms[, ticks]}, []) of an owntask
+    row's args, or (None, [what is wrong])."""
     import json
     try:
         a = json.loads(args)
@@ -701,9 +703,14 @@ def owntask_job(args, job_timeout):
             bad.append(f"params dword {k}: {v!r} is not a 32-bit value or a list of them")
     if type(tmo) is not int or not 1 <= tmo <= job_timeout * 1000:
         bad.append(f"timeout_ms {tmo!r} is not 1 to {job_timeout * 1000} (job_timeout)")
+    if "ticks" in a and type(a["ticks"]) is not bool:
+        bad.append(f"ticks {a['ticks']!r} is not true or false")
     if bad:
         return None, bad
-    return {"n": cmd, "params": params, "timeout_ms": tmo}, []
+    job = {"n": cmd, "params": params, "timeout_ms": tmo}
+    if "ticks" in a:
+        job["ticks"] = a["ticks"]
+    return job, []
 
 
 def owntask_problems(kp, c=None):

@@ -7,13 +7,14 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
 
   arm    {blob, arm}: the blob file must exist; the task is armed (FAKE_DIR/own holds the arm
          line), the results page reset (magic 0x4e574f53); ok unless the world has ownarmbad
-  run    {name, outdir, jobs}: each job {n, params, runid, timeout_ms} needs the task armed (a
-         reset in between disarms it: the job never reports done); the task stores what the
+  run    {name, outdir, jobs}: each job {n, params, runid, timeout_ms[, ticks]} needs the task
+         armed (a reset in between disarms it: the job never reports done); the task stores what the
          world's optional own_res(cmd, params, world) gives ({dword: value}), the run id echo and
          state 2. World ownstop: the first job never reports done, the runner's stop dump is
          written to OUTDIR (stopI-own_res.json, -regs.txt, -status.txt, -dmesg.txt), rc 1;
          world ownhang: the same with the tick frozen after the stop, the real runner's
-         "firmware hung" stop (r36-n3)
+         "firmware hung" stop (r36-n3). A job with ticks true records ticks, ticks_expected and
+         window_ms as the real runner (0 ticks in world ownhang)
   page   the results page, {"page": [1024 dwords]}
   gate   the fill and triangle, ok unless the world has owngatebad
   reset  disarm; ok
@@ -30,7 +31,7 @@ import sys
 PAGE, MAGIC, CMD, STATE, RUNID, ECHO, RESULTS = 1024, 0, 1, 2, 3, 5, 0x40
 KEYS = {"arm": {"blob", "arm"}, "run": {"name", "outdir", "jobs"}, "page": set(), "gate": set(),
         "reset": set()}
-JOB_KEYS = {"n", "params", "runid", "timeout_ms"}
+JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks"}
 
 
 def fake(name):
@@ -129,6 +130,10 @@ def run(a):
         records.append({"done": done, "ms": 1.0 if done else float(j.get("timeout_ms", 100)),
                         "slot": p[base:base + 4], "echo": p[ECHO], "cmd_after": p[CMD],
                         "overlap": 0, "job": j, "H": {}, "restored": True})
+        if j.get("ticks"):          # the real runner's HostCtl dword 12 count over the window
+            ms = records[-1]["ms"] + 30.0
+            records[-1].update(ticks=0 if "ownhang" in w else int(ms), ticks_expected=ms * 0.997,
+                               window_ms=ms)
         if not done:
             stop = f"no done within {j.get('timeout_ms', 100)} ms (job {i})"
             os.makedirs(a["outdir"], exist_ok=True)
