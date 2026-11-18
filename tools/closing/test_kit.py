@@ -2393,3 +2393,388 @@ def test_the_freeze_refuses_a_snap0_reference_to_an_unknown_row(repos):
     assert li.returncode == 1 and "nope" in li.stdout
     f = kit(kp, repos, "freeze")
     assert f.returncode != 0 and "nope" in f.stdout and not (kp / "FROZEN.sha256").exists()
+
+
+# ---- owntask: one of our own firmware tasks as a kit stage (round 36, kernel33 design §5) ----
+OWN_BLOB = b"\x01own-task blob fixture\x00" * 4
+OWN_STAGE = ('own = { alarm = 1800, class = "flagged", owntask = { blob = "emitsa", '
+             'arm = "slots=0x1 entry=0" } }')
+OWN_ROWS = ('o1|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}\n'
+            'o2|fit|flagged|-|owntask|{"cmd": 1, "params": {"32": 7}, "timeout_ms": 100}\n')
+OWN_REQUIRED = ('"own": (".txt", ".own_res.json", ".gate.json", "cases.tsv", "void.tsv", '
+                '"readings.tsv", "owntask.arm.json", "owntask.reset.json")')
+OWN_WORLD = ("def own_res(cmd, params, world):\n"
+             "    return {0x44: 0x5a5a3301, 0x45: 1, 0x50: 0x5a5a3302}\n\n\n")
+
+
+def own_repos(repos, blob=OWN_BLOB, name="emitsa"):
+    """repos with asm/fwtask/fwtask.map at a new commit (c1): NAME's blob sha256 is BLOB's."""
+    import json
+    m = repos["main"]
+    (m / "asm/fwtask").mkdir(parents=True, exist_ok=True)
+    old = (m / "asm/fwtask/fwtask.map").read_text() if (m / "asm/fwtask/fwtask.map").exists() \
+        else None
+    (m / "asm/fwtask/fwtask.map").write_text(json.dumps(
+        {name: {"bytes": len(blob), "insns": 1, "sha256": hashlib.sha256(blob).hexdigest(),
+                "source": f"{name}.s", "source_sha256": "0" * 64}},
+        indent=1, sort_keys=True) + "\n")
+    if (m / "asm/fwtask/fwtask.map").read_text() == old:
+        return dict(repos, c1=git(m, "rev-parse", "HEAD"))
+    return dict(repos, c1=commit_all(m, "map"))
+
+
+def own_session(repos, stage=OWN_STAGE, rows=OWN_ROWS, blob=OWN_BLOB, preds="", expect=None):
+    """The scaffold's safe s0, then the flagged owntask stage `own` (STAGE) with ROWS, its blob
+    file owntask/emitsa.blob (BLOB; None: none) and the map of the fixture blob."""
+    r = own_repos(repos)
+    kp = scaffold(r)
+    st = (kp / "session.toml").read_text()
+    (kp / "session.toml").write_text(st.replace("s0 = { alarm = 1800 }",
+                                                "s0 = { alarm = 1800 }\n" + stage))
+    (kp / "tables/own.txt").write_text("#stage own\n#limit 0\n" + rows)
+    (kp / "predictions/own.tsv").write_text("case\tquantity\tvalue\tmodel\tset\tsource\n" + preds)
+    if blob is not None:
+        (kp / "owntask").mkdir()
+        (kp / "owntask/emitsa.blob").write_bytes(blob)
+    sc = (kp / "score/score.py").read_text()
+    sc = sc.replace('REQUIRED = {"s0": (".txt", "cases.tsv", "void.tsv", "readings.tsv")}',
+                    'REQUIRED = {"s0": (".txt", "cases.tsv", "void.tsv", "readings.tsv"), '
+                    + OWN_REQUIRED + "}")
+    (kp / "score/score.py").write_text(sc)
+    w = (kp / "mock/world.py").read_text().replace("def answer(tool, argv, world):\n",
+                                                   OWN_WORLD + "def answer(tool, argv, world):\n")
+    expect = expect or {"model": (0, {"s0": 0, "own": 0}), "nodiff": (25, {"s0": 25})}
+    w = re.sub(r"^EXPECT = .*$", f"EXPECT = {expect!r}", w, count=1, flags=re.M)
+    (kp / "mock/world.py").write_text(w)
+    return kp, r
+
+
+def test_the_kit_copies_fwtask_run_and_stages_it_with_the_blob_and_the_job_table(repos):
+    assert S.KIT_SOURCES["kit/fwtask_run.py"] == "tools/fwtask/fwtask_run.py"
+    assert "kit/fake/fwtask.py" in S.KIT_SOURCES
+    kp, r = own_session(repos)
+    assert (kp / "kit/fwtask_run.py").read_bytes() == \
+        (HERE.parent / "fwtask/fwtask_run.py").read_bytes()
+    lap = S.laptop_files(kp)
+    for f in ("kit/fwtask_run.py", "owntask/emitsa.blob", "run/owntask.tsv"):
+        assert f in lap, lap
+
+
+def test_lint_and_guard_accept_a_valid_owntask_session(repos):
+    kp, r = own_session(repos)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    g = kit(kp, r, "guard")
+    assert g.returncode == 0, g.stdout + g.stderr
+
+
+OWN_DEBUGFS = ("own_code", "own_arm", "own_res", "load", "boot", "status", "miscinfo", "kreg")
+
+
+def test_the_preflight_needs_the_debugfs_files_fwtask_run_uses_only_in_an_owntask_session(repos):
+    kp, r = own_session(repos)
+    S.ENV = env_for(r)
+    try:
+        env = S.generated(kp)["run/session.env"]
+    finally:
+        S.ENV = None
+    need = re.search(r'^DEBUGFS_NEED="([^"]*)"', env, re.M).group(1).split()
+    assert set(OWN_DEBUGFS) <= set(need) and len(need) == len(set(need)), need
+    env = S.generated(scaffold(dict(repos, tmp=repos["tmp"] / "plain")))["run/session.env"]
+    need = re.search(r'^DEBUGFS_NEED="([^"]*)"', env, re.M).group(1).split()
+    assert not set(OWN_DEBUGFS) & set(need), need
+
+
+def test_prepare_writes_the_arm_and_each_job_for_the_runner(repos):
+    import json
+    kp, r = own_session(repos)
+    S.ENV = env_for(r)
+    try:
+        tsv = S.generated(kp)["run/owntask.tsv"]
+    finally:
+        S.ENV = None
+    lines = [ln.split("\t") for ln in tsv.splitlines() if ln and not ln.startswith("#")]
+    assert lines[0] == ["arm", "own", "emitsa", hashlib.sha256(OWN_BLOB).hexdigest(),
+                        "slots=0x1 entry=0"], lines
+    jobs = {ln[2]: json.loads(ln[3]) for ln in lines if ln[0] == "job"}
+    assert jobs == {"o1": {"n": 1, "params": {}, "runid": 1, "timeout_ms": 100},
+                    "o2": {"n": 1, "params": {"32": 7}, "runid": 2, "timeout_ms": 100}}, jobs
+    assert all(ln[1] == "own" for ln in lines)
+
+
+def test_a_session_without_owntask_has_an_empty_job_table(repos):
+    kp = scaffold(repos)
+    tsv = S.generated(kp)["run/owntask.tsv"]
+    assert not [ln for ln in tsv.splitlines() if ln and not ln.startswith("#")], tsv
+
+
+BAD_ARMS = ["slots=0x1", "slots=0x0 entry=0", "slots=0x1 entry=0 trc_hazard=1",
+            "slots=0x3 entry=0", "entry=0 slots=0x1", "slots=0x1 entry=0 trc=32",
+            "slots=0x1 entry=0;reboot", "slots=1 entry=0"]
+
+
+@pytest.mark.parametrize("arm", BAD_ARMS)
+def test_lint_refuses_a_bad_arm_string(repos, arm):
+    kp, r = own_session(repos, stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "arm" in li.stdout, li.stdout
+    assert kit(kp, r, "guard").returncode != 0
+
+
+def test_lint_accepts_the_arm_forms_of_the_runner(repos):
+    for arm in ("slots=0xf entry=0,1,2,3", "slots=0x1 entry=0 trc=31"):
+        kp, r = own_session(dict(repos, tmp=repos["tmp"] / arm.replace(" ", "_")),
+                            stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
+        li = kit(kp, r, "lint")
+        assert li.returncode == 0, (arm, li.stdout)
+
+
+def test_lint_refuses_a_missing_blob(repos):
+    kp, r = own_session(repos, blob=None)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "owntask/emitsa.blob" in li.stdout, li.stdout
+
+
+def test_lint_refuses_a_blob_that_is_not_the_maps(repos):
+    kp, r = own_session(repos, blob=OWN_BLOB + b"\x00")
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "fwtask.map" in li.stdout and "sha256" in li.stdout, li.stdout
+
+
+def test_lint_refuses_a_blob_name_the_map_does_not_hold(repos):
+    kp, r = own_session(repos, stage=OWN_STAGE.replace('"emitsa"', '"nosuch"'))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "nosuch" in li.stdout, li.stdout
+
+
+def test_lint_refuses_an_owntask_stage_without_a_blob_key(repos):
+    kp, r = own_session(repos, stage=OWN_STAGE.replace('blob = "emitsa", ', ""))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "blob" in li.stdout, li.stdout
+
+
+def test_an_owntask_stage_must_be_flagged(repos):
+    kp, r = own_session(repos, stage=OWN_STAGE.replace('class = "flagged", ', ""))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "flagged" in li.stdout, li.stdout
+    g = kit(kp, r, "guard")
+    assert g.returncode != 0 and "flagged" in g.stdout, g.stdout
+
+
+@pytest.mark.parametrize("row,word", [
+    ('o3|fit|flagged|-|owntask|{"params": {}, "timeout_ms": 100}', "cmd"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 0, "params": {}, "timeout_ms": 100}', "cmd"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {"1": 5}, "timeout_ms": 100}', "params"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {"1024": 5}, "timeout_ms": 100}', "params"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {"x": 5}, "timeout_ms": 100}', "params"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {"40": -1}, "timeout_ms": 100}', "params"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}}', "timeout_ms"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 999999}', "timeout_ms"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "regs": {}}', "regs"),
+    ('o3|fit|flagged|-|owntask|cmd=1', "JSON"),
+    ('o3|fit|flagged|kreg:0x0a78=0x01|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}',
+     "kreg"),
+    ('o3|fit|flagged|expectfault|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}',
+     "expectfault"),
+    ('o3|fit|flagged|noreset|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}', "noreset"),
+    ("o3|fit|flagged|-|t4|tri --width 64 --height 64", "owntask rows only"),
+])
+def test_lint_refuses_a_malformed_owntask_row(repos, row, word):
+    kp, r = own_session(repos, rows=OWN_ROWS + row + "\n")
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and word in li.stdout, li.stdout
+
+
+def test_an_owntask_row_outside_an_owntask_stage_is_refused(repos):
+    kp, r = own_session(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + 'x|fit|safe|-|owntask|{"cmd": 1, "params": {}, '
+                 '"timeout_ms": 100}\n')
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "not an owntask stage" in li.stdout, li.stdout
+    g = kit(kp, r, "guard")
+    assert g.returncode != 0 and "not an owntask stage" in g.stdout, g.stdout
+
+
+def test_a_tool_may_not_be_named_owntask(repos):
+    kp, r = own_session(repos)
+    st = (kp / "session.toml").read_text().replace("[tools.t4]", "[tools.owntask]")
+    st = st.replace('health_tool = "t4"', 'health_tool = "owntask"')
+    (kp / "session.toml").write_text(st)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "owntask" in li.stdout and "reserved" in li.stdout, li.stdout
+
+
+@pytest.mark.parametrize("qty,ok", [("res:0x44", True), ("res:80", True), ("res:0x400", False),
+                                    ("res:x", False)])
+def test_lint_reads_a_result_dword_quantity_by_index(repos, qty, ok):
+    kp, r = own_session(repos, preds=f"o1\t{qty}\t0x5a5a3301\tH-PA\tfit\tdesign §3\n")
+    li = kit(kp, r, "lint")
+    assert (li.returncode == 0) is ok, li.stdout
+    if not ok:
+        assert qty in li.stdout, li.stdout
+
+
+def test_the_freeze_pins_the_map_the_blob_was_checked_against(repos):
+    kp, r = own_session(repos)
+    f = kit(kp, r, "freeze")
+    assert f.returncode == 0, f.stdout + f.stderr
+    commits = (kp / "FROZEN.commits").read_text()
+    assert re.search(rf"  {r['c1']}  resgx545:asm/fwtask/fwtask.map$", commits, re.M), commits
+    assert "  owntask/emitsa.blob" in (kp / "FROZEN.sha256").read_text()
+    v = kit(kp, r, "verify")
+    assert v.returncode == 0, v.stdout
+
+
+def own_log(mm):
+    return (mm / "fake/own.log").read_text().splitlines()
+
+
+def test_an_owntask_stage_arms_once_runs_each_job_without_a_reset_and_disarms(repos):
+    import gzip
+    import json
+    kp, r = own_session(repos)
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0, own 0\)", m.stdout, re.M), m.stdout
+    mm = next(kp.glob("debug/mock.*/model"))
+    log = own_log(mm)
+    own = log[next(i for i, x in enumerate(log) if x.startswith("arm ")):]
+    assert own[:8] == ["arm slots=0x1 entry=0", "run o1 n=1 runid=1", "page", "gate",
+                       "run o2 n=1 runid=2", "page", "gate", "reset"], log
+    kept = mm / "out/model/own"
+    page = json.loads(gzip.decompress((kept / "o2.own_res.json.gz").read_bytes()))
+    page = page["page"] if isinstance(page, dict) else page
+    assert page[0x44] == 0x5a5a3301 and page[32] == 7 and page[3] == 2, page[:64]
+    for f in ("owntask.arm.json.gz", "owntask.reset.json.gz", "o1.gate.json.gz", "o1.txt.gz"):
+        assert (kept / f).exists(), f
+    runner = (kept / "runner.log").read_text()
+    assert "## end: 2 jobs of own" in runner, runner
+    kmsg = (mm / "kmsg").read_text()
+    order = [kmsg.index(s) for s in ("resgx545 r8t owntask-arm own emitsa ", "resgx545 case o1 ",
+                                     "resgx545 case o2 ", "resgx545 r8t owntask-disarm own ")]
+    assert order == sorted(order), kmsg
+
+
+@pytest.mark.parametrize("world,rc,word", [
+    ("ownarmbad", 26, "## STOP: the own-task arm of emitsa"),
+    ("ownstop", 4, "## STOP: unexplained failure in o1"),
+    ("owngatebad", 16, "## STOP: the gate after o1 failed"),
+])
+def test_an_owntask_stage_stops_on_a_bad_arm_a_runner_stop_or_a_failed_gate(repos, world, rc,
+                                                                           word):
+    kp, r = own_session(repos, expect={world: (rc, {"s0": 0, "own": rc})})
+    m = kit(kp, r, "mock", "--world", world)
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob(f"debug/mock.*/{world}"))
+    runner = (mm / f"out/{world}/own/runner.log").read_text()
+    assert word in runner, runner
+    if world == "ownstop":
+        assert (mm / f"out/{world}/own/o1.stop0-own_res.json.gz").exists()
+
+
+def test_the_scorer_reads_a_result_slot_by_dword_index(tmp_path):
+    import gzip
+    import json
+    import kitscore
+    d = tmp_path / "kept"
+    d.mkdir()
+    page = [0] * 1024
+    page[0x44], page[0x50] = 0x5a5a3301, 0x5a5a3302
+    (d / "o1.own_res.json.gz").write_bytes(gzip.compress(json.dumps({"page": page}).encode()))
+    (d / "o2.own_res.json").write_text(json.dumps(page))        # a runner stop dump's form
+    assert kitscore.own_res(str(d), "o1") == page
+    assert kitscore.own_dword(str(d), "o1", 0x44) == 0x5a5a3301
+    assert kitscore.own_dword(str(d), "o2", kitscore.res_index("res:0x50")) == 0x5a5a3302
+    assert kitscore.own_slot(str(d), "o1", 1) == [0x5a5a3301, 0, 0, 0]
+    assert kitscore.own_dword(str(d), "none", 0x44) is None
+    assert kitscore.res_index("diff") is None
+    for bad in ("res:0x400", "res:x", "res:-1"):
+        with pytest.raises(ValueError):
+            kitscore.res_index(bad)
+
+
+def test_the_kept_check_wants_the_own_res_dump_of_every_owntask_row(tmp_path):
+    import sessioncheck
+    d = tmp_path / "kept"
+    d.mkdir()
+    cols = "name\tstage\tset\trisk\tknobs\ttool\targs\trc\tclass\tfault_int\tfault_word\tfree_kb\n"
+    (d / "cases.tsv").write_text(cols + "o1\town\tfit\tflagged\t-\towntask\t{}\t0\tok\t-\t-\t1\n")
+    (d / "o1.txt").write_text("{}\n")
+    probs = sessioncheck.kept_problems(str(d), (".txt",), sessioncheck.kept_classes(str(d)))
+    assert any("o1.own_res.json" in p for p in probs), probs
+    (d / "o1.own_res.json").write_text("[]\n")
+    assert sessioncheck.kept_problems(str(d), (".txt",), sessioncheck.kept_classes(str(d))) == []
+
+
+@pytest.mark.parametrize("obj,ok", [
+    ('{"health": {"ok": true}, "ok": false}', False),
+    ('{"fill": "x", "ok": true, "tri": "y"}', True),
+    ('{"ok": "true"}', False), ("[true]", False), ("not json", False), ("", False),
+    ('{"alive": {}, "ok": true}\n{"ok": false}', False),
+])
+def test_the_runner_reads_ok_only_at_the_top_of_the_runners_object(tmp_path, obj, ok):
+    """fwtask_run.py's arm and reset nest a health object with its own ok: the runner's check
+    is the top level's (sessioncheck.py ownok, the laptop's one JSON reader)."""
+    f = tmp_path / "o.json"
+    f.write_text(obj)
+    r = subprocess.run([PY, str(HERE / "sessioncheck.py"), "ownok", str(f)], capture_output=True,
+                       text=True)
+    assert (r.returncode == 0) is ok, (obj, r.stdout + r.stderr)
+    lib = (KIT / "lib_kit.sh").read_text()
+    assert 'json_ok() { python3 "$KIT/sessioncheck.py" ownok "$1"; }' in lib
+
+
+@pytest.mark.parametrize("line", ['owntask_call gate "{}" "$JW/g" "$JW/e" 60',
+                                  'sudo -n timeout -k 5 20 python3 "$KIT/fwtask_run.py" page "{}"'])
+def test_the_guard_refuses_an_own_task_call_in_a_hook(repos, line):
+    kp, r = own_session(repos)
+    with open(kp / "run/hooks.sh", "a") as f:
+        f.write(f"hook_extra() {{ {line}; }}\n")
+    g = kit(kp, r, "guard")
+    assert g.returncode != 0 and "hooks.sh" in g.stdout, g.stdout
+
+
+OWN_TSV = ("arm\town\temitsa\t" + "a" * 64 + "\tslots=0x1 entry=0\n"
+           'job\town\to1\t{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100}\n')
+
+
+def own_runner_tree(tmp, rows, env='FLAGGED_STAGES="own"\n', tsv=OWN_TSV, stage="own"):
+    st = tmp / "staged"
+    (st / "kit").mkdir(parents=True)
+    (st / "run").mkdir()
+    (st / "tables").mkdir()
+    (st / "kit/run_stage.sh").write_bytes((KIT / "run_stage.sh").read_bytes())
+    (st / f"tables/{stage}.txt").write_text(f"#stage {stage}\n#limit 0\n" + rows)
+    (st / "run/session.env").write_text('PREFIX=r8t\nTOOLS="t4"\nEXTRA_KNOBS=""\nKNOBS=""\n' + env)
+    (st / "run/owntask.tsv").write_text(tsv)
+    (st / "FROZEN.sha256").write_text("x\n")
+    fz = hashlib.sha256(b"x\n").hexdigest()
+    return subprocess.run(["bash", str(st / "kit/run_stage.sh"), stage, fz, "a1"],
+                          capture_output=True, text=True, timeout=60,
+                          env=dict(PATH=os.environ["PATH"], HOME=str(tmp)))
+
+
+OWN_ROW = 'o1|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}\n'
+
+
+@pytest.mark.parametrize("rows,env,tsv,stage,word", [
+    (OWN_ROW, 'FLAGGED_STAGES=""\n', OWN_TSV, "own", "flagged"),
+    (OWN_ROW + "t|fit|flagged|-|t4|tri\n", 'FLAGGED_STAGES="own"\n', OWN_TSV, "own",
+     "owntask rows only"),
+    (OWN_ROW.replace("|-|", "|kreg:0x0a78=0x01|"), 'FLAGGED_STAGES="own"\n', OWN_TSV, "own",
+     "kreg"),
+    (OWN_ROW, 'FLAGGED_STAGES="own"\n', OWN_TSV.replace("slots=0x1 entry=0", "slots=0x1"),
+     "own", "arm"),
+    (OWN_ROW, 'FLAGGED_STAGES="own"\n', OWN_TSV.split("job")[0], "own", "no job"),
+    (OWN_ROW, 'FLAGGED_STAGES="s0"\n', "", "s0", "not an owntask stage"),
+])
+def test_the_runner_refuses_an_owntask_table_that_breaks_the_rules(tmp_path, rows, env, tsv,
+                                                                   stage, word):
+    r = own_runner_tree(tmp_path, rows, env, tsv, stage)
+    assert r.returncode == 7 and word in r.stdout, (r.returncode, r.stdout + r.stderr)
+
+
+def test_the_runner_takes_a_valid_owntask_table(tmp_path):
+    r = own_runner_tree(tmp_path, OWN_ROW)
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)

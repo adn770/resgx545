@@ -26,6 +26,9 @@ it imports, and its tests call it. Each check is the design-out of a round-6 sli
   premise NAME KEYS FILE|-
                         the premise stage's check of one control: the reading (`k=v` words) has
                         every key of KEYS; `-`, empty or absent is no reading and prints a STOP
+  ownok FILE            an owntask stage's check of the kit's fwtask_run.py answer (round 36):
+                        FILE is one JSON object whose top-level ok is true (arm and reset nest
+                        a health object with an ok of its own, which never counts)
 
 Library only: lint_predictions(tables, preds, order) (round 34, T1): the warnings and errors of
 the controls' premises, run by `session.py freeze` (constants for registers the kit snapshots,
@@ -35,6 +38,7 @@ Exit status: 0 clean, 1 a finding (each printed as FAIL or STOP), 2 a usage erro
 """
 import argparse
 import importlib.util
+import json
 import os
 import re
 import subprocess
@@ -185,6 +189,16 @@ def staged_problems(src, staged, entries=None, dir_vars=()):
     return refs_bad + calls_bad
 
 
+def own_ok(path):
+    """Whether PATH holds one JSON object whose top-level ok is true (fwtask_run.py's answer)."""
+    try:
+        with open(path) as f:
+            obj = json.loads(f.read())
+    except (OSError, ValueError):
+        return False
+    return isinstance(obj, dict) and obj.get("ok") is True
+
+
 # ---- env -i --------------------------------------------------------------------------------
 def run_env_i(cmd, env, cwd=None, timeout=None):
     """Run cmd with only PATH (the caller's unless env sets it) and env. (status, output,
@@ -266,11 +280,14 @@ def kept_classes(kept_dir):
 # a row's knob word whose runner keeps a file of its own before the job, whatever the job's end:
 # pre:miscinfo keeps NAME.miscinfo (the debugfs miscinfo read, kit/run_stage.sh)
 WORD_FILES = {"pre:miscinfo": ".miscinfo"}
+# a row's tool whose runner keeps a file of its own whatever the job's end: an owntask row keeps
+# NAME.own_res.json (the results page after its job, kit/run_stage.sh)
+TOOL_FILES = {"owntask": ".own_res.json"}
 
 
 def kept_word_files(kept_dir):
     """NAME.suffix of every kept row (cases.tsv) whose knobs (the fifth column) have a word of
-    WORD_FILES."""
+    WORD_FILES, or whose tool (the sixth) is one of TOOL_FILES."""
     p = os.path.join(kept_dir, "cases.tsv")
     if not os.path.exists(p):
         return []
@@ -279,6 +296,8 @@ def kept_word_files(kept_dir):
         f = line.rstrip("\n").split("\t")
         if len(f) > 4 and not line.startswith("#") and f[0].strip() != "name":
             out += [f[0].strip() + s for w, s in WORD_FILES.items() if w in f[4].split()]
+            if len(f) > 5 and f[5].strip() in TOOL_FILES:
+                out.append(f[0].strip() + TOOL_FILES[f[5].strip()])
     return out
 
 
@@ -494,6 +513,8 @@ def main(argv=None):
     s.add_argument("--dir-opt", action="append", default=[])
     s.add_argument("--file-opt", action="append", default=[])
     s.add_argument("argv", nargs=argparse.REMAINDER)
+    s = sub.add_parser("ownok")
+    s.add_argument("file")
     s = sub.add_parser("premise")
     s.add_argument("name")
     s.add_argument("keys")
@@ -530,6 +551,8 @@ def main(argv=None):
     if a.cmd == "outdirs":
         args = a.argv[1:] if a.argv[:1] == ["--"] else a.argv
         return _report(missing_outdirs(args, a.dir_opt, a.file_opt), "")
+    if a.cmd == "ownok":
+        return 0 if own_ok(a.file) else 1
     if a.cmd == "premise":
         keys = tuple(a.keys.split())
         if not keys:

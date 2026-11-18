@@ -55,6 +55,15 @@
 #     idle:S         one fixed sleep of S seconds (1 to 120, one per row) right before the job,
 #                    after the reset and the knobs (IDLE_WAIT, which the mock sets to 0)
 #     EXTRA_KNOBS    the session's own words, for its hooks (run/hooks.sh)
+# An owntask stage (round 36: one of our own firmware tasks; its `arm` line in run/owntask.tsv,
+# which kit/session.py prepare writes): flagged only, every row `name|set|risk|-|owntask|{job}`
+# (knobs - or reads:K only) with its `job` line in run/owntask.tsv. After the first reset and
+# health the runner checks the staged blob against the map's sha256 and arms it once with the
+# kit's fwtask_run.py (`arm`, kept as owntask.arm.json; not ok: rc 26); each row runs with no
+# reset before it (a reset disarms the task): `run` with its one job (its JSON is NAME.txt), then
+# `page`, the results page as NAME.own_res.json, whatever the end; after a row that ended ok,
+# `gate` (NAME.gate.json; not ok: recovery, rc 16). At the stage's end `reset` disarms
+# (owntask.reset.json; not ok: rc 13) in place of the kit's last reset.
 # Hooks (run/hooks.sh, optional, staged): hook_reading NAME prints a control's `k=v` reading from
 # the job's files ($JW/NAME.out, .err, .dmesg, $W); hook_check NAME prints a reason to stop the
 # stage after a job that read ok (rc 24), or nothing; it runs in the runner's shell, so a count
@@ -66,9 +75,10 @@
 # before a job; 16 strict health failed; 19 a knob did not read back; 22 not enough free space;
 # 23 a file the scorer reads was not kept, or an output directory missing; 24 the stage stopped by
 # its rule; 25 a control without its reading; 19 also a kreg that did not read back, or a
-# pre:miscinfo read that was not served.
+# pre:miscinfo read that was not served; 26 the own-task arm of an owntask stage failed.
 # No reboot, no boot-loader change, no kernel build, no wait loop, and no register write of ours
-# but a flagged stage's kreg:OFF=V to a register of KIT_KREGS.
+# but a flagged stage's kreg:OFF=V to a register of KIT_KREGS; no firmware task of ours but a
+# flagged owntask stage's blob.
 trap '' PIPE HUP
 STAGE=${1:?stage name}
 FROZEN_WANT=${2:-}
@@ -84,6 +94,25 @@ else FROZEN_GOT=$(shasum -a 256 "$FZ" | cut -d' ' -f1); fi
 [ -n "$FROZEN_WANT" ] && [ "$FROZEN_WANT" = "$FROZEN_GOT" ] || { echo "the laptop's FROZEN.sha256 is not the Mac's (${FROZEN_GOT:-none}, Mac ${FROZEN_WANT:-not given}): stage again"; exit 1; }
 [ -n "$ATT" ] || { echo "no attempt name (the driver passes it)"; exit 1; }
 . "$STAGED/run/session.env"
+# an owntask stage: its arm line and its rows' job lines in run/owntask.tsv (kit/session.py)
+OWN_TSV=$STAGED/run/owntask.tsv
+OWN_BLOB=""; OWN_SHA=""; OWN_ARM=""; OWN_JOBS=""
+if [ -f "$OWN_TSV" ]; then
+	OWN_BLOB=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $3; exit }' "$OWN_TSV")
+	OWN_SHA=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $4; exit }' "$OWN_TSV")
+	OWN_ARM=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $5; exit }' "$OWN_TSV")
+	OWN_JOBS=$(awk -F'\t' -v s="$STAGE" '$1 == "job" && $2 == s { printf " %s", $3 }' "$OWN_TSV")
+fi
+if [ -n "$OWN_BLOB$OWN_SHA$OWN_ARM" ]; then
+	case " ${FLAGGED_STAGES:-} " in
+	*" $STAGE "*) ;;
+	*) echo "stage $STAGE: an owntask stage that is not flagged (a planned firmware break if wrong)"; exit 7 ;;
+	esac
+	printf '%s\n' "$OWN_BLOB" | grep -Eqx '[a-z0-9_]+' \
+		&& printf '%s\n' "$OWN_SHA" | grep -Eqx '[0-9a-f]{64}' \
+		&& printf '%s\n' "$OWN_ARM" | grep -Eqx 'slots=0x[0-9a-f]{1,2} entry=[0-9]{1,2}(,[0-9]{1,2})*( trc=[0-9]{1,2})?' \
+		|| { echo "stage $STAGE: owntask blob '$OWN_BLOB', sha256 '$OWN_SHA' or arm line '$OWN_ARM' is not one the kit arms"; exit 7; }
+fi
 # the registers kreg:OFF=V may write, frozen with kit/session.py's KREG_ALLOWED: OFF=DEFAULT/MAX
 # (CR_PDS_REG_0A78: E045 drew 0x00-0x3f exactly; 0x2c the firmware's value, E141)
 KIT_KREGS="0x0a78=0x2c/0x3f"
@@ -104,7 +133,17 @@ case " ${FLAGGED_STAGES:-} " in
 		done
 	done ;;
 esac
-awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " '
+awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " -v own="$OWN_BLOB" -v jobs="$OWN_JOBS " '
+	!/^#/ && NF >= 6 && $5 == "owntask" {
+		row++
+		if (own == "") { print $1 ": tool owntask, and this is not an owntask stage"; bad = 1; next }
+		n = split($4, k, " ")
+		for (i = 1; i <= n; i++) if (k[i] != "-" && k[i] !~ /^reads:[a-z0-9_]+(,[a-z0-9_]+)*$/) { print $1 ": knob " k[i] " (an owntask row takes only - and reads:K)"; bad = 1 }
+		if (!index(jobs, " " $1 " ")) { print $1 ": no job line in run/owntask.tsv"; bad = 1 }
+		if ($2 == "control" && $4 !~ /(^| )reads:/) { print $1 ": a control row without reads:"; bad = 1 }
+		next
+	}
+	!/^#/ && NF >= 6 && own != "" { print $1 ": tool " $5 " (an owntask stage runs owntask rows only)"; bad = 1; next }
 	!/^#/ && NF >= 6 {
 		n = split($4, k, " "); row++; idles = 0; kregs = 0; xf = 0; mis = 0; nr = 0
 		for (i = 1; i <= n; i++) { if (k[i] == "expectfault") xf = 1; if (k[i] == "noreset") nr = 1 }
@@ -154,6 +193,23 @@ S=$STAGED
 
 # ---- the rows ---------------------------------------------------------------------------------
 begin
+if [ -n "$OWN_BLOB" ]; then
+	# the own task, armed once for the stage: the staged blob must be the map's
+	JW=$WROOT/arm; mkdir -p "$JW"
+	got=$(sha "$STAGED/owntask/$OWN_BLOB.blob" | cut -d' ' -f1)
+	[ "$got" = "$OWN_SHA" ] || { echo "## STOP: owntask/$OWN_BLOB.blob is not the map's ($got, map $OWN_SHA)"; exit 1; }
+	echo "== owntask arm $OWN_BLOB [$OWN_ARM]"
+	mark "owntask-arm $STAGE $OWN_BLOB $OWN_ARM"
+	owntask_call arm "{\"blob\": \"$STAGED/owntask/$OWN_BLOB.blob\", \"arm\": \"$OWN_ARM\"}" "$JW/arm.json" "$JW/arm.err" 120
+	r=$?
+	keep owntask "$JW/arm.json" ".arm.json"
+	keep owntask "$JW/arm.err" ".arm.err"
+	if [ "$r" -ne 0 ] || ! json_ok "$JW/arm.json"; then
+		echo "## STOP: the own-task arm of $OWN_BLOB failed (status $r, $(head -c 300 "$JW/arm.json" "$JW/arm.err" | tr '\n' ' '))"
+		reset_gpu; health owntask-arm </dev/null; exit 26
+	fi
+	rm_work "$JW"
+fi
 njob=0; SKIP_GRPS=""; FAULT_EVENTS=0; SOFT_RUN=0
 # how the row before ended (its class, or skipped), and its name: what a noreset row builds on
 PREV_END=""; PREV_NAME=begin
@@ -198,7 +254,10 @@ EOF
 	TT=$(tool_path "$tool")
 	echo "== $name set=$sset risk=$risk tool=$tool knobs=[$knobs]"
 	fk=$(free_kb); space_ok || { echo "## STOP: $fk KiB free on ~ before $name (at least $MIN_FREE_MB MiB)"; exit 22; }
-	if [ "$noreset" = 1 ]; then
+	if [ -n "$OWN_BLOB" ]; then
+		echo "  owntask: no reset before $name (a reset disarms the task armed for the stage)"
+		mark "owntask-noreset $name"
+	elif [ "$noreset" = 1 ]; then
 		echo "  noreset: no reset before $name (the row before, $PREV_NAME, ended $PREV_END)"
 		mark "noreset $name $PREV_END"
 	else
@@ -229,14 +288,26 @@ EOF
 	snap "$name" 0 || { echo "## STOP: registers unreadable before $name"; exit 12; }
 	f0=$(fault_req "$JW/snap0.regs")
 	[ "$f0" = 0 ] || { echo "## STOP: a fault is latched before $name (bits 15:0 = $f0)"; exit 14; }
-	eval "set -- $args"
-	miss=$(outdirs "$@")
-	[ -z "$miss" ] || { echo "## STOP: $miss (an output directory the tool writes into, before $name)"; exit 23; }
-	echo "  cmd: $TT $*"
-	mark_case "$name"
-	sudo -n timeout -k 10 "$JOB_TIMEOUT" "$TT" "$@" > "$JW/$name.out" 2> "$JW/$name.err" </dev/null
-	rc=$?
+	if [ -n "$OWN_BLOB" ]; then
+		job=$(awk -F'\t' -v s="$STAGE" -v n="$name" '$1 == "job" && $2 == s && $3 == n { print $4; exit }' "$OWN_TSV")
+		echo "  owntask run: $job"
+		mark_case "$name"
+		owntask_call run "{\"name\": \"$name\", \"outdir\": \"$W\", \"jobs\": [$job]}" "$JW/$name.out" "$JW/$name.err" "$JOB_TIMEOUT"
+		rc=$?
+	else
+		eval "set -- $args"
+		miss=$(outdirs "$@")
+		[ -z "$miss" ] || { echo "## STOP: $miss (an output directory the tool writes into, before $name)"; exit 23; }
+		echo "  cmd: $TT $*"
+		mark_case "$name"
+		sudo -n timeout -k 10 "$JOB_TIMEOUT" "$TT" "$@" > "$JW/$name.out" 2> "$JW/$name.err" </dev/null
+		rc=$?
+	fi
 	snap "$name" 9 || { echo "## STOP: registers unreadable after $name"; exit 12; }
+	# an owntask row's results page, whatever its end (but a job that did not return)
+	if [ -n "$OWN_BLOB" ] && [ "$rc" -ne 124 ]; then
+		owntask_call page '{}' "$W/own_res.json" "$JW/page.err" 60 || echo "  owntask: the page dump after $name failed ($(head -c 200 "$JW/page.err"))"
+	fi
 	echo "  rc $rc $(grep -E '^(job|target|diff|outside)' "$JW/$name.out" | head -n 3 | tr '\n' ' ' | cut -c1-200)"
 	# a file or command the tool could not find is said in the log, where the driver stops on it
 	grep -Eh 'No such file or directory|command not found|: not found' "$JW/$name.out" "$JW/$name.err" | head -n 3 | sed 's/^/  tool: /'
@@ -278,6 +349,17 @@ EOF
 			reset_gpu; kregs_restore || { echo "## STOP: a kreg did not go back to its default after $name"; exit 19; }
 		fi
 		mark "kreg-restored $name"
+	fi
+	# an owntask row that ended ok: the health gate (fill and triangle) with the task armed
+	if [ -n "$OWN_BLOB" ] && [ "$class" = ok ]; then
+		owntask_call gate '{}' "$JW/gate.json" "$JW/gate.err" 120
+		r=$?
+		keep "$name" "$JW/gate.json" ".gate.json"
+		mark "owntask-gate $name"
+		if [ "$r" -ne 0 ] || ! json_ok "$JW/gate.json"; then
+			echo "## STOP: the gate after $name failed (status $r, $(head -c 300 "$JW/gate.json" | tr '\n' ' ')): recovery, then stop"
+			reset_gpu; health "$name" </dev/null; exit 16
+		fi
 	fi
 	case "$class" in
 	ok)
@@ -337,10 +419,24 @@ EOF
 	if [ "$after" = 1 ]; then strict_health "$name" </dev/null; fi
 	rm_work "$JW"
 done
+if [ -n "$OWN_BLOB" ]; then
+	# the disarm: fwtask_run.py's reset (own_arm off, ticks, health), the stage's last reset
+	JW=$WROOT/disarm; mkdir -p "$JW"
+	mark "owntask-disarm $STAGE $OWN_BLOB"
+	owntask_call reset '{}' "$JW/reset.json" "$JW/reset.err" 120
+	r=$?
+	keep owntask "$JW/reset.json" ".reset.json"
+	if [ "$r" -ne 0 ] || ! json_ok "$JW/reset.json"; then
+		echo "## STOP: the own-task reset at the end of $STAGE did not disarm (status $r)"; exit 13
+	fi
+	rm_work "$JW"
+fi
 miss=$(required_missing | tr '\n' ' ')
 [ -z "$miss" ] || { echo "## STOP: the scorer reads $miss, which the stage did not keep"; exit 23; }
 JW=$WROOT/end; mkdir -p "$JW"
-reset_gpu || { echo "## STOP: the reset after the last job failed"; exit 13; }
+if [ -z "$OWN_BLOB" ]; then
+	reset_gpu || { echo "## STOP: the reset after the last job failed"; exit 13; }
+fi
 health end </dev/null
 rm_work "$JW"
 echo "## end: $njob jobs of $STAGE"

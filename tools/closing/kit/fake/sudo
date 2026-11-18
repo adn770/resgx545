@@ -16,10 +16,15 @@
 # world token miscinfobad: a MISMATCH (status 0), miscinfofail: the read fails (status 1).
 # regs shows CR_CACHE_CTRL (0x0804) as the laptop's snapshots read it: 0x0000ffff after a reset,
 # 0x1000ffff once a tool ran ($FAKE_DIR/cc).
+# `python3 .../kit/fwtask_run.py SUB JSON` (the kit's owntask_call) runs fake/fwtask.py, the fake
+# of the own-task runner; a reset disarms its task and logs "kit reset" in $FAKE_DIR/own.log.
 [ "${1:-}" = "-n" ] && shift
 DB=${KIT_DEBUGFS:?}; R=${FAKE_DBGREAL:?}; F=${FAKE_DIR:?}
 if [ "$1" = timeout ]; then shift; [ "$1" = "-k" ] && shift 2; shift; fi
 case "$1" in dmesg) cat "${KIT_KMSG:?}"; exit 0 ;; journalctl) exit 1 ;; esac
+if [ "$1" = python3 ]; then
+	case "${2:-}" in */kit/fwtask_run.py) shift 2; exec "${KIT_PY:?}" "${KIT_FAKE:?}/fwtask.py" "$@" ;; esac
+fi
 regs() {
 	local w=0 a=0
 	read -r st aa < "$F/state"
@@ -57,6 +62,7 @@ if [ "$1" = tee ]; then
 		} >> "$KIT_KMSG"
 		echo idle > "$F/state"
 		echo 0x0000ffff > "$F/cc"
+		rm -f "$F/own"; echo "kit reset" >> "$F/own.log"
 		exit 0 ;;
 	"$DB/kreg")
 		read -r v; echo "kreg $v" >> "$F/writes"
