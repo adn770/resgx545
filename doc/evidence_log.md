@@ -9808,6 +9808,15 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   RULE (b) other size: ... not decided'; 'Q073 RULE: NARROW: (a) decided; open: (b)'; the offsets
   were formed post hoc from E1143 and are held out here.
   *isp; HW; data: `render-closing-r35-o0b:out/20261118-091726/o/`, `render-closing-r35-o0b:fold/`.*
+- `E1148` r36-n3 stage own (module C01FB320, fork c78059370315, flagged, user present): our EDM task
+  emitsa, armed on slot 0, ran the one allowed emitpds form (the firmware's `.tasks.taske` word, the
+  kernel's control word 0x01000100, image address >> 4 and 0) on its first tester command and its
+  entry 1, which the kernel's PDS image starts with doutu, left no write within 200 ms (slots 2-4
+  kept the host's fill, state 0): 'N3 RULE: NONE: entry 1 never ran after the emit (e1-a): the
+  landing stays open', 'Q128 RULE: NARROW'; post hoc, the EDM's tick had stopped by the end of the
+  window with no BIF fault, and the kit's reset recovered it (fill and triangle exact); where an
+  emitted douta lands stays open.
+  *edm; HW; data: `render-closing-r36-n3:out/20261118-152130/own/`, `render-closing-r36-n3:fold/`.*
 
 ## By unit
 
@@ -9834,7 +9843,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148.
 
 ### firmware
 
