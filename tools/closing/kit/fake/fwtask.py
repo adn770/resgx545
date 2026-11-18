@@ -157,7 +157,7 @@ def main(argv):
         return arm(a)
     if sub == "run":
         return run(a)
-    log(sub)
+    log(f"gate {os.environ.get('FWTASK_HEALTH_TOOL', '-')}" if sub == "gate" else sub)
     if sub == "page":
         emit({"page": page()})
     elif sub == "gate":

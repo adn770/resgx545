@@ -120,3 +120,17 @@ def test_a_job_reads_the_extra_result_slots_it_names_after_filling_them():
                             "4": [0x140, 0x141, 0x142, 0x143]}
     out = FR.one_cmd(FakeRes(), 1, {}, 8, {})
     assert "slots" not in out
+
+
+def test_the_gate_runs_the_health_tool_the_environment_names(monkeypatch):
+    # the kit passes its session's pinned health tool; the runner must not fall back to its own
+    calls = []
+    monkeypatch.setenv("FWTASK_HEALTH_TOOL", "/home/u/sgxfive-test-t30")
+    monkeypatch.setattr(FR, "sh", lambda cmd, check=True: calls.append(cmd) or "")
+    FR.gate()
+    assert calls and all(c.startswith("/home/u/sgxfive-test-t30 ") for c in calls), calls
+
+
+def test_every_health_tool_call_goes_through_the_one_name():
+    src = (pathlib.Path(FR.__file__)).read_text()
+    assert src.count("/home/jtorra/sgxfive-test") == 1, "a call names the tool past health_tool()"

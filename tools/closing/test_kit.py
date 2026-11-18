@@ -2640,6 +2640,11 @@ def test_an_owntask_stage_arms_once_runs_each_job_without_a_reset_and_disarms(re
     mm = next(kp.glob("debug/mock.*/model"))
     log = own_log(mm)
     own = log[next(i for i, x in enumerate(log) if x.startswith("arm ")):]
+    # the gate runs the session's pinned health tool (t4), never the runner's default
+    gates = [x for x in own[:8] if x.startswith("gate")]
+    assert len(gates) == 2 and all(re.fullmatch(r"gate /\S+/sgxfive-test-rgn4", g)
+                                   for g in gates), log
+    own = ["gate" if x.startswith("gate") else x for x in own]
     assert own[:8] == ["arm slots=0x1 entry=0", "run o1 n=1 runid=1", "page", "gate",
                        "run o2 n=1 runid=2", "page", "gate", "reset"], log
     kept = mm / "out/model/own"

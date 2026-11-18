@@ -166,8 +166,8 @@ OWNTASK_PAGE = 1024
 OWNTASK_PROTOCOL = 6
 OWNTASK_WORDS = re.compile(r"^(-|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
 # the one laptop line that runs python besides sessioncheck premise: lib_kit.sh's owntask_call
-OWNTASK_LINE = ('sudo -n timeout -k 10 "$5" python3 "$KIT/fwtask_run.py" "$1" "$2" > "$3" '
-                '2> "$4" </dev/null')
+OWNTASK_LINE = ('sudo -n timeout -k 10 "$5" env FWTASK_HEALTH_TOOL="$ht" python3 '
+                '"$KIT/fwtask_run.py" "$1" "$2" > "$3" 2> "$4" </dev/null')
 OWNTASK_USE = r"owntask_call|fwtask_run"
 # the debugfs files the kit's fwtask_run.py reads or writes (arm, run, page, gate, reset): the
 # preflight of a session with an owntask stage wants them all in the loaded driver

@@ -210,7 +210,10 @@ miscinfo_read() { # NAME: debugfs miscinfo into $JW/miscinfo.out, kept as NAME.m
 # ---- owntask: the kit's fwtask_run.py in an owntask stage (run_stage.sh) -------------------------
 owntask_call() { # SUB JSON OUT ERR LIMIT: fwtask_run.py SUB JSON, its JSON to OUT, bounded by LIMIT s; its status
 	[ -n "${OWN_BLOB:-}" ] || { echo "owntask_call: stage $STAGE is not an owntask stage"; exit 7; }
-	sudo -n timeout -k 10 "$5" python3 "$KIT/fwtask_run.py" "$1" "$2" > "$3" 2> "$4" </dev/null
+	# the health gate runs the session's pinned health tool, not the runner's default
+	local ht
+	ht=$(tool_path "$HEALTH_TOOL")
+	sudo -n timeout -k 10 "$5" env FWTASK_HEALTH_TOOL="$ht" python3 "$KIT/fwtask_run.py" "$1" "$2" > "$3" 2> "$4" </dev/null
 }
 # json_ok FILE: fwtask_run.py's answer says ok at its top level (a nested health ok never counts)
 json_ok() { python3 "$KIT/sessioncheck.py" ownok "$1"; }

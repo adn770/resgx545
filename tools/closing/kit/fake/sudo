@@ -21,6 +21,7 @@
 [ "${1:-}" = "-n" ] && shift
 DB=${KIT_DEBUGFS:?}; R=${FAKE_DBGREAL:?}; F=${FAKE_DIR:?}
 if [ "$1" = timeout ]; then shift; [ "$1" = "-k" ] && shift 2; shift; fi
+if [ "$1" = env ]; then shift; while [[ ${1:-} == [A-Z_]*=* ]]; do export "$1"; shift; done; fi
 case "$1" in dmesg) cat "${KIT_KMSG:?}"; exit 0 ;; journalctl) exit 1 ;; esac
 if [ "$1" = python3 ]; then
 	case "${2:-}" in */kit/fwtask_run.py) shift 2; exec "${KIT_PY:?}" "${KIT_FAKE:?}/fwtask.py" "$@" ;; esac
