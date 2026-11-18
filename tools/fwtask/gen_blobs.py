@@ -17,7 +17,7 @@ HEADER = """; SPDX-License-Identifier: MIT
 ; Written from doc/specs/usse_isa.md and the records E475/E476 (pclink, lapc), E480 (wdf with
 ; nothing outstanding), E512 (stad then ldad), E146/E155 (the event task, pa0 to pa2); it is run
 ; as an EDM task from the page the kernel maps at heap + 0x20000 (index 0x4000). Rules: r0 to r31
-; only, no sa write except {sa}, no emit, no lock, every store the same value from every lane.
+; only, no sa write except {sa}, {emit}, no lock, every store the same value from every lane.
 """
 
 REG = {"R1": 0x0814 // 4, "R2": 0xa78 // 4}
@@ -30,8 +30,8 @@ WRITE, READ = 1, 9
 
 
 class Src:
-    def __init__(self, name, what, phase="11.29", sa="state.s"):
-        self.out = [HEADER.format(name=name, what=what, phase=phase, sa=sa)]
+    def __init__(self, name, what, phase="11.29", sa="state.s", emit="no emit"):
+        self.out = [HEADER.format(name=name, what=what, phase=phase, sa=sa, emit=emit)]
 
     def __call__(self, *lines):
         for ln in lines:
@@ -545,12 +545,68 @@ TRC_STAIRS = [8, 9, 12, 16, 24, 31, 32, 40, 48, 49, 64]
 TRCP_STAIRS = [32, 36, 40, 44, 48]          # 11.33
 
 
+EMIT_MARK, READ_MARK = 0x5a5a3301, 0x5a5a3302
+
+
+def gen_emitsa():
+    """Round 33 (N3): where an emitted PDS program's douta land. cmd 1 at entry 0 (armed on slot 0):
+    a marker and the run id in slot 1, cmd = 0 (the next tick does not emit again), a fence, then
+    the one emitpds form (the kernel's image: douta of sa0's and sa2's own values to attributes 0
+    and 2, doutu of entry 1) and the closed task. Entry 1, the task the image starts: pa0 to pa3 in
+    slot 2, sa0 to sa3 in slot 3, a marker and the run id in slot 4, state = done, the end."""
+    s = Src("emitsa", "round 33 (N3): one emitpds of the kernel's image (cmd 1) and the task it "
+            "starts (entry 1), which stores pa0 to pa3 and sa0 to sa3", phase="r33",
+            emit="one emitpds (the owned form, its sources the kernel's pds0 to pds2, E146, E488)")
+    prologue(s)
+    dispatch(s, [1])
+    s("c1:")
+    result_base(s, 1)
+    s("mov r7, #0x%08x" % EMIT_MARK,
+      "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
+      "wdf drc0")
+    store(s, 0, "r7")
+    store(s, 1, "r5")
+    s("mov r4, #0x00000000",
+      "stad [r1,+#%d], r4                  ; cmd = 0: one emit per command" % L.CMD,
+      "idf drc0, bif",
+      "wdf drc0",
+      "mov r2, #0xdeadbeef                 ; @patch pds0",
+      "mov r3, #0xdeadbeef                 ; @patch pds1",
+      "mov r4, #0xdeadbeef                 ; @patch pds2",
+      "emitpds.tasks.taske #0, r2, r3, r4, #0x0",
+      "br @tail")
+    s("@entry 1",
+      "reader:",
+      "mov r1, #0xdeadbeef                 ; @patch res+0")
+    result_base(s, 2)
+    s("mov r4, pa0", "mov r5, pa1", "mov r6, pa2", "mov r7, pa3")
+    for j, r in enumerate(("r4", "r5", "r6", "r7")):
+        store(s, j, r)
+    result_base(s, 3)
+    s("mov r4, sa0", "mov r5, sa1", "mov r6, sa2", "mov r7, sa3")
+    for j, r in enumerate(("r4", "r5", "r6", "r7")):
+        store(s, j, r)
+    result_base(s, 4)
+    s("mov r7, #0x%08x" % READ_MARK,
+      "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
+      "wdf drc0")
+    store(s, 0, "r7")
+    store(s, 1, "r5")
+    s("stad [r1,+#%d], r5" % L.RUNID_ECHO,
+      "mov r3, #0x%08x" % L.DONE,
+      "idf drc0, bif",
+      "wdf drc0",
+      "stad [r1,+#%d], r3                ; state = done" % L.STATE,
+      "own_end")
+    return s.text()
+
+
 def all_sources():
     d = {"null": gen_null(), "mem": gen_mem(), "ldr": gen_ldr(),
          "x9b_r1": gen_9b("R1"), "x9b_r2": gen_9b("R2"),
          "state": gen_state(), "events": gen_events(), "slow": gen_slow(),
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
-         "oomring2": gen_oomring2()}
+         "oomring2": gen_oomring2(), "emitsa": gen_emitsa()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

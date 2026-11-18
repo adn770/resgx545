@@ -480,7 +480,7 @@ srcversion, fork tip, laptop tools.
 
 ## Tool and fork versions
 
-- fork pin (`tools/forkpin.py`): 8bc0877e8603
+- fork pin (`tools/forkpin.py`): c78059370315
 - module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
@@ -493,7 +493,7 @@ srcversion, fork tip, laptop tools.
 - module srcversion 230E0EF50FFFD606C53AE3C: last named 2026-11-10, 3 sessions
 - module srcversion B21FDA82BD5E5CB5A627E3B: last named 2026-11-10, 9 sessions
 - `tools/closing/scorekit.py` sha256 d27010b698c7d622
-- `tools/closing/sessioncheck.py` sha256 50fd40eadf67ff6a
+- `tools/closing/sessioncheck.py` sha256 d6dec085558d1f47
 
 ## Known tool weaknesses
 
@@ -550,6 +550,12 @@ stays with what a session must do around it.
   only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
   and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
   outside them changes that test first.
+- an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
+  the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
+  the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
+  kit has no own-task job kind: a session runs `emitsa` through `tools/fwtask/fwtask_run.py`
+  (`arm` with `slots=0x1 entry=0`, then `run` jobs of `n` 1 with `slots` [2, 3, 4], the reader's
+  `pa0`-`pa3`, `sa0`-`sa3` and its marker), as phases 11.29 to 11.33 ran own tasks.
 
 ## Simulator coverage baseline
 

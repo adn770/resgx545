@@ -13,6 +13,9 @@ A task is written in assembler (asm/fwtask/*.s) with `usse-asm` text, plus three
                           the kernel resolves it only for the firmware file whose digest the
                           index was read from (E154), and refuses the arm otherwise
     p0 br @label          a branch to a label; written out as a numeric `br` offset
+    ; @patch pds0         ... with the control word of the kernel's PDS image (pds1: its address
+                          shifted right by four, pds2: the argument, 0): the three sources of the
+                          one emitpds form a task may hold (round 33, N3)
     own_end               the exit of a task that ends itself (E793, E817, E818, E830): the
                           `phas #0, #0, pixel, end, parallel` that declares the end, then `nop.end`;
                           a `.end` without that `phas` before it is a lint warning (lint()), not a
@@ -46,7 +49,11 @@ OWN_INDEX = 0x4000          # instruction index of the code page (heap + 0x20000
 MAX_INSNS = 1024            # the code page is 8 KiB
 MAX_PATCHES = 256
 MAX_ENTRIES = 4
-PATCH_KINDS = {"res": 1, "cont": 2}
+PATCH_KINDS = {"res": 1, "cont": 2, "pds": 3}
+PDS_SLOTS = 3               # a pds patch's slot: 0 the control word, 1 the address >> 4, 2 the argument
+# the one emitpds form (N3): its sources, s0 to s2, are these registers (E488's operand order)
+EMIT_REGS = (2, 3, 4)
+EMIT_ENTRY = 1              # the blob's entry the kernel's PDS image starts (its doutu)
 EXIT_SLOT = 4               # a continue patch's slot 4: the shared exit, not a slot of PDS #13
 # the one firmware file the kernel resolves cont4 for (tools/fwcutter/README.md's cut, format v3)
 EXIT_FW_SHA256 = "6a00268e9d4ca552c02e52651a42a2b4db3887d7fe626f209888369985162b0a"
@@ -146,6 +153,9 @@ FORMS = [
     ("lapc", "LAPC", ALL, 0xF800008000000000),                                         # #125
     ("alu-test", "PLAIN", ALL & ~_ALU_FREE, 0x48081081000C0000),                       # #24: and, xor, no write
     ("ima32", "IMA32", ALL, 0xD002008081020089),                                       # #179
+    # round 33 (N3): the one emitpds form, exactly `emitpds.tasks.taske #0, r2, r3, r4, #0x0`; its
+    # sources must hold the kernel's patched values (pass 6) and it runs once per task (pass 7)
+    ("emitpds-own", "EMITPDS", ALL, 0xFB20B00000008184),                                # #149
     ("ldad", "LOAD_ABS", ALL & ~(DSTN | SRC0N | SRC1N), 0xE82B0002A0000000),               # #30
     ("stad", "STORE_ABS", ALL & ~_STR_FREE, 0xF022000080000000),                            # #33
     ("ldr-imm", "LDR", ALL & ~_LDR_FREE, 0xFE21000020000000),                          # #145
@@ -183,12 +193,19 @@ def limm_get(insn: int) -> int:
     return (insn & 0x1FFFFF) | (insn >> 36 & 0x1F) << 21 | (insn >> 44 & 0x3F) << 26
 
 
-def apply_patches(words, patches, res_addr: int, cont: dict[int, int]) -> list[int]:
+def apply_patches(words, patches, res_addr: int, cont: dict[int, int],
+                  pds: dict[int, int] | None = None) -> list[int]:
     """What the kernel overlay does to the blob: res+N -> res_addr + N, contK -> cont[K] (cont[4]:
-    the shared exit's index, which the caller has to give)."""
+    the shared exit's index, which the caller has to give), pdsK -> pds[K] (the image's control
+    word, address >> 4 and argument)."""
     out = list(words)
     for p in patches:
-        v = res_addr + p.addend if p.kind == "res" else cont[int(p.kind[4:])] + p.addend
+        if p.kind == "res":
+            v = res_addr + p.addend
+        elif p.kind.startswith("pds"):
+            v = (pds or {})[int(p.kind[3:])]
+        else:
+            v = cont[int(p.kind[4:])] + p.addend
         out[p.index] = limm_set(out[p.index], v & 0xFFFFFFFF)
     return out
 
@@ -242,6 +259,9 @@ def _patch_kind(kind: str) -> tuple[int, int] | None:
     m = re.fullmatch(r"cont(\d+)", kind)
     if m and int(m.group(1)) < 256:
         return PATCH_KINDS["cont"], int(m.group(1))
+    m = re.fullmatch(r"pds(\d+)", kind)
+    if m and int(m.group(1)) < 256:
+        return PATCH_KINDS["pds"], int(m.group(1))
     m = re.fullmatch(r"kind(\d+)", kind)           # a kind byte of a hand-made blob (tests)
     if m and int(m.group(1)) < 256:
         return int(m.group(1)), 0
@@ -251,6 +271,7 @@ def _patch_kind(kind: str) -> tuple[int, int] | None:
 RES_SIZE = 0x1000           # the results page (the kernel's SGX_OWN_RES_SIZE)
 TRACKED = 32                # the registers a store or load base may name (the stock 32 temporaries)
 TOP = 0xffff                # a register's state in the base analysis: unknown (else the page offset)
+PDS_STATE = 0xfff0          # + slot: the register holds the kernel's pds<slot> value
 
 
 class Why:
@@ -274,6 +295,9 @@ class Why:
     ENTRY = "entry outside the blob or inside a continue triple"
     BASE = "load or store base is not the results page"
     PA = "mov to a pa register not on the list"
+    EMIT_ARGS = "emitpds sources are not the kernel's image"
+    EMIT_ONCE = "emitpds can run twice"
+    EMIT_ENTRY = "emitpds without the started task's entry"
 
 
 PA_OK = (2, 3, 4)           # the pa registers a mov may write (R3-K3)
@@ -309,6 +333,8 @@ def verify_why(words: list[int], patches: list[Patch], regs: Regs, entries=(),
                 err.append((i, Why.BR_OUT, f"br leaves the blob (target {t})"))
         elif kind == "MOVPA" and dst_num(w) not in PA_OK:
             err.append((i, Why.PA, f"mov to pa{dst_num(w)}: only pa2 to pa4"))
+        elif kind == "EMITPDS" and kinds[:i].count("EMITPDS"):
+            err.append((i, Why.EMIT_ONCE, "a second emitpds"))
     if err:
         return err
     # pass 2: the patches
@@ -319,18 +345,20 @@ def verify_why(words: list[int], patches: list[Patch], regs: Regs, entries=(),
             err.append((p.index, Why.PATCH_LIMM, f"patch at {p.index}: not an unpredicated mov limm"))
             continue
         k = _patch_kind(p.kind)
-        if k is not None and k[0] == PATCH_KINDS["cont"] and k[1] > EXIT_SLOT:
+        if k is not None and ((k[0] == PATCH_KINDS["cont"] and k[1] > EXIT_SLOT) or
+                              (k[0] == PATCH_KINDS["pds"] and k[1] >= PDS_SLOTS)):
             err.append((p.index, Why.PATCH_SLOT, f"patch at {p.index}: slot {k[1]}"))
         elif k is None or k[0] not in PATCH_KINDS.values():
             err.append((p.index, Why.PATCH_KIND, f"patch at {p.index}: unknown kind {p.kind}"))
         elif pk[p.index]:
             err.append((p.index, Why.PATCH_TWICE, f"patch at {p.index}: a second patch"))
-        elif k[0] == PATCH_KINDS["cont"] and p.addend != 0:
-            err.append((p.index, Why.PATCH_ADD, f"patch at {p.index}: a continue patch has no addend"))
+        elif k[0] in (PATCH_KINDS["cont"], PATCH_KINDS["pds"]) and p.addend != 0:
+            err.append((p.index, Why.PATCH_ADD, f"patch at {p.index}: a continue or pds patch has no addend"))
         elif k[0] == PATCH_KINDS["res"] and p.addend >= RES_SIZE:
             err.append((p.index, Why.PATCH_ADD, f"patch at {p.index}: addend 0x{p.addend:x} past the page"))
         else:
-            pk[p.index], padd[p.index] = k[0], p.addend
+            pk[p.index] = k[0]
+            padd[p.index] = k[1] if k[0] == PATCH_KINDS["pds"] else p.addend
     if err:
         return err
     # pass 3: the continue triple, and nothing else touches pclink or branches into it
@@ -361,10 +389,45 @@ def verify_why(words: list[int], patches: list[Patch], regs: Regs, entries=(),
             err.append((None, Why.ENTRY, f"entry {e}"))
     if err:
         return err
+    if "EMITPDS" in kinds and len(entries) <= EMIT_ENTRY:
+        return [(kinds.index("EMITPDS"), Why.EMIT_ENTRY, "an emitpds needs the started task's entry 1")]
     # pass 6: a load or store base is a register that every path from an entry set to the results
     # page, never written since, and the address stays in the page (the EDM's page directory maps
-    # the closed code and data too: a base from anywhere else could store into it)
-    return _check_bases(words, kinds, pk, padd, entries)
+    # the closed code and data too: a base from anywhere else could store into it); the emitpds's
+    # sources hold the kernel's pds0 to pds2 the same way
+    err = _check_bases(words, kinds, pk, padd, entries)
+    if err:
+        return err
+    # pass 7: the emitpds runs once per task: nothing after it reaches it again, nor does the task
+    # the image starts (entry 1)
+    if "EMITPDS" in kinds:
+        e = kinds.index("EMITPDS")
+        if e in _reach(words, kinds, [e + 1, entries[EMIT_ENTRY]]):
+            return [(e, Why.EMIT_ONCE, "the emitpds is reached again")]
+    return []
+
+
+def _succ(i: int, w: int, kind: str) -> list[int]:
+    """The words control goes to after word i (none past the end, after an end or a lapc)."""
+    if kind == "LAPC" or (kind == "NOP" and w >> 50 & 1):
+        return []
+    if kind == "BR":
+        return [br_target(i, w)] + ([i + 1] if pred_of("BR", w) else [])
+    return [i + 1]
+
+
+def _reach(words, kinds, starts) -> set[int]:
+    """Every word some path from one of `starts` reaches (the starts included)."""
+    n = len(words)
+    seen: set[int] = set()
+    work = [s for s in starts if 0 <= s < n]
+    while work:
+        i = work.pop()
+        if i in seen:
+            continue
+        seen.add(i)
+        work += [j for j in _succ(i, words[i], kinds[i]) if 0 <= j < n]
+    return seen
 
 
 def _effects(kind: str, w: int, k: int, add: int, st: list[int]) -> list[int]:
@@ -373,7 +436,7 @@ def _effects(kind: str, w: int, k: int, add: int, st: list[int]) -> list[int]:
     d = dst_num(w)
     if kind == "MOVLIMM":
         if d < TRACKED:
-            out[d] = add if k == PATCH_KINDS["res"] else TOP
+            out[d] = add if k == PATCH_KINDS["res"] else PDS_STATE + add if k == PATCH_KINDS["pds"] else TOP
     elif kind == "MOVREG":
         if not w >> 51 & 1 and d < TRACKED:
             out[d] = TOP
@@ -420,6 +483,10 @@ def _check_bases(words, kinds, pk, padd, entries):
             flow(i + 1, out)
     err = []
     for i in range(n):
+        if st[i] is not None and kinds[i] == "EMITPDS":
+            if any(st[i][r] != PDS_STATE + s for s, r in enumerate(EMIT_REGS)):
+                err.append((i, Why.EMIT_ARGS, "an emitpds source is not the kernel's pds value"))
+            continue
         if st[i] is None or kinds[i] not in ("LOAD_ABS", "STORE_ABS"):
             continue
         b = base_num(words[i])
@@ -464,7 +531,8 @@ def parse_blob(b: bytes) -> Blob:
     patches = []
     for k in range(np_):
         idx, kind, slot, add = struct.unpack_from("<HBBI", b, 16 + 8 * n + 8 * k)
-        patches.append(Patch(idx, "res" if kind == 1 else f"cont{slot}" if kind == 2 else f"kind{kind}", add))
+        patches.append(Patch(idx, "res" if kind == 1 else f"cont{slot}" if kind == 2 else
+                             f"pds{slot}" if kind == 3 else f"kind{kind}", add))
     entries = list(struct.unpack_from(f"<{ne}H", b, 16 + 8 * n + 8 * np_))
     return Blob(words, patches, entries)
 

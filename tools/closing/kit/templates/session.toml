@@ -28,6 +28,9 @@ forbid_options = []                 # options no row may use, besides the kit's
 # the stages in run order; alarm: the Mac's bound on the stage (s); gate = true: score.py gate;
 # on_stop = "end": the stage's rc 24 (stopped by its rule) ends the session (default "next");
 # class = "flagged": a stage of planned faults, hangs or kreg writes, after every safe stage
+# owntask = { blob = "NAME", arm = "slots=0x1 entry=0" }: a stage of one of our own firmware
+# tasks (flagged only; its rows `name|set|risk|-|owntask|{"cmd": 1, "params": {}, "timeout_ms":
+# 100}`, its blob owntask/NAME.blob, the sha256 asm/fwtask/fwtask.map gives NAME; HACKING.md)
 [stages]
 s0 = { alarm = 1800 }
 

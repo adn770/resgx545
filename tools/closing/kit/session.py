@@ -16,7 +16,9 @@ the rest:
                snapshots (use "@snap0" or "@snap0:ROW") or for a sample interval (use "@cal:STAGE",
                a calibration stage of the same register set that runs first); exit 1 on an @snap0
                or @cal form that names no row or stage, a stage not before, or another register
-               set. freeze prints the warnings and refuses the errors
+               set; and the owntask stages (round 36): the blob present and the sha256 the
+               resgx545 asm/fwtask/fwtask.map gives it, the arm line, the stage flagged, the
+               rows' jobs and knobs. freeze prints the warnings and refuses the errors
   freeze  KP   write PREDICTIONS.sha256, FROZEN.sha256 and FROZEN.commits; refuses a kit copy
                that is not its blob at the pinned commit, a guard finding, an unreadable control,
                an existing freeze
@@ -35,13 +37,14 @@ the rest:
                tool answering by argv (mock/world.py), for every world of its EXPECT; no clock
   files   KP [--laptop]   the freeze's file list (or the laptop list)
 
-Exit status of run: the laptop runner's own (kit/run_stage.sh: 1 preflight ... 25 premise) for a
-stage that stopped (after the copy back), and 20 the freeze does not verify, 38 the scorer failed
-or printed no SUMMARY, 39 the attempt's stage directory exists, 43 a file the scorer reads was
-not kept, 44 the premise (a control with no reading), 45 a laptop command or file was missing
-(a "command not found" or "No such file" line in the stage's log), 142 a bounded command reached
-its limit. A runner status 24 (the stage stopped by its rule) goes on to the next stage, unless
-the stage declares `on_stop = "end"` in session.toml: then the session ends there, status 24.
+Exit status of run: the laptop runner's own (kit/run_stage.sh: 1 preflight ... 26 own-task arm)
+for a stage that stopped (after the copy back), and 20 the freeze does not verify, 38 the scorer
+failed or printed no SUMMARY, 39 the attempt's stage directory exists, 43 a file the scorer
+reads was not kept, 44 the premise (a control with no reading), 45 a laptop command or file was
+missing (a "command not found" or "No such file" line in the stage's log), 142 a bounded command
+reached its limit. A runner status 24 (the stage stopped by its rule) goes on to the next stage,
+unless the stage declares `on_stop = "end"` in session.toml: then the session ends there, status
+24.
 """
 import argparse
 import glob
@@ -69,11 +72,16 @@ import scorekit  # noqa: E402
 # the kit files of a session's kit/ and their sources in the resgx545 tree
 KIT_SOURCES = {f"kit/{n}": f"tools/closing/kit/{n}" for n in (
     "session.py", "lib_kit.sh", "run_stage.sh", "kitscore.py", "fake/sudo", "fake/timeout",
-    "fake/df", "fake/modinfo", "fake/sha256sum", "fake/tool.sh", "fake/tool.py", "fake/ssh.py")}
+    "fake/df", "fake/modinfo", "fake/sha256sum", "fake/tool.sh", "fake/tool.py", "fake/ssh.py",
+    "fake/fwtask.py")}
 KIT_SOURCES.update({"kit/scorekit.py": "tools/closing/scorekit.py",
-                    "kit/sessioncheck.py": "tools/closing/sessioncheck.py"})
-LAPTOP_KIT = ("kit/lib_kit.sh", "kit/run_stage.sh", "kit/sessioncheck.py", "kit/scorekit.py")
-GENERATED = ("run/session.env", "run/required.tsv", "run/staged.lst")
+                    "kit/sessioncheck.py": "tools/closing/sessioncheck.py",
+                    # the own-task runner of phase 11.29 (arm, run, page, gate, reset), reused
+                    # as it is by an owntask stage (round 36), never reimplemented in the kit
+                    "kit/fwtask_run.py": "tools/fwtask/fwtask_run.py"})
+LAPTOP_KIT = ("kit/lib_kit.sh", "kit/run_stage.sh", "kit/sessioncheck.py", "kit/scorekit.py",
+              "kit/fwtask_run.py")
+GENERATED = ("run/session.env", "run/required.tsv", "run/staged.lst", "run/owntask.tsv")
 # the session subtrees no freeze names: out/ (kept records, lead logs), debug/ (the mock, the
 # library mock) and fold/ (the fold's post-run notes and tables); no laptop file comes from them
 NOT_FROZEN_DIRS = ("out", "debug", "fold")
@@ -132,6 +140,39 @@ MISCINFO_USE = r"\$\{?D\}?/miscinfo|dbg_cat +miscinfo|miscinfo_read"
 # a stage's class: safe (the default), or flagged (a planned fault or hang, a register write of
 # ours): every flagged stage runs after every safe one, and only a flagged stage writes a kreg
 STAGE_CLASSES = ("safe", "flagged")
+# owntask (round 36, the round-33 emitpds design's kit job): a stage that runs one of our
+# own firmware (EDM) tasks through the kit's copy of tools/fwtask/fwtask_run.py. session.toml
+# declares it on the stage, `owntask = { blob = "emitsa", arm = "slots=0x1 entry=0" }`; the
+# session holds the blob as owntask/BLOB.blob (tools/fwtask/fwtask.py OUTDIR asm/fwtask/BLOB.s),
+# whose sha256 must be the one asm/fwtask/fwtask.map gives BLOB at the freeze's resgx545 commit
+# (the freeze pins the map). Its rows are `name|set|risk|-|owntask|{"cmd": N, "params": {...},
+# "timeout_ms": T}`: one command a job. The runner arms once after the stage's first health,
+# runs each job with no reset before it (a reset disarms), dumps the results page and runs the
+# health gate after each, and disarms with fwtask_run.py's reset at the stage's end. An
+# owntask stage is a planned firmware break if wrong: it must be flagged.
+OWNTASK_TOOL = "owntask"
+OWNTASK_MAP = "asm/fwtask/fwtask.map"
+OWNTASK_KEYS = ("blob", "arm")
+# own_arm's line as the phase 11.29-11.33 runner writes it (run_stage.py): one entry per slot of
+# the mask; trc 32 and up need the hazard word (run_stage.py TRC_HAZARD_FROM, E540), never armed
+# from the kit
+OWNTASK_ARM = re.compile(r"slots=0x([0-9a-f]{1,2}) entry=([0-9]{1,2}(?:,[0-9]{1,2})*)"
+                         r"(?: trc=([0-9]{1,2}))?")
+OWNTASK_TRC_MAX = 31
+OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms")
+# the results page (tools/fwtask/layout.py): 1024 dwords, 0-5 the protocol's (magic, cmd, state,
+# run id, overlap, run id echo), which a job's params never write
+OWNTASK_PAGE = 1024
+OWNTASK_PROTOCOL = 6
+OWNTASK_WORDS = re.compile(r"^(-|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
+# the one laptop line that runs python besides sessioncheck premise: lib_kit.sh's owntask_call
+OWNTASK_LINE = ('sudo -n timeout -k 10 "$5" env FWTASK_HEALTH_TOOL="$ht" python3 '
+                '"$KIT/fwtask_run.py" "$1" "$2" > "$3" 2> "$4" </dev/null')
+OWNTASK_USE = r"owntask_call|fwtask_run"
+# the debugfs files the kit's fwtask_run.py reads or writes (arm, run, page, gate, reset): the
+# preflight of a session with an owntask stage wants them all in the loaded driver
+OWNTASK_DEBUGFS = ["own_code", "own_arm", "own_res", "load", "boot", "status", "miscinfo",
+                   "kreg"]
 
 
 class Stop(Exception):
@@ -203,10 +244,13 @@ def uses_miscinfo(kp, c=None):
 
 def debugfs_need(kp, c=None):
     """The debugfs files the preflight wants besides reset, regs and the knobs: session.toml's
-    debugfs = [...], and miscinfo when a row reads it (pre:miscinfo)."""
+    debugfs = [...], miscinfo when a row reads it (pre:miscinfo), and the files fwtask_run.py
+    uses when a stage is an owntask stage (OWNTASK_DEBUGFS)."""
     c = c or config(kp)
-    return [*c["debugfs"], *(["miscinfo"] if uses_miscinfo(kp, c)
-                             and "miscinfo" not in c["debugfs"] else [])]
+    out = [*c["debugfs"], *(["miscinfo"] if uses_miscinfo(kp, c) else [])]
+    if owntask_stages(c):
+        out += OWNTASK_DEBUGFS
+    return list(dict.fromkeys(out))
 
 
 def flagged_stages(c):
@@ -234,6 +278,8 @@ def laptop_files(kp, c=None):
     if (kp / "run/hooks.sh").exists():
         out.append("run/hooks.sh")
     out += [f"tables/{s}.txt" for s in stages(c)]
+    out += [f"owntask/{d.get('blob')}.blob" for d in owntask_stages(c).values()
+            if isinstance(d, dict) and isinstance(d.get("blob"), str)]
     for g in c["files"].get("laptop", []):
         hits = sorted(glob.glob(str(kp / g)))
         out += [pathlib.Path(h).relative_to(kp).as_posix() for h in hits if os.path.isfile(h)]
@@ -299,7 +345,8 @@ def generated(kp):
     rq = "".join(f"{s}\t{f}\n" for s in stages(c) for f in req.get(s, ()))
     staged = [f for f in laptop_files(kp, c)]
     return {"run/session.env": "\n".join(env) + "\n", "run/required.tsv": rq,
-            "run/staged.lst": "".join(f + "\n" for f in staged)}
+            "run/staged.lst": "".join(f + "\n" for f in staged),
+            "run/owntask.tsv": owntask_table(kp, c)}
 
 
 def prepare(kp):
@@ -367,6 +414,7 @@ def guard(kp):
             bad.append(f"session.toml: stage {seen_flagged} is flagged and runs before the safe "
                        f"stage {st}: every flagged stage runs after every safe stage")
     bad += _kreg_decl(c)
+    bad += owntask_problems(kp, c)
     if c.get("health_tool") not in c["tools"]:
         bad.append("session.toml: health_tool is not one of [tools]")
     try:
@@ -401,7 +449,8 @@ def guard(kp):
                     and not re.match(r"\s*(D=\$KIT_DEBUGFS|D=\$DL|DL=/sys/kernel/debug/dri/0/sgx)\s*$", ln):
                 bad.append(f"{where}: debugfs access without sudo -n")
             if re.search(r"python|perl", ln) and not re.search(
-                    r"python3 (\"\$KIT/sessioncheck.py\" premise|-c 'import sys; sys.exit\(sys.version_info < \(3, 10\)\)')", ln):
+                    r"python3 (\"\$KIT/sessioncheck.py\" (premise|ownok)|-c 'import sys; sys.exit\(sys.version_info < \(3, 10\)\)')", ln) \
+                    and (hook or ln.strip() != OWNTASK_LINE):
                 bad.append(f"{where}: python or perl on the laptop (only sessioncheck.py premise)")
             if hook and re.search(r"(^|[^a-z_])(rm|mktemp|mkfifo)( |$)", ln):
                 bad.append(f"{where}: rm, mktemp or mkfifo in a hook (the kit owns the work directories)")
@@ -409,6 +458,9 @@ def guard(kp):
                 bad.append(f"{where}: a debugfs write in a hook (the kit writes only reset and the declared knobs)")
             if hook and re.search(r"(^|[^a-z_])(ssh|scp|sudo) ", ln) and not re.search(r"sudo -n (timeout -k|cat)", ln):
                 bad.append(f"{where}: ssh, scp or sudo in a hook")
+            if hook and re.search(OWNTASK_USE, ln):
+                bad.append(f"{where}: an own-task call in a hook (the kit's runner alone arms, "
+                           "runs, gates and disarms)")
             if hook and re.search(r"(^|[^a-z_])exit ", ln):
                 bad.append(f"{where}: exit in a hook (a hook prints a reason; the runner stops)")
     if (kp / "run/hooks.sh").exists():
@@ -466,7 +518,7 @@ def guard(kp):
                            "reset)")
             if sum(w.startswith("idle:") for w in words) > 1:
                 bad.append(f"{where}: more than one idle: word (one idle:S a row)")
-            if tool not in c["tools"]:
+            if tool not in c["tools"] and tool != OWNTASK_TOOL:
                 bad.append(f"{where}: tool {tool} is not one of session.toml [tools]")
             bad += [f"{where}: {x}" for x in _wrapped(c, tool, args)]
             if sset == "control" and not any(w.startswith("reads:") for w in words):
@@ -578,6 +630,188 @@ def _wrapped(c, tool, args):
     return bad
 
 
+# ---- owntask: one of our own firmware tasks (round 36) -----------------------------------------
+def owntask_stages(c):
+    """{stage: its owntask table} of the stages that declare one."""
+    return {s: d["owntask"] for s, d in c["stages"].items() if "owntask" in d}
+
+
+def owntask_map(c):
+    """(the fwtask.map of the freeze's resgx545 commit as a dict, None) or (None, why)."""
+    import json
+    rev = c["freeze"].get("resgx545")
+    main = repo_dirs()["resgx545"]
+    commit = git_commit(main, rev) if rev else None
+    if commit is None:
+        return None, f"session.toml [freeze] names no resgx545 commit of {main} to read " \
+                     f"{OWNTASK_MAP} at"
+    blob = git_blob(main, commit, OWNTASK_MAP)
+    if blob is None:
+        return None, f"{OWNTASK_MAP} is not in resgx545 {commit[:12]}"
+    try:
+        return json.loads(blob), None
+    except ValueError:
+        return None, f"{OWNTASK_MAP} at resgx545 {commit[:12]} is not JSON"
+
+
+def owntask_arm_problem(arm):
+    """Why an own_arm line is not one the kit arms (None: it is)."""
+    m = OWNTASK_ARM.fullmatch(arm) if isinstance(arm, str) else None
+    if m is None:
+        return (f"arm {arm!r} is not `slots=0xMASK entry=E[,E...]` with an optional `trc=T` "
+                "(lower-case hex mask, decimal entries)")
+    mask, entries, trc = int(m[1], 16), m[2].split(","), m[3]
+    if mask == 0:
+        return f"arm {arm!r} arms no slot (slots=0x0)"
+    if len(entries) != bin(mask).count("1"):
+        return f"arm {arm!r} gives {len(entries)} entries for {bin(mask).count('1')} slots"
+    if trc is not None and not 1 <= int(trc) <= OWNTASK_TRC_MAX:
+        return (f"arm {arm!r}: trc {trc} is out of 1 to {OWNTASK_TRC_MAX} (32 and up need the "
+                "hazard word, which the kit never arms)")
+    return None
+
+
+def owntask_job(args, job_timeout):
+    """(the job fwtask_run.py run takes: {n, params, timeout_ms}, []) of an owntask row's args,
+    or (None, [what is wrong])."""
+    import json
+    try:
+        a = json.loads(args)
+    except ValueError:
+        a = None
+    if not isinstance(a, dict):
+        return None, [f"args {args!r} are not a JSON object "
+                      '{"cmd": N, "params": {...}, "timeout_ms": T}']
+    bad = [f"args key {k!r} is not one of {', '.join(OWNTASK_JOB_KEYS)}"
+           for k in a if k not in OWNTASK_JOB_KEYS]
+    cmd, params, tmo = a.get("cmd"), a.get("params", {}), a.get("timeout_ms")
+    if type(cmd) is not int or not 1 <= cmd <= 0xffff:
+        bad.append(f"cmd {cmd!r} is not a command number 1 to 0xffff (0 is the tick's own "
+                   "tail call)")
+    if not isinstance(params, dict):
+        bad.append(f"params {params!r} is not an object {{dword: value}}")
+        params = {}
+    for k, v in params.items():
+        vals = v if isinstance(v, list) else [v]
+        if not (k.isdigit() and OWNTASK_PROTOCOL <= int(k) < OWNTASK_PAGE
+                and int(k) + len(vals) <= OWNTASK_PAGE):
+            bad.append(f"params dword {k!r} is not {OWNTASK_PROTOCOL} to {OWNTASK_PAGE - 1} "
+                       "(0-5 are the protocol's: magic, cmd, state, run id, overlap, echo)")
+        if not vals or any(type(x) is not int or not 0 <= x <= 0xffffffff for x in vals):
+            bad.append(f"params dword {k}: {v!r} is not a 32-bit value or a list of them")
+    if type(tmo) is not int or not 1 <= tmo <= job_timeout * 1000:
+        bad.append(f"timeout_ms {tmo!r} is not 1 to {job_timeout * 1000} (job_timeout)")
+    if bad:
+        return None, bad
+    return {"n": cmd, "params": params, "timeout_ms": tmo}, []
+
+
+def owntask_problems(kp, c=None):
+    """What is wrong with the session's owntask stages and rows, each 'WHERE: what'."""
+    import kitscore
+    kp = pathlib.Path(kp)
+    c = c or config(kp)
+    bad = []
+    own = owntask_stages(c)
+    if OWNTASK_TOOL in c["tools"]:
+        bad.append(f"session.toml: [tools] {OWNTASK_TOOL}: the name is reserved for the kit's "
+                   "owntask rows")
+    m, why = owntask_map(c) if own else ({}, None)
+    jt = int(c.get("job_timeout", 120))
+    for st in stages(c):
+        d = own.get(st)
+        where = f"session.toml: stage {st}"
+        if d is not None:
+            if not isinstance(d, dict):
+                bad.append(f"{where}: owntask is not a table {{ blob, arm }}")
+                d = {}
+            extra = sorted(set(d) - set(OWNTASK_KEYS))
+            if extra:
+                bad.append(f"{where}: owntask declares {', '.join(extra)}: it takes "
+                           f"{' and '.join(OWNTASK_KEYS)} only")
+            if c["stages"][st].get("class", "safe") != "flagged":
+                bad.append(f"{where}: an owntask stage is not flagged (class = \"flagged\"): "
+                           "an own firmware task is a planned firmware break if wrong")
+            blob = d.get("blob")
+            if not (isinstance(blob, str) and re.fullmatch(r"[a-z0-9_]+", blob)):
+                bad.append(f"{where}: owntask has no blob (a name of {OWNTASK_MAP})")
+            elif m is None:
+                bad.append(f"{where}: {why}")
+            elif not isinstance(m.get(blob), dict) or "sha256" not in m[blob]:
+                bad.append(f"{where}: blob {blob!r} is not in {OWNTASK_MAP}")
+            elif not (kp / "owntask" / f"{blob}.blob").is_file():
+                bad.append(f"{where}: owntask/{blob}.blob is missing (tools/fwtask/fwtask.py "
+                           f"OUTDIR asm/fwtask/{blob}.s writes it)")
+            elif sha_file(kp / "owntask" / f"{blob}.blob") != m[blob]["sha256"]:
+                bad.append(f"{where}: owntask/{blob}.blob hashes to "
+                           f"{sha_file(kp / 'owntask' / f'{blob}.blob')[:12]}, not the sha256 "
+                           f"{OWNTASK_MAP} gives {blob} ({m[blob]['sha256'][:12]})")
+            if "arm" not in d:
+                bad.append(f"{where}: owntask has no arm")
+            else:
+                a = owntask_arm_problem(d["arm"])
+                if a:
+                    bad.append(f"{where}: {a}")
+        f = kp / "tables" / f"{st}.txt"
+        if not f.exists():
+            continue
+        for row in _rows(f):
+            name, tool, args, words = row[0], row[4], row[5], row[3].split()
+            w = f"tables/{st}.txt {name}"
+            if tool == OWNTASK_TOOL and d is None:
+                bad.append(f"{w}: tool {OWNTASK_TOOL} in stage {st}, which is not an owntask "
+                           "stage (session.toml: owntask = { blob, arm })")
+            elif d is not None and tool != OWNTASK_TOOL:
+                bad.append(f"{w}: tool {tool}: an owntask stage runs owntask rows only")
+            elif d is not None:
+                bad += [f"{w}: knob {k}: an owntask row takes only - and reads:K (no reset, "
+                        "knob or register write between the arm and its disarm)"
+                        for k in words if not OWNTASK_WORDS.match(k)]
+                bad += [f"{w}: {x}" for x in owntask_job(args, jt)[1]]
+        p = kp / "predictions" / f"{st}.tsv"
+        if p.exists():
+            for case, quants in kitscore.predictions(str(kp), st).items():
+                for q in quants:
+                    try:
+                        idx = kitscore.res_index(q)
+                    except ValueError as e:
+                        bad.append(f"predictions/{st}.tsv {case}: {e}")
+                        continue
+                    if idx is not None and d is None:
+                        bad.append(f"predictions/{st}.tsv {case}: {q} reads the results page, "
+                                   f"and {st} is not an owntask stage")
+    return bad
+
+
+def owntask_table(kp, c=None):
+    """run/owntask.tsv: `arm STAGE BLOB SHA256 ARM` of each owntask stage (the sha256 the map
+    gives the blob) and `job STAGE NAME JSON` of each of its rows (fwtask_run.py run's job, with
+    its run id, the row's place in the stage), tab-separated; the runner reads its stage's."""
+    import json
+    c = c or config(kp)
+    own = owntask_stages(c)
+    out = ["# run/owntask.tsv: written by kit/session.py prepare from session.toml and the "
+           "tables; never edit"]
+    if not own:
+        return "\n".join(out) + "\n"
+    m, _ = owntask_map(c)
+    jt = int(c.get("job_timeout", 120))
+    for st, d in own.items():
+        if not isinstance(d, dict):
+            continue
+        blob = d.get("blob", "")
+        sha = ((m or {}).get(blob) or {}).get("sha256", "-") if isinstance(blob, str) else "-"
+        out.append(f"arm\t{st}\t{blob}\t{sha}\t{d.get('arm', '')}")
+        f = pathlib.Path(kp) / "tables" / f"{st}.txt"
+        rows = _rows(f) if f.exists() else []
+        for i, row in enumerate(rows, 1):
+            job, _ = owntask_job(row[5], jt) if row[4] == OWNTASK_TOOL else (None, [])
+            if job:
+                out.append(f"job\t{st}\t{row[0]}\t"
+                           + json.dumps(dict(job, runid=i), sort_keys=True))
+    return "\n".join(out) + "\n"
+
+
 # ---- the freeze ------------------------------------------------------------------------------
 def _pins(c):
     """[(repo, path)] of session.toml [freeze] pins."""
@@ -587,6 +821,8 @@ def _pins(c):
         if repo not in ("resgx545", "data") or not path:
             raise Stop(1, f"pin {p!r} is not resgx545:PATH or data:PATH")
         out.append((repo, path))
+    if owntask_stages(c) and ("resgx545", OWNTASK_MAP) not in out:
+        out.append(("resgx545", OWNTASK_MAP))     # the map an owntask blob was checked against
     return out
 
 
@@ -1399,6 +1635,7 @@ def main(argv=None):
             return 1 if bad else 0
         if a.cmd == "lint":
             warns, errs = lint_premises(a.kp)
+            errs = errs + owntask_problems(a.kp)
             print("\n".join(warns + [f"FAIL {e}" for e in errs]) or "lint: clean")
             return 1 if errs else 0
         if a.cmd == "prepare":

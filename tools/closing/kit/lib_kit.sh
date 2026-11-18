@@ -17,6 +17,11 @@
 #    KIT_KREGS (0x0a78), V one session.toml [kregs] declares, the register at its default before
 #    the write, V read back after it, the default written and read back after the job and again
 #    by the exit trap once any was written;
+#  - one of our own firmware tasks, an owntask stage's (round 36, run_stage.sh): the kit's copy of
+#    tools/fwtask/fwtask_run.py, through owntask_call alone (the one python line besides
+#    sessioncheck.py's premise and ownok), arms the staged blob once, runs one command a row,
+#    dumps the results page and gates after it, and resets at the stage's end; never in a hook,
+#    never in another stage;
 #  - every laptop command that can block is bounded by `timeout -k`; no wait loop (no while or
 #    until), single fixed sleeps whose length the mock sets to 0;
 #  - at least MIN_FREE_MB free on ~ before each job; the kernel log of a job is its slice after
@@ -201,6 +206,17 @@ miscinfo_read() { # NAME: debugfs miscinfo into $JW/miscinfo.out, kept as NAME.m
 	echo "  miscinfo before $1: status $r, $MISCINFO_WHY"
 	return 19
 }
+
+# ---- owntask: the kit's fwtask_run.py in an owntask stage (run_stage.sh) -------------------------
+owntask_call() { # SUB JSON OUT ERR LIMIT: fwtask_run.py SUB JSON, its JSON to OUT, bounded by LIMIT s; its status
+	[ -n "${OWN_BLOB:-}" ] || { echo "owntask_call: stage $STAGE is not an owntask stage"; exit 7; }
+	# the health gate runs the session's pinned health tool, not the runner's default
+	local ht
+	ht=$(tool_path "$HEALTH_TOOL")
+	sudo -n timeout -k 10 "$5" env FWTASK_HEALTH_TOOL="$ht" python3 "$KIT/fwtask_run.py" "$1" "$2" > "$3" 2> "$4" </dev/null
+}
+# json_ok FILE: fwtask_run.py's answer says ok at its top level (a nested health ok never counts)
+json_ok() { python3 "$KIT/sessioncheck.py" ownok "$1"; }
 
 # ---- the GPU: reset, registers ------------------------------------------------------------------
 NO_MORE_RESET=0

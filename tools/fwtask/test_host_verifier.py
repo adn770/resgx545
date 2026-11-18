@@ -33,7 +33,10 @@ def host_build() -> pathlib.Path:
     if cc is None or not (SGXFIVE / "sgxfive_owntask.c").is_file():
         pytest.skip(f"SKIPPED, NOT PASSED: no C compiler or no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX}")
     out = pathlib.Path(__import__("tempfile").mkdtemp(prefix="own_host_")) / "own_host"
-    flags = [] if "sgx_own_apply" in (SGXFIVE / "sgxfive_owntask.h").read_text() else ["-DHOST_NO_APPLY"]
+    head = (SGXFIVE / "sgxfive_owntask.h").read_text()
+    flags = [] if "sgx_own_apply" in head else ["-DHOST_NO_APPLY"]
+    if "const struct sgx_own_pds *pds" in head:        # the apply takes the emitpds image (N3)
+        flags.append("-DHOST_APPLY_PDS")
     r = subprocess.run([cc, "-std=gnu11", "-O1", "-Wall", "-Wextra", *flags, f"-I{HERE / 'host' / 'shim'}",
                         f"-I{SGXFIVE}", "-o", str(out), str(HERE / "host" / "own_host.c"),
                         str(SGXFIVE / "sgxfive_owntask.c"), str(SGXFIVE / "sgx_fw.c")],
@@ -81,7 +84,7 @@ def flips(words):
             yield i, b, words[:i] + [words[i] ^ 1 << b] + words[i + 1:]
 
 
-@pytest.mark.parametrize("name", ["null", "mem", "x9b_r1", "state"])
+@pytest.mark.parametrize("name", ["null", "mem", "x9b_r1", "state", "emitsa"])
 def test_c_and_python_agree_on_every_bit_flip_of_every_word(name, tmp_path):
     p = fwtask.parse_blob(fwtask.blob_of(name))
     muts = [fwtask.pack_blob(w, p.patches, p.entries) for _, _, w in flips(p.words)]
@@ -100,13 +103,16 @@ def random_blob(rng):
     n = rng.randrange(1, 14)
     words = [random_word(rng) for _ in range(n)]
     pool = fwtask.assemble_text("mov r1, #0xdeadbeef\nstad [r1,+#0], r4\nldad.bypassl1 r2, [r1,+#1], drc0\n"
-                                "mov pclink, r30\nlapc\nbr #1\np0 br -#0x1\nnop.end\nmov r30, #0xdeadbeef")
+                                "mov pclink, r30\nlapc\nbr #1\np0 br -#0x1\nnop.end\nmov r30, #0xdeadbeef\n"
+                                "mov r2, #0xdeadbeef\nmov r3, #0xdeadbeef\nmov r4, #0xdeadbeef\n"
+                                "emitpds.tasks.taske #0, r2, r3, r4, #0x0")
     words += [rng.choice(pool) for _ in range(rng.randrange(0, 8))]
     n = len(words)
-    patches = [fwtask.Patch(rng.randrange(0, n + 1), rng.choice(["res", "cont0", "cont5", "kind9"]),
+    patches = [fwtask.Patch(rng.randrange(0, n + 1),
+                            rng.choice(["res", "cont0", "cont5", "kind9", "pds0", "pds1", "pds2", "pds3"]),
                             rng.choice([0, 0, 4, 0xfff, 0x1000]))
                for _ in range(rng.randrange(0, 4))]
-    entries = [rng.randrange(0, n + 1) for _ in range(rng.randrange(0, 3))]
+    entries = [rng.randrange(0, n + 1) for _ in range(rng.randrange(0, 4))]
     return fwtask.pack_blob(words, patches, entries)
 
 

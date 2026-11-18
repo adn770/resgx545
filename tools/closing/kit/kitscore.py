@@ -37,6 +37,16 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           `expectdiff` row (the runner took it as a reading only with `job: ok`
                           and a diff line) or the rc of an expected outcome its knobs declare
                           (OUTCOMES, `expect:NAME`)
+  own_res(d, name)        the kept NAME.own_res.json of an owntask row (the results page the
+                          kit's fwtask_run.py page dumped after the job, or a runner stop's
+                          <tag>-own_res.json): its 1024 dwords, or None
+  own_dword(d, name, i)   dword I of that page (None when absent): a frozen rule names a result
+                          by its dword index, the prediction quantity `res:I` (res_index)
+  own_slot(d, name, n)    the 4 dwords of result slot N (RESULTS + 4 N, tools/fwtask/layout.py)
+  res_index(quantity)     I of a `res:I` quantity (decimal or 0x hex, below 1024), None for any
+                          other quantity; ValueError for a `res:` that is not one
+  own_json(d, name, sfx)  a kept owntask JSON file of the row (".txt": fwtask_run.py run's
+                          output; ".gate.json": its gate after the job), or None
 
 OUTCOMES: {NAME: (rc, line)} the expected outcomes a row may declare with the knob word
 `expect:NAME`: a job that ends with that rc and prints that line is a completed job, not a
@@ -193,6 +203,53 @@ def miscinfo(d, name):
     m = MISCINFO_ANSWERED.search(t)
     served = bool(m and MISCINFO_MATCH.search(t) and "MISMATCH" not in t)
     return dict(text=t, served=served, us=int(m.group(1)) if m else None)
+
+
+# the results page of our own firmware tasks (tools/fwtask/layout.py)
+OWN_PAGE = 1024
+OWN_RESULTS = 0x40
+RES_QTY = re.compile(r"res:(0x[0-9a-f]+|[0-9]+)")
+
+
+def res_index(q):
+    """I of a prediction quantity `res:I` (a dword of the results page), None for any other."""
+    if not isinstance(q, str) or not q.startswith("res:"):
+        return None
+    m = RES_QTY.fullmatch(q)
+    if not m or int(m.group(1), 0) >= OWN_PAGE:
+        raise ValueError(f"quantity {q!r} is not res:I with I a dword 0 to {OWN_PAGE - 1}")
+    return int(m.group(1), 0)
+
+
+def own_json(d, name, suffix):
+    import json
+    b = _read(os.path.join(d, name + suffix))
+    if b is None:
+        return None
+    try:
+        return json.loads(b)
+    except ValueError:
+        return None
+
+
+def own_res(d, name):
+    """The kept results page of an owntask row ({"page": [...]} of fwtask_run.py page, or a stop
+    dump's plain list): 1024 dwords, or None."""
+    p = own_json(d, name, ".own_res.json")
+    p = p.get("page") if isinstance(p, dict) else p
+    if not isinstance(p, list) or len(p) != OWN_PAGE or not all(isinstance(x, int) for x in p):
+        return None
+    return p
+
+
+def own_dword(d, name, i):
+    p = own_res(d, name)
+    return None if p is None else p[i]
+
+
+def own_slot(d, name, n):
+    p = own_res(d, name)
+    return None if p is None else p[OWN_RESULTS + 4 * n:OWN_RESULTS + 4 * n + 4]
 
 
 def completed(row):

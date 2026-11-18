@@ -183,9 +183,15 @@ def health():
             "ok": r.get(0x118) == 0x400 and (r.get(0xc04, 0) & 0xffff) == 0 and faults == 0}
 
 
+def health_tool():
+    """The health tool: FWTASK_HEALTH_TOOL (the session kit passes its session's pinned tool),
+    else the laptop's own build in its home."""
+    return os.environ.get("FWTASK_HEALTH_TOOL") or "/home/jtorra/sgxfive-test"
+
+
 def gate():
     """fill and triangle on the render node, exact; the stock firmware (own_arm 0)."""
-    t = "/home/jtorra/sgxfive-test"
+    t = health_tool()
     fill = sh(f"{t} fill 2>&1 | grep -E '^diff|FAIL' | head -3", check=False)
     tri = sh(f"{t} tri 2>&1 | grep -E '^diff|FAIL|^tri 64x64' | head -4", check=False)
     ok = "diff: 0 of 2048" in fill and "diff: 0 of 4096" in tri and "FAIL" not in fill + tri
@@ -262,11 +268,15 @@ def cmd_gate(a):
     emit(gate())
 
 
-def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=True, ticks=False):
-    """One experiment: initfill, set registers, params, cmd; poll state. Returns the record."""
+def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=True, ticks=False,
+            extra=()):
+    """One experiment: initfill, set registers, params, cmd; poll state. Returns the record.
+    extra: the other result slots (command numbers) the task fills, initfilled and read too."""
     base = RESULTS + 4 * n
     if initfill:
         res.w(base, [INITFILL] * 4)
+        for s in extra:
+            res.w(RESULTS + 4 * s, [INITFILL] * 4)
     res.w(OVERLAP, 0)
     for off, val in regs_to_set.items():
         kreg_write(int(off), val)
@@ -285,6 +295,8 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     ms = (time.monotonic() - t0) * 1000
     out = {"done": done, "ms": ms, "slot": res.r(base, 4), "echo": res.r(ECHO)[0],
            "cmd_after": res.r(CMD)[0], "overlap": res.r(OVERLAP)[0]}
+    if extra:
+        out["slots"] = {str(s): res.r(RESULTS + 4 * s, 4) for s in extra}
     if ticks:
         time.sleep(0.03)
         tk1 = regs()[1].get(12)
@@ -326,7 +338,8 @@ def cmd_run(a):
     for i, j in enumerate(jobs):
         try:
             rec = one_cmd(res, j["n"], j.get("params", {}), j.get("runid", i + 1), j.get("regs", {}),
-                          j.get("timeout_ms", DONE_MS), ticks=j.get("ticks", False))
+                          j.get("timeout_ms", DONE_MS), ticks=j.get("ticks", False),
+                          extra=j.get("slots", ()))
             rec["job"] = j
             # host-side proof that a str landed: the register itself, then restore
             now = kreg_all()
@@ -408,7 +421,7 @@ def cmd_pair(a):
         else:
             time.sleep(rd_.get("gap_ms", 0) / 1000)
             if kind == "fill":
-                entry["fill"] = sh("/home/jtorra/sgxfive-test" + " fill 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()
+                entry["fill"] = sh(health_tool() + " fill 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()
             res.w(STATE, 0)
             res.w(CMD, 2)
             entry["task2_done"] = wait_cmd_clear(res)
@@ -481,7 +494,7 @@ def cmd_tailpair(a):
                 if kind == "gap":
                     time.sleep(rd_.get("gap_ms", 1200) / 1000)
                 if kind == "fill":
-                    entry["fill"] = sh("/home/jtorra/sgxfive-test fill 2>&1 | grep -E '^diff|FAIL' | head -2",
+                    entry["fill"] = sh(health_tool() + " fill 2>&1 | grep -E '^diff|FAIL' | head -2",
                                        check=False).strip()
                 res.w(STATE, 0)
                 t0 = time.monotonic()
@@ -530,9 +543,9 @@ def cmd_events(a):
     if a["trigger"] == "miscinfo":
         trig = miscinfo()
     elif a["trigger"] == "tri":
-        trig = {"tri": sh("/home/jtorra/sgxfive-test" + " tri 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()}
+        trig = {"tri": sh(health_tool() + " tri 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()}
     else:
-        trig = {"fill": sh("/home/jtorra/sgxfive-test" + " fill 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()}
+        trig = {"fill": sh(health_tool() + " fill 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()}
     time.sleep(0.05)
     log = res.r(LOG, 16)
     res.close()

@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-PIN = "8bc0877e8603"        # the linux fork's resgx545 branch the tests read
+PIN = "c78059370315"        # the linux fork's resgx545 branch the tests read
 SGXFIVE = "drivers/gpu/drm/gma500/sgxfive"
 _cache: dict = {}
 
