@@ -1023,7 +1023,10 @@ same 20 passes and marks). A stop reads
 `CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer
 counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
 debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task still running inside
-a 90.5 ms hold reads the same, so the signature cannot tell a stop from a long task (E811, E816). A
+a 90.5 ms hold reads the same, so the signature cannot tell a stop from a long task (E811, E816).
+The stops after an `emitpds` from a task of ours (E1148, E1149, E1150) read the rest of it with
+`USE0_SERV_EVENT` bit 16 set, as it was before the command (its count 5 ahead of HostCtl dword 12
+throughout), so there bit 16 marks nothing. A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

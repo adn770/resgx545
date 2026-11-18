@@ -56,3 +56,5 @@ E1142 = "platform: refused: event-bit timelines of overflowing renders by PB siz
 E1143 = "isp: refused: readings only, every frozen row gated by failed 128 x 128 controls; no simulator models o0 at the start of an opaque pass (an earlier job's o0 left at a pixel), no vectors table (r35-o0)"
 E1147 = "isp: refused: cross-job state, an earlier job's o0 left at a pixel (same pixel or fixed offsets) at the start of an opaque pass; a per-job replay would take it as an input, not a model; no vectors table (r35-o0b)"
 E1148 = "edm: refused: one own-task emitpds job, the started entry left no write and the tick stopped (r36-n3); fwsim keeps its emitted-douta landing unmeasured, no vectors table"
+E1149 = "edm: refused: one own-task emitpds job with breadcrumbs, the issuer went on, the started entry never stored and the tick stopped (r37-n3b-a); no vectors table"
+E1150 = "edm: refused: one own-task emitpds job with the crumb image, its first movs tim never reached 0x0acc (the program never ran, inferred) and the tick stopped (r37-n3b-b); no vectors table"

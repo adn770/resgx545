@@ -7284,6 +7284,13 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   entry left no write within 200 ms and the EDM's tick stopped in that window, recovered by a
   reset, in its one job (E1148, Q128). Whether the image ran, and where an emitted `douta` lands,
   is **[open]**.
+- **The issuer goes on; the program does not start [HW, infer].** With breadcrumbs (E1149,
+  E1150: one job each, the same form and image, then a `tim`-marking image) the issuing task
+  went on past the `emitpds` and the started entry never made its first store, while the tick
+  stopped within 10 ticks of the command **[HW]**; the marking image's first `movs tim` never
+  showed at 0x0acc, so the emitted program never executed its first instruction **[infer]**: that
+  rests on a `movs tim` from an emitted program writing the 0x0acc the host reads, measured only
+  from a client's PDS program (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150"]
 terms = []
 +++
 
@@ -58,3 +58,20 @@ visibly. Not shown: whether the emitted program ran at all, or ran and its doutu
 task (the design's [infer] U1 = U2 = 0, TRC 8 and code index in U0), or started it and entry 1
 stopped before its first store; what stopped the tick; where an emitted douta lands (pa or sa) stays
 open.
+
+Narrowed 2026-11-19 (E1149, E1150, r37-n3b-a and r37-n3b-b, flagged, N3b of
+closing29/n3b/design.md): the same form from our task emitsb (E1148's emitsa with a store right
+after the emitpds and one as entry 1's first work), one job with each image. Measured [HW]: the
+issuing task went on past the emitpds in both (X0 written), the started entry 1 never made its first
+store in both, and the EDM's tick stopped within 10 ticks of the command write in both, with no BIF
+fault; the reset recovered. With the crumb image (E1150), whose first instruction writes a stopped 0
+to `tim`, CR_EVENT_TIMER (0x0acc) still counted after the stop. Inferred from that [infer]: the
+emitpds issued by our task stops the EDM's tick with the emitted PDS program never executing its
+first instruction, so E1148's causes (2), the program ran and its doutu did not start our task, and
+(3), entry 1 started and stopped before its first store, are excluded. The inference is that a `movs
+tim` from an emitted program writes the 0x0acc the host reads: `movs tim` was measured only from a
+client fill's PDS program, read back through the PDS (doc/isa/content/pds/probe/inputs.md), and the
+host's 0x0acc only as the firmware's running timer (E1131, E1133); if it is false, E1150 cannot tell
+whether the program ran, (1) from (2), and only E1149's readings stand. Open: why the emitted
+program does not start from an EDM task (the PDS, an emit queue the stopped EDM no longer serves, or
+the form), what stops the tick, and where an emitted douta lands (pa or sa), never reached.

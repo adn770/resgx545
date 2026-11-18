@@ -9817,6 +9817,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   window with no BIF fault, and the kit's reset recovered it (fill and triangle exact); where an
   emitted douta lands stays open.
   *edm; HW; data: `render-closing-r36-n3:out/20261118-152130/own/`, `render-closing-r36-n3:fold/`.*
+- `E1149` r37-n3b-a stage own (N3b step A, module 77917296, fork 4f35fc20ffa9, image v1, flagged,
+  user present): our EDM task emitsb, E1148's emitsa with two breadcrumbs, ran the same emitpds form
+  with the same kernel PDS image on its one command; entry 0 stored X0 0x5a5a3303 right after the
+  emitpds, entry 1 stored nothing, not even S1, its first store (S1, M4 and slots 2-4 kept the
+  host's fill, state 0), and the EDM's tick stopped 10 ticks after the command write with no BIF
+  fault: every control passed, 'N3b-A RULE: A-PAST: issuer on; no entry-1 store: (1), (2) or early
+  (3)'; the kit's reset recovered it (fill and triangle exact).
+  *edm; HW; data: `render-closing-r37-n3b-a:out/20261118-212949/own/`,
+  `render-closing-r37-n3b-a:out/20261118-212845/own/`, `render-closing-r37-n3b-a:fold/`.*
+- `E1150` r37-n3b-b stage own (N3b step B, module 77917296, fork 4f35fc20ffa9, image crumb, flagged,
+  user present): with the crumb image, E1148's image whose first instruction is a movs tim of a
+  stopped 0 and which marks its douta and doutu passes the same way, our task emitsb's one job wrote
+  X0 0x5a5a3303 past the emitpds, entry 1 stored nothing (S1, M4, state 0), the EDM's tick stopped
+  10 ticks after the command write with no BIF fault, and CR_EVENT_TIMER (0x0acc) still counted
+  after the stop (0x0101fc6d, then 0x010585dc, bit 24 set): every control passed, 'N3b-B RULE: B-1:
+  (1) the program never ran'; that reading rests on the inference that a movs tim from an emitted
+  program writes the 0x0acc the host reads (measured only from a client fill's PDS program); the
+  kit's reset recovered it (fill and triangle exact).
+  *edm; HW; data: `render-closing-r37-n3b-b:out/20261118-213042/own/`,
+  `render-closing-r37-n3b-b:fold/`.*
 
 ## By unit
 
@@ -9843,7 +9863,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150.
 
 ### firmware
 

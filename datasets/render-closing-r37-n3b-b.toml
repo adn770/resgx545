@@ -1,0 +1,9 @@
+title = "laptop session r37-n3b-b of the question-closing pass, round 37 (N3b step B of closing29/n3b/design.md: the crumb PDS image's movs tim breadcrumbs; Q128), built on the session kit, flagged class: stage own (our own firmware task emitsb armed on slot 0 with the crumb image, one row) and stage post (the t30 triangle and fill), stopped at own's one row, with the freeze, the kit copy, the generator, the blob, predictions, scorer, mock and tests, the pre-run README and PREFLIGHT, the kept outputs, the driver logs and the fold's notes and reproduction"
+repo = "data"
+paths = ["render/closing-r37-n3b-b/"]
+method = "the session kit (kit/ = resgx545 7925c98's tools/closing/kit, scorekit.py, sessioncheck.py and tools/fwtask/fwtask_run.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over ssh to the laptop at home, kit/run_stage.sh with run/hooks.sh on it, every file under ~/scratch/r37b/, 2026-11-18, kernel 7.3.0-resgx545, module srcversion 77917296568EB311B89B0DA (installed and loaded alike; linux fork 4f35fc20ffa9; the same boot as r37-n3b-a), stock firmware, our task owntask/emitsb.blob (sha256 83c25ac3cfc0a87473649979a41b8ddd0b49441d52a8eb9a7f405bb2866d7c2c, asm/fwtask/fwtask.map at 7925c98) armed slots=0x1 entry=0 pds=crumb, health tool ~/sgxfive-test-t30 (t30, sha256 b5ea288d273f0da50884bbeec38f784a5d19773b8ed20efc7937dd455c1b87a5, resgx545 42c4de7); the user present; one attempt (out/20261118-213042): own stopped at c1-a (no done within 200 ms, class hang, stage rc 4), post did not run; scored by hand with the frozen score/score.py (fold/reproduce-own.out), the fold's readings in fold/FOLD-NOTES.md. debug/ (the library-mock builds, mock trees) and the bytecode caches are not in the copy"
+date = "2026-11-18"
+files = 71
+size = 341741
+sha256 = "ba4fdafe1fa4ab9e004593a506728ab7d14402085cdb43481646f799d5755d15"
+recipe = "kit/session.py"
