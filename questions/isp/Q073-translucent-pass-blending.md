@@ -1,11 +1,11 @@
 +++
 id = "Q073"
-question = "what does o0 hold at the start of an opaque pass's pixel shader?"
+question = "what does o0 hold at the start of an opaque pass's pixel shader after a job of another target size?"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E077", "E283", "E417", "E739", "E757", "E1143"]
+evidence = ["E077", "E283", "E417", "E739", "E757", "E1143", "E1147"]
 terms = ["ISP0.PASS_TYPE"]
 +++
 
@@ -54,3 +54,13 @@ of 32 rows, of 32 columns and 16 rows, or of 16 rows; a debugfs reset between ke
 fill between replaces them with its colour, and after a 128 x 128 job a 64 x 64 pass-through kept
 no pixel (2 of 2). The corrected rerun r35-o0b freezes those readings as its fit. Status: narrowed,
 not answered.
+
+Narrowed 2026-11-18 (r35-o0b, E1147; the line now asks only the other-size clause). Same size,
+decided on 4 of 4 held-out rows with every control passing: on the pixels that keep a value, o0
+at the start of the opaque pass holds the o0 the previous job's shader wrote at the same pixel, at
+the pixel 32 rows lower or at the pixel 32 columns right and 16 rows up, else a value of a job
+further back, and the background elsewhere; a debugfs reset between keeps it and a fill between
+replaces it (2 of 2 each). Which pixels keep a value is not the line: 188 to 414 of 1062 at 64 x
+64 (R35-2 a). Open: after a job of another target size, a 64 x 64 pass-through after a 128 x 128
+job kept 0 and 12 pixels (the 12 from 80 rows lower), a 128 x 128 one after a 64 x 64 job 0 and 6,
+so neither frozen rule held. Status: narrowed to the other-size clause.

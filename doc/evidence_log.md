@@ -9754,6 +9754,19 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the same 188, the t10 fill between replaces all with its colour (651), and after a 128 x 128 job a
   64 x 64 pass-through keeps nothing (2 of 2).
   *isp; HW; data: `render-closing-r35-o0:out/20261118-085126/o/`, `render-closing-r35-o0:fold/`.*
+- `E1147` r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected rerun of r35-o0
+  (E1143), every control passed: at the start of an opaque pass's pixel shader, on the pixels that
+  keep a value, o0 holds the o0 an earlier job's shader wrote at the same pixel (130 to 287 pixels a
+  row), 32 rows lower (36 or 85) or 32 columns right and 16 rows up (0 or 4), or a value of a job
+  further back (36 in one row), the background elsewhere, 4 of 4 held-out rows at 64 x 64: 'Q073
+  RULE (a) same size: controls passed; h1 rows decided 4 of 4; H-OFFSETS 4 held, 0 FAILED ...:
+  DECIDED, H-OFFSETS' (H-SAMEPIX 4 FAILED on h1, H-OTHER 4 FAILED); a debugfs reset between keeps it
+  (2 of 2) and the t10 fill between replaces every kept pixel with its colour (2 of 2); after a job
+  of another size it is not decided: a 64 x 64 pass-through after a 128 x 128 job kept 0 and 12
+  pixels (the 12 at 80 rows lower), a 128 x 128 one after a 64 x 64 job 0 and 6 (same pixel): 'Q073
+  RULE (b) other size: ... not decided'; 'Q073 RULE: NARROW: (a) decided; open: (b)'; the offsets
+  were formed post hoc from E1143 and are held out here.
+  *isp; HW; data: `render-closing-r35-o0b:out/20261118-091726/o/`, `render-closing-r35-o0b:fold/`.*
 
 ## By unit
 
@@ -9795,7 +9808,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072, E1143.
+E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072, E1143, E1147.
 
 ### mte
 

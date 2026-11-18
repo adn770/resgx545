@@ -55,8 +55,8 @@ list.
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
   20 to 23, 27 to 31) do, alone and set together, what does ... (E1069, E1088, E1093)
-- `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E739, E757,
-  E1143)
+- `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader after a job of
+  another target size? (E757, E1143, E1147)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
@@ -277,9 +277,12 @@ list.
 
 ## Recent records
 
-7 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
+8 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1147` isp, 2026-11-18: r35-o0b stage o (32 t10 probe triangles, module 7CE8E38E), the corrected
+  rerun of r35-o0 (E1143), every control passed: at the start of an opaque pass's pixel shader, on
+  the pixels that keep a value, ...
 - `E1143` isp, 2026-11-18: r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the
   frozen rule printed NARROW with nothing decided, because the three A' controls at 128 x 128 failed
   and the frozen gate put the 128 ...
@@ -304,9 +307,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-107 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+108 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r35-o0b`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r35-o0`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10
 - `render/closing-r34-sa0b`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
@@ -467,7 +471,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 15 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 16 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
@@ -539,4 +543,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-51 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
