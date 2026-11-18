@@ -238,8 +238,8 @@ list.
   of the instances that do not read the last job's value, ... (E477, E484, E500)
 - `Q127` usse, low: what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae
   with a repeat, a u16 or z16 source or a .rsN shift do with ... (E528, E595, E597)
-- `Q129` usse, low: why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and
-  sa7 show those sa values as their output, and how long ... (E484, E1140)
+- `Q129` usse, low: why do exactly 4 pixels of a fill that writes sa_n show the written value
+  instead of the colour, and what rule places them (E1144: the same ... (E484, E1140, E1144)
 - `Q130` usse, low: when does a load on one counter land while a wdf waits on another: why four ldad
   on drc0 issued after a wdf drc1 that waited for four ldad ... (E479)
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
@@ -247,7 +247,7 @@ list.
 - `Q146` usse, low: when does a load that is not waited for land, why did a load not waited for hold
   the loaded value after 40, 100 and 128 `nop` but not after ... (E517, E602)
 - `Q193` usse, low: what holds a temporary a task did not write: which earlier job's value does it
-  read, per instance, and what clears it (a power cycle, a ... (E484, E485, E593)
+  read, per instance, and what clears it (a power cycle, a ... (E485, E593, E1145)
 - `Q195` usse, low: what do the narrow memory forms do that the 11.36 fills did not run: a register
   or negative offset, the pre- and post-increment forms, ... (E598, E599)
 - `Q275` usse, low: why do g20, g41 and g42 read 0 in the end-of-tile task's per-tile stores of E708
@@ -277,9 +277,15 @@ list.
 
 ## Recent records
 
-32 records of 2026-11-16 to 2026-11-17 (the last 2 days to the newest record's date), newest first;
+8 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1145` usse, 2026-11-18: r35-sa stage t (23 jobs, t30 probe fills with --pixels, module
+  7CE8E38E): every kit control passed, but the frozen reader form control (a fill that reads r20
+  without writing it, right after a fill ...
+- `E1144` usse, 2026-11-18: r35-sa stage a (40 jobs, t30 probe fills with --pixels, module
+  7CE8E38E): every control passed, the position decode on K3 and on --coords' (y << 16) | x and the
+  sa5 reader form included; a fill whose ...
 - `E1142` platform, 2026-11-17: r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs,
   CR_EVENT_STATUS alone at 3.1 to 3.9 us; every control passed): frozen H-OOM-SMALL (bit 1 at 0xe2
   and 0x82 in every row, at 0x2b6 and 0x1c2 ...
@@ -298,90 +304,14 @@ the claims are cut at 200 characters.
 - `E1137` platform, 2026-11-17: r34-ev on module 7CE8E38E (Q111), stages e0, e1, e2c, e2 (32 jobs:
   calibrations of CR_EVENT_STATUS alone and with CR_EVENT_STATUS2, every control passed with
   premises read from snap0 and the ...
-- `E1136` pbe, 2026-11-16: r34-q044 on module 7CE8E38E (Q044), stage p2, E385's alpha ramp, every
-  control passed: the stored one-bit alpha of pack mode 4 is set where the alpha is at or above the
-  low byte of the word that ...
-- `E1135` pbe, 2026-11-16: r34-q044 on module 7CE8E38E (Q044), stages s0, p1 and pw, colour form (o0
-  0x80ff8040 over 0xff203040), every control passed: bit 25 of the word that loads CR_REG_0400
-  changes the stored image in pack ...
-- `E1134` texture, 2026-11-16: r34-q010 stage c (Q010, 32 jobs, safe): the kit's health triangle
-  clears colour-space set 0 and the health fill does not: after a BT.601 load, a copy without the
-  load read black 0xd3522437a14b6325 ...
-- `E1133` platform, 2026-11-16: r33-tim2 on module 7CE8E38E (fwsim's tim, E1130; the rerun of
-  E1131), stages t1 (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER
-  alone), regtimeline over plain 64x64 ...
-- `E1131` platform, 2026-11-16: r33-tim on module 7CE8E38E (fwsim's tim, E1130), stages t1
-  (CR_EVENT_STATUS, CR_CACHE_CTRL and CR_EVENT_TIMER) and t1d (CR_EVENT_TIMER alone), regtimeline
-  over plain 64x64 triangles: every control ...
-- `E1130` edm, 2026-11-16: fwsim (stock microkernel in sgx-sim, kept render job render/closing-r9-k1
-  c-off kicked as our kernel built it) with the kept order of CR_EVENT_STATUS replayed after the
-  kick's CR_CACHE_CTRL write ...
-- `E1129` pds, 2026-11-16: r32-kreg3 on module 7CE8E38E (Q024), stage kl10, H0 held for all 64
-  values: CR_PDS_REG_0A78 at each value 0x00-0x3f on two shuffled passes leaves the render time of
-  500 triangles (t30 probe --tri ...
-- `E1128` pds, 2026-11-16: r32-kreg3 on module 7CE8E38E (Q024), stage s0, a safe calibration of the
-  many-triangles load (t30 probe --tri --vertices 1500, the triangle and 499 copies, no register
-  write): eight references a ...
-- `E1127` platform, 2026-11-16: r32-misc on module 7CE8E38E (Q111), stage m2 (pre:miscinfo, then
-  t10's 64x64 triangle under regtimeline on CR_CACHE_CTRL and CR_USE0_SERV_EVENT at 852 to 856 ns a
-  sample), every control passed, the ...
-- `E1126` platform, 2026-11-16: r32-misc on module 7CE8E38E (Q111, a served kick without
-  INVAL_DATA), stage m1 (the kit word pre:miscinfo: one debugfs miscinfo read, a GETMISCINFO command
-  with no cache control pending, after the ...
-- `E1125` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k2, cannot tell by its frozen
-  premise: CR_PDS_REG_0A78 at each of its 64 values on two shuffled passes before a job of six
-  renders of 500 small triangles ...
-- `E1124` pds, 2026-11-16: r31-kreg2 on module 7CE8E38E (Q024), stage k1: CR_PDS_REG_0A78 written to
-  each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256 triangle job of six
-  renders; by the frozen rule (the ...
-- `E1123` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
-  after a kick), stages c4 (CR_EVENT_STATUS, CR_CACHE_CTRL, CR_DMS_CTRL, CR_USE0_SERV_EVENT and
-  CR_BIF_CTRL at 1766 to 1789 ns a sample, ...
-- `E1122` platform, 2026-11-16: r31-cc on module 7CE8E38E (Q111, the fwsim read of CR_CACHE_CTRL
-  after a kick), stages c1, c2, c3 (CR_CACHE_CTRL alone at 540 to 542 ns a sample, with
-  CR_USE0_SERV_EVENT, with CR_BIF_CTRL, both at ...
-- `E1121` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111), stages e1 and e5
-  (CR_EVENT_STATUS alone at 539 to 548 ns a sample, every control passed, every row held out against
-  E1115): CR_EVENT_STATUS reads 0x20000000 ...
-- `E1120` platform, 2026-11-16: r30-evst2 on module 7CE8E38E (Q111, the fwsim read rules), stages
-  e2, e3, e4 (CR_EVENT_STATUS with CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with
-  27 registers), every control ...
-- `E1119` bif, 2026-11-16: r30-pde stage f67 (Q109, a size field the BIF does not take; every s0
-  control passed): a client directory entry with the unnamed size codes 6 and 7 is walked as 4 KiB
-  entries like codes 0 to 5: four ...
-- `E1118` bif, 2026-11-16: r30-pde stages f2 and f45 (Q109, the table's layout and address bits,
-  every s0 control passed): over codes 1 to 4 a table laid out with each entry 4 KiB past its block
-  (misalign) and a table at + ...
-- `E1117` bif, 2026-11-16: r30-pde stages s0, f1 and f45 (Q109, module 7CE8E38E, every control
-  passed): a client page directory entry whose size field (bits 3:1) names 16 KiB, 64 KiB, 256 KiB,
-  1 MiB or 4 MiB (codes 1 to 5), ...
-- `E1116` platform, 2026-11-16: r30-evst on module E0CC4027, stages e2, e3, e4 (CR_EVENT_STATUS with
-  CR_EVENT_STATUS2, CR_CACHE_CTRL and CR_USE0_SERV_EVENT, and with 27 registers), readings only, no
-  verdict: every frozen headline ...
-- `E1115` platform, 2026-11-16: r30-evst on module E0CC4027 (Q111), stages e1 and e5
-  (CR_EVENT_STATUS alone at 541 ns a sample, every control passed): in plain 64x64 triangles
-  CR_EVENT_STATUS reads 0x20000000 in every sample ...
-- `E1114` pds, 2026-11-16: r29-kreg on module E0CC4027 (Q024), readings only, no verdict:
-  CR_PDS_REG_0A78 written to each of its 64 values 0x00-0x3f on two shuffled passes before a 256x256
-  triangle job of six renders; the mean ...
-- `E1113` vdm, 2026-11-16: r29-flag2 stage h2 (Q163, 9 rows of E700's two-block stream on t10 in
-  three triples from a reset, the kit's noreset, 2 planned hangs): a block-2 v = 1 job completed at
-  c = 8 after (6,2) (h2-a3) and ...
-- `E1112` texture, 2026-11-16: r29-flag2 stage h1 and h2's first row (Q010, 7 copies on t22 and
-  E737's bit-24 hang twice on t10, 2 planned hangs, both recovered): a copy without the load read
-  black 0xd3522437a14b6325 after each ...
-- `E1109` ta, 2026-11-16: r29-flag stage f2 (2 jobs, t10, E1074's form at 512 x 512 (n = 2, TA data
-  32768 bytes by the kernel's layout, c-512's reading), the size's own CR_TE_MTILE1 and CR_TE_MTILE2
-  with B2 cleared, words ...
-- `E1108` bif, 2026-11-16: r29-flag stage f1 (2 jobs, t14, the debugfs knobs vm_pte_addr and
-  vm_pte_flags = 0x12, WRITEONLY and EDMPROTECT together, on a mapping only read, held out; 2
-  planned faults): r14-bif's ZLS load of ...
 
 ## Closing sessions
 
-106 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+107 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r35-sa`: 2026-11-18; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t30
 - `render/closing-r34-sa0b`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t30
 - `render/closing-r34-sa0`: 2026-11-17; module 7CE8E38EDB97FC5EA4F6C90; tools ~/sgxfive-test-t10,
@@ -541,7 +471,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 8bc0877e8603
-- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-17, 14 sessions
+- module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 15 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74

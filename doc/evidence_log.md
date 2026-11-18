@@ -9738,6 +9738,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW, infer; data: `render-closing-r34-ev2:out/20261117-004223/e0/`,
   `render-closing-r34-ev2:out/20261117-004223/e1/`, `render-closing-r34-ev2:fold/`.*
 
+### 2026-11-18
+
+- `E1144` r35-sa stage a (40 jobs, t30 probe fills with --pixels, module 7CE8E38E): every control
+  passed, the position decode on K3 and on --coords' (y << 16) | x and the sa5 reader form included;
+  a fill whose pixel task writes sa_n (n = 0 to 15) with iaddu32 outputs the written value at
+  exactly 4 pixels and K1 at the other 2044 (H-FOUR 21 of 21 held-out rows), the same 4 pixels in
+  both replicates (H-VAR 0 of 6), and a writer of sa1, sa5 and sa7 shows the union of the three
+  single writers' 12 pixels (H-UNION 2 of 2); the frozen position rules failed (H-FIXED4 and
+  H-SHIFT, S0 + n d with S0 [0, 16, 512, 528] and d 1 fitted on sa1, 0 of 19); an sa5 written by one
+  job and read after a job that wrote sa1 reads that job's output (H-ONEJOB 2 of 2, H-UNTILWRITE 0
+  of 2; E484's form reproduced), so an sa lasts one job also across a job that writes another sa;
+  the frozen rule printed 'Q129 RULE: NARROW: clause (b) decided, clause (a) open'; post hoc
+  [infer]: sa_n's 4 pixels are (x, y) = ((n & 1) + 2 (n >> 2) + {0, 16}, ((n >> 1) & 1) + {0, 8}),
+  29 of 29 position sets.
+  *usse; HW, infer; data: `render-closing-r35-sa:out/20261118-085610/a/`,
+  `render-closing-r35-sa:fold/`.*
+- `E1145` r35-sa stage t (23 jobs, t30 probe fills with --pixels, module 7CE8E38E): every kit
+  control passed, but the frozen reader form control (a fill that reads r20 without writing it,
+  right after a fill that wrote a marker to r20, frozen to read the marker in 2048 of 2048 pixels
+  after E484 and E593) failed on both rows, 2024 pixels at the marker and 24 at 0x0000200f, so every
+  held-out reader is cannot tell and the frozen rule decided no group ('Q193 RULE: NARROW: clause
+  (a) decided for no group of t1, t2, t3, t4'); not a decode error (each reader's pixels agree with
+  its o0 line, the decode passed its controls in stage a): the frozen premise did not hold; post hoc
+  [infer]: every reader read the last r20 writer's marker in 2023 to 2025 pixels, after a colour
+  fill, the t10 triangle and a debugfs reset alike, and values 0x0000n00f or 0x0000n02f in 23 or 24
+  pixels at even coordinates in two 16 x 8 blocks, at positions that differ from row to row; after a
+  --temps 8 writer of r0-r5, 1388 pixels read its r4 marker and 637 the r20 marker.
+  *usse; HW, infer; data: `render-closing-r35-sa:out/20261118-085610/t/`,
+  `render-closing-r35-sa:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9850,7 +9880,7 @@ E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E4
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
 E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921,
-E1061, E1062, E1098, E1102, E1106, E1139, E1140.
+E1061, E1062, E1098, E1102, E1106, E1139, E1140, E1144, E1145.
 
 ### vdm
 

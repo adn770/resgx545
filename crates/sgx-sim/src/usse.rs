@@ -332,13 +332,16 @@ pub struct Machine {
     /// A vertex task's instance (11.33, q053-vtx): (the vertex's sequence number in the draw, the
     /// vertices a task holds, the vertices of the draw); the g bank's per-vertex registers depend on it.
     pub vertex: Option<(u32, u32, u32)>,
+    /// The temporaries. One the task does not write holds what an earlier job left (E484, E593);
+    /// which job, per instance, is session state and not measured (E1145: its reader control
+    /// failed), refused here as the sa carry is.
     pub r: [u32; 128],
     pub i: [u32; 4],
     pub o: [u32; 128],
     pub pa: [u32; 128],
     /// The secondary attributes. What a job finds in an sa it does not write (and in pa0) is carried
-    /// from the job before: an sa0 write lasts one job, a job between leaves its colour (E484,
-    /// E1139, E1140). One job is modelled alone: the carried value is session state, refused here
+    /// from the job before: an sa write lasts one job, a job between leaves its colour, also one
+    /// that writes another sa (E484, E1139, E1140, E1144). One job is modelled alone: the carried value is session state, refused here
     /// (a per-job vector would carry it as an input, not a model).
     pub sa: [u32; 128],
     pub p: [bool; 4],
