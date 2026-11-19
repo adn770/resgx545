@@ -757,8 +757,10 @@ impl Bus for Unit<'_> {
         Ok(())
     }
 
-    /// emitpds s0, s1, s2: the control word (data rows at 27:23), the address
-    /// >> 4, and ir0 for the program (hw_spec 11.2).
+    /// emitpds s0, s1, s2: the control word (data rows at 27:23) and the address >> 4. s2 is
+    /// not ir0 or ir1 of the started program (E488: s2 0, 1, 0xFFFFFFFF and 0xE17D0001 gave
+    /// ir0.0 3, 3, 2, 3, varying from run to run, and ir1.0 0), so both stay unknown and a
+    /// program that reads them is refused.
     fn emit(&mut self, text: &str, s: [u32; 3]) -> Result<(), Error> {
         if !text.starts_with("emitpds") {
             return Err(why(format!("{text}: no unit for this emit")));
@@ -781,7 +783,7 @@ impl Bus for Unit<'_> {
         self.st.queue.push_back(Work::Pds {
             addr: s[1] << 4,
             data,
-            ir0: Some(s[2]),
+            ir0: None,
             ir1: None,
             tim: if running { self.st.emit_tim } else { None },
             bank: Bank::Secondary,
@@ -1251,7 +1253,29 @@ mod tests {
         // sa4.. = DATA's dwords; the task at insn 2 wrote register 65 from sa5
         assert_eq!(&s.st.sa[4..12], &[0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7]);
         assert_eq!(s.st.regs[&65], 0xA1);
-        assert!(s.st.log.contains(&Event::Pds { addr: CODE + 0x1000, data: 4, ir0: Some(7) }));
+        // E488: s2 (7 here) is not ir0 of the started program; ir0 is unmodelled
+        assert!(s.st.log.contains(&Event::Pds { addr: CODE + 0x1000, data: 4, ir0: None }));
+    }
+
+    #[test]
+    fn an_emitted_program_does_not_get_s2_as_ir0() {
+        // E488: with s2 0, 1, 0xFFFFFFFF and 0xE17D0001 the program saw ir0.0 3, 3, 2, 3 (a
+        // number that moves from run to run) and ir1.0 0: s2 is neither, and ir0 is not a rule
+        // of the operands, so a program that reads ir0 or ir1 is refused
+        for s2 in [0u32, 1, 0xFFFF_FFFF, 0xE17D_0001] {
+            let mut s = sgx();
+            s.st.mem.map(DATA, &[0; 16]);
+            s.st.mem.map(CODE + 0x1000, &pds(&[0, 0, 0, 0], "mov32 ds0[48], ir0.0\nhalt"));
+            s.st.mem.map(CODE, &usse("mov r0, pa0\nmov r2, pa2\nmov r4, pa4\nemitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nnop.end"));
+            let mut pa = [0; 128];
+            (pa[0], pa[2], pa[4]) = (1 << 23, (CODE + 0x1000) >> 4, s2);
+            s.st.queue.push_back(Work::Task { base: CODE, pc: 0, temps: 8, pa: Box::new(pa), written: 0b10101 });
+            let r = s.run(10_000);
+            assert!(
+                matches!(r, Err(Error::Unsupported { ref why, .. }) if why.contains("ir0")),
+                "s2 {s2:#x}: {r:?}"
+            );
+        }
     }
 
     #[test]

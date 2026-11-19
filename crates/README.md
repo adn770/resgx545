@@ -192,7 +192,8 @@ one `Pds` and the USSE, and a queue of the work between them, run one piece at a
 order it was issued (the hardware overlaps them). `EVENT_KICK2` runs the other-event PDS
 program, and so does `EVENT_KICK` (the host's command kick), with the host-kick bit 8 in `ir1`
 and the `ir0` and counter the caller gives (`event_ir0`, `event_tim`; the hardware's are not
-modelled); `emitpds` starts a PDS program with its control word, address and `ir0`; `doutu`
+modelled); `emitpds` starts a PDS program with its control word and address (its `ir0` and
+`ir1` stay unknown, E488: not s2); `doutu`
 starts a USSE task at its code base and instruction; `doutd` and `douta` fill the task's
 primary attributes for an event, and the EDM's secondaries, which persist, for an `emitpds`.
 Each rule cites `doc/specs/hw_spec.md` 11.1-11.3. A register read before anything wrote it
