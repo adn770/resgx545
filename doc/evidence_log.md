@@ -9942,8 +9942,7 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   outside what D0 reads, or onto sa0 and sa2, which already held its values); post's triangle and
   fill exact.
   *edm; HW, infer; data: `render-closing-r40-d0-survey:out/20261119-191743/own/`,
-  `render-closing-r40-d0-survey:out/20261119-191743/post/`, `render-closing-r40-d0-survey:fold/`,
-  `closing29/r40-s-logs/d0-shim-emitsb14d.log`.*
+  `render-closing-r40-d0-survey:out/20261119-191743/post/`, `render-closing-r40-d0-survey:fold/`.*
 
 ## By unit
 
