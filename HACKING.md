@@ -418,8 +418,10 @@ and records `ticks`, `ticks_expected` and `window_ms`, kept on a stop too; the k
 "flagged"`, as a kreg row's stage. `session.py lint` (and the guard, so the freeze) refuses a
 missing blob, a blob that is not the map's, a name the map lacks, an arm line that is not
 `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the hazard word
-is never armed) and an optional `pds=crumb` last (the kernel's second PDS image, below; with no
-`pds=` word the kernel arms the v1 image), a stage that is not flagged, a malformed job, any other
+is never armed), an optional `pds=crumb`, `pds=halt` or `pds=crumb3` (the kernel's other PDS
+images, below; with no `pds=` word the kernel arms the v1 image) and an optional `pdsat=fw14` last
+(the image in the slack of the firmware's PDS #14 page, round 38; with none, the kernel's own
+page), a stage that is not flagged, a malformed job, any other
 knob, a non-owntask row in the stage, an owntask row elsewhere, a tool named `owntask` and a
 `res:I` prediction outside an owntask stage or past dword 1023. `prepare` writes `run/owntask.tsv`
 (the stage's `arm` line with the map's sha256, each row's `job` with its run id), which the runner
@@ -608,6 +610,19 @@ lets a reviewer check that they stay clean-room; each check is a test.
      `emitsb`'s entry 1 ends with (M4 and the run id in slot 4, the echo, state 2) and the tail
      call. It separates the emit from our cmd-1 path. The kernel's verifier accepts it
      (`test_host_verifier.py`), and the fork's KUnit list carries it since round 38's kernel.
+     Round 38's kernel (N3c rows R4 to R7) adds two images and a place, all chosen at the arm.
+     `pds=halt` (`asm/fwtask/pds/halt.s`) is v1's data rows and a lone `halt`: no output, no
+     `doutu`, so its job never reports done. `pds=crumb3` (`asm/fwtask/pds/crumb3.s`) is crumb
+     with a third data row of zeros (dwords 8-11, which no instruction names): 3 rows, as PDS #14
+     has (E146), so its control word is `(3 << 23) | 0x100` = 0x01800100, #14's own; every image
+     carries its rows and control word in `sgx_own_pds.h`, and `pds0` is the armed image's.
+     `pdsat=fw14` writes the image into the slack of the firmware's PDS #14 page (buffer 5, 0x68
+     bytes) instead of the kernel's read-only page: past #14's buffer and every PATCHES word in it,
+     at the next 0x100 (so #14's base + 0x100), with #14's PTE and flags (read-write); `pds1`
+     names that address and the arm's log line gives it. #14's own bytes are never written; the
+     arm refuses `fw14` for a blob without the emit, and every arm and the recovery reset zero
+     the slack (the firmware's build rewrites only #14's 0x68 bytes), so no word of ours outlives
+     the run.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
@@ -870,6 +885,8 @@ stays with what a session must do around it.
   outside them changes that test first.
 - `pds=crumb` arms only with the fork's branch `r37-kernel` (own_arm's image choice); the
   module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
+- `pds=halt`, `pds=crumb3` and `pdsat=fw14` arm only with the fork's branch `r38-kernel`
+  (e1cf9d2b43ab, not built nor booted yet); the module of r37-kernel refuses them.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The

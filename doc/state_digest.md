@@ -566,6 +566,8 @@ stays with what a session must do around it.
   outside them changes that test first.
 - `pds=crumb` arms only with the fork's branch `r37-kernel` (own_arm's image choice); the
   module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
+- `pds=halt`, `pds=crumb3` and `pdsat=fw14` arm only with the fork's branch `r38-kernel`
+  (e1cf9d2b43ab, not built nor booted yet); the module of r37-kernel refuses them.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
