@@ -637,3 +637,108 @@ def test_emitsb14_is_in_the_map_but_not_the_kernel_s_pinned_list():
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsb14"]["source"] == "emitsb14.s"
     assert "emitsb14" not in gen_verify.OK_BLOBS
+
+
+# ---- emitsb14d: emitsb14 with the landing survey (round 40, N3e row D0) -------------------------
+def _code(text):
+    """The instruction lines of a source (comments and blank lines gone, labels kept)."""
+    out = []
+    for ln in text.splitlines():
+        c = ln.split(";")[0].strip()
+        if c:
+            out.append(c)
+    return out
+
+
+def _survey():
+    import gen_blobs
+    return _code(gen_blobs.gen_emitsb14d())
+
+
+PRE_AT, POST_SA_AT, POST_PA_AT = 128, 160, 192     # page dwords (N3e §3.1)
+
+
+def _block(lines, start, end):
+    i, j = lines.index(start), lines.index(end)
+    return lines[i + 1:j]
+
+
+def _reads_and_stores(block, base_reg, base_dword):
+    """Pairs (source, page dword) in a block: each `mov rN, src` read, then `stad [base,+#j], rN`."""
+    import re as _re
+    cur, out = {}, []
+    for ln in block:
+        m = _re.fullmatch(r"mov (r\d+), ((?:pa|sa)\d+)", ln)
+        if m:
+            cur[m.group(1)] = m.group(2)
+            continue
+        m = _re.fullmatch(r"stad \[%s,\+#(\d+)\], (r\d+)" % base_reg, ln)
+        if m:
+            out.append((cur.pop(m.group(2)), base_dword + int(m.group(1))))
+    return out
+
+
+def test_emitsb14d_pre_reads_sa0_to_sa31_into_dwords_128_on():
+    """Entry 0, out of line (after entry 1's end; its br takes the place of c1's `mov r4, #0`,
+    which the block does last, so entry 1 keeps emitsb14's index and the kernel's U0 is ST's):
+    r10 = res+512, sa0-sa31 to dwords 128-159, reached from c1 after the M1/run-id stores and
+    before the cmd store and the fence that precede the emit."""
+    s = _survey()
+    pre = _block(s, "pre:", "br @back")
+    assert pre[0] == "mov r10, #0xdeadbeef" and pre[-1] == "mov r4, #0x00000000"
+    assert _reads_and_stores(pre, "r10", PRE_AT) == [(f"sa{k}", PRE_AT + k) for k in range(32)]
+    c1 = s[s.index("c1:") + 1:s.index("back:")]
+    assert c1[-3:] == ["stad [r9,+#0], r7", "stad [r9,+#1], r5", "br @pre"]
+    after = s[s.index("back:") + 1:]
+    assert after[:3] == ["stad [r1,+#1], r4", "idf drc0, bif", "wdf drc0"]
+    assert s.index("pre:") > s.index("@entry 1") and s[-1] == "br @back"
+    import gen_blobs
+    assert "@patch res+512" in gen_blobs.gen_emitsb14d()
+
+
+def test_emitsb14d_post_reads_sa_and_pa_after_s1_before_m4():
+    """Entry 1: after S1 and the pa0-pa3/sa0-sa3 slots, before M4: sa0-sa31 to dwords 160-191
+    and pa0-pa15 to dwords 192-207, through r9."""
+    import gen_blobs
+    src = gen_blobs.gen_emitsb14d()
+    s = _survey()
+    e1 = s[s.index("@entry 1"):s.index("pre:")]
+    i = e1.index("mov r7, #0x5a5a3304")
+    j = e1.index("mov r7, #0x5a5a3302")
+    body = e1[i:j]
+    sa = body.index("mov r9, #0xdeadbeef", body.index("mov r4, sa0") + 1)
+    pa = body.index("mov r9, #0xdeadbeef", sa + 1)
+    assert _reads_and_stores(body[sa:pa], "r9", POST_SA_AT) == \
+        [(f"sa{k}", POST_SA_AT + k) for k in range(32)]
+    assert _reads_and_stores(body[pa:], "r9", POST_PA_AT) == \
+        [(f"pa{k}", POST_PA_AT + k) for k in range(16)]
+    assert "@patch res+640" in src and "@patch res+768" in src
+
+
+def test_emitsb14d_is_emitsb14_plus_the_survey_only():
+    """Putting c1's `mov r4, #0` back in place of the branch out and removing the survey lines
+    (the pre block, the two post blocks) leaves emitsb14's code; the word and entries 0 and 1
+    (so U0) are kept."""
+    import gen_blobs
+    s = _survey()
+    b = _code(gen_blobs.gen_emitsb14())
+    e1 = s.index("@entry 1")
+    i = s.index("mov r7, #0x5a5a3302", e1)
+    first_post = [k for k in range(e1, i) if s[k] == "mov r9, #0xdeadbeef"][-3]
+    kept = s[:s.index("br @pre")] + ["mov r4, #0x00000000"] + \
+        s[s.index("back:") + 1:first_post] + \
+        s[i - 1:s.index("pre:")]
+    assert kept == b
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsb14d"))
+    bb = fwtask.parse_blob(fwtask.blob_of("emitsb14"))
+    assert blob.entries == bb.entries                  # entry 1's index: U0 as ST's
+    assert [w for w in blob.words if fwtask.classify(w)[0] == "EMITPDS"] == [FW14_WORD]
+    assert fwtask.refusal(fwtask.blob_of("emitsb14d"), REGS) is None
+    assert fwtask.lint((fwtask.ASM / "emitsb14d.s").read_text()) == []
+
+
+def test_emitsb14d_is_in_the_map_but_not_the_kernel_s_pinned_list():
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m["emitsb14d"]["source"] == "emitsb14d.s"
+    assert "emitsb14d" not in gen_verify.OK_BLOBS
