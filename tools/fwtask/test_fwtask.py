@@ -134,7 +134,7 @@ def test_classify(line, kind):
 
 
 @pytest.mark.parametrize("line", [
-    "emitpds.tasks.taske #0, r2, r3, r4, #0x1",    # the owned word (#0x0) is test_emitpds.py's
+    "emitpds.tasks.taske #0, r2, r3, r4, #0x4",    # the listed words (N3e) are test_emitpds.py's
     "emitpix1.freep #0, r0, r1",
     "bexception #0",
     "phas #0, #0, pixel, end, perinstance",     # not the exit's word (R3-K11 allows only that one)

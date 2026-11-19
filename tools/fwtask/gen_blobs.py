@@ -665,6 +665,24 @@ def gen_emitsb14d():
     return emit_reader(s, crumbs=True, word=FW14_EMIT, survey=True)
 
 
+def gen_emitsb_form(name):
+    """Round 40 (N3e §3.2, the user's decision A (a)): emitsb14d with the emit word of form= `name`
+    (fwtask.EMIT_SIDEBANDS: our word with that sideband) and nothing else; one blob per listed word
+    other than fw14 (emitsb14d itself) and own (sideband 0, measured never to start), so every
+    sideband row also carries row D0's pre/post landing survey. The kernel arms it only with
+    form=`name`."""
+    import fwtask
+    sb = dict(fwtask.EMIT_SIDEBANDS).get(name)
+    if sb is None or name in ("own", "fw14"):
+        raise ValueError(f"{name!r} is not a listed sideband form other than own and fw14")
+    s = Src(f"emitsb_{name}", f"round 40 (N3e): emitsb14d with the emit word of sideband 0x{sb:03x} "
+            f"(form={name}): the landing survey of D0 and the emit on the first pass that sees cmd 1",
+            phase="r40",
+            emit=f"one emitpds (the {name} form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=True, word=f"emitpds.tasks.taske #0, r2, r3, r4, #0x{sb:x}",
+                       survey=True)
+
+
 def survey_block(s, base, at, src, n):
     """`mov base, res+4*at`, then src0..src(n-1) in fours through r4-r7 to base+0..n-1."""
     s("mov %s, #0xdeadbeef                ; @patch res+%d" % (base, 4 * at))
@@ -759,6 +777,10 @@ def all_sources():
          "emitsn": gen_emitsn(), "emitsk": gen_emitsk(),
          "emitsk14": gen_emitsk14(), "emitsb14": gen_emitsb14(),
          "emitsb14d": gen_emitsb14d()}
+    import fwtask
+    for name, _, _ in fwtask.EMIT_FORMS:
+        if name not in ("own", "fw14"):
+            d[f"emitsb_{name}"] = gen_emitsb_form(name)
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

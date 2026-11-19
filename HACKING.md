@@ -648,7 +648,18 @@ lets a reviewer check that they stay clean-room; each check is a test.
      `emitsb14`), the fork's list at the pin does not carry it. `emitsb14d` (N3e row D0) is
      `emitsb14` with a landing survey: sa0-sa31 before the emit (page dwords 128-159, out of
      line, so entry 1 and the kernel's U0 stay `emitsb14`'s) and sa0-sa31 and pa0-pa15 in the
-     started task (160-207); likewise accepted unchanged, not in the pinned list.
+     started task (160-207); likewise accepted unchanged.
+     Round 40's kernel (N3e §3.2, the user's decisions A (a) and C (a)) makes the emit word a
+     closed list, `fwtask.EMIT_SIDEBANDS`: our word with each of 18 sidebands (the 16 subsets of
+     0x843's set bits {0, 1, 6, 11}, #11's 0x0c43 and 0x403), every other field ours, each a form
+     row `emitpds-NAME` under every rule of the first; `form=NAME` arms a blob holding that word
+     only (`sgx_own_regs.h` carries the names and words, generated). Every other sideband stays
+     refused. `emitsb_NAME` is `emitsb14d` with the word of NAME (one blob per listed word but
+     `own` and `fw14`, whose blob is `emitsb14d`), so every sideband row reads D0's survey. The
+     image `pds=land` (`asm/fwtask/pds/land.s`) is crumb3's layout (3 rows, 0x01800100) with its
+     two `douta` writing constant markers 0x5a5a3a18 and 0x5a5a3a1a to secondary attributes 24
+     and 26, the `doutu` and `halt`, no `tim`; the kernel fills its U0 only. The fork's KUnit list
+     carries `emitsb14`, `emitsb14d` and every `emitsb_NAME`.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
@@ -913,6 +924,8 @@ stays with what a session must do around it.
   module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
 - `pds=halt`, `pds=crumb3` and `pdsat=fw14` arm only with the fork's branch `r38-kernel`
   (e1cf9d2b43ab, not built nor booted yet); the module of r37-kernel refuses them.
+- `pds=land` and every `form=` name but `fw14` arm only with the fork's branch `r40-kernel` (round
+  40, not built nor booted yet); the module of r39-kernel (0CDFCDB7) refuses them.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
