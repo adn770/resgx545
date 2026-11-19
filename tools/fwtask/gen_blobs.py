@@ -610,16 +610,36 @@ def gen_emitsn():
     return s.text()
 
 
+def gen_emitsk():
+    """Round 39 (N3d, row K): emitsb whose emit waits for a host kick pass. At cmd 1, entry 0
+    reads pa1 and tests bit 8 (the CCB reader's bit: a GETMISCINFO kick reaches slot 0 with pa1
+    bits 23:0 = 0x100, a tick with 0, E746); without it the tail call follows with cmd untouched,
+    so the ticks between the command write and the kick do not emit; with it, emitsb's c1 (M1,
+    cmd = 0, the fence, the emitpds, X0) and emitsb's entry 1. The mask is a limm in r8: the
+    alu-test form has no encoding for the immediate 0x100."""
+    s = Src("emitsk", "round 39 (N3d): emitsb whose emit (cmd 1) waits for a pass with pa1 bit 8 "
+            "(a host kick, E746); every other pass tail-calls with cmd untouched", phase="r39",
+            emit="one emitpds (the owned form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=True, kick=True)
+
+
 def crumb(s, mark, j):
     s("mov r7, #0x%08x" % mark)
     store(s, j, "r7")
     s("idf drc0, bif", "wdf drc0")
 
 
-def emit_reader(s, crumbs):
+def emit_reader(s, crumbs, kick=False):
     prologue(s)
     dispatch(s, [1])
     s("c1:")
+    if kick:
+        s("mov r5, pa1",
+          "mov r8, #0x00000100",
+          "and.testtanz.chan0 !c0, p0, r5, r8  ; p0 = pa1 bit 8 (a host kick pass, E746)",
+          "p0 br @kick",
+          "br @tail",
+          "kick:")
     result_base(s, 1)
     s("mov r7, #0x%08x" % EMIT_MARK,
       "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
@@ -672,7 +692,7 @@ def all_sources():
          "state": gen_state(), "events": gen_events(), "slow": gen_slow(),
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
          "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb(),
-         "emitsn": gen_emitsn()}
+         "emitsn": gen_emitsn(), "emitsk": gen_emitsk()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

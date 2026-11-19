@@ -623,6 +623,12 @@ lets a reviewer check that they stay clean-room; each check is a test.
      arm refuses `fw14` for a blob without the emit, and every arm and the recovery reset zero
      the slack (the firmware's build rewrites only #14's 0x68 bytes), so no word of ours outlives
      the run.
+     Since round 39 (N3d, row K) the blob `emitsk` is `emitsb` whose emit waits for a host kick
+     pass: at cmd 1 entry 0 reads `pa1` and tests bit 8 (a GETMISCINFO kick reaches slot 0 with
+     `pa1` bits 23:0 = 0x100, a tick with 0, E746); without it the tail call follows with cmd
+     untouched, with it `emitsb`'s c1 and entry 1, unchanged. The mask is a limm in r8 (the
+     alu-test form has no encoding for the immediate). The kernel's verifier at round 38's fork
+     accepts it (`test_host_verifier.py`); the fork's KUnit list gains it with round 39's kernel.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),

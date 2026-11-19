@@ -439,3 +439,85 @@ def test_emitsn_is_in_the_map_and_the_kernel_s_accepted_list():
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsn"]["source"] == "emitsn.s"
     assert "emitsn" in gen_verify.OK_BLOBS
+
+
+# ---- emitsk: emitsb whose emit waits for a host kick pass (round 39, N3d row K) -----------------
+KICK_GATE = ["mov r5, pa1", "mov r8, #0x00000100",
+             "and.testtanz.chan0 !c0, p0, r5, r8  ; p0 = pa1 bit 8 (a host kick pass, E746)",
+             "p0 br @kick", "br @tail", "kick:"]
+
+
+def emitsk_lines():
+    import gen_blobs
+    return [ln.strip() for ln in gen_blobs.gen_emitsk().splitlines()
+            if ln.strip() and not ln.startswith(";")]
+
+
+def test_the_emitsk_source_has_one_emit_its_patches_and_two_entries():
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsk"))
+    kinds = [fwtask.classify(w)[0] for w in blob.words]
+    assert kinds.count("EMITPDS") == 1
+    assert sorted(p.kind for p in blob.patches if p.kind.startswith("pds")) == ["pds0", "pds1", "pds2"]
+    assert len(blob.entries) == 2
+    assert fwtask.refusal(fwtask.blob_of("emitsk"), REGS) is None
+    assert fwtask.lint((fwtask.ASM / "emitsk.s").read_text()) == []
+    (w,) = asm([OWN_EMIT])
+    assert [x for x in blob.words if fwtask.classify(x)[0] == "EMITPDS"] == [w]
+
+
+def test_emitsk_takes_the_emit_path_only_on_cmd_1_with_pa1_bit_8():
+    """N3d §3.1: c1 (cmd = 1) first reads pa1 and tests bit 8 (the CCB reader's bit, E746: a
+    GETMISCINFO kick has pa1 bits 23:0 = 0x100, a tick 0); without it the tail call follows with
+    cmd untouched (no store before it); with it, emitsb's c1 body, unchanged."""
+    raw = emitsk_lines()
+    c1 = raw[raw.index("c1:") + 1:]
+    assert c1[:len(KICK_GATE)] == KICK_GATE
+    before = c1[:c1.index("kick:")]
+    assert not [ln for ln in before if ln.startswith(("stad", "str", "emitpds", "ldad"))]
+    import gen_blobs
+    b = [ln.strip() for ln in gen_blobs.gen_emitsb().splitlines()
+         if ln.strip() and not ln.startswith(";")]
+    body_b = b[b.index("c1:") + 1:b.index("@entry 1")]
+    body_k = c1[len(KICK_GATE):c1.index("@entry 1")]
+    assert body_k == body_b
+    assert body_k.index("stad [r1,+#1], r4                  ; cmd = 0: one emit per command") \
+        < next(i for i, ln in enumerate(body_k) if ln.startswith("emitpds"))
+
+
+def test_emitsk_is_emitsb_plus_the_kick_gate_and_nothing_else():
+    import collections
+    import gen_blobs
+    b = collections.Counter(ln.strip() for ln in gen_blobs.gen_emitsb().splitlines()
+                            if ln.strip() and not ln.startswith(";"))
+    k = collections.Counter(emitsk_lines())
+    assert b - k == collections.Counter()
+    assert sorted((k - b).elements()) == sorted(KICK_GATE)
+
+
+def test_emitsk_keeps_emitsb_s_offsets():
+    """M1/X0 at res+272 (dwords 68-70), S1 at res+336 (84), M4 at res+320 (80-81)."""
+    import gen_blobs
+    import re
+    pk = re.findall(r"@patch (res\+\d+)", gen_blobs.gen_emitsk())
+    pb = re.findall(r"@patch (res\+\d+)", gen_blobs.gen_emitsb())
+    assert pk == pb
+
+
+def test_the_kick_gate_test_assembles_and_round_trips():
+    """The bit test is the alu-test form (`and.testtanz` of two registers: the immediate #0x100
+    has no encoding in this form, so the mask is a mov limm into r8, as events_m and oomring2)."""
+    (w,) = asm(["and.testtanz.chan0 !c0, p0, r5, r8"])
+    assert fwtask.classify(w) == ("PLAIN", "alu-test")
+    with pytest.raises(fwtask.VerifyError):
+        asm(["and.testtanz.chan0 !c0, p0, r5, #0x100"])
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsk"))
+    assert w in blob.words
+
+
+def test_emitsk_is_in_the_map():
+    """The map names it (the kit's owntask stage checks the staged blob against it). The fork's
+    KUnit list gains it with the next kernel series (round 39, Z); until then the kernel's
+    verifier at the pin runs it (test_host_verifier.py, every source)."""
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m["emitsk"]["source"] == "emitsk.s"
