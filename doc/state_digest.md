@@ -143,7 +143,7 @@ list.
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
-  the s0, s1 and s2 operands of the started PDS program become ... (E1150, E1151, E1152)
+  the s0, s1 and s2 operands of the started PDS program become ... (E1152, E1153, E1154)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
   (does it land in the register whose index is the register's ... (E486, E519, E535)
 - `Q134` usse, medium: which register does a client str change (the order of a client str then ldr
@@ -275,9 +275,15 @@ list.
 
 ## Recent records
 
-10 records of 2026-11-18 to 2026-11-19 (the last 2 days to the newest record's date), newest first;
+12 records of 2026-11-18 to 2026-11-19 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1154` edm, 2026-11-19: r38-n3c-s3 stage own (N3c R4 M, module 88ADCEB5, fork e1cf9d2b43ab, image
+  crumb3 at fw14, flagged, user present): our EDM task emitsb emitted E1150's crumb program with 3
+  data rows (crumb's 8 dwords ...
+- `E1153` edm, 2026-11-19: r38-n3c-s4 stage own (N3c R5 H, module 88ADCEB5, fork e1cf9d2b43ab, image
+  halt, flagged, user present): our EDM task emitsb emitted E1149's form with the halt image, v1's
+  two data rows and a lone ...
 - `E1152` pds, 2026-11-19: r38-n3c-s1 stage tim (N3c R2 th, module 77917296, stock firmware,
   flagged, user present): a client fill's PDS program (the recorded pds-timer-tim-host) did movs tim
   of 0x00abcde0 under regtimeline ...
@@ -311,9 +317,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-114 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+116 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r38-n3c-s4`: 2026-11-19; module 88ADCEB5AD9F055D077A99C; tools ~/sgxfive-test-t30
+- `render/closing-r38-n3c-s3`: 2026-11-19; module 88ADCEB5AD9F055D077A99C; tools ~/sgxfive-test-t30
 - `render/closing-r38-n3c-s1`: 2026-11-19; module 77917296568EB311B89B0DA; tools ~/sgxfive-test-t30
 - `render/closing-r37-n3b-b`: 2026-11-18; module 77917296568EB311B89B0DA; tools ~/sgxfive-test-t30
 - `render/closing-r37-n3b-a`: 2026-11-18; module 77917296568EB311B89B0DA; tools ~/sgxfive-test-t30
@@ -482,6 +490,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): e1cf9d2b43ab
+- module srcversion 88ADCEB5AD9F055D077A99C: last named 2026-11-19, 2 sessions
 - module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions
 - module srcversion C01FB3203FDA4FEF01E4891: last named 2026-11-18, 1 sessions
 - module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
@@ -566,4 +575,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+54 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154"]
 terms = []
 +++
 
@@ -87,3 +87,19 @@ rests only on an emitted program's `tim` write landing as a client's does [infer
 the emit (the program, its page or flags, the control word's rows, the operands or the issuing
 pass) stops the tick, why the emitted program does not start from an EDM task, and where an
 emitted douta lands (pa or sa), never reached.
+
+Narrowed 2026-11-19 (E1153, E1154, r38-n3c-s4 and r38-n3c-s3, flagged, sessions S4 and S3 of
+closing29/n3c/design.md, one boot of module 88ADCEB5): E1149's job with the image changed at the
+arm, one job each. R5 (E1153): the halt image, v1's two data rows and a lone `halt`, in the
+kernel's own page, stopped the tick within 9 ticks as v1 and crumb did, the issuer going on past
+the emit [HW]: the stop needs the emit (E1151) but no instruction of the program. R4 (E1154):
+crumb's program with 3 data rows and #14's control word 0x01800100, placed at 0x30011100 in the
+firmware's own PDS #14 page with that page's flags, never showed its first `tim` marker and
+stopped the tick within 9 ticks [HW; that it never started is inferred as in E1150]: our page,
+its flags, the rows and the control word are not the cause. R6 and R7 (sessions s5 and s6) were
+not run: the design runs them only after a start (M-T1 to M-DONE). Remaining candidates for why
+an emitted program does not start from an EDM task and the tick stops: our `emitpds`'s `s2`
+operand or its encoding form, or emitting from our task's timer pass where the firmware emits
+from its kick pass. The next step is a user decision (closing29/n3c/design.md, after M-NEVER),
+after a facts-only fwsim read of what the stock kick pass does after its #14 emit. Where an
+emitted douta lands (pa or sa) stays open, never reached.

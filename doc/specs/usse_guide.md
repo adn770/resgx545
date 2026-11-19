@@ -3546,6 +3546,14 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   arm, command, stores, fences and tail call, one job) ran its command to done with the tick
   going at its rate through and after the job, so our cmd-1 path does not stop the EDM by itself;
   which part of the emit does is **[open]** (Q128).
+- **Not the program, its page, rows or control word [HW, infer].** A lone `halt` image (v1's two
+  data rows, the kernel's own page, E1153) stopped the tick within 9 ticks as v1 and crumb did,
+  the issuer going on, so the stop needs no instruction of the program **[HW]**. crumb's program
+  with 3 data rows and #14's control word 0x01800100, placed in the firmware's own PDS #14 page
+  (0x30011100, that page's flags, E1154) never showed its first `tim` marker and stopped the
+  tick the same way **[HW]**, so it never started there either **[infer, as E1150]**. Left open
+  (Q128): our `s2` operand or the encoding form, and emitting from our task's timer pass where
+  the firmware emits from its kick pass.
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

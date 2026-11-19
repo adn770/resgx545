@@ -1026,10 +1026,12 @@ same 20 passes and marks). A stop reads
 counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
 debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task still running inside
 a 90.5 ms hold reads the same, so the signature cannot tell a stop from a long task (E811, E816).
-The stops after an `emitpds` from a task of ours (E1148, E1149, E1150) read the rest of it with
-`USE0_SERV_EVENT` bit 16 set, as it was before the command (its count 5 ahead of HostCtl dword 12
-throughout), so there bit 16 marks nothing; it read set at snap0 and snap9 of the same task's job
-without the emit, which did not stop (E1151). A
+The stops after an `emitpds` from a task of ours (E1148, E1149, E1150, E1153, E1154) read the rest
+of it with `USE0_SERV_EVENT` bit 16 set, as it was before the command (its count 5 ahead of HostCtl
+dword 12 throughout), so there bit 16 marks nothing; it read set at snap0 and snap9 of the same
+task's job without the emit, which did not stop (E1151). They came within 9 to 10 ticks of the
+command whatever the emitted program was, a lone `halt` included (E1153), and wherever it sat, the
+firmware's own PDS #14 page with 3 data rows and #14's control word included (E1154). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

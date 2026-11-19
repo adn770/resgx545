@@ -9857,6 +9857,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   0x0acc after a PDS tim write, so the PDS's tim is the host's CR_EVENT_TIMER.
   *pds; HW; data: `render-closing-r38-n3c-s1:out/20261119-092626/tim/`,
   `render-closing-r38-n3c-s1:out/20261119-092626/post/`, `render-closing-r38-n3c-s1:fold/`.*
+- `E1153` r38-n3c-s4 stage own (N3c R5 H, module 88ADCEB5, fork e1cf9d2b43ab, image halt, flagged,
+  user present): our EDM task emitsb emitted E1149's form with the halt image, v1's two data rows
+  and a lone halt (no douta, no doutu, no tim), control 0x01000100, in the kernel's own image page
+  at 0x30022000; X0 0x5a5a3303 was written, S1, M4 and slots 2-4 kept the host's fill, state 0, and
+  the EDM's tick stopped 9 ticks after the command write (alive false, the tick and
+  USE0_SERV_EVENT's count frozen in the runner's three reads) with no BIF fault: every control
+  passed, 'N3c-H RULE: H-STOP: any program stops the EDM, no instruction needed'; the kit's reset
+  recovered it (fill and triangle exact).
+  *edm; HW; data: `render-closing-r38-n3c-s4:out/20261119-112618/own/`,
+  `render-closing-r38-n3c-s4:fold/`.*
+- `E1154` r38-n3c-s3 stage own (N3c R4 M, module 88ADCEB5, fork e1cf9d2b43ab, image crumb3 at fw14,
+  flagged, user present): our EDM task emitsb emitted E1150's crumb program with 3 data rows
+  (crumb's 8 dwords and four zeros) and the control word 0x01800100, placed at 0x30011100, offset
+  0x100 of the firmware's own PDS #14 page with that page's PTE and flags; X0 0x5a5a3303 was
+  written, T (0x0acc) kept counting (none of crumb's tim markers), S1, M4 and slots 2-4 kept the
+  host's fill, state 0, and the EDM's tick stopped 9 ticks after the command write with no BIF
+  fault: every control passed, 'N3c-M RULE: M-NEVER: the program never started (T running, S1 fill):
+  page, flags and rows are not the cause'; the kit's reset recovered it (fill and triangle exact).
+  *edm; HW, infer; data: `render-closing-r38-n3c-s3:out/20261119-112717/own/`,
+  `render-closing-r38-n3c-s3:fold/`.*
 
 ## By unit
 
@@ -9883,7 +9903,8 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
+E1153, E1154.
 
 ### firmware
 
