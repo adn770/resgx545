@@ -11,6 +11,7 @@ a skip is not a pass. None of this touches the closed firmware."""
 import functools
 import pathlib
 import random
+import re
 import shutil
 import struct
 import subprocess
@@ -35,7 +36,9 @@ def host_build() -> pathlib.Path:
     out = pathlib.Path(__import__("tempfile").mkdtemp(prefix="own_host_")) / "own_host"
     head = (SGXFIVE / "sgxfive_owntask.h").read_text()
     flags = [] if "sgx_own_apply" in head else ["-DHOST_NO_APPLY"]
-    if "const struct sgx_own_pds *pds" in head:        # the apply takes the emitpds image (N3)
+    # the apply takes the emitpds image (N3), read-only until round 37, then written back (the
+    # address the emit names, round 38)
+    if re.search(r"(const )?struct sgx_own_pds \*pds\);", head):
         flags.append("-DHOST_APPLY_PDS")
     r = subprocess.run([cc, "-std=gnu11", "-O1", "-Wall", "-Wextra", *flags, f"-I{HERE / 'host' / 'shim'}",
                         f"-I{SGXFIVE}", "-o", str(out), str(HERE / "host" / "own_host.c"),

@@ -481,7 +481,7 @@ srcversion, fork tip, laptop tools.
 
 ## Tool and fork versions
 
-- fork pin (`tools/forkpin.py`): 4f35fc20ffa9
+- fork pin (`tools/forkpin.py`): e1cf9d2b43ab
 - module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions
 - module srcversion C01FB3203FDA4FEF01E4891: last named 2026-11-18, 1 sessions
 - module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
@@ -555,6 +555,8 @@ stays with what a session must do around it.
   outside them changes that test first.
 - `pds=crumb` arms only with the fork's branch `r37-kernel` (own_arm's image choice); the
   module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
+- `pds=halt`, `pds=crumb3` and `pdsat=fw14` arm only with the fork's branch `r38-kernel`
+  (e1cf9d2b43ab, not built nor booted yet); the module of r37-kernel refuses them.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
