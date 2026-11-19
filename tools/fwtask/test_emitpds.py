@@ -306,3 +306,77 @@ def test_emitsb_is_in_the_map_and_the_kernel_s_accepted_list():
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsb"]["source"] == "emitsb.s"
     assert "emitsb" in gen_verify.OK_BLOBS
+
+
+# ---- emitsn: emitsb's entry 0 without the emit (round 38, N3c row R1) ---------------------------
+def emitsn_lines():
+    import gen_blobs
+    return [ln.strip() for ln in gen_blobs.gen_emitsn().splitlines()
+            if ln.strip() and not ln.startswith(";")]
+
+
+def test_emitsn_has_no_emit_no_pds_patch_and_one_entry():
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsn"))
+    kinds = [fwtask.classify(w)[0] for w in blob.words]
+    assert "EMITPDS" not in kinds
+    assert not [p for p in blob.patches if p.kind.startswith("pds")]
+    assert len(blob.entries) == 1
+    assert fwtask.refusal(fwtask.blob_of("emitsn"), REGS) is None
+    assert fwtask.lint((fwtask.ASM / "emitsn.s").read_text()) == []
+    src = [ln for ln in emitsn_lines() if not ln.startswith("@")]
+    assert not [ln for ln in src if ln.startswith("emitpds") or "@patch pds" in ln]
+    assert [ln for ln in emitsn_lines() if ln.startswith("@entry")] == ["@entry 0"]
+
+
+def test_emitsn_stores_m1_run_id_cmd_0_then_x0_fenced_at_slot_1_dword_2():
+    """c1: M1 and the run id in slot 1 (res+272), cmd = 0, a fence, then X0 0x5a5a3303 to
+    res+280 (page dword 70) through r9 = res+272, fenced: emitsb's order with the emit gone."""
+    raw = emitsn_lines()
+    c1 = raw[raw.index("c1:") + 1:]
+    assert c1[0].startswith("mov r9, #0xdeadbeef") and c1[0].endswith("@patch res+272")
+    i = c1.index("stad [r1,+#1], r4                  ; cmd = 0: one emit per command")
+    assert c1[i - 1] == "mov r4, #0x00000000"
+    assert c1[1:i - 1] == ["mov r7, #0x5a5a3301", "ldad.bypassl1 r5, [r1,+#3], drc0   ; the run id",
+                           "wdf drc0", "stad [r9,+#0], r7", "stad [r9,+#1], r5"]
+    assert c1[i + 1:i + 7] == ["idf drc0, bif", "wdf drc0", "mov r7, #0x5a5a3303",
+                               "stad [r9,+#2], r7", "idf drc0, bif", "wdf drc0"]
+    assert 272 + 4 * 2 == 4 * 70
+
+
+def test_emitsn_then_does_done_s_sequence_in_slot_4_and_the_tail_call():
+    """After X0: M4 0x5a5a3302 and the run id in slot 4 (res+320, page dwords 80-81), the echo,
+    a fence, state = 2, then the tail call into the closed task (no own_end: one entry)."""
+    raw = emitsn_lines()
+    x0 = raw.index("stad [r9,+#2], r7")
+    rest = raw[x0 + 3:]
+    assert rest[0].startswith("mov r9, #0xdeadbeef") and rest[0].endswith("@patch res+320")
+    assert rest[1:] == ["mov r7, #0x5a5a3302", "ldad.bypassl1 r5, [r1,+#3], drc0   ; the run id",
+                        "wdf drc0", "stad [r9,+#0], r7", "stad [r9,+#1], r5", "stad [r1,+#5], r5",
+                        "mov r3, #0x00000002", "idf drc0, bif", "wdf drc0",
+                        "stad [r1,+#2], r3                ; state = done", "br @tail"]
+    assert "own_end" not in raw and 320 == 4 * 80
+
+
+def test_emitsn_is_emitsb_entry_0_without_the_emit():
+    """Every line of emitsn is one of emitsb's (entry 1 moved into entry 0's tail, its pa and sa
+    reads and S1 gone); emitsb's emit and its three pds limms are the lines it lacks."""
+    import collections
+    import gen_blobs
+    b = collections.Counter(ln.strip() for ln in gen_blobs.gen_emitsb().splitlines()
+                            if ln.strip() and not ln.startswith(";"))
+    n = collections.Counter(emitsn_lines())
+    assert n - b == collections.Counter()
+    gone = {ln for ln in (b - n).elements()}
+    assert {"emitpds.tasks.taske #0, r2, r3, r4, #0x0", "mov r2, #0xdeadbeef                 ; @patch pds0",
+            "mov r3, #0xdeadbeef                 ; @patch pds1",
+            "mov r4, #0xdeadbeef                 ; @patch pds2"} <= gone
+
+
+def test_emitsn_is_in_the_map_and_not_yet_in_the_kernel_s_accepted_list():
+    """The map names it (the kit's owntask stage checks the staged blob against it). The fork's
+    KUnit list (sgxfive_owntask_blobs.h, at the pin) gains it with the next kernel series; until
+    then the kernel's verifier at the pin is run on it by test_host_verifier.py (every source)."""
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m["emitsn"]["source"] == "emitsn.s"
+    assert "emitsn" not in gen_verify.OK_BLOBS

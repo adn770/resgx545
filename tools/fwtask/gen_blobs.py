@@ -573,6 +573,43 @@ def gen_emitsb():
     return emit_reader(s, crumbs=True)
 
 
+def gen_emitsn():
+    """Round 38 (N3c, row R1 `n0`): emitsb's entry 0 without the emit. cmd 1 at entry 0: M1 and
+    the run id in slot 1, cmd = 0, a fence, X0 (0x5a5a3303, slot 1 dword 2), a fence, then the
+    sequence emitsb's entry 1 ends with (M4 and the run id in slot 4, the echo, a fence, state =
+    done) and the tail call into the closed task. One entry, no pds patch: it separates "the emit"
+    from "our cmd-1 path"."""
+    s = Src("emitsn", "round 38 (N3c): emitsb's entry 0 without the emitpds (cmd 1): M1, X0, "
+            "then M4, the echo and state done in entry 0, and the closed task", phase="r38")
+    prologue(s)
+    dispatch(s, [1])
+    s("c1:")
+    result_base(s, 1)
+    s("mov r7, #0x%08x" % EMIT_MARK,
+      "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
+      "wdf drc0")
+    store(s, 0, "r7")
+    store(s, 1, "r5")
+    s("mov r4, #0x00000000",
+      "stad [r1,+#%d], r4                  ; cmd = 0: one emit per command" % L.CMD,
+      "idf drc0, bif",
+      "wdf drc0")
+    crumb(s, PAST_MARK, 2)                      # X0: r9 is still slot 1
+    result_base(s, 4)
+    s("mov r7, #0x%08x" % READ_MARK,
+      "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
+      "wdf drc0")
+    store(s, 0, "r7")
+    store(s, 1, "r5")
+    s("stad [r1,+#%d], r5" % L.RUNID_ECHO,
+      "mov r3, #0x%08x" % L.DONE,
+      "idf drc0, bif",
+      "wdf drc0",
+      "stad [r1,+#%d], r3                ; state = done" % L.STATE,
+      "br @tail")
+    return s.text()
+
+
 def crumb(s, mark, j):
     s("mov r7, #0x%08x" % mark)
     store(s, j, "r7")
@@ -634,7 +671,8 @@ def all_sources():
          "x9b_r1": gen_9b("R1"), "x9b_r2": gen_9b("R2"),
          "state": gen_state(), "events": gen_events(), "slow": gen_slow(),
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
-         "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb()}
+         "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb(),
+         "emitsn": gen_emitsn()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:
