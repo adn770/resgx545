@@ -774,28 +774,37 @@ impl Bus for Unit<'_> {
         if !text.starts_with("emitpds") {
             return Err(why(format!("{text}: no unit for this emit")));
         }
-        // E1148, E1149, E1150 (Q128): from our own task the issuer went on past the emit, the
-        // started entry never stored and the EDM's tick stopped; the crumb image's first `movs
-        // tim` never reached 0x0acc, so the program never ran [infer: a client's does reach it,
-        // E1152]. Without the emit the same task ran to done (E1151); a lone `halt` image stopped
-        // it as well (E1153), and so did crumb's program with 3 rows and #14's control word in
-        // the firmware's own PDS page (E1154): not the program, its page, rows or control word.
-        // From a GETMISCINFO kick pass the same word with s2 0 scored CANNOT TELL (E1155); with
-        // #14's sideband 0x843 and s2 0x00020000 (the request bit) the emitted program ran and
-        // its doutu started our entry to done (E1156). Which of the sideband, s2 and the pass
-        // decides is open, and the sim does not know the pass: not a model either way, refused.
+        // From our own task the sideband decides (Q128). With our old word, sideband 0, the
+        // issuer went on past the emit, the started entry never stored and the EDM's tick
+        // stopped (E1148-E1150); the crumb images' first `movs tim` never reached 0x0acc, so the
+        // program never ran [infer, E1152]. Not the program, its page, rows or control word
+        // (E1153, E1154), not s2 or the pass (E1155 from a kick pass, CANNOT TELL; E1158 with s2
+        // 0x00020000 from a kick pass, NEVER). The simulator keeps no EDM tick: refused. With
+        // #14's sideband 0x843 the program ran and its doutu started our entry to done, with s2
+        // 0x00020000 or 0, from a kick pass or a tick pass (E1156, E1157, E1159, E1160): it runs
+        // as the firmware's emits do. Where its douta land is the model's (the secondary bank);
+        // those rows read pa0 and pa2 not the douta values and sa0 and sa2 equal to them, which
+        // they held anyway, so the landing is not contradicted, nor measured [infer]. Any other
+        // sideband is unmeasured from our task.
         if self.own {
             let sideband = text.rsplit_once('#').and_then(|(_, n)| n.trim().strip_prefix("0x"));
-            let sideband = sideband.and_then(|n| u32::from_str_radix(n, 16).ok());
-            if sideband == Some(0x843) && s[2] == 0x0002_0000 {
-                let tail = "#14's sideband and s2 ran once from a kick pass (E1156); which of the \
-                            sideband, s2 and the pass decides is open";
-                return Err(why(format!("emitpds from our own task: {tail} (Q128)")));
+            match sideband.and_then(|n| u32::from_str_radix(n, 16).ok()) {
+                Some(0x843) => {}
+                Some(0) => {
+                    let tail = "the emitted program did not start [infer], the tick stopped";
+                    return Err(why(format!(
+                        "emitpds from our own task with sideband 0: {tail} \
+                         (E1148-E1150, E1153, E1154, E1155, E1158, Q128)"
+                    )));
+                }
+                b => {
+                    let b = b.map_or("unread".into(), |b| format!("{b:#x}"));
+                    return Err(why(format!(
+                        "emitpds from our own task with sideband {b}: unmeasured (only 0 and 0x843 \
+                         were run, E1158, E1160, Q128)"
+                    )));
+                }
             }
-            let tail = "the emitted program did not start [infer], the tick stopped";
-            return Err(why(format!(
-                "emitpds from our own task: {tail} (E1148-E1150, E1153, E1154, E1155, Q128)"
-            )));
         }
         self.st.effect()?;
         self.st.trace(|| Ev::Emit { s });
@@ -1535,9 +1544,10 @@ mod tests {
         // E1148, E1149, E1150 (Q128): from our own task (instruction 0x4000 on) the firmware's
         // emitpds form went on in the issuer, the started entry never stored, the EDM's tick
         // stopped, and the crumb image's first `movs tim` never showed: the emitted program
-        // did not run [infer]. The simulator would run it and start the task, so it refuses.
+        // did not run [infer]. That word's sideband was 0 (E1158: the sideband decides), and
+        // the simulator, which would run it and start the task, refuses it.
         let emit = "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
-                    emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nnop.end";
+                    emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000000\nnop.end";
         let go = |own: bool| {
             let mut s = sgx();
             s.st.mem.map(DATA, &[0; 16]);
@@ -1579,9 +1589,10 @@ mod tests {
         // own page) stopped the tick as v1 and crumb did, so no instruction of the program is
         // needed; E1154 (r38-n3c-s3 M): crumb's program with 3 rows and #14's control word
         // 0x01800100, in the firmware's own PDS page past #14's image, never started either.
-        // The refusal does not depend on the program, its page, its rows or its control word.
+        // The refusal does not depend on the program, its page, its rows or its control word
+        // (both emitted our word, sideband 0).
         let emit = "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
-                    emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nnop.end";
+                    emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000000\nnop.end";
         let crumb = "movs tim, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt";
         for (rows, at, prog) in [(2u32, 0x100000u32, "halt"), (3, 0x80100, crumb)] {
             let mut s = sgx();
@@ -1604,42 +1615,74 @@ mod tests {
         }
     }
 
+    /// Our own task at OWN_INDEX emits a tim-marking program at CODE + 0x80100 (3 rows) with
+    /// `sideband` and `s2`; the program writes `tim`, then its doutu starts our entry at
+    /// OWN_INDEX + 8, which stores 0x5a5a3302 to register 65.
+    fn own_emit(sideband: u32, s2: u32) -> (Sgx, Result<(), Error>) {
+        let emit = format!(
+            "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
+             emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x{sideband:08x}\nnop.end"
+        );
+        let entry = "mov r1, #0x5A5A3302\nstr #65, r1\nnop.end";
+        let prog =
+            "movs tim, ds1[0], ds1[0], ds1[0], ds1[0]\nmovs doutu, ds0[0], ds0[1], ds0[0], ds0[0]\nhalt";
+        let mut s = sgx();
+        s.st.mem.map(DATA, &[0; 16]);
+        s.st.mem.map(CODE, &vec![0; 0x20000]);
+        let data = [code_word(OWN_INDEX as u32 + 8), 0, 0x005a_3305, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        s.st.mem.map(CODE + 0x80100, &pds(&data, prog));
+        let mut code = usse(&emit);
+        code.resize(8 * 8, 0);
+        code.extend(usse(entry));
+        s.st.mem.map(CODE + 8 * OWN_INDEX as u32, &code);
+        s.code_len = Some(OWN_INDEX + 16);
+        let mut pa = [0; 128];
+        (pa[0], pa[2], pa[4]) = (3 << 23 | 0x100, (CODE + 0x80100) >> 4, s2);
+        s.st.queue.push_back(Work::Task {
+            base: CODE,
+            pc: OWN_INDEX,
+            temps: 8,
+            pa: Box::new(pa),
+            written: 0b10101,
+        });
+        let r = s.run(10_000);
+        (s, r)
+    }
+
     #[test]
-    fn an_own_task_emit_with_14s_sideband_and_s2_is_refused_citing_the_one_run() {
-        // E1156 (r39-n3d-z Z): from a GETMISCINFO kick pass, our word with #14's sideband 0x843
-        // and s2 0x00020000 (the request bit) started crumb3 in #14's page; it ran to its last
-        // `tim` marker and its doutu started our entry 1 to done. Which of the sideband, s2 and
-        // the kick pass decides is open (Q128), so the simulator still refuses, naming the run;
-        // E1155 (r39-n3d-k K: our word, s2 0, a kick pass) scored CANNOT TELL.
-        let crumb = "movs tim, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt";
-        for (sideband, s2, ran) in [(0x843u32, 0x0002_0000u32, true), (0, 0, false), (0x843, 0, false)] {
-            let emit = format!(
-                "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
-                 emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x{sideband:08x}\nnop.end"
-            );
-            let mut s = sgx();
-            s.st.mem.map(DATA, &[0; 16]);
-            s.st.mem.map(CODE, &vec![0; 0x20000]);
-            s.st.mem.map(CODE + 0x80100, &pds(&[0; 12], crumb));
-            s.st.mem.map(CODE + 8 * 0x4000, &usse(&emit));
-            s.code_len = Some(0x4000 + 8);
-            let mut pa = [0; 128];
-            (pa[0], pa[2], pa[4]) = (3 << 23 | 0x100, (CODE + 0x80100) >> 4, s2);
-            s.st.queue.push_back(Work::Task {
-                base: CODE,
-                pc: 0x4000,
-                temps: 8,
-                pa: Box::new(pa),
-                written: 0b10101,
-            });
-            let r = s.run(10_000);
+    fn an_own_task_emit_with_14s_sideband_runs_the_program_whatever_s2() {
+        // E1156 (Z), E1157 (SB), E1159 (S-PASS), E1160 (S-SBT): with #14's sideband 0x843 the
+        // program our task emitted ran to its last tim marker and its doutu started our entry
+        // to done, with s2 0x00020000 or 0, from a kick pass or a tick pass: 4 of 4.
+        for s2 in [0x0002_0000, 0] {
+            let (s, r) = own_emit(0x843, s2);
+            r.unwrap();
+            assert_eq!(s.st.regs[&reg::EVENT_TIMER], 0x005a_3305);
+            assert_eq!(s.st.regs[&65], 0x5a5a_3302);
+        }
+    }
+
+    #[test]
+    fn an_own_task_emit_without_14s_sideband_is_refused_as_measured() {
+        // E1148-E1150, E1153-E1155, E1158: with our old word, sideband 0, the program never
+        // started and the EDM's tick stopped, with s2 0 or 0x00020000, from a tick or a kick
+        // pass; the simulator keeps no EDM tick, so it refuses, naming the sideband
+        for s2 in [0, 0x0002_0000] {
+            let (_, r) = own_emit(0, s2);
             assert!(
                 matches!(r, Err(Error::Unsupported { ref why, .. })
-                if why.contains("own task") && why.contains("Q128")
-                    && why.contains("E1156") == ran && why.contains("E1155") != ran),
+                    if why.contains("own task") && why.contains("sideband 0")
+                        && why.contains("E1158") && why.contains("Q128")),
                 "{r:?}"
             );
         }
+        // any other sideband is unmeasured from our task (#11's 0xc43 included)
+        let (_, r) = own_emit(0xc43, 0);
+        assert!(
+            matches!(r, Err(Error::Unsupported { ref why, .. })
+                if why.contains("own task") && why.contains("0xc43") && why.contains("unmeasured")),
+            "{r:?}"
+        );
     }
 
     #[test]
