@@ -2531,7 +2531,10 @@ BAD_ARMS = ["slots=0x1", "slots=0x0 entry=0", "slots=0x1 entry=0 trc_hazard=1",
             "slots=0x3 entry=0", "entry=0 slots=0x1", "slots=0x1 entry=0 trc=32",
             "slots=0x1 entry=0;reboot", "slots=1 entry=0", "slots=0x1 entry=0 pds=other",
             "slots=0x1 entry=0 pds=", "slots=0x1 entry=0 pds=crumb trc=8",
-            "slots=0x1 entry=0 pds=crumb pds=crumb"]
+            "slots=0x1 entry=0 pds=crumb pds=crumb", "slots=0x1 entry=0 pds=crumb4",
+            "slots=0x1 entry=0 pds=v1", "slots=0x1 entry=0 pdsat=own", "slots=0x1 entry=0 pdsat=other",
+            "slots=0x1 entry=0 pdsat=fw14 pds=crumb3", "slots=0x1 entry=0 pds=crumb3 pdsat=",
+            "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 pdsat=fw14", "slots=0x1 entry=0 pdsmap=rw"]
 
 
 @pytest.mark.parametrize("arm", BAD_ARMS)
@@ -2544,7 +2547,10 @@ def test_lint_refuses_a_bad_arm_string(repos, arm):
 
 def test_lint_accepts_the_arm_forms_of_the_runner(repos):
     for arm in ("slots=0xf entry=0,1,2,3", "slots=0x1 entry=0 trc=31",
-                "slots=0x1 entry=0 pds=crumb", "slots=0x1 entry=0 trc=8 pds=crumb"):
+                "slots=0x1 entry=0 pds=crumb", "slots=0x1 entry=0 trc=8 pds=crumb",
+                "slots=0x1 entry=0 pds=halt", "slots=0x1 entry=0 pds=crumb3",
+                "slots=0x1 entry=0 pds=crumb3 pdsat=fw14", "slots=0x1 entry=0 pds=crumb pdsat=fw14",
+                "slots=0x1 entry=0 trc=8 pds=crumb3 pdsat=fw14", "slots=0x1 entry=0 pdsat=fw14"):
         kp, r = own_session(dict(repos, tmp=repos["tmp"] / arm.replace(" ", "_")),
                             stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
         li = kit(kp, r, "lint")
@@ -2829,6 +2835,15 @@ def test_the_runner_refuses_an_owntask_table_that_breaks_the_rules(tmp_path, row
     assert r.returncode == 7 and word in r.stdout, (r.returncode, r.stdout + r.stderr)
 
 
+def test_the_mock_arms_an_image_in_the_firmware_s_14_page(repos):
+    """N3c R4: the arm line with pds=crumb3 pdsat=fw14 reaches the runner as written."""
+    kp, r = own_session(repos, stage=OWN_STAGE.replace("entry=0", "entry=0 pds=crumb3 pdsat=fw14"))
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert "arm slots=0x1 entry=0 pds=crumb3 pdsat=fw14" in own_log(mm)
+
+
 def test_the_runner_takes_a_valid_owntask_table(tmp_path):
     r = own_runner_tree(tmp_path, OWN_ROW)
     assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
@@ -2841,4 +2856,21 @@ def test_the_runner_takes_the_crumb_image_and_refuses_another(tmp_path):
     assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
     r = own_runner_tree(tmp_path / "b", OWN_ROW, tsv=OWN_TSV.replace(
         "slots=0x1 entry=0", "slots=0x1 entry=0 pds=other"))
+    assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pds=halt", "pds=crumb3", "pds=crumb3 pdsat=fw14",
+                                   "pds=crumb pdsat=fw14"])
+def test_the_runner_takes_the_round_38_arm_words(tmp_path, words):
+    """N3c: pds=halt|crumb3 and pdsat=fw14 are arm lines the kit arms."""
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pdsat=own", "pdsat=other", "pdsat=fw14 pds=crumb3",
+                                   "pds=crumb3 pdsmap=rw"])
+def test_the_runner_refuses_other_round_38_arm_words(tmp_path, words):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
     assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)
