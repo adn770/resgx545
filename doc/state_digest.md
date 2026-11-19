@@ -489,7 +489,7 @@ srcversion, fork tip, laptop tools.
 
 ## Tool and fork versions
 
-- fork pin (`tools/forkpin.py`): e1cf9d2b43ab
+- fork pin (`tools/forkpin.py`): f9453424bf71
 - module srcversion 88ADCEB5AD9F055D077A99C: last named 2026-11-19, 2 sessions
 - module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions
 - module srcversion C01FB3203FDA4FEF01E4891: last named 2026-11-18, 1 sessions
