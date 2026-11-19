@@ -646,13 +646,44 @@ def gen_emitsb14():
     return emit_reader(s, crumbs=True, word=FW14_EMIT)
 
 
+SURVEY_PRE, SURVEY_SA, SURVEY_PA = 128, 160, 192     # page dwords of the D0 survey (N3e §3.1)
+
+
+def gen_emitsb14d():
+    """Round 40 (N3e row D0, the landing survey): emitsb14 plus reads and stores, nothing else.
+    Pre: c1 (entry 0), after the M1/run-id stores and before the cmd store and the fence that
+    precede the emit, branches out of line to a block after entry 1's end that stores sa0-sa31
+    through r10 into page dwords 128-159, then does c1's `mov r4, #0` and branches back; the br
+    takes that mov's place, so entry 1 keeps emitsb14's index (the kernel's U0, so the
+    firmware-page write, is ST's). Post: entry 1, after
+    S1 and the pa0-pa3/sa0-sa3 slots and before M4, stores sa0-sa31 into dwords 160-191 and
+    pa0-pa15 into dwords 192-207 through r9."""
+    s = Src("emitsb14d", "round 40 (N3e D0): emitsb14 with a landing survey: sa0-sa31 before the "
+            "emit (dwords 128-159), sa0-sa31 and pa0-pa15 in the started task (160-191, 192-207)",
+            phase="r40",
+            emit="one emitpds (the fw14 form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=True, word=FW14_EMIT, survey=True)
+
+
+def survey_block(s, base, at, src, n):
+    """`mov base, res+4*at`, then src0..src(n-1) in fours through r4-r7 to base+0..n-1."""
+    s("mov %s, #0xdeadbeef                ; @patch res+%d" % (base, 4 * at))
+    regs = ("r4", "r5", "r6", "r7")
+    for k in range(0, n, 4):
+        for j, r in enumerate(regs):
+            s("mov %s, %s%d" % (r, src, k + j))
+        for j, r in enumerate(regs):
+            s("stad [%s,+#%d], %s" % (base, k + j, r))
+
+
 def crumb(s, mark, j):
     s("mov r7, #0x%08x" % mark)
     store(s, j, "r7")
     s("idf drc0, bif", "wdf drc0")
 
 
-def emit_reader(s, crumbs, kick=False, word="emitpds.tasks.taske #0, r2, r3, r4, #0x0"):
+def emit_reader(s, crumbs, kick=False, word="emitpds.tasks.taske #0, r2, r3, r4, #0x0",
+                survey=False):
     prologue(s)
     dispatch(s, [1])
     s("c1:")
@@ -669,8 +700,11 @@ def emit_reader(s, crumbs, kick=False, word="emitpds.tasks.taske #0, r2, r3, r4,
       "wdf drc0")
     store(s, 0, "r7")
     store(s, 1, "r5")
-    s("mov r4, #0x00000000",
-      "stad [r1,+#%d], r4                  ; cmd = 0: one emit per command" % L.CMD,
+    if survey:      # the pre survey, out of line: its br takes the place of the `mov r4, #0`
+        s("br @pre", "back:")
+    else:
+        s("mov r4, #0x00000000")
+    s("stad [r1,+#%d], r4                  ; cmd = 0: one emit per command" % L.CMD,
       "idf drc0, bif",
       "wdf drc0",
       "mov r2, #0xdeadbeef                 ; @patch pds0",
@@ -694,6 +728,9 @@ def emit_reader(s, crumbs, kick=False, word="emitpds.tasks.taske #0, r2, r3, r4,
     s("mov r4, sa0", "mov r5, sa1", "mov r6, sa2", "mov r7, sa3")
     for j, r in enumerate(("r4", "r5", "r6", "r7")):
         store(s, j, r)
+    if survey:
+        survey_block(s, "r9", SURVEY_SA, "sa", 32)
+        survey_block(s, "r9", SURVEY_PA, "pa", 16)
     result_base(s, 4)
     s("mov r7, #0x%08x" % READ_MARK,
       "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
@@ -706,6 +743,10 @@ def emit_reader(s, crumbs, kick=False, word="emitpds.tasks.taske #0, r2, r3, r4,
       "wdf drc0",
       "stad [r1,+#%d], r3                ; state = done" % L.STATE,
       "own_end")
+    if survey:
+        s("pre:")
+        survey_block(s, "r10", SURVEY_PRE, "sa", 32)
+        s("mov r4, #0x00000000", "br @back")
     return s.text()
 
 
@@ -716,7 +757,8 @@ def all_sources():
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
          "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb(),
          "emitsn": gen_emitsn(), "emitsk": gen_emitsk(),
-         "emitsk14": gen_emitsk14(), "emitsb14": gen_emitsb14()}
+         "emitsk14": gen_emitsk14(), "emitsb14": gen_emitsb14(),
+         "emitsb14d": gen_emitsb14d()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

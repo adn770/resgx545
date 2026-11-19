@@ -645,7 +645,10 @@ lets a reviewer check that they stay clean-room; each check is a test.
      without the emit. The blob `emitsk14` is `emitsk` with that word; the fork's KUnit list
      carries `emitsk` and `emitsk14`. Round 40's `emitsb14` (Q128, row S-PASS) is `emitsb` with
      that word: the module's verifier accepts it unchanged (a scratch shim run with the list plus
-     `emitsb14`), the fork's list at the pin does not carry it.
+     `emitsb14`), the fork's list at the pin does not carry it. `emitsb14d` (N3e row D0) is
+     `emitsb14` with a landing survey: sa0-sa31 before the emit (page dwords 128-159, out of
+     line, so entry 1 and the kernel's U0 stay `emitsb14`'s) and sa0-sa31 and pa0-pa15 in the
+     started task (160-207); likewise accepted unchanged, not in the pinned list.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
