@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160"]
 terms = []
 +++
 
@@ -119,3 +119,19 @@ comes from a kick pass. Open: which of the sideband, `s2` and the kick pass deci
 together (row S of the design and the rows that split the sideband from `s2`), and so what
 stopped the tick after our other emits; where an emitted `douta` lands (Z: not `pa0` or `pa2`;
 `sa0`-`sa3` read the values they hold anyway, so not told); and the client-side parts above.
+
+Settled in part 2026-11-19, the own-task stop (E1157 to E1160, r40-s-sb, -s2, -pass and -sbt,
+flagged, module 0CDFCDB7, each changing one thing against Z or S-PASS; this corrects the
+narrowing above, which left the sideband, `s2` and the pass open): the cause of the stop after an
+emitpds from our EDM task is our emit word's 14-bit sideband being 0. Of six emits of crumb3 in
+#14's page, the four with #14's sideband 0x843 ran the program and the entry it started to done,
+from a kick pass or a tick pass, with `s2` 0 or the request bit 0x00020000 (E1156, E1157 kick;
+E1159, E1160 tick) [HW]; the two with sideband 0 never started it and the tick stopped (E1154
+tick and `s2` 0; E1158 kick and `s2` 0x00020000) [HW, infer as E1150], E1155 reading the same
+(CANNOT TELL by its band). `s2` and the pass are not needed. Still open here: what the
+sideband's bits mean (the firmware's #11 emit carries 0x0c43, #12's and #14's 0x0843; facts of
+the data-private read) and whether another nonzero value runs; what stops the tick with sideband
+0; where an emitted `douta` lands (every run row: not pa0 or pa2; sa0-sa3 held those values
+anyway; a row is sketched in closing29/r40-s-logs/d-row-note.md, not built); and the client-side
+parts above (the fault at page 0xd2000, `s0`-`s2` as seen by the program, the addend). Not
+retired.

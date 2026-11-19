@@ -79,9 +79,17 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   from the same kick pass, the same crumb3 image in #14's page ran to its last `tim` marker
   (0x005a3305 at 0x0acc), its `doutu` started our entry 1 and that ran to done (E1156): the first
   program our task emitted that ran, and an emitted program's `tim` write lands at 0x0acc as a
-  client's does. Which of the sideband, `s2` and the kick pass is needed, alone or together, is
-  **[open]** (Q128); where its `douta` land is open too (not `pa0` or `pa2`; `sa0` and `sa2`
-  hold those values anyway).
+  client's does. Which of the sideband, `s2` and the kick pass is needed: the next item. Where
+  its `douta` land is **[open]** (not `pa0` or `pa2` in any run; `sa0` and `sa2` hold those
+  values anyway).
+- **The sideband decides [HW].** One change at a time against that run (E1157-E1160): with
+  #14's sideband 0x843 the emitted program ran and our entry to done from a kick pass or a tick
+  pass, with `s2` 0 or 0x00020000 (4 of 4: E1156, E1157, E1159, E1160); with our sideband 0 it
+  never started and the tick stopped, from a tick pass with `s2` 0 (E1154) or a kick pass with
+  `s2` 0x00020000 (E1158). So the stop after our earlier emits came from the 14-bit sideband
+  being 0; `s2` and the pass are not needed. What the sideband's bits mean (#11's emit carries
+  0x0c43, #12's and #14's 0x0843), whether another nonzero value runs and what stops the tick
+  with 0 are **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

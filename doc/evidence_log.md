@@ -9896,6 +9896,40 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   sideband, s2 and the kick pass decides is open.
   *edm; HW, infer; data: `render-closing-r39-n3d-z:out/20261119-153429/own/`,
   `render-closing-r39-n3d-z:out/20261119-153429/post/`, `render-closing-r39-n3d-z:fold/`.*
+- `E1157` r40-s-sb stage own (row S-SB, module 0CDFCDB7, fork f9453424bf71, emitsk14, image crumb3
+  at fw14, form=fw14, s2 0, flagged, user present): Z's job (E1156) with s2 0 instead of 0x00020000:
+  our EDM task emitted the word with #14's 14-bit sideband 0x843 on the pass of a host GETMISCINFO
+  kick; T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2, done: every control
+  passed, 'Q128-SB RULE: SB-DONE: all ran (SB-RUN: s2 is not needed: #14's sideband with the kick
+  pass suffices)'; post's triangle and fill exact.
+  *edm; HW; data: `render-closing-r40-s-sb:out/20261119-170536/own/`,
+  `render-closing-r40-s-sb:out/20261119-170536/post/`, `render-closing-r40-s-sb:fold/`.*
+- `E1158` r40-s-s2 stage own (row S-S2, module 0CDFCDB7, fork f9453424bf71, emitsk, image crumb3 at
+  fw14, pds2=req, flagged, user present): Z's job (E1156) with our old emit word, sideband 0,
+  instead of #14's: our EDM task emitted with s2 0x00020000 on the pass of a host GETMISCINFO kick;
+  X0 0x5a5a3303 was written, T (0x0acc) kept counting, S1, M4 and state the host's fill and 0, and
+  the EDM's tick stopped 7 ticks from the kick with no BIF fault: every control passed, 'Q128-S2
+  RULE: S2-NEVER: the program never started (T running, S1 fill): with the kick and s2 = 0x00020000,
+  #14's sideband is needed'; the kit's reset recovered it (fill and triangle exact).
+  *edm; HW, infer; data: `render-closing-r40-s-s2:out/20261119-170645/own/`,
+  `render-closing-r40-s-s2:fold/`.*
+- `E1159` r40-s-pass stage own (row S-PASS, the design's row S, module 0CDFCDB7, fork f9453424bf71,
+  emitsb14, image crumb3 at fw14, pds2=req form=fw14, flagged, user present): Z's word and s2
+  (E1156) emitted by emitsb14 on the first tick pass that saw the command, no kick; T read
+  0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2, done: every control passed,
+  'Q128-SP RULE: SP-DONE: all ran (SP-RUN: the kick pass is not needed: #14's word and s2 suffice on
+  a tick)'; post's triangle and fill exact.
+  *edm; HW; data: `render-closing-r40-s-pass:out/20261119-170734/own/`,
+  `render-closing-r40-s-pass:out/20261119-170734/post/`, `render-closing-r40-s-pass:fold/`.*
+- `E1160` r40-s-sbt stage own (row S-SBT, module 0CDFCDB7, fork f9453424bf71, emitsb14, image crumb3
+  at fw14, form=fw14, s2 0, flagged, user present): r40-s-pass's job (E1159) with s2 0: our EDM task
+  emitted the word with #14's 14-bit sideband 0x843 on the first tick pass that saw the command, no
+  kick; T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2, done: every control
+  passed, 'Q128-ST RULE: ST-DONE: all ran (ST-RUN: #14's sideband alone suffices, on a tick, with s2
+  = 0)'; post's triangle and fill exact; with E1158, the sideband is what decides whether our
+  emitted program runs.
+  *edm; HW; data: `render-closing-r40-s-sbt:out/20261119-174746/own/`,
+  `render-closing-r40-s-sbt:out/20261119-174746/post/`, `render-closing-r40-s-sbt:fold/`.*
 
 ## By unit
 
@@ -9923,7 +9957,7 @@ E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E6
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
-E1153, E1154, E1155, E1156.
+E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160.
 
 ### firmware
 
