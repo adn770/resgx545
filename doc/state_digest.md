@@ -564,4 +564,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-54 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

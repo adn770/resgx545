@@ -765,7 +765,8 @@ impl Bus for Unit<'_> {
         }
         // E1148, E1149, E1150 (Q128): from our own task the issuer went on past the emit, the
         // started entry never stored and the EDM's tick stopped; the crumb image's first `movs
-        // tim` never reached 0x0acc, so the program never ran [infer]. Not a model: refused.
+        // tim` never reached 0x0acc, so the program never ran [infer: a client's does reach it,
+        // E1152]. Without the emit the same task ran to done (E1151). Not a model: refused.
         if self.own {
             let tail = "the emitted program did not start [infer], the tick stopped";
             return Err(why(format!("emitpds from our own task: {tail} (E1148-E1150, Q128)")));
@@ -1145,6 +1146,30 @@ mod tests {
     }
 
     #[test]
+    fn the_host_reads_a_pds_tim_write_at_0x0acc() {
+        // E1152 (r38-n3c-s1 th): a client fill's PDS `movs tim` of 0x00abcde0 replaced the
+        // running count the host sampled at 0x0acc and held to the reset, as the PDS read it
+        // back: one register, the host's read is the program's write
+        let mut s = sgx();
+        s.st.mem.map(DATA, &[0; 16]);
+        s.write_reg(reg::EVENT_TIMER, 0x0106_1a80).unwrap();
+        let load = pds(&[0x00ab_cde0, 0, 0, 0], "movs tim, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt");
+        s.st.mem.map(CODE + 0x1000, &load);
+        s.st.queue.push_back(Work::Pds {
+            addr: CODE + 0x1000,
+            data: 4,
+            ir0: None,
+            ir1: None,
+            tim: None,
+            bank: Bank::Secondary,
+        });
+        s.run(100).unwrap();
+        assert!(matches!(s.st.read(reg::EVENT_TIMER), Ok((0x00ab_cde0, Source::Written))));
+        // bit 24 clear: stopped, so a later read is the same value
+        assert!(matches!(s.st.read(reg::EVENT_TIMER), Ok((0x00ab_cde0, _))));
+    }
+
+    #[test]
     fn an_emitted_program_reads_the_callers_running_count() {
         // E1133: while the timer runs (bit 24 set) its count is a running count, bits 23:0 at
         // most 400000, at a phase no row gives; an emitted program's tim is the caller's
@@ -1415,6 +1440,21 @@ mod tests {
         go(false).unwrap();
         assert!(matches!(go(true), Err(Error::Unsupported { ref why, .. })
             if why.contains("E1150") && why.contains("own task")));
+        // E1151 (r38-n3c-s1 n0): the same task without the emit ran to done with the tick
+        // going, so only the emit is refused: the rest of an own task's page runs
+        let mut s = sgx();
+        s.st.mem.map(DATA, &[0; 16]);
+        s.st.mem.map(CODE, &vec![0; 0x20000]);
+        s.st.mem.map(CODE + 8 * 0x4000, &usse("mov r0, pa0\nmov r2, pa2\nmov r4, pa4\nnop.end"));
+        s.code_len = Some(0x4000 + 8);
+        s.st.queue.push_back(Work::Task {
+            base: CODE,
+            pc: 0x4000,
+            temps: 8,
+            pa: Box::new([0; 128]),
+            written: 0b10101,
+        });
+        s.run(10_000).unwrap();
     }
 
     #[test]
