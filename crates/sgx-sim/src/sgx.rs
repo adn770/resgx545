@@ -775,6 +775,7 @@ impl Bus for Unit<'_> {
             return Err(why(format!("emitpds from our own task: {tail} (E1148-E1150, E1153, E1154, Q128)")));
         }
         self.st.effect()?;
+        self.st.trace(|| Ev::Emit { s });
         let data = (s[0] >> 23 & 31) as usize * 4;
         // a running timer: the caller's count (E1133); a stopped one: run_pds reads the register
         let running = self.st.regs.get(&reg::EVENT_TIMER).is_some_and(|v| v >> 24 & 1 == 1);
@@ -787,6 +788,10 @@ impl Bus for Unit<'_> {
             bank: Bank::Secondary,
         });
         Ok(())
+    }
+
+    fn fence(&mut self, wait: bool) {
+        self.st.trace(|| Ev::Fence { wait });
     }
 
     fn port(&mut self, port: Port, w: [u32; 4]) -> Result<(), Error> {
@@ -1212,6 +1217,49 @@ mod tests {
             assert!(s2.set_emit_tim(Some(bad)).is_err(), "{bad:#x}");
         }
         assert!(s2.set_emit_tim(Some(0x0106_1a80)).is_ok() && s2.set_emit_tim(None).is_ok());
+    }
+
+    #[test]
+    fn an_emit_and_the_fences_are_traced_with_values_only() {
+        // fwsim (N3d O2): a trace reader needs the emit's three operand values and where a
+        // task fences, without instruction text: an emit event carries s0-s2, a fence event
+        // whether it issues (idf) or waits (wdf)
+        let mut s = sgx();
+        s.st.mem.map(DATA, &[0; 16]);
+        s.st.mem.map(CODE + 0x1000, &pds(&[0, 0, 0, 0], "halt"));
+        s.st.mem.map(
+            CODE,
+            &usse(
+                "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\nidf drc0, bif\nwdf drc0\n\
+                 emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x00000843\nwdf drc0\nnop.end",
+            ),
+        );
+        let mut pa = [0; 128];
+        (pa[0], pa[2], pa[4]) = (1 << 23, (CODE + 0x1000) >> 4, 0x0002_0000);
+        s.st.queue.push_back(Work::Task { base: CODE, pc: 0, temps: 8, pa: Box::new(pa), written: 0b10101 });
+        let rec = Rc::new(std::cell::RefCell::new(Vec::new()));
+        s.trace_to(Box::new(rec.clone()));
+        s.run(10_000).unwrap();
+        let ev: Vec<Ev> = rec
+            .borrow()
+            .iter()
+            .filter(|e| matches!(e, Ev::Emit { .. } | Ev::Fence { .. } | Ev::PdsStart { .. }))
+            .cloned()
+            .collect();
+        assert_eq!(
+            ev,
+            [
+                Ev::Fence { wait: false },
+                Ev::Fence { wait: true },
+                Ev::Emit { s: [1 << 23, (CODE + 0x1000) >> 4, 0x0002_0000] },
+                Ev::Fence { wait: true },
+                Ev::PdsStart { addr: CODE + 0x1000, data: 4 },
+            ]
+        );
+        for e in &ev {
+            let j = e.json();
+            assert!(!["idf", "wdf", "emit"].iter().any(|w| j.contains(w)), "{j}");
+        }
     }
 
     #[test]

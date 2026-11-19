@@ -70,6 +70,14 @@ pub enum Ev {
         addr: u32,
         value: u32,
     },
+    /// A task handed a PDS program to the PDS (the emit): its three operand values s0-s2.
+    Emit {
+        s: [u32; 3],
+    },
+    /// A data fence in a task: issued (`wait` false) or waited on (`wait` true).
+    Fence {
+        wait: bool,
+    },
     /// A pass ended (the queue ran empty): its number from 0 and the model time at its entry.
     Pass {
         n: u64,
@@ -122,6 +130,11 @@ impl Ev {
             Ev::Store { addr, value } => {
                 format!("{{\"ev\":\"st\",\"addr\":{},\"value\":{}}}", x(*addr), x(*value))
             }
+            Ev::Emit { s } => format!(
+                "{{\"ev\":\"launch\",\"s\":[{}]}}",
+                s.iter().map(|v| x(*v)).collect::<Vec<_>>().join(",")
+            ),
+            Ev::Fence { wait } => format!("{{\"ev\":\"fence\",\"wait\":{wait}}}"),
             Ev::Pass { n, time } => format!("{{\"ev\":\"pass\",\"n\":{n},\"time\":{}}}", opt(*time)),
             Ev::Refusal { index, pc, why } => format!(
                 "{{\"ev\":\"refusal\",\"reg\":{},\"pc\":{pc},\"why\":{}}}",

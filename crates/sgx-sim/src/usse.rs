@@ -35,6 +35,9 @@ pub trait Bus {
         Err(why(format!("{text}: no task emission on this bus")))
     }
 
+    /// A data fence: issued (`wait` false) or waited on (`wait` true). Nothing to do but note it.
+    fn fence(&mut self, _wait: bool) {}
+
     /// smp: the registers a texture sample writes (see tex).
     fn sample(&mut self, _s: &tex::Sample) -> Result<Vec<u32>, Error> {
         Err(why("no texture unit on this bus"))
@@ -2210,7 +2213,11 @@ impl Machine {
     fn op(&mut self, insn: &Insn, bus: &mut dyn Bus) -> Result<Option<usize>, Error> {
         let op = insn.form.op;
         Ok(match op {
-            "nop" | "idf" => None,
+            "nop" => None,
+            "idf" => {
+                bus.fence(false);
+                None
+            }
             "phas" => {
                 self.phas(insn)?;
                 None
@@ -2232,6 +2239,7 @@ impl Machine {
                 None
             }
             "wdf" => {
+                bus.fence(true);
                 let drc = insn.get("drc").unwrap();
                 let (land, keep): (Vec<_>, Vec<_>) = self.pending.drain(..).partition(|p| p.0 == drc);
                 self.pending = keep;
