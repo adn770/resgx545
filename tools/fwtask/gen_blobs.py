@@ -623,13 +623,26 @@ def gen_emitsk():
     return emit_reader(s, crumbs=True, kick=True)
 
 
+FW14_EMIT = "emitpds.tasks.taske #0, r2, r3, r4, #0x843"     # the emitpds-fw14 form (round 39)
+
+
+def gen_emitsk14():
+    """Round 39 (N3d, row Z): emitsk with the emitpds-fw14 word, our form with the sideband of
+    #14's own emit (0x0843, N3d O1); every other line is emitsk's. The kernel arms it only with
+    form=fw14."""
+    s = Src("emitsk14", "round 39 (N3d): emitsk with #14's emit word (sideband 0x843): the emit "
+            "(cmd 1) waits for a pass with pa1 bit 8 (a host kick, E746)", phase="r39",
+            emit="one emitpds (the fw14 form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=True, kick=True, word=FW14_EMIT)
+
+
 def crumb(s, mark, j):
     s("mov r7, #0x%08x" % mark)
     store(s, j, "r7")
     s("idf drc0, bif", "wdf drc0")
 
 
-def emit_reader(s, crumbs, kick=False):
+def emit_reader(s, crumbs, kick=False, word="emitpds.tasks.taske #0, r2, r3, r4, #0x0"):
     prologue(s)
     dispatch(s, [1])
     s("c1:")
@@ -653,7 +666,7 @@ def emit_reader(s, crumbs, kick=False):
       "mov r2, #0xdeadbeef                 ; @patch pds0",
       "mov r3, #0xdeadbeef                 ; @patch pds1",
       "mov r4, #0xdeadbeef                 ; @patch pds2",
-      "emitpds.tasks.taske #0, r2, r3, r4, #0x0")
+      word)
     if crumbs:
         crumb(s, PAST_MARK, 2)                  # X0: r9 is still slot 1
     s("br @tail")
@@ -692,7 +705,8 @@ def all_sources():
          "state": gen_state(), "events": gen_events(), "slow": gen_slow(),
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
          "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb(),
-         "emitsn": gen_emitsn(), "emitsk": gen_emitsk()}
+         "emitsn": gen_emitsn(), "emitsk": gen_emitsk(),
+         "emitsk14": gen_emitsk14()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

@@ -632,7 +632,16 @@ lets a reviewer check that they stay clean-room; each check is a test.
      `pa1` bits 23:0 = 0x100, a tick with 0, E746); without it the tail call follows with cmd
      untouched, with it `emitsb`'s c1 and entry 1, unchanged. The mask is a limm in r8 (the
      alu-test form has no encoding for the immediate). The kernel's verifier at round 38's fork
-     accepts it (`test_host_verifier.py`); the fork's KUnit list gains it with round 39's kernel.
+     accepts it (`test_host_verifier.py`), so row K runs on that module.
+     Round 39's kernel (N3d row Z) mirrors the two things of the firmware's #14 emit that still
+     differ from ours, with arm words. `pds2=req` writes 0x00020000 (the request #14 emits with in
+     `s2`) into the blob's `pds2` limm instead of 0; the verifier still pins the sources, so no
+     blob chooses `s2`. A second `emitpds` form, `emitpds-fw14`, is our exact word with #14's
+     14-bit sideband 0x0843 (0xfb20b10800c08184; N3d O1: the only field that differs; `#11`'s
+     0x0c43 stays refused), under every rule of the first; the kernel arms a blob holding it only
+     with `form=fw14`, and refuses `form=fw14` for the first word and both words for a blob
+     without the emit. The blob `emitsk14` is `emitsk` with that word; the fork's KUnit list
+     carries `emitsk` and `emitsk14`.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),

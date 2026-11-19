@@ -156,6 +156,9 @@ FORMS = [
     # round 33 (N3): the one emitpds form, exactly `emitpds.tasks.taske #0, r2, r3, r4, #0x0`; its
     # sources must hold the kernel's patched values (pass 6) and it runs once per task (pass 7)
     ("emitpds-own", "EMITPDS", ALL, 0xFB20B00000008184),                                # #149
+    # round 39 (N3d row Z): the same word with the 14-bit sideband of #14's own emit, 0x0843 (N3d
+    # O1: the only field that differs); the same rules; the kernel takes it only at form=fw14
+    ("emitpds-fw14", "EMITPDS", ALL, 0xFB20B10800C08184),                               # #149
     ("ldad", "LOAD_ABS", ALL & ~(DSTN | SRC0N | SRC1N), 0xE82B0002A0000000),               # #30
     ("stad", "STORE_ABS", ALL & ~_STR_FREE, 0xF022000080000000),                            # #33
     ("ldr-imm", "LDR", ALL & ~_LDR_FREE, 0xFE21000020000000),                          # #145

@@ -128,6 +128,7 @@ def crafted_blobs():
     for name, ins in (("emitpds_flags", "emitpds #0, r2, r3, r4, #0x0"),
                       ("emitpds_freep", "emitpds.tasks.taske.freep #0, r2, r3, r4, #0x0"),
                       ("emitpds_sideband", "emitpds.tasks.taske #0, r2, r3, r4, #0x1"),
+                      ("emitpds_sideband_11", "emitpds.tasks.taske #0, r2, r3, r4, #0xc43"),
                       ("emitpds_incp", "emitpds.tasks.taske #1, r2, r3, r4, #0x0"),
                       ("emitpds_regs", "emitpds.tasks.taske #0, r5, r3, r4, #0x0"),
                       ("emitpds_bank", "emitpds.tasks.taske #0, sa2, r3, r4, #0x0")):
@@ -230,7 +231,7 @@ def c_array(name, data):
 
 
 OK_BLOBS = ("null", "mem", "ldr", "x9b_r1", "x9b_r2", "state", "events", "slow", "trc_08", "trc_31",
-            "emitsa", "emitsb", "emitsn")
+            "emitsa", "emitsb", "emitsn", "emitsk", "emitsk14")
 
 # ---- the one PDS image (N3) ------------------------------------------------------------------
 PDS_SOURCE = "fwtask/pds/emit.s"        # under asm/

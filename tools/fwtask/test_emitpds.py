@@ -515,9 +515,97 @@ def test_the_kick_gate_test_assembles_and_round_trips():
 
 
 def test_emitsk_is_in_the_map():
-    """The map names it (the kit's owntask stage checks the staged blob against it). The fork's
-    KUnit list gains it with the next kernel series (round 39, Z); until then the kernel's
-    verifier at the pin runs it (test_host_verifier.py, every source)."""
+    """The map names it (the kit's owntask stage checks the staged blob against it). The kernel's
+    verifier at the pin runs it (test_host_verifier.py, every source), and the fork's KUnit list
+    carries it since round 39's kernel series (below)."""
     import json
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsk"]["source"] == "emitsk.s"
+
+
+# ---- the fw14 form: ours with #14's sideband (round 39, N3d row Z) -------------------------------
+FW14_EMIT = "emitpds.tasks.taske #0, r2, r3, r4, #0x843"
+FW14_WORD = 0xFB20B10800C08184
+
+
+def sideband(w):
+    """The 14-bit field of usse-dis form #149 (N3d O1): value bits 5:0 = word bits 27:22, 11:6 =
+    word bits 40:35, 13:12 = word bits 55:54."""
+    return (w >> 22 & 0x3F) | (w >> 35 & 0x3F) << 6 | (w >> 54 & 3) << 12
+
+
+def test_the_fw14_form_is_ours_with_14_s_sideband_and_nothing_else():
+    """O1 (data-private firmware/fwsim/n3d-o1/facts.txt): against our word only the sideband
+    differs at #14's emit, and #14's is 0x0843 (#12's too; #11's 0x0c43)."""
+    (w,) = asm([FW14_EMIT])
+    assert w == FW14_WORD
+    assert sideband(w) == 0x0843 and sideband(0xFB20B00000008184) == 0
+    mask = (0x3F << 22) | (0x3F << 35) | (3 << 54)
+    assert w & ~mask == 0xFB20B00000008184 & ~mask
+    assert fwtask.classify(w) == ("EMITPDS", "emitpds-fw14")
+    row = next(r for r in fwtask.FORMS if r[0] == "emitpds-fw14")
+    assert row[1] == "EMITPDS" and row[2] == fwtask.ALL and row[3] == w
+    spec = pathlib.Path(gen_verify.spec_path()).read_text()
+    assert gen_verify.in_spec(spec, row[2], row[3])
+
+
+FW14_GOOD = SETUP + [FW14_EMIT, "nop.end", "nop.end"]
+
+
+def test_the_fw14_form_keeps_every_rule_of_the_owned_form():
+    assert why_of(FW14_GOOD) is None
+    assert why_of(FW14_GOOD, []) == Y.EMIT_ARGS
+    assert why_of(FW14_GOOD, [P(0, "pds1"), P(1, "pds0"), P(2, "pds2")]) == Y.EMIT_ARGS
+    assert why_of(SETUP + ["mov r4, r5", FW14_EMIT, "nop.end", "nop.end"],
+                  entries=(0, 6)) == Y.EMIT_ARGS
+    assert why_of(FW14_GOOD, entries=(0,)) == Y.EMIT_ENTRY
+    # one emit a task, whichever the word: the two forms together are two
+    assert why_of(SETUP + [OWN_EMIT, FW14_EMIT, "nop.end", "nop.end"], entries=(0, 6)) == Y.EMIT_ONCE
+    assert why_of(SETUP + [FW14_EMIT, "p0 br -#0x1", "nop.end", "nop.end"],
+                  entries=(0, 6)) == Y.EMIT_ONCE
+
+
+@pytest.mark.parametrize("word", [
+    "emitpds.tasks.taske #0, r2, r3, r4, #0xc43", "emitpds.tasks.taske #0, r2, r3, r4, #0x842",
+    "emitpds.tasks.taske #0, r2, r3, r4, #0x844", "emitpds.tasks.taske #0, r2, r3, r4, #0x1843",
+    "emitpds.tasks.taske #0, r2, r3, r4, #0x43", "emitpds #0, r2, r3, r4, #0x843",
+    "emitpds.tasks.taske.freep #0, r2, r3, r4, #0x843", "emitpds.tasks.taske #1, r2, r3, r4, #0x843",
+    "emitpds.tasks.taske #0, r5, r3, r4, #0x843", "emitpds.tasks.taske #0, sa2, r3, r4, #0x843",
+])
+def test_every_other_sideband_or_field_with_it_is_still_unknown(word):
+    assert why_of(SETUP + [word, "nop.end", "nop.end"]) == Y.UNKNOWN
+
+
+def test_no_single_bit_change_of_either_word_is_an_emit_form():
+    for w in (0xFB20B00000008184, FW14_WORD):
+        for b in range(64):
+            assert fwtask.classify(w ^ 1 << b)[1] not in ("emitpds-own", "emitpds-fw14"), (hex(w), b)
+
+
+def test_the_crafted_blobs_refuse_11_s_sideband():
+    rows = {n: (want, why) for n, _, want, why in gen_verify.crafted_blobs()}
+    assert rows["emitpds_sideband_11"] == ("EPERM", Y.UNKNOWN)
+    assert rows["emitpds_sideband"] == ("EPERM", Y.UNKNOWN)
+
+
+def test_emitsk14_is_emitsk_with_the_fw14_word_and_nothing_else():
+    import gen_blobs
+    k = [ln for ln in gen_blobs.gen_emitsk().splitlines() if not ln.startswith(";")]
+    f = [ln for ln in gen_blobs.gen_emitsk14().splitlines() if not ln.startswith(";")]
+    assert len(k) == len(f)
+    diff = [(a.strip(), b.strip()) for a, b in zip(k, f) if a != b]
+    assert diff == [(OWN_EMIT, FW14_EMIT)]
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsk14"))
+    assert [w for w in blob.words if fwtask.classify(w)[0] == "EMITPDS"] == [FW14_WORD]
+    assert fwtask.refusal(fwtask.blob_of("emitsk14"), REGS) is None
+    assert fwtask.lint((fwtask.ASM / "emitsk14.s").read_text()) == []
+    kb = fwtask.parse_blob(fwtask.blob_of("emitsk"))
+    assert blob.entries == kb.entries and blob.patches == kb.patches
+
+
+def test_emitsk_and_emitsk14_are_in_the_kernel_s_accepted_list():
+    """Round 39's kernel series (r39-kernel) carries both in the fork's KUnit list."""
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m["emitsk14"]["source"] == "emitsk14.s"
+    assert "emitsk" in gen_verify.OK_BLOBS and "emitsk14" in gen_verify.OK_BLOBS
