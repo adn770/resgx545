@@ -9930,6 +9930,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   emitted program runs.
   *edm; HW; data: `render-closing-r40-s-sbt:out/20261119-174746/own/`,
   `render-closing-r40-s-sbt:out/20261119-174746/post/`, `render-closing-r40-s-sbt:fold/`.*
+- `E1161` r40-d0-survey stage own (row D0, a landing survey, module 0CDFCDB7, fork f9453424bf71,
+  emitsb14d, image crumb3 at fw14, form=fw14, s2 0, flagged, user present): E1160's job with a
+  survey: our EDM task emitted the word with #14's sideband 0x843 on the first tick pass that saw
+  the command; T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2, done: every
+  control passed (PG, E0, T0, B, P0, P1), 'Q128-D0 RULE: D0-HID' held as predicted; sa0-sa31 read
+  identical before the emit and in the started task after the program ran (sa0-sa2 0x32004000
+  0x32005000 0x32002000, sa3-sa21 and sa24-sa31 zero, sa22 0x32000000, sa23 0x05f17000), and
+  pa0-pa15 of the started task held no V0 or V2; so the program's douta wrote nothing to any sa this
+  survey could tell apart from the values already there and nothing to pa0-pa15 (inferred: it landed
+  outside what D0 reads, or onto sa0 and sa2, which already held its values); post's triangle and
+  fill exact.
+  *edm; HW, infer; data: `render-closing-r40-d0-survey:out/20261119-191743/own/`,
+  `render-closing-r40-d0-survey:out/20261119-191743/post/`, `render-closing-r40-d0-survey:fold/`,
+  `closing29/r40-s-logs/d0-shim-emitsb14d.log`.*
 
 ## By unit
 
@@ -9957,7 +9971,7 @@ E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E6
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
-E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160.
+E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161.
 
 ### firmware
 

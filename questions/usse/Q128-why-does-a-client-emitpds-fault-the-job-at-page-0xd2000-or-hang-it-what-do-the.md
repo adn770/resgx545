@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161"]
 terms = []
 +++
 
@@ -135,3 +135,14 @@ the data-private read) and whether another nonzero value runs; what stops the ti
 anyway; a row is sketched in closing29/r40-s-logs/d-row-note.md, not built); and the client-side
 parts above (the fault at page 0xd2000, `s0`-`s2` as seen by the program, the addend). Not
 retired.
+
+Landing line, 2026-11-19 (E1161, r40-d0-survey, flagged, module 0CDFCDB7; this updates the
+"where an emitted `douta` lands" item of the section above): the survey row (emitsb14d, #14's
+sideband, `s2` 0, tick pass) ran the program to done again and read sa0-sa31 before the emit and
+after, and pa0-pa15 of the started entry: sa0-sa31 identical, sa3-sa21 and sa24-sa31 zero,
+sa22 0x32000000, sa23 0x05f17000, and no V0 or V2 in pa0-pa15, as predicted (D0-HID) [HW]. So
+the `douta` landed nowhere D0 can see [infer]: sa0 and sa2 are the only secondaries holding
+V0 and V2 and held them before, so a landing there is not told apart from none, and no other sa
+and no pa0-pa15 took them. Still open: the destination bank (sa0 and sa2, another bank, or a
+dropped write), the sideband's bits, what stops the tick with sideband 0, and the client-side
+parts above. Not retired.

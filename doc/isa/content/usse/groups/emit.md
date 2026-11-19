@@ -81,7 +81,8 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   program our task emitted that ran, and an emitted program's `tim` write lands at 0x0acc as a
   client's does. Which of the sideband, `s2` and the kick pass is needed: the next item. Where
   its `douta` land is **[open]** (not `pa0` or `pa2` in any run; `sa0` and `sa2` hold those
-  values anyway).
+  values anyway; a survey of sa0-sa31 before and after and of `pa0`-`pa15` found no change and no
+  V0 or V2, so it landed nowhere that survey sees [infer], E1161).
 - **The sideband decides [HW].** One change at a time against that run (E1157-E1160): with
   #14's sideband 0x843 the emitted program ran and our entry to done from a kick pass or a tick
   pass, with `s2` 0 or 0x00020000 (4 of 4: E1156, E1157, E1159, E1160); with our sideband 0 it

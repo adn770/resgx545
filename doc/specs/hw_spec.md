@@ -1040,7 +1040,9 @@ started ran to done (E1156; the tick then stood only because the program's first
 a stopped 0, by design). The sideband decides: 0x843 ran from either pass with `s2` 0 or
 0x00020000 (E1157, E1159, E1160), our 0 with `s2` 0x00020000 from a kick pass stopped as before,
 7 ticks after the kick (E1158). So these stops follow an own-task emit whose 14-bit sideband is
-0; what in the EDM stops is open (Q128). A
+0; what in the EDM stops is open (Q128). Where the running program's `douta` lands is open
+too: sa0-sa31 read the same before the emit and after the program ran and `pa0`-`pa15` of the
+started entry held no V0 or V2 (E1161). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the
