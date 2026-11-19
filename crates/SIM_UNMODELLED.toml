@@ -55,5 +55,3 @@ E1138 = "dpm: refused: readings only, d1 not run (its gate shut on the measured 
 E1142 = "platform: refused: event-bit timelines of overflowing renders by PB size and of copies by form (r34-ev2 e1); hw.rs answers CR_EVENT_STATUS by E1115 until a kick and refuses it after, no vectors table"
 E1143 = "isp: refused: readings only, every frozen row gated by failed 128 x 128 controls; no simulator models o0 at the start of an opaque pass (an earlier job's o0 left at a pixel), no vectors table (r35-o0)"
 E1147 = "isp: refused: cross-job state, an earlier job's o0 left at a pixel (same pixel or fixed offsets) at the start of an opaque pass; a per-job replay would take it as an input, not a model; no vectors table (r35-o0b)"
-E1155 = "edm: refused: one own-task job whose emit of our word from a GETMISCINFO kick pass scored CANNOT TELL, the tick stopped (r39-n3d-k K); no simulator keeps the EDM's tick or the pass's event, no vectors table"
-E1156 = "edm: refused: one own-task job whose emit with #14's sideband and s2 from a kick pass ran crumb3 and our entry 1 to done (r39-n3d-z Z); which of sideband, s2 and pass decides is open, no vectors table"

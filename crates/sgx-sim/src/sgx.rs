@@ -780,10 +780,22 @@ impl Bus for Unit<'_> {
         // E1152]. Without the emit the same task ran to done (E1151); a lone `halt` image stopped
         // it as well (E1153), and so did crumb's program with 3 rows and #14's control word in
         // the firmware's own PDS page (E1154): not the program, its page, rows or control word.
-        // Not a model: refused.
+        // From a GETMISCINFO kick pass the same word with s2 0 scored CANNOT TELL (E1155); with
+        // #14's sideband 0x843 and s2 0x00020000 (the request bit) the emitted program ran and
+        // its doutu started our entry to done (E1156). Which of the sideband, s2 and the pass
+        // decides is open, and the sim does not know the pass: not a model either way, refused.
         if self.own {
+            let sideband = text.rsplit_once('#').and_then(|(_, n)| n.trim().strip_prefix("0x"));
+            let sideband = sideband.and_then(|n| u32::from_str_radix(n, 16).ok());
+            if sideband == Some(0x843) && s[2] == 0x0002_0000 {
+                let tail = "#14's sideband and s2 ran once from a kick pass (E1156); which of the \
+                            sideband, s2 and the pass decides is open";
+                return Err(why(format!("emitpds from our own task: {tail} (Q128)")));
+            }
             let tail = "the emitted program did not start [infer], the tick stopped";
-            return Err(why(format!("emitpds from our own task: {tail} (E1148-E1150, E1153, E1154, Q128)")));
+            return Err(why(format!(
+                "emitpds from our own task: {tail} (E1148-E1150, E1153, E1154, E1155, Q128)"
+            )));
         }
         self.st.effect()?;
         self.st.trace(|| Ev::Emit { s });
@@ -1589,6 +1601,44 @@ mod tests {
             });
             assert!(matches!(s.run(10_000), Err(Error::Unsupported { ref why, .. })
                 if why.contains("E1153") && why.contains("E1154") && why.contains("own task")));
+        }
+    }
+
+    #[test]
+    fn an_own_task_emit_with_14s_sideband_and_s2_is_refused_citing_the_one_run() {
+        // E1156 (r39-n3d-z Z): from a GETMISCINFO kick pass, our word with #14's sideband 0x843
+        // and s2 0x00020000 (the request bit) started crumb3 in #14's page; it ran to its last
+        // `tim` marker and its doutu started our entry 1 to done. Which of the sideband, s2 and
+        // the kick pass decides is open (Q128), so the simulator still refuses, naming the run;
+        // E1155 (r39-n3d-k K: our word, s2 0, a kick pass) scored CANNOT TELL.
+        let crumb = "movs tim, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt";
+        for (sideband, s2, ran) in [(0x843u32, 0x0002_0000u32, true), (0, 0, false), (0x843, 0, false)] {
+            let emit = format!(
+                "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
+                 emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x{sideband:08x}\nnop.end"
+            );
+            let mut s = sgx();
+            s.st.mem.map(DATA, &[0; 16]);
+            s.st.mem.map(CODE, &vec![0; 0x20000]);
+            s.st.mem.map(CODE + 0x80100, &pds(&[0; 12], crumb));
+            s.st.mem.map(CODE + 8 * 0x4000, &usse(&emit));
+            s.code_len = Some(0x4000 + 8);
+            let mut pa = [0; 128];
+            (pa[0], pa[2], pa[4]) = (3 << 23 | 0x100, (CODE + 0x80100) >> 4, s2);
+            s.st.queue.push_back(Work::Task {
+                base: CODE,
+                pc: 0x4000,
+                temps: 8,
+                pa: Box::new(pa),
+                written: 0b10101,
+            });
+            let r = s.run(10_000);
+            assert!(
+                matches!(r, Err(Error::Unsupported { ref why, .. })
+                if why.contains("own task") && why.contains("Q128")
+                    && why.contains("E1156") == ran && why.contains("E1155") != ran),
+                "{r:?}"
+            );
         }
     }
 
