@@ -636,6 +636,16 @@ def gen_emitsk14():
     return emit_reader(s, crumbs=True, kick=True, word=FW14_EMIT)
 
 
+def gen_emitsb14():
+    """Round 40 (Q128, row S-PASS): emitsb with the emitpds-fw14 word (sideband 0x0843, N3d O1);
+    every other line is emitsb's: Z's word on the timer pass, no kick gate. The kernel arms it
+    only with form=fw14."""
+    s = Src("emitsb14", "round 40 (Q128): emitsb with #14's emit word (sideband 0x843): the emit "
+            "(cmd 1) on the first pass that sees the command, a timer tick", phase="r40",
+            emit="one emitpds (the fw14 form, its sources the kernel's pds0 to pds2, E146, E488)")
+    return emit_reader(s, crumbs=True, word=FW14_EMIT)
+
+
 def crumb(s, mark, j):
     s("mov r7, #0x%08x" % mark)
     store(s, j, "r7")
@@ -706,7 +716,7 @@ def all_sources():
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
          "oomring2": gen_oomring2(), "emitsa": gen_emitsa(), "emitsb": gen_emitsb(),
          "emitsn": gen_emitsn(), "emitsk": gen_emitsk(),
-         "emitsk14": gen_emitsk14()}
+         "emitsk14": gen_emitsk14(), "emitsb14": gen_emitsb14()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

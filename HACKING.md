@@ -643,7 +643,9 @@ lets a reviewer check that they stay clean-room; each check is a test.
      0x0c43 stays refused), under every rule of the first; the kernel arms a blob holding it only
      with `form=fw14`, and refuses `form=fw14` for the first word and both words for a blob
      without the emit. The blob `emitsk14` is `emitsk` with that word; the fork's KUnit list
-     carries `emitsk` and `emitsk14`.
+     carries `emitsk` and `emitsk14`. Round 40's `emitsb14` (Q128, row S-PASS) is `emitsb` with
+     that word: the module's verifier accepts it unchanged (a scratch shim run with the list plus
+     `emitsb14`), the fork's list at the pin does not carry it.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
