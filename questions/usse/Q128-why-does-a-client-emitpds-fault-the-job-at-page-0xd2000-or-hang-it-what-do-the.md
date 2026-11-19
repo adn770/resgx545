@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156"]
 terms = []
 +++
 
@@ -103,3 +103,19 @@ operand or its encoding form, or emitting from our task's timer pass where the f
 from its kick pass. The next step is a user decision (closing29/n3c/design.md, after M-NEVER),
 after a facts-only fwsim read of what the stock kick pass does after its #14 emit. Where an
 emitted douta lands (pa or sa) stays open, never reached.
+
+Narrowed 2026-11-19 (E1155, E1156, r39-n3d-k and r39-n3d-z, flagged, sessions S1 and S3 of
+closing29/n3d/design.md): E1154's job with crumb3 in #14's page, each emit issued on the pass of
+a host GETMISCINFO kick. K (E1155: our word, sideband 0, `s2` 0, module 88ADCEB5) scored CANNOT
+TELL: the readings were K-NEVER's (T running, entry 1 never stored, the tick stopped) but Δtick
+from the kick was 7, outside the frozen band 8-11; read informally [infer], the kick pass alone
+did not start the program. Z was then refrozen before it ran, at the user's choice, without the
+band. Z (E1156: our word with the firmware's 14-bit sideband 0x843 and `s2` 0x00020000, the
+request bit #14 emits with, module 0CDFCDB7) ran: crumb3 reached its last `tim` marker at
+0x0acc, its `doutu` started our entry 1 and entry 1 ran to done [HW], the first program emitted
+from our task that ran; an emitted program's `tim` lands at 0x0acc as a client's does. So an
+emitted program does start from an EDM task when the emit carries #14's sideband and `s2` and
+comes from a kick pass. Open: which of the sideband, `s2` and the kick pass decides, alone or
+together (row S of the design and the rows that split the sideband from `s2`), and so what
+stopped the tick after our other emits; where an emitted `douta` lands (Z: not `pa0` or `pa2`;
+`sa0`-`sa3` read the values they hold anyway, so not told); and the client-side parts above.

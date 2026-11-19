@@ -9877,6 +9877,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   page, flags and rows are not the cause'; the kit's reset recovered it (fill and triangle exact).
   *edm; HW, infer; data: `render-closing-r38-n3c-s3:out/20261119-112717/own/`,
   `render-closing-r38-n3c-s3:fold/`.*
+- `E1155` r39-n3d-k stage own (N3d K, module 88ADCEB5, fork e1cf9d2b43ab, emitsk, image crumb3 at
+  fw14, flagged, user present): our EDM task emitsk emitted our old word (sideband 0, s2 0) only on
+  the pass of a host GETMISCINFO kick, with R4's crumb3 image in the firmware's PDS #14 page; every
+  control passed (PG, K0: no tick pass emitted, K1, T0, B) and no frozen outcome held, 'N3d-K RULE:
+  CANNOT TELL (no frozen outcome holds)': X0 0x5a5a3303, T (0x0acc) running, S1, M4 and state the
+  host's fill and 0, as K-NEVER, but the tick stopped 7 ticks from the kick, outside K-NEVER's
+  frozen band 8-11; the kit's reset recovered it (fill and triangle exact).
+  *edm; HW, infer; data: `render-closing-r39-n3d-k:out/20261119-152848/own/`,
+  `render-closing-r39-n3d-k:fold/`.*
+- `E1156` r39-n3d-z stage own (N3d Z, module 0CDFCDB7, fork f9453424bf71, emitsk14, image crumb3 at
+  fw14, pds2=req form=fw14, flagged, user present): our EDM task emitsk14 emitted, on the pass of a
+  host GETMISCINFO kick, our word with the 14-bit sideband 0x843 (0xfb20b10800c08184) and s2
+  0x00020000 (the request bit), with R4's crumb3 image in the firmware's PDS #14 page; T (0x0acc)
+  read 0x005a3305, crumb3's last tim marker, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2,
+  done: every control passed, 'N3d-Z RULE: Z-DONE: all ran'; the first program emitted from our task
+  that ran, its doutu starting our entry 1 to done; post's triangle and fill exact; which of the
+  sideband, s2 and the kick pass decides is open.
+  *edm; HW, infer; data: `render-closing-r39-n3d-z:out/20261119-153429/own/`,
+  `render-closing-r39-n3d-z:out/20261119-153429/post/`, `render-closing-r39-n3d-z:fold/`.*
 
 ## By unit
 
@@ -9904,7 +9923,7 @@ E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E6
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
-E1153, E1154.
+E1153, E1154, E1155, E1156.
 
 ### firmware
 

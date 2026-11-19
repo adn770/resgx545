@@ -1031,7 +1031,13 @@ of it with `USE0_SERV_EVENT` bit 16 set, as it was before the command (its count
 dword 12 throughout), so there bit 16 marks nothing; it read set at snap0 and snap9 of the same
 task's job without the emit, which did not stop (E1151). They came within 9 to 10 ticks of the
 command whatever the emitted program was, a lone `halt` included (E1153), and wherever it sat, the
-firmware's own PDS #14 page with 3 data rows and #14's control word included (E1154). A
+firmware's own PDS #14 page with 3 data rows and #14's control word included (E1154). Issued
+from a GETMISCINFO kick pass instead, the same emit stopped the tick 7 ticks after the kick (15
+after the command), with the same signature (count 6 ahead) and the program not seen to start: a
+CANNOT TELL, the frozen band being 8-11 (E1155). With the firmware's sideband 0x843 and `s2`
+0x00020000 from the same kick pass there was no stop: the emitted program ran and our entry it
+started ran to done (E1156; the tick then stood only because the program's first `tim` write is
+a stopped 0, by design). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the
