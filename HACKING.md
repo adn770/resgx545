@@ -418,18 +418,19 @@ and records `ticks`, `ticks_expected` and `window_ms`, kept on a stop too, and a
 the command write, records K0 (`k0`: HostCtl dword 12, cmd and the job's slot), reads debugfs
 `miscinfo` once (a GETMISCINFO kick, a non-tick EDM pass; `kick` keeps its reply or error) and
 only then polls, its timeout counted from the kick; with ticks it adds `ticks_from_kick`; the
-knobs are `-` and `reads:K` only. An owntask stage is a planned firmware break if wrong, so it must be `class =
-"flagged"`, as a kreg row's stage. `session.py lint` (and the guard, so the freeze) refuses a
-missing blob, a blob that is not the map's, a name the map lacks, an arm line that is not
-`slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the hazard word
-is never armed), an optional `pds=crumb`, `pds=halt` or `pds=crumb3` (the kernel's other PDS
-images, below; with no `pds=` word the kernel arms the v1 image), an optional `pdsat=fw14` (the
-image in the slack of the firmware's PDS #14 page, round 38; with none, the kernel's own page),
-and optional `pds2=req` and `form=fw14` last, in that order (round 39: the emit's `s2` the
-request 0x00020000, and the emit word with #14's sideband; with none, 0 and our word), a stage that is not flagged, a malformed job, any other
-knob, a non-owntask row in the stage, an owntask row elsewhere, a tool named `owntask` and a
-`res:I` prediction outside an owntask stage or past dword 1023. `prepare` writes `run/owntask.tsv`
-(the stage's `arm` line with the map's sha256, each row's `job` with its run id), which the runner
+knobs are `-` and `reads:K` only. An owntask stage is a planned firmware break if wrong, so it
+must be `class = "flagged"`, as a kreg row's stage. `session.py lint` (and the guard, so the
+freeze) refuses a missing blob, a blob that is not the map's, a name the map lacks, an arm line
+that is not `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the
+hazard word is never armed), an optional `pds=crumb`, `pds=halt` or `pds=crumb3` (the kernel's
+other PDS images, below; with no `pds=` word the kernel arms the v1 image), an optional
+`pdsat=fw14` (the image in the slack of the firmware's PDS #14 page, round 38; with none, the
+kernel's own page), and optional `pds2=req` and `form=fw14` last, in that order (round 39: the
+emit's `s2` the request 0x00020000, and the emit word with #14's sideband; with none, 0 and our
+word), a stage that is not flagged, a malformed job, any other knob, a non-owntask row in the
+stage, an owntask row elsewhere, a tool named `owntask` and a `res:I` prediction outside an owntask
+stage or past dword 1023. `prepare` writes `run/owntask.tsv` (the stage's `arm` line with the map's
+sha256, each row's `job` with its run id), which the runner
 reads. The runner arms once after the stage's first reset and health (`arm`, kept as
 `owntask.arm.json`; not ok: rc 26), runs each row with no reset before it (a reset disarms): `run`
 with its one job (its JSON kept as `NAME.txt`, a runner stop's dump as `NAME.stopI-*`), then
