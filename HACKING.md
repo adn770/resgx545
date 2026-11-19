@@ -422,12 +422,13 @@ knobs are `-` and `reads:K` only. An owntask stage is a planned firmware break i
 must be `class = "flagged"`, as a kreg row's stage. `session.py lint` (and the guard, so the
 freeze) refuses a missing blob, a blob that is not the map's, a name the map lacks, an arm line
 that is not `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the
-hazard word is never armed), an optional `pds=crumb`, `pds=halt` or `pds=crumb3` (the kernel's
-other PDS images, below; with no `pds=` word the kernel arms the v1 image), an optional
+hazard word is never armed), an optional `pds=crumb`, `pds=halt`, `pds=crumb3` or `pds=land` (the
+kernel's other PDS images, below; with no `pds=` word the kernel arms the v1 image), an optional
 `pdsat=fw14` (the image in the slack of the firmware's PDS #14 page, round 38; with none, the
-kernel's own page), and optional `pds2=req` and `form=fw14` last, in that order (round 39: the
-emit's `s2` the request 0x00020000, and the emit word with #14's sideband; with none, 0 and our
-word), a stage that is not flagged, a malformed job, any other knob, a non-owntask row in the
+kernel's own page), and optional `pds2=req` and `form=NAME` last, in that order (round 39: the
+emit's `s2` the request 0x00020000; round 40: NAME one of the kernel's listed emit words,
+`fwtask.EMIT_SIDEBANDS` but `own`, e.g. `fw14` for #14's sideband; with none, 0 and our word), a
+stage that is not flagged, a malformed job, any other knob, a non-owntask row in the
 stage, an owntask row elsewhere, a tool named `owntask` and a `res:I` prediction outside an owntask
 stage or past dword 1023. `prepare` writes `run/owntask.tsv` (the stage's `arm` line with the map's
 sha256, each row's `job` with its run id), which the runner

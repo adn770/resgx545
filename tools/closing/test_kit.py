@@ -2539,7 +2539,13 @@ BAD_ARMS = ["slots=0x1", "slots=0x0 entry=0", "slots=0x1 entry=0 trc_hazard=1",
             "slots=0x1 entry=0 form=own", "slots=0x1 entry=0 form=fw11",
             "slots=0x1 entry=0 form=fw14 pds2=req", "slots=0x1 entry=0 pds2=req pdsat=fw14",
             "slots=0x1 entry=0 pds2=req pds2=req", "slots=0x1 entry=0 form=fw14 form=fw14",
-            "slots=0x1 entry=0 pds2=0x20000"]
+            "slots=0x1 entry=0 pds2=0x20000",
+            # round 40 (N3e): the listed form= names only (own the default, never spelled), pds=land
+            "slots=0x1 entry=0 form=sb004", "slots=0x1 entry=0 form=sb000", "slots=0x1 entry=0 form=SB003",
+            "slots=0x1 entry=0 form=sb3", "slots=0x1 entry=0 form=0x843", "slots=0x1 entry=0 form=sbc03",
+            "slots=0x1 entry=0 form=sb003 form=sb003", "slots=0x1 entry=0 form=sb841 pds2=req",
+            "slots=0x1 entry=0 pds=land2", "slots=0x1 entry=0 pds=LAND",
+            "slots=0x1 entry=0 pdsat=fw14 pds=land", "slots=0x1 entry=0 pds=land pds=land"]
 
 
 @pytest.mark.parametrize("arm", BAD_ARMS)
@@ -2558,7 +2564,10 @@ def test_lint_accepts_the_arm_forms_of_the_runner(repos):
                 "slots=0x1 entry=0 trc=8 pds=crumb3 pdsat=fw14", "slots=0x1 entry=0 pdsat=fw14",
                 "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 pds2=req form=fw14",
                 "slots=0x1 entry=0 pds2=req", "slots=0x1 entry=0 form=fw14",
-                "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 form=fw14"):
+                "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 form=fw14",
+                "slots=0x1 entry=0 pds=land pdsat=fw14 form=fw14", "slots=0x1 entry=0 pds=land",
+                "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 form=sb841",
+                "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 pds2=req form=sbc43"):
         kp, r = own_session(dict(repos, tmp=repos["tmp"] / arm.replace(" ", "_")),
                             stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
         li = kit(kp, r, "lint")
@@ -2960,3 +2969,57 @@ def test_the_mock_arms_row_z_s_words(repos):
     assert m.returncode == 0, m.stdout + m.stderr
     mm = next(kp.glob("debug/mock.*/model"))
     assert "arm slots=0x1 entry=0 pds=crumb3 pdsat=fw14 pds2=req form=fw14" in own_log(mm)
+
+
+# ---- round 40 (N3e §3.2): the listed emit words and the land image ---------------------------------
+def _fwtask():
+    sys.path.insert(0, str(HERE.parent / "fwtask"))
+    import fwtask
+    return fwtask
+
+
+def test_the_kit_s_form_names_are_fwtask_s_list_but_own():
+    """The kit arms exactly the listed words by name (form=own, the default, is never spelled)."""
+    names = [n for n, _, _ in _fwtask().EMIT_FORMS if n != "own"]
+    assert list(S.OWNTASK_FORMS) == names and len(names) == 17
+    rs = (KIT / "run_stage.sh").read_text()
+    assert "( form=(" + "|".join(names) + "))?" in rs
+    assert "( pds=(crumb|halt|crumb3|land))?" in rs
+
+
+@pytest.mark.parametrize("name", [n for n in ("sb001", "sb002", "sb003", "sb040", "sb041", "sb042",
+                                              "sb043", "sb800", "sb801", "sb802", "sb803", "sb840",
+                                              "sb841", "sb842", "fw14", "sbc43", "sb403")])
+def test_lint_and_the_runner_take_every_listed_form(repos, tmp_path, name):
+    arm = f"slots=0x1 entry=0 pds=crumb3 pdsat=fw14 form={name}"
+    kp, r = own_session(dict(repos, tmp=repos["tmp"] / name),
+                        stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, (arm, li.stdout)
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace("slots=0x1 entry=0", arm))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pds=land", "pds=land pdsat=fw14 form=fw14",
+                                   "pds=land pdsat=fw14 pds2=req form=sb003"])
+def test_the_runner_takes_the_round_40_arm_words(tmp_path, words):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["form=sb004", "form=own", "form=sb3", "pds=land2",
+                                   "pdsat=fw14 pds=land", "form=sb841 pds2=req", "form=sbc03"])
+def test_the_runner_refuses_other_round_40_arm_words(tmp_path, words):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)
+
+
+def test_the_mock_arms_row_l_s_words(repos):
+    kp, r = own_session(repos, stage=OWN_STAGE.replace(
+        "entry=0", "entry=0 pds=land pdsat=fw14 form=fw14"))
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert "arm slots=0x1 entry=0 pds=land pdsat=fw14 form=fw14" in own_log(mm)

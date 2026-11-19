@@ -110,7 +110,7 @@ if [ -n "$OWN_BLOB$OWN_SHA$OWN_ARM" ]; then
 	esac
 	printf '%s\n' "$OWN_BLOB" | grep -Eqx '[a-z0-9_]+' \
 		&& printf '%s\n' "$OWN_SHA" | grep -Eqx '[0-9a-f]{64}' \
-		&& printf '%s\n' "$OWN_ARM" | grep -Eqx 'slots=0x[0-9a-f]{1,2} entry=[0-9]{1,2}(,[0-9]{1,2})*( trc=[0-9]{1,2})?( pds=(crumb|halt|crumb3))?( pdsat=fw14)?( pds2=req)?( form=fw14)?' \
+		&& printf '%s\n' "$OWN_ARM" | grep -Eqx 'slots=0x[0-9a-f]{1,2} entry=[0-9]{1,2}(,[0-9]{1,2})*( trc=[0-9]{1,2})?( pds=(crumb|halt|crumb3|land))?( pdsat=fw14)?( pds2=req)?( form=(sb001|sb002|sb003|sb040|sb041|sb042|sb043|sb800|sb801|sb802|sb803|sb840|sb841|sb842|fw14|sbc43|sb403))?' \
 		|| { echo "stage $STAGE: owntask blob '$OWN_BLOB', sha256 '$OWN_SHA' or arm line '$OWN_ARM' is not one the kit arms"; exit 7; }
 fi
 # the registers kreg:OFF=V may write, frozen with kit/session.py's KREG_ALLOWED: OFF=DEFAULT/MAX
