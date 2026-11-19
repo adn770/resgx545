@@ -451,6 +451,17 @@ impl Sgx {
         self.s.alu_specials_in_movs = v;
     }
 
+    /// The assumption that an emitted program's ir0 is emitpds's s2 (off by default; E488).
+    #[getter]
+    fn emit_s2_is_ir0(&self) -> bool {
+        self.s.emit_s2_is_ir0
+    }
+
+    #[setter]
+    fn set_emit_s2_is_ir0(&mut self, v: bool) {
+        self.s.emit_s2_is_ir0 = v;
+    }
+
     /// The instructions a task reads from its code base (None: the default window).
     #[getter]
     fn code_len(&self) -> Option<usize> {

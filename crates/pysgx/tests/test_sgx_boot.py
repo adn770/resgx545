@@ -76,6 +76,8 @@ def prepare(pysgx) -> tuple:
     lay = layout()
     boot = fwload.load(fwformat.unpack(FW.read_bytes()), lay)
     s = pysgx.Sgx()
+    # the boot's emitted programs read ir0 as the emitpds's s2 (E146 [infer]; E488: not in a client fill)
+    s.emit_s2_is_ir0 = True
     for i, image in boot.images.items():
         s.map(lay.addr[i], image)
     host = lay.addr[facts.HOST_CTL]
