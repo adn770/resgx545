@@ -193,6 +193,7 @@ class Run:
             s.hw_replay(r["reg"] // 4, r["trigger_reg"] // 4, r["trigger_value"], r["words"], r["missing"],
                         r["cite"])
         s.alu_specials_in_movs = True       # PDS #13 passes ir1.l and tim.l on with movs (R5)
+        s.emit_s2_is_ir0 = True             # an emitted program's ir0 is s2 (E146 [infer]; E488)
         # the running count a program a task emits reads (E1133; SEEDED: seeds.toml [events]
         # emit_tim, None: refused); the sim refuses a count outside E1133's rule (ValueError)
         self.emit_tim = self.seeds["events"].get("emit_tim") if emit_tim is SEEDED else emit_tim
@@ -327,6 +328,8 @@ def summary(run: Run, evs: list[dict], phases: list[tuple[str, int, int, list[in
     """facts.txt: counts and values only (no instruction text, no index beyond E146's slots)."""
     out = [f"firmware sha256 {hashlib.sha256(run.fw.read_bytes()).hexdigest()}",
            "assumption alu_specials_in_movs = true (PDS #13 passes ir1 and tim on to its task; R5)",
+           "assumption emit_s2_is_ir0 = true (an emitted program's ir0 is emitpds's s2: E146 [infer], "
+           "not E488's client fill)",
            "[time] a kick's tim is set to the tick's word (seeds.toml [events]); E746 reads it as a "
            "sample of the counter"]
     if run.emit_tim is not None:
