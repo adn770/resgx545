@@ -228,6 +228,66 @@ def test_the_kernel_header_carries_both_images():
     assert "0x005a3305" in crumb
 
 
+# ---- halt and crumb3 (round 38, N3c rows R5 and R4) ---------------------------------------------
+CRUMB_IMAGE = [0, 0, 0, 0, 0, 0, 0x200, 0x005A3305, 0x07001FE7, 0x07040606, 0x07042CA6, 0x07003547,
+               0x07000305, 0x07003FE7, 0xAF000000]
+
+
+def dis_n(tmp_path, words, ndata):
+    f = tmp_path / "image.bin"
+    f.write_bytes(b"".join(w.to_bytes(4, "little") for w in words))
+    r = subprocess.run([str(pds_dis()), str(f), str(ndata)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return [ln.split("\t", 1)[1] for ln in r.stdout.splitlines()]
+
+
+def test_v1_and_crumb_are_byte_for_byte_as_at_round_37():
+    assert gen_verify.pds_image("v1") == V1_IMAGE
+    assert gen_verify.pds_image("crumb") == CRUMB_IMAGE
+
+
+def test_the_halt_image_is_v1_s_data_rows_then_halt_alone(tmp_path):
+    """N3c R5 (the program floor): v1's 8 data dwords (the kernel fills U0, V0, V2 as for v1),
+    then `halt` and nothing else: no output, no doutu."""
+    img = gen_verify.pds_image("halt")
+    assert img == V1_IMAGE[:8] + [0xAF000000]
+    assert dis_n(tmp_path, img, 8) == ["data"] * 8 + ["halt"]
+
+
+def test_the_crumb3_image_is_crumb_with_a_zero_third_row(tmp_path):
+    """N3c R4 (the firmware's #14 mirror): crumb's 8 data dwords plus four zeros (3 rows, as #14),
+    then crumb's 7 instructions with every operand unchanged (the third row is ds0[4], ds0[5],
+    ds1[4], ds1[5]; nothing names it)."""
+    img = gen_verify.pds_image("crumb3")
+    assert img[:8] == CRUMB_IMAGE[:8] and img[8:12] == [0, 0, 0, 0] and img[12:] == CRUMB_IMAGE[8:]
+    crumb = dis_n(tmp_path, CRUMB_IMAGE, 8)
+    assert dis_n(tmp_path, img, 12) == ["data"] * 12 + crumb[8:]
+
+
+def test_each_image_has_its_own_rows_and_control_word():
+    assert gen_verify.PDS_IMAGE_ROWS == {"v1": 2, "crumb": 2, "halt": 2, "crumb3": 3}
+    for k, rows in gen_verify.PDS_IMAGE_ROWS.items():
+        assert sum(1 for _, t in gen_verify.pds_listing(k) if t == "data") == 4 * rows, k
+    assert [gen_verify.pds_ctl(k) for k in ("v1", "crumb", "halt")] == [0x01000100] * 3
+    assert gen_verify.pds_ctl("crumb3") == (3 << 23) | 0x100 == 0x01800100
+
+
+def test_the_kernel_header_carries_every_image_with_its_rows_and_control():
+    h = gen_verify.render_pds()
+    assert "#define SGX_OWN_PDS_ROWS\t2" in h and "#define SGX_OWN_PDS_CTL\t0x01000100" in h
+    for k, n, rows, ctl in (("crumb", 15, 2, 0x01000100), ("halt", 9, 2, 0x01000100),
+                            ("crumb3", 19, 3, 0x01800100)):
+        u = k.upper()
+        assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h, k
+        assert f"#define SGX_OWN_PDS_{u}_ROWS\t{rows}" in h, k
+        assert f"#define SGX_OWN_PDS_{u}_CTL\t0x{ctl:08x}" in h, k
+        assert f"static const u32 sgx_own_pds_{k}[SGX_OWN_PDS_{u}_WORDS]" in h, k
+        assert f"asm/fwtask/pds/{k}.s" in h, k
+        body = h[h.index(f"sgx_own_pds_{k}["):]
+        body = body[:body.index("};")]
+        assert [int(ln.split(",")[0], 16) for ln in body.splitlines()[1:]] == gen_verify.pds_image(k)
+
+
 def test_the_committed_kernel_pds_header_is_current():
     p = gen_verify.SGXFIVE / "sgx_own_pds.h"
     if not p.is_file():
