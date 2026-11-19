@@ -13,6 +13,13 @@
   "source": "emitsb.s",
   "source_sha256": "2fdeb75282516ce1bea290d5d24e6e9091f9d82c4c97a9f9f156858a35a4aeb0"
  },
+ "emitsb14": {
+  "bytes": 644,
+  "insns": 67,
+  "sha256": "25b572585ca7950909c86469027eded9eff4c2c2d3b6737e4b7ec5717e5ecbea",
+  "source": "emitsb14.s",
+  "source_sha256": "7f7d2f5b8965ec2b34fdcae2869ca314be78de7ddd9e904c720fe58b12a03658"
+ },
  "emitsk": {
   "bytes": 684,
   "insns": 72,

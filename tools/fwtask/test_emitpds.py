@@ -609,3 +609,31 @@ def test_emitsk_and_emitsk14_are_in_the_kernel_s_accepted_list():
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsk14"]["source"] == "emitsk14.s"
     assert "emitsk" in gen_verify.OK_BLOBS and "emitsk14" in gen_verify.OK_BLOBS
+
+
+# ---- emitsb14: emitsb with #14's emit word (round 40, Q128 row S-PASS) --------------------------
+def test_emitsb14_is_emitsb_with_the_fw14_word_and_nothing_else():
+    """Row S-PASS splits the kick pass from Z: Z's word on emitsb's timer pass (no pa1 gate)."""
+    import gen_blobs
+    b = [ln for ln in gen_blobs.gen_emitsb().splitlines() if not ln.startswith(";")]
+    f = [ln for ln in gen_blobs.gen_emitsb14().splitlines() if not ln.startswith(";")]
+    assert len(b) == len(f)
+    diff = [(x.strip(), y.strip()) for x, y in zip(b, f) if x != y]
+    assert diff == [(OWN_EMIT, FW14_EMIT)]
+    blob = fwtask.parse_blob(fwtask.blob_of("emitsb14"))
+    assert [w for w in blob.words if fwtask.classify(w)[0] == "EMITPDS"] == [FW14_WORD]
+    assert fwtask.refusal(fwtask.blob_of("emitsb14"), REGS) is None
+    assert fwtask.lint((fwtask.ASM / "emitsb14.s").read_text()) == []
+    bb = fwtask.parse_blob(fwtask.blob_of("emitsb"))
+    assert blob.entries == bb.entries and blob.patches == bb.patches
+    assert [w for w in blob.words if fwtask.classify(w)[0] != "EMITPDS"] == \
+        [w for w in bb.words if fwtask.classify(w)[0] != "EMITPDS"]
+
+
+def test_emitsb14_is_in_the_map_but_not_the_kernel_s_pinned_list():
+    """The fork's KUnit list at the pin (f9453424bf71) does not carry emitsb14: its module's
+    verifier accepts it unchanged (the shim run of round 40), the list is not regenerated."""
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m["emitsb14"]["source"] == "emitsb14.s"
+    assert "emitsb14" not in gen_verify.OK_BLOBS
