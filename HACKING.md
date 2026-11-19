@@ -413,8 +413,12 @@ pins the map). Its rows are `name|set|risk|-|owntask|{"cmd": 1, "params": {}, "t
 one command a job, `params` dwords 6 to 1023 of the results page (0-5 are the protocol's),
 `timeout_ms` up to `job_timeout`, and an optional `"ticks": true` (a bool only, round 37), with
 which the runner reads HostCtl dword 12 right before the command write and 30 ms after the window
-and records `ticks`, `ticks_expected` and `window_ms`, kept on a stop too; the knobs are `-` and
-`reads:K` only. An owntask stage is a planned firmware break if wrong, so it must be `class =
+and records `ticks`, `ticks_expected` and `window_ms`, kept on a stop too, and an optional
+`"kick": "miscinfo"` (that value only, round 39, N3d row K), with which the runner, right after
+the command write, records K0 (`k0`: HostCtl dword 12, cmd and the job's slot), reads debugfs
+`miscinfo` once (a GETMISCINFO kick, a non-tick EDM pass; `kick` keeps its reply or error) and
+only then polls, its timeout counted from the kick; with ticks it adds `ticks_from_kick`; the
+knobs are `-` and `reads:K` only. An owntask stage is a planned firmware break if wrong, so it must be `class =
 "flagged"`, as a kreg row's stage. `session.py lint` (and the guard, so the freeze) refuses a
 missing blob, a blob that is not the map's, a name the map lacks, an arm line that is not
 `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the hazard word

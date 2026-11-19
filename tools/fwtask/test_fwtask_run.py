@@ -179,3 +179,111 @@ def test_a_stop_whose_tick_cannot_be_read_says_so(tmp_path, monkeypatch):
     monkeypatch.setattr(FR, "emit", lambda obj: lines.append(obj))
     assert FR.cmd_run({"name": "o1", "outdir": str(tmp_path), "jobs": [{"n": 1}]}) == 1
     assert "debugfs gone" in lines[0]["alive_at_stop"]["error"]
+
+
+# ---- the kick (round 39, N3d row K) -------------------------------------------------------------
+class KickRes(FakeRes):
+    """A results page whose task runs only at a kick: the command write leaves state 0 (the ticks
+    tail-call), the miscinfo read runs it. Every access is logged in `calls`."""
+
+    def __init__(self, calls):
+        super().__init__(fill=(1,))
+        self.calls = calls
+        self.kicked = False
+
+    def r(self, dword, n=1):
+        self.calls.append(("r", dword, n))
+        return super().r(dword, n)
+
+    def w(self, dword, vals):
+        self.calls.append(("w", dword))
+        vals = [vals] if isinstance(vals, int) else vals
+        self.page[dword:dword + len(vals)] = vals          # no task run at the write
+
+
+def kick_setup(monkeypatch, calls, res, reply="ok"):
+    tick = iter(range(100, 10000, 7))
+
+    def regs():
+        calls.append(("regs",))
+        return {}, {12: next(tick)}
+
+    def rd(name):
+        calls.append(("rd", name))
+        assert name == "miscinfo"
+        if reply == "error":
+            raise OSError(110, "Connection timed out")
+        base = FR.RESULTS + 4
+        res.page[base:base + 4] = [0x5a5a3301, 1, 0x5a5a3303, 0]
+        res.page[FR.CMD], res.page[FR.STATE] = 0, 2
+        return "sgx misc info: ok\n"
+    monkeypatch.setattr(FR, "regs", regs)
+    monkeypatch.setattr(FR, "rd", rd)
+    monkeypatch.setattr(FR.time, "sleep", lambda s: None)
+
+
+def test_a_kick_job_writes_the_command_reads_k0_then_kicks_then_polls(monkeypatch):
+    """N3d K: fill, the command write, K0 (HostCtl dword 12, cmd and the job's slot), the one
+    miscinfo read, then the poll for state 2; the ticks are counted from the command write and
+    from the kick."""
+    calls = []
+    res = KickRes(calls)
+    kick_setup(monkeypatch, calls, res)
+    out = FR.one_cmd(res, 1, {}, 1, {}, ticks=True, kick="miscinfo")
+    i_cmd = calls.index(("w", FR.CMD))
+    i_kick = calls.index(("rd", "miscinfo"))
+    k0 = calls[i_cmd + 1:i_kick]
+    assert ("regs",) in k0 and ("r", FR.CMD, 1) in k0 and ("r", FR.RESULTS + 4, 4) in k0, k0
+    assert calls.index(("w", FR.RESULTS + 4)) < i_cmd                  # the fill first
+    assert ("r", FR.STATE, 1) in calls[i_kick:]                         # the poll after the kick
+    assert not [c for c in calls[:i_kick] if c == ("r", FR.STATE, 1)]   # no poll before it
+    assert out["done"] and out["k0"]["cmd"] == 1 and out["k0"]["slot"] == [FR.INITFILL] * 4
+    assert out["k0"]["tick"] == 107 and out["ticks"] == (out["k0"]["tick"] - 100) + \
+        out["ticks_from_kick"]
+    assert out["kick"] == {"kind": "miscinfo", "reply": out["kick"]["reply"]}
+    assert out["kick"]["reply"]["text"].startswith("sgx misc info")
+
+
+def test_a_kick_whose_reply_fails_is_kept_and_the_poll_goes_on(monkeypatch):
+    calls = []
+    res = KickRes(calls)
+    kick_setup(monkeypatch, calls, res, reply="error")
+    out = FR.one_cmd(res, 1, {}, 1, {}, timeout_ms=5, ticks=True, kick="miscinfo")
+    assert not out["done"] and "error" in out["kick"]["reply"]
+    assert "Connection timed out" in out["kick"]["reply"]["error"]
+
+
+def test_a_job_without_a_kick_reads_no_miscinfo(monkeypatch):
+    calls = []
+    res = KickRes(calls)
+    kick_setup(monkeypatch, calls, res)
+    out = FR.one_cmd(res, 1, {}, 1, {}, timeout_ms=5, ticks=True)
+    assert ("rd", "miscinfo") not in calls and "k0" not in out and "kick" not in out
+
+
+def test_the_runner_refuses_another_kick(monkeypatch):
+    import pytest
+    with pytest.raises(ValueError):
+        FR.one_cmd(FakeRes(), 1, {}, 1, {}, kick="fill")
+
+
+def test_cmd_run_passes_the_job_s_kick(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(FR, "dmesg_len", lambda: 0)
+    monkeypatch.setattr(FR, "dmesg_new", lambda n0: [])
+    monkeypatch.setattr(FR, "kreg_all", lambda: {o: 0 for o in FR.REGS_WRITABLE})
+    monkeypatch.setattr(FR, "alive", lambda: {"advancing": True})
+    monkeypatch.setattr(FR, "health", lambda: {"ok": True})
+    monkeypatch.setattr(FR, "emit", lambda obj: None)
+
+    class ClosingRes(FakeRes):
+        def close(self):
+            pass
+    monkeypatch.setattr(FR, "Res", lambda: ClosingRes())
+
+    def one(*a, **k):
+        seen.update(k)
+        return {"done": True}
+    monkeypatch.setattr(FR, "one_cmd", one)
+    FR.cmd_run({"name": "o1", "outdir": "/nonexistent", "jobs": [{"n": 1, "kick": "miscinfo"}]})
+    assert seen.get("kick") == "miscinfo"

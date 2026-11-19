@@ -161,8 +161,11 @@ OWNTASK_KEYS = ("blob", "arm")
 OWNTASK_ARM = re.compile(r"slots=0x([0-9a-f]{1,2}) entry=([0-9]{1,2}(?:,[0-9]{1,2})*)"
                          r"(?: trc=([0-9]{1,2}))?(?: pds=(crumb|halt|crumb3))?(?: pdsat=(fw14))?")
 OWNTASK_TRC_MAX = 31
-# ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window
-OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks")
+# ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window;
+# kick (round 39, N3d row K): "miscinfo", the one host kick the runner makes right after the
+# command write (K0, then one debugfs miscinfo read, a GETMISCINFO kick), nothing else
+OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks", "kick")
+OWNTASK_KICKS = ("miscinfo",)
 # the results page (tools/fwtask/layout.py): 1024 dwords, 0-5 the protocol's (magic, cmd, state,
 # run id, overlap, run id echo), which a job's params never write
 OWNTASK_PAGE = 1024
@@ -676,7 +679,7 @@ def owntask_arm_problem(arm):
 
 
 def owntask_job(args, job_timeout):
-    """(the job fwtask_run.py run takes: {n, params, timeout_ms[, ticks]}, []) of an owntask
+    """(the job fwtask_run.py run takes: {n, params, timeout_ms[, ticks][, kick]}, []) of an owntask
     row's args, or (None, [what is wrong])."""
     import json
     try:
@@ -707,11 +710,14 @@ def owntask_job(args, job_timeout):
         bad.append(f"timeout_ms {tmo!r} is not 1 to {job_timeout * 1000} (job_timeout)")
     if "ticks" in a and type(a["ticks"]) is not bool:
         bad.append(f"ticks {a['ticks']!r} is not true or false")
+    if "kick" in a and a["kick"] not in OWNTASK_KICKS:
+        bad.append(f"kick {a['kick']!r} is not one of {', '.join(OWNTASK_KICKS)}")
     if bad:
         return None, bad
     job = {"n": cmd, "params": params, "timeout_ms": tmo}
-    if "ticks" in a:
-        job["ticks"] = a["ticks"]
+    for k in ("ticks", "kick"):
+        if k in a:
+            job[k] = a[k]
     return job, []
 
 

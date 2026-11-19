@@ -2603,6 +2603,10 @@ def test_an_owntask_stage_must_be_flagged(repos):
     ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "ticks": 1}', "ticks"),
     ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "ticks": "yes"}',
      "ticks"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "kick": "fill"}',
+     "kick"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "kick": true}', "kick"),
+    ('o3|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100, "kick": ""}', "kick"),
     ('o3|fit|flagged|kreg:0x0a78=0x01|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}',
      "kreg"),
     ('o3|fit|flagged|expectfault|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}',
@@ -2874,3 +2878,51 @@ def test_the_runner_refuses_other_round_38_arm_words(tmp_path, words):
     r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
         "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
     assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)
+
+
+# ---- the kick (round 39, N3d row K) -------------------------------------------------------------
+KICK_ROWS = OWN_ROWS.replace('"timeout_ms": 100}\no2',
+                             '"timeout_ms": 100, "ticks": true, "kick": "miscinfo"}\no2')
+
+
+def test_a_kick_row_prepares_to_a_job_with_the_kick(repos):
+    """N3d K: "kick": "miscinfo" passes through, so the runner reads the GETMISCINFO debugfs file
+    once right after the command write."""
+    import json
+    kp, r = own_session(repos, rows=KICK_ROWS)
+    S.ENV = env_for(r)
+    try:
+        tsv = S.generated(kp)["run/owntask.tsv"]
+    finally:
+        S.ENV = None
+    jobs = {ln.split("\t")[2]: json.loads(ln.split("\t")[3]) for ln in tsv.splitlines()
+            if ln.startswith("job\t")}
+    assert jobs["o1"] == {"n": 1, "params": {}, "runid": 1, "timeout_ms": 100, "ticks": True,
+                          "kick": "miscinfo"}
+    assert "kick" not in jobs["o2"], jobs
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+
+
+def test_a_kick_row_in_a_stage_that_is_not_flagged_is_refused(repos):
+    kp, r = own_session(repos, stage=OWN_STAGE.replace('class = "flagged", ', ""), rows=KICK_ROWS)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "flagged" in li.stdout, li.stdout
+
+
+def test_the_mock_kicks_and_keeps_the_k0_and_kick_records(repos):
+    """The fake runner takes a job's kick as the real one does: K0 (the HostCtl dword 12 count,
+    cmd and the job's slot right before the kick), the reply, and the ticks from the kick."""
+    import gzip
+    kp, r = own_session(repos, rows=KICK_ROWS)
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    log = own_log(mm)
+    i = next(k for k, ln in enumerate(log) if ln.startswith("run o1 "))
+    assert log[i + 1] == "kick miscinfo" and log.count("kick miscinfo") == 1, log
+    o1 = gzip.decompress((mm / "out/model/own/o1.txt.gz").read_bytes()).decode()
+    for k in ('"k0": ', '"kick": ', '"ticks_from_kick": ', '"reply": '):
+        assert k in o1, (k, o1[-2000:])
+    o2 = gzip.decompress((mm / "out/model/own/o2.txt.gz").read_bytes()).decode()
+    assert '"k0": ' not in o2, o2[-2000:]

@@ -14,7 +14,9 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          written to OUTDIR (stopI-own_res.json, -regs.txt, -status.txt, -dmesg.txt), rc 1;
          world ownhang: the same with the tick frozen after the stop, the real runner's
          "firmware hung" stop (r36-n3). A job with ticks true records ticks, ticks_expected and
-         window_ms as the real runner (0 ticks in world ownhang)
+         window_ms as the real runner (0 ticks in world ownhang); a job with kick "miscinfo"
+         (round 39) logs "kick miscinfo" after its run line and records k0 (cmd 1, the job's
+         slot as the runner initfilled it), the kick's reply and, with ticks, ticks_from_kick
   page   the results page, {"page": [1024 dwords]}
   gate   the fill and triangle, ok unless the world has owngatebad
   reset  disarm; ok
@@ -31,7 +33,8 @@ import sys
 PAGE, MAGIC, CMD, STATE, RUNID, ECHO, RESULTS = 1024, 0, 1, 2, 3, 5, 0x40
 KEYS = {"arm": {"blob", "arm"}, "run": {"name", "outdir", "jobs"}, "page": set(), "gate": set(),
         "reset": set()}
-JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks"}
+JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks", "kick"}
+KICKS = ("miscinfo",)
 
 
 def fake(name):
@@ -114,8 +117,14 @@ def run(a):
     for i, j in enumerate(a["jobs"]):
         if set(j) - JOB_KEYS or not isinstance(j.get("n"), int):
             return usage(f"job {j!r}")
+        if j.get("kick", "miscinfo") not in KICKS:
+            return usage(f"kick {j['kick']!r}")
         log(f"run {a['name']} n={j['n']} runid={j.get('runid', i + 1)}")
         p = page()
+        base = RESULTS + 4 * j["n"]
+        k0 = {"tick": 1000, "cmd": j["n"], "slot": [0xdeadc0de] * 4, "ms": 0.5}  # the initfill
+        if "kick" in j:
+            log(f"kick {j['kick']}")
         done = armed() and not w & {"ownstop", "ownhang"}
         if done:
             for k, v in j.get("params", {}).items():
@@ -126,7 +135,6 @@ def run(a):
                 p[int(k)] = v
             p[CMD], p[STATE], p[RUNID], p[ECHO] = 0, 2, j.get("runid", i + 1), j.get("runid", i + 1)
             save(p)
-        base = RESULTS + 4 * j["n"]
         records.append({"done": done, "ms": 1.0 if done else float(j.get("timeout_ms", 100)),
                         "slot": p[base:base + 4], "echo": p[ECHO], "cmd_after": p[CMD],
                         "overlap": 0, "job": j, "H": {}, "restored": True})
@@ -134,6 +142,12 @@ def run(a):
             ms = records[-1]["ms"] + 30.0
             records[-1].update(ticks=0 if "ownhang" in w else int(ms), ticks_expected=ms * 0.997,
                                window_ms=ms)
+        if "kick" in j:
+            reply = {"ms": 2.0, "lines": 1, "text": "fake miscinfo\n"} if done else \
+                {"error": "[Errno 110] Connection timed out"}
+            records[-1].update(k0=k0, kick={"kind": j["kick"], "reply": reply})
+            if j.get("ticks"):
+                records[-1]["ticks_from_kick"] = max(records[-1]["ticks"] - 1, 0)
         if not done:
             stop = f"no done within {j.get('timeout_ms', 100)} ms (job {i})"
             os.makedirs(a["outdir"], exist_ok=True)

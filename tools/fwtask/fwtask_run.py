@@ -268,10 +268,18 @@ def cmd_gate(a):
     emit(gate())
 
 
+KICKS = ("miscinfo",)       # a job's kick: the one host command read right after its cmd write
+
+
 def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=True, ticks=False,
-            extra=()):
+            extra=(), kick=None):
     """One experiment: initfill, set registers, params, cmd; poll state. Returns the record.
-    extra: the other result slots (command numbers) the task fills, initfilled and read too."""
+    extra: the other result slots (command numbers) the task fills, initfilled and read too.
+    kick "miscinfo" (round 39, N3d K): right after the cmd write, K0 (HostCtl dword 12, cmd and
+    the job's slot), then one read of debugfs miscinfo (a GETMISCINFO kick: a non-tick EDM pass,
+    E746), its reply or error kept; the poll and its timeout start after it."""
+    if kick is not None and kick not in KICKS:
+        raise ValueError(f"kick {kick!r} is not one of {', '.join(KICKS)}")
     base = RESULTS + 4 * n
     if initfill:
         res.w(base, [INITFILL] * 4)
@@ -287,8 +295,17 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     tk0 = regs()[1].get(12) if ticks else None
     t0 = time.monotonic()
     res.w(CMD, n)                      # last: the task sees complete parameters
+    k0 = kicked = None
+    if kick:
+        k0 = {"tick": regs()[1].get(12), "cmd": res.r(CMD)[0], "slot": res.r(base, 4),
+              "ms": (time.monotonic() - t0) * 1000}
+        try:
+            kicked = {"kind": kick, "reply": miscinfo()}
+        except OSError as e:            # no MISCINFO_READY (the kernel gives up at 500 ms)
+            kicked = {"kind": kick, "reply": {"error": str(e)}}
+    tp = time.monotonic()               # the poll's start: the cmd write, or the kick's end
     done = False
-    while (time.monotonic() - t0) * 1000 < timeout_ms:
+    while (time.monotonic() - tp) * 1000 < timeout_ms:
         if res.r(STATE)[0] == 2:
             done = True
             break
@@ -297,11 +314,15 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
            "cmd_after": res.r(CMD)[0], "overlap": res.r(OVERLAP)[0]}
     if extra:
         out["slots"] = {str(s): res.r(RESULTS + 4 * s, 4) for s in extra}
+    if kick:
+        out["k0"], out["kick"] = k0, kicked
     if ticks:
         time.sleep(0.03)
         tk1 = regs()[1].get(12)
         dt = (time.monotonic() - t0) * 1000
         out["ticks"] = (tk1 - tk0) & 0xffffffff
+        if kick:
+            out["ticks_from_kick"] = (tk1 - k0["tick"]) & 0xffffffff
         out["ticks_expected"] = dt * 0.997
         out["window_ms"] = dt
     return out
@@ -339,7 +360,7 @@ def cmd_run(a):
         try:
             rec = one_cmd(res, j["n"], j.get("params", {}), j.get("runid", i + 1), j.get("regs", {}),
                           j.get("timeout_ms", DONE_MS), ticks=j.get("ticks", False),
-                          extra=j.get("slots", ()))
+                          extra=j.get("slots", ()), kick=j.get("kick"))
             rec["job"] = j
             # host-side proof that a str landed: the register itself, then restore
             now = kreg_all()
