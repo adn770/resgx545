@@ -81,3 +81,16 @@ B-1 cannot be told from B-1p, B-2a or B-2b, and only E1149's measured readings s
 from the EDM's own context, an emit queue the stopped EDM no longer serves, or the form); what
 stops the tick, and whether the stop comes before the PDS would take the program or the program
 is never taken at all; where an emitted `douta` lands (pa or sa: never reached).
+
+**Correction 2026-11-19:** The inference above is now measured in part. E1152 (r38-n3c-s1, N3c
+R2, the same module) ran the recorded `pds-timer-tim-host` probe under regtimeline on 0x0acc:
+the host's 0x0acc, running before, read the client PDS program's `movs tim` value 0x00abcde0
+from 13.13 ms on the timeline's clock to its end and in snap9 after the job, as the program's
+own `tim` reads did (V0-HOLDS). So the CR_EVENT_TIMER the host reads is the register a PDS
+`movs tim` writes **[HW]**, not only by the register names; "`pds-timer-tim-host` asked for the
+host's read of 0x0acc but its kept files hold only the PDS's own reads" no longer leaves that
+side open. What stays inferred is narrower: that a program started by an `emitpds` from an EDM
+task writes it the same way as a client fill's program **[infer]** (no emitted program's `movs
+tim` has been seen to run). The reading B-1 rests on that much only, and V0-NOT, which would
+have voided it, is refuted. E1151 (R1 of the same session) adds that the same task without the
+`emitpds` ran to done with the tick going, so the stop here needs the emit. The rest stands.

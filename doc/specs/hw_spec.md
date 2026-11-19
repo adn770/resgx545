@@ -968,7 +968,9 @@ of the closing pass add, by topic; the contract a task of ours must keep is gath
 book's *Tasks and phases* (`doc/specs/usse_isa.md` §3.6).
 
 **The timer and the tick [HW].** The tick is `CR_EVENT_TIMER` (0x0acc): bit 24 set, bits 23:0
-counting down 400000 core clocks and reloading by themselves (E746, E751). One tick is 25000
+counting down 400000 core clocks and reloading by themselves (E746, E751). It is the PDS's `tim`:
+a client fill's `movs tim` of 0x00abcde0 showed in the host's 0x0acc within one 5.8 us sample and
+held there to the reset (E1152; doc/specs/pds_isa.md `tim`). One tick is 25000
 `CR_TIMER` units (E746, E813; the plain gaps of the kept rings are 25000 to within a few units).
 `pa2` of an event is the timer sampled for it: 0x01061a70, 16 clocks after the reload, for a tick
 served at once, 0x01061a74 for a tick latched while the EDM was not idle (the first ticks after a
@@ -1026,7 +1028,8 @@ debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task 
 a 90.5 ms hold reads the same, so the signature cannot tell a stop from a long task (E811, E816).
 The stops after an `emitpds` from a task of ours (E1148, E1149, E1150) read the rest of it with
 `USE0_SERV_EVENT` bit 16 set, as it was before the command (its count 5 ahead of HostCtl dword 12
-throughout), so there bit 16 marks nothing. A
+throughout), so there bit 16 marks nothing; it read set at snap0 and snap9 of the same task's job
+without the emit, which did not stop (E1151). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

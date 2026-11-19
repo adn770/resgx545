@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152"]
 terms = []
 +++
 
@@ -75,3 +75,15 @@ host's 0x0acc only as the firmware's running timer (E1131, E1133); if it is fals
 whether the program ran, (1) from (2), and only E1149's readings stand. Open: why the emitted
 program does not start from an EDM task (the PDS, an emit queue the stopped EDM no longer serves, or
 the form), what stops the tick, and where an emitted douta lands (pa or sa), never reached.
+
+Narrowed 2026-11-19 (E1151, E1152, r38-n3c-s1, flagged, session S1 of closing29/n3c/design.md):
+two rows, one job each. R1 (E1151): our task emitsn, emitsb with the emitpds taken out, ran the
+same command to done (X0, M4 and state 2 written, 40 ticks in 38.1 ms, the tick going after it),
+so the stop of E1148-E1150 needs the emit [HW]. R2 (E1152): a client fill's PDS `movs tim` of
+0x00abcde0 showed in the host's 0x0acc at once and held there to the reset [HW], so E1150's
+instrument holds for a client program: the 0x0acc the host reads is the register a PDS `tim`
+write loads. E1150's reading that the emitted program never executed its first instruction now
+rests only on an emitted program's `tim` write landing as a client's does [infer]. Open: what in
+the emit (the program, its page or flags, the control word's rows, the operands or the issuing
+pass) stops the tick, why the emitted program does not start from an EDM task, and where an
+emitted douta lands (pa or sa), never reached.

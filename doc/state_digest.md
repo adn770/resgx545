@@ -143,7 +143,7 @@ list.
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
-  the s0, s1 and s2 operands of the started PDS program become ... (E1148, E1149, E1150)
+  the s0, s1 and s2 operands of the started PDS program become ... (E1150, E1151, E1152)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
   (does it land in the register whose index is the register's ... (E486, E519, E535)
 - `Q134` usse, medium: which register does a client str change (the order of a client str then ldr
@@ -275,9 +275,15 @@ list.
 
 ## Recent records
 
-14 records of 2026-11-17 to 2026-11-18 (the last 2 days to the newest record's date), newest first;
+10 records of 2026-11-18 to 2026-11-19 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1152` pds, 2026-11-19: r38-n3c-s1 stage tim (N3c R2 th, module 77917296, stock firmware,
+  flagged, user present): a client fill's PDS program (the recorded pds-timer-tim-host) did movs tim
+  of 0x00abcde0 under regtimeline ...
+- `E1151` edm, 2026-11-19: r38-n3c-s1 stage own (N3c R1 n0, module 77917296, fork 4f35fc20ffa9, no
+  emit image, flagged, user present): our EDM task emitsn, emitsb's entry 0 with the emitpds and its
+  operands taken out, ran ...
 - `E1150` edm, 2026-11-18: r37-n3b-b stage own (N3b step B, module 77917296, fork 4f35fc20ffa9,
   image crumb, flagged, user present): with the crumb image, E1148's image whose first instruction
   is a movs tim of a stopped 0 and ...
@@ -302,30 +308,13 @@ the claims are cut at 200 characters.
 - `E1143` isp, 2026-11-18: r35-o0 stage o (27 t10 probe triangles, module 7CE8E38E), Q073: the
   frozen rule printed NARROW with nothing decided, because the three A' controls at 128 x 128 failed
   and the frozen gate put the 128 ...
-- `E1142` platform, 2026-11-17: r34-ev2 on module 7CE8E38E (Q111), stages e0, e1 (36 jobs,
-  CR_EVENT_STATUS alone at 3.1 to 3.9 us; every control passed): frozen H-OOM-SMALL (bit 1 at 0xe2
-  and 0x82 in every row, at 0x2b6 and 0x1c2 ...
-- `E1141` dpm, 2026-11-17: r34-ev2 on module 7CE8E38E (Q036), stages c0, d1, p0, p1 (25 jobs; every
-  control passed): 0x0748 alone samples at a 3762 ns median, under the frozen 3890 ns bound, so d1
-  ran (d1s skipped); held: ...
-- `E1140` usse, 2026-11-17: r34-sa0b stage s (54 jobs, t30 probe fills whose readers output the
-  value read, module 7CE8E38E), the corrected rerun of r34-sa0 (E1139), every control passed (16 sa0
-  writers read their marker back ...
-- `E1139` usse, 2026-11-17: r34-sa0 stage s (60 jobs, t30 probe fills, module 7CE8E38E): every
-  control passed (18 sa0 writers read their marker M back in dword 0 with K1 their most frequent
-  colour, 6 colour fills K3), but the ...
-- `E1138` dpm, 2026-11-17: r34-ev on module 7CE8E38E (Q036), stage d0 (calibration of 0x0660 +
-  0x0748, 2 jobs of the overflow probe at 0x422, both controls passed: 0x0660's first sample =
-  snap0, 0x0748's = 0x1f, the kept ...
-- `E1137` platform, 2026-11-17: r34-ev on module 7CE8E38E (Q111), stages e0, e1, e2c, e2 (32 jobs:
-  calibrations of CR_EVENT_STATUS alone and with CR_EVENT_STATUS2, every control passed with
-  premises read from snap0 and the ...
 
 ## Closing sessions
 
-113 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+114 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r38-n3c-s1`: 2026-11-19; module 77917296568EB311B89B0DA; tools ~/sgxfive-test-t30
 - `render/closing-r37-n3b-b`: 2026-11-18; module 77917296568EB311B89B0DA; tools ~/sgxfive-test-t30
 - `render/closing-r37-n3b-a`: 2026-11-18; module 77917296568EB311B89B0DA; tools ~/sgxfive-test-t30
 - `render/closing-r36-n3`: 2026-11-18; module C01FB3203FDA4FEF01E4891; tools ~/sgxfive-test-t30
@@ -493,7 +482,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 4f35fc20ffa9
-- module srcversion 77917296568EB311B89B0DA: last named 2026-11-18, 2 sessions
+- module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions
 - module srcversion C01FB3203FDA4FEF01E4891: last named 2026-11-18, 1 sessions
 - module srcversion 7CE8E38EDB97FC5EA4F6C90: last named 2026-11-18, 18 sessions
 - module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-16, 20 sessions
@@ -575,4 +564,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+54 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

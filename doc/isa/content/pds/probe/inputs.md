@@ -74,4 +74,7 @@ holds, an enabled count that reaches 0 hung the job: loads of `0x0100_0002`, `0x
 `0x0100_0040` each lost their job to the driver's recovery (Q057 asks for the recorded run). The
 counter is the microkernel's tick timer, `EVENT_TIMER`
 (GPL DDK, *Input and special registers*), so a probe that writes it stops or speeds up the
-firmware's tick. It is not a PDS watchdog.
+firmware's tick. It is not a PDS watchdog. The host reads the same register at 0x0acc
+(`pds-timer-tim-host` under a host timeline of 0x0acc, E1152): the running count gave way to the
+loaded 0x00abcde0 within one 5.8 us sample of the fill's job and read it to the timeline's end
+and after the job, as the program's own `tim` reads did **[HW]**.

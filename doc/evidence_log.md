@@ -9838,6 +9838,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *edm; HW; data: `render-closing-r37-n3b-b:out/20261118-213042/own/`,
   `render-closing-r37-n3b-b:fold/`.*
 
+### 2026-11-19
+
+- `E1151` r38-n3c-s1 stage own (N3c R1 n0, module 77917296, fork 4f35fc20ffa9, no emit image,
+  flagged, user present): our EDM task emitsn, emitsb's entry 0 with the emitpds and its operands
+  taken out, ran E1149's job word for word: X0 0x5a5a3303, M4 0x5a5a3302 and run id 1, state 2,
+  done, 40 ticks in a 38.1 ms window, the tick still advancing after it and the gate's fill and
+  triangle exact: every control passed, 'N3c-R1 RULE: N0-OK: the stop needs the emit (expected)'; so
+  the cmd-1 path of E1148-E1150 without the emitpds does not stop the tick.
+  *edm; HW; data: `render-closing-r38-n3c-s1:out/20261119-092626/own/`,
+  `render-closing-r38-n3c-s1:fold/`.*
+- `E1152` r38-n3c-s1 stage tim (N3c R2 th, module 77917296, stock firmware, flagged, user present):
+  a client fill's PDS program (the recorded pds-timer-tim-host) did movs tim of 0x00abcde0 under
+  regtimeline sampling 0x0acc; the host's 0x0acc, a running count in all 8531 stored samples before,
+  changed to 0x00abcde0 at 13.13 ms on the timeline's clock and no later sample differed, snap9
+  after the job read 0x00abcde0, and the program's tim stores read back 0x00abcde0: every control
+  passed, 'N3c-R2 RULE: V0-HOLDS: the host sees the PDS write (expected)'; the first host read of
+  0x0acc after a PDS tim write, so the PDS's tim is the host's CR_EVENT_TIMER.
+  *pds; HW; data: `render-closing-r38-n3c-s1:out/20261119-092626/tim/`,
+  `render-closing-r38-n3c-s1:out/20261119-092626/post/`, `render-closing-r38-n3c-s1:fold/`.*
+
 ## By unit
 
 ### bif
@@ -9863,7 +9883,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151.
 
 ### firmware
 
@@ -9897,7 +9917,7 @@ E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E2
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
 E808, E838, E850, E858, E871, E878, E880, E905, E1096, E1104, E1107, E1114, E1124, E1125, E1128,
-E1129.
+E1129, E1152.
 
 ### platform
 

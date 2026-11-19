@@ -198,7 +198,8 @@ program must write a temporary before it reads it.
   400 MHz, for the DDK's 1000 Hz `SYS_SGX_PDS_TIMER_FREQ`); it counts down while enabled, and its
   expiry is `EVENT_STATUS.TIMER` (bit 29), which `EVENT_PDS_ENABLE` sends to the event program
   **[GPL/RE]**. Everything measured fits: a `movs tim` writes it (its first word's bits 24-0), for
-  every later job, the firmware's included; reset reprograms it (`0x0102_0000`-`0x0106_1a7f` read
+  every later job, the firmware's included; the host reads that value at 0x0acc from the write
+  on (E1152); reset reprograms it (`0x0102_0000`-`0x0106_1a7f` read
   back) and POWER IDLE writes 0 **[HW]**. The firmware writes it only at boot and on POWER resume,
   so it reloads itself with the period last written **[RE/infer]**; an enabled small count, which
   hung the job in runs by hand that no record holds (Q057), would then raise TIMER events back to
@@ -1415,7 +1416,10 @@ holds, an enabled count that reaches 0 hung the job: loads of `0x0100_0002`, `0x
 `0x0100_0040` each lost their job to the driver's recovery (Q057 asks for the recorded run). The
 counter is the microkernel's tick timer, `EVENT_TIMER`
 (GPL DDK, *Input and special registers*), so a probe that writes it stops or speeds up the
-firmware's tick. It is not a PDS watchdog.
+firmware's tick. It is not a PDS watchdog. The host reads the same register at 0x0acc
+(`pds-timer-tim-host` under a host timeline of 0x0acc, E1152): the running count gave way to the
+loaded 0x00abcde0 within one 5.8 us sample of the fill's job and read it to the timeline's end
+and after the job, as the program's own `tim` reads did **[HW]**.
 
 ### 8.10 `load`, `store`, the fences and the other ports
 
