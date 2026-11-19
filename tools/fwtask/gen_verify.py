@@ -230,7 +230,7 @@ def c_array(name, data):
 
 
 OK_BLOBS = ("null", "mem", "ldr", "x9b_r1", "x9b_r2", "state", "events", "slow", "trc_08", "trc_31",
-            "emitsa", "emitsb")
+            "emitsa", "emitsb", "emitsn")
 
 # ---- the one PDS image (N3) ------------------------------------------------------------------
 PDS_SOURCE = "fwtask/pds/emit.s"        # under asm/

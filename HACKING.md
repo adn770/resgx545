@@ -606,9 +606,8 @@ lets a reviewer check that they stay clean-room; each check is a test.
      Since round 38 (N3c, row R1) the blob `emitsn` is `emitsb`'s entry 0 without the emit: no
      `emitpds`, no `pds` patch, one entry; M1 and the run id, cmd 0, X0, then the sequence
      `emitsb`'s entry 1 ends with (M4 and the run id in slot 4, the echo, state 2) and the tail
-     call. It separates the emit from our cmd-1 path. The kernel's verifier at the fork pin
-     accepts it (`test_host_verifier.py`); the fork's KUnit list gains it with the next kernel
-     series.
+     call. It separates the emit from our cmd-1 path. The kernel's verifier accepts it
+     (`test_host_verifier.py`), and the fork's KUnit list carries it since round 38's kernel.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),

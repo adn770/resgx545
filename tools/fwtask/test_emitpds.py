@@ -432,11 +432,10 @@ def test_emitsn_is_emitsb_entry_0_without_the_emit():
             "mov r4, #0xdeadbeef                 ; @patch pds2"} <= gone
 
 
-def test_emitsn_is_in_the_map_and_not_yet_in_the_kernel_s_accepted_list():
-    """The map names it (the kit's owntask stage checks the staged blob against it). The fork's
-    KUnit list (sgxfive_owntask_blobs.h, at the pin) gains it with the next kernel series; until
-    then the kernel's verifier at the pin is run on it by test_host_verifier.py (every source)."""
+def test_emitsn_is_in_the_map_and_the_kernel_s_accepted_list():
+    """The map names it (the kit's owntask stage checks the staged blob against it), and the
+    fork's KUnit list (sgxfive_owntask_blobs.h, round 38's kernel series) carries it."""
     import json
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsn"]["source"] == "emitsn.s"
-    assert "emitsn" not in gen_verify.OK_BLOBS
+    assert "emitsn" in gen_verify.OK_BLOBS
