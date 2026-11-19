@@ -423,9 +423,10 @@ knobs are `-` and `reads:K` only. An owntask stage is a planned firmware break i
 missing blob, a blob that is not the map's, a name the map lacks, an arm line that is not
 `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the hazard word
 is never armed), an optional `pds=crumb`, `pds=halt` or `pds=crumb3` (the kernel's other PDS
-images, below; with no `pds=` word the kernel arms the v1 image) and an optional `pdsat=fw14` last
-(the image in the slack of the firmware's PDS #14 page, round 38; with none, the kernel's own
-page), a stage that is not flagged, a malformed job, any other
+images, below; with no `pds=` word the kernel arms the v1 image), an optional `pdsat=fw14` (the
+image in the slack of the firmware's PDS #14 page, round 38; with none, the kernel's own page),
+and optional `pds2=req` and `form=fw14` last, in that order (round 39: the emit's `s2` the
+request 0x00020000, and the emit word with #14's sideband; with none, 0 and our word), a stage that is not flagged, a malformed job, any other
 knob, a non-owntask row in the stage, an owntask row elsewhere, a tool named `owntask` and a
 `res:I` prediction outside an owntask stage or past dword 1023. `prepare` writes `run/owntask.tsv`
 (the stage's `arm` line with the map's sha256, each row's `job` with its run id), which the runner

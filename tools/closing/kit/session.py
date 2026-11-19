@@ -157,9 +157,12 @@ OWNTASK_KEYS = ("blob", "arm")
 # the mask; trc 32 and up need the hazard word (run_stage.py TRC_HAZARD_FROM, E540), never armed
 # from the kit; pds= names the kernel's emitpds image, none the first (v1): crumb (round 37, N3b
 # step B: three tim breadcrumbs), halt and crumb3 (round 38, N3c rows R5 and R4); pdsat=fw14 puts
-# the image in the slack of the firmware's PDS #14 page (N3c R4 and R6), none in the kernel's own
+# the image in the slack of the firmware's PDS #14 page (N3c R4 and R6), none in the kernel's own;
+# pds2=req sets the emit's s2 to the request #14 emits with, none 0, and form=fw14 arms a blob
+# whose emit is the word with #14's sideband, none our own word (round 39, N3d row Z)
 OWNTASK_ARM = re.compile(r"slots=0x([0-9a-f]{1,2}) entry=([0-9]{1,2}(?:,[0-9]{1,2})*)"
-                         r"(?: trc=([0-9]{1,2}))?(?: pds=(crumb|halt|crumb3))?(?: pdsat=(fw14))?")
+                         r"(?: trc=([0-9]{1,2}))?(?: pds=(crumb|halt|crumb3))?(?: pdsat=(fw14))?"
+                         r"(?: pds2=(req))?(?: form=(fw14))?")
 OWNTASK_TRC_MAX = 31
 # ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window;
 # kick (round 39, N3d row K): "miscinfo", the one host kick the runner makes right after the
@@ -665,7 +668,8 @@ def owntask_arm_problem(arm):
     m = OWNTASK_ARM.fullmatch(arm) if isinstance(arm, str) else None
     if m is None:
         return (f"arm {arm!r} is not `slots=0xMASK entry=E[,E...]` with an optional `trc=T` "
-                "and optional `pds=crumb|halt|crumb3` and `pdsat=fw14`, in that order "
+                "and optional `pds=crumb|halt|crumb3`, `pdsat=fw14`, `pds2=req` and `form=fw14`, "
+                "in that order "
                 "(lower-case hex mask, decimal entries)")
     mask, entries, trc = int(m[1], 16), m[2].split(","), m[3]
     if mask == 0:
