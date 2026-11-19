@@ -513,7 +513,7 @@ srcversion, fork tip, laptop tools.
 
 ## Tool and fork versions
 
-- fork pin (`tools/forkpin.py`): f9453424bf71
+- fork pin (`tools/forkpin.py`): 423b436e7f80
 - module srcversion 0CDFCDB73D76F39FE9E593C: last named 2026-11-19, 5 sessions
 - module srcversion 88ADCEB5AD9F055D077A99C: last named 2026-11-19, 3 sessions
 - module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions

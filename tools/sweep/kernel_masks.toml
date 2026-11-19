@@ -20,7 +20,7 @@
 # checks, both commands are rejected when shorter than their version 1 size, longer than a
 # page, misaligned (8 bytes), or longer than the kernel knows with a non-zero tail
 # (sgxfive_submit.c:111, :151; the tail rule is copy_elem, :36).
-fork = "linux fork, branch resgx545 at f9453424bf71"
+fork = "linux fork, branch resgx545 at 423b436e7f80"
 
 [[word]]
 word = "xfer:0"
