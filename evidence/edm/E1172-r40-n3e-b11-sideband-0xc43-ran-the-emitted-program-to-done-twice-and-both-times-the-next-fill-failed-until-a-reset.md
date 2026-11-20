@@ -44,3 +44,18 @@ other secondaries than the issuer's, with sa12 onwards holding its own pa0 onwar
 
 **What it does not show.** What the state is; whether the EDM's own secondaries changed (the
 post `sa` are read by the started entry); why attempt 2's pa0 and pa2 differ; what bit 10 means.
+
+**Correction 2026-11-20:** Round 41 (closing29/n3f/design.md) read what this record inferred. In rows X
+(E1174, 0xc43) and Y (E1175, 0x403) our entry 0 read the EDM's own secondaries after the emit, in
+a second job: they equal the post words above in all 32, so the "other secondaries" the started
+entry read are the issuer's own bank, rewritten by bit 10: sa12-sa27 take the started entry's
+pa0-pa15, sa1 and words of sa3-sa10 change, sa0 and sa2 stay (crumb3) [HW]. sa13 then holds pa1,
+0x00043000, and the next fill (X, Y) and the next triangle (T, E1177) fault through the EDM's list
+at page 0x00043000 until a reset [HW]; with sideband 0x843 the bank stays as it was and both run
+(C, E1173). This record's two fills failed the same way: its kept kernel logs read `BIF fault
+0xd0400 at 0x4300f (PD 0x0)` in both attempts, and the triangle after it ran on the stock
+firmware after the watchdog's recovery reset, so "the triangle exact" says nothing of bit 10's
+state. The readings above stand; the inferred "bit 10 leaves state that breaks the next fill until
+a reset" is now read: the state is the rewritten sa12-sa27, and the fault page is the one sa13
+holds. Why the fault follows sa13 is still inferred. The claim is not contradicted and is left as
+it was.

@@ -143,7 +143,7 @@ list.
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
-  the s0, s1 and s2 operands of the started PDS program become ... (E1170, E1171, E1172)
+  the s0, s1 and s2 operands of the started PDS program become ... (E1175, E1176, E1177)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
   (does it land in the register whose index is the register's ... (E486, E519, E535)
 - `Q134` usse, medium: which register does a client str change (the order of a client str then ldr
@@ -275,9 +275,24 @@ list.
 
 ## Recent records
 
-22 records of 2026-11-19 to 2026-11-20 (the last 2 days to the newest record's date), newest first;
+27 records of 2026-11-19 to 2026-11-20 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1177` edm, 2026-11-20: r41-n3f-h4 stage t (row T, module 83FBFD86, fork 423b436e7f80,
+  emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
+  B11's one job, then the gate triangle ...
+- `E1176` edm, 2026-11-20: r41-n3f-h3 stage lc (row LC, module 83FBFD86, fork 423b436e7f80,
+  emitsb_sbc43s, image land at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): job 1
+  done, then BIF_FAULT 0x0000000f ...
+- `E1175` edm, 2026-11-20: r41-n3f-h2 stage y (row Y, module 83FBFD86, fork 423b436e7f80,
+  emitsb_sb403s, image crumb3 at fw14, form=sb403, sideband 0x403, s2 0, flagged, user present): row
+  X's two jobs with bit 10 and bits 1:0 ...
+- `E1174` edm, 2026-11-20: r41-n3f-h1 stage x (row X, module 83FBFD86, fork 423b436e7f80,
+  emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row
+  C's two jobs with bit 10 of the ...
+- `E1173` edm, 2026-11-20: r41-n3f-h1 stage c (row C, the control, module 83FBFD86, fork
+  423b436e7f80, emitsb14s, image crumb3 at fw14, form=fw14, sideband 0x843, s2 0, flagged, user
+  present): B0's job (E1162) then a second ...
 - `E1172` edm, 2026-11-20: r40-n3e-b11 stage own (row B11, module 83FBFD86, fork 423b436e7f80,
   emitsb_sbc43, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): B0's
   job with bit 10 of the sideband ...
@@ -347,9 +362,13 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-134 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+138 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r41-n3f-h4`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
+- `render/closing-r41-n3f-h3`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
+- `render/closing-r41-n3f-h2`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
+- `render/closing-r41-n3f-h1`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
 - `render/closing-r40-n3e-b9`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
 - `render/closing-r40-n3e-b8`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
 - `render/closing-r40-n3e-b7`: 2026-11-20; module 83FBFD860D4E0D4CE691F48; tools ~/sgxfive-test-t30
@@ -539,7 +558,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 423b436e7f80
-- module srcversion 83FBFD860D4E0D4CE691F48: last named 2026-11-20, 11 sessions
+- module srcversion 83FBFD860D4E0D4CE691F48: last named 2026-11-20, 15 sessions
 - module srcversion 0CDFCDB73D76F39FE9E593C: last named 2026-11-19, 6 sessions
 - module srcversion 88ADCEB5AD9F055D077A99C: last named 2026-11-19, 3 sessions
 - module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions
@@ -628,4 +647,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-52 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+57 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

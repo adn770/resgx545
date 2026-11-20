@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177"]
 terms = []
 +++
 
@@ -174,3 +174,23 @@ pa0 and pa2 (E1164, E1166, E1168, E1172) where 0x843 put them nowhere in pa0-pa1
 open: why the landing depends on the sideband and where attributes 0 to 11 go with 0x843; what
 bits 6, 10 and 11 do; what bit 10 leaves behind; what stops the tick with bits 1:0 = 0 and what
 the fault at #14's page + 0x10 is; the client-side parts above. Not retired.
+
+Bit 10's after-effect, 2026-11-20 (E1173 to E1177, r41-n3f-h1 to -h4, flagged, module 83FBFD86
+of fork r40-kernel 423b436e7f80, no rebuild or boot): our entry 0 read the EDM's own sa0-sa31 in a
+second job after the emit (command 6, the after-read). With 0x843 they are as before and the next
+fill and triangle run (C, E1173). With bit 10, 0xc43 (X, E1174) or 0x403 without bits 6 and 11
+(Y, E1175), they equal what the started entry read: sa12-sa27 take the started entry's
+pa0-pa15, sa1 and words of sa3-sa10 change (sa1 0x04000010 in X, 0x04400000 in Y and B11), sa0
+and sa2 stay [HW]. So bit 10 rewrites the issuer's own secondaries, and the rewrite stays: the
+kick and command 6 after it were served. sa13 then holds pa1, 0x00043000, and the EDM's list
+faults at that page: the fill (X, Y, and B11's two in E1172) and, run first, the triangle (T,
+E1177), with BIF_FAULT 0x0004300f (list 15), until a reset [HW]; in X and Y the fault was already
+latched by the end of the row (after job 2's kick), in T and B11 (one job) it came with the gate's
+first job. The design's T-HEAD (the render queue's head sa15, page 0x01555000) failed: render and
+transfer fault at the same page. That the hardware or the firmware takes sa13 as a page base (the
+transfer queue head of the firmware's roles) is inferred. LC (E1176: land, the timer running)
+ended CANNOT TELL: its control E0 read the cmd word at the row's end, 6 for the unserved job 2, a
+design slip of the scorer; its printed readings fit the predicted early stop (sa0 0, sa2
+0x0104b95b, BIF_FAULT 0x0000000f, the tick stopped). Still open: where sa1 and sa3-sa10 come from;
+whether the rewrite heals without a reset; whether the timer matters; what bits 6, 10 and 11 mean;
+the parts above. Not retired.

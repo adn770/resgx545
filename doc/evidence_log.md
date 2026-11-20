@@ -10047,6 +10047,52 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   bit 10 leaves state that breaks the next fill until a reset is inferred.
   *edm; HW, infer; data: `render-closing-r40-n3e-b11:out/20261120-074024/own/`,
   `render-closing-r40-n3e-b11:out/20261120-084102/own/`, `render-closing-r40-n3e-b11:fold/`.*
+- `E1173` r41-n3f-h1 stage c (row C, the control, module 83FBFD86, fork 423b436e7f80, emitsb14s,
+  image crumb3 at fw14, form=fw14, sideband 0x843, s2 0, flagged, user present): B0's job (E1162)
+  then a second job of command 6 on a GETMISCINFO kick, in which entry 0 stored its own sa0-sa31:
+  job 2 done, its after-read equal to job 1's pre sa0-sa31 in all 32, the gate's fill and triangle
+  exact, BIF_FAULT 0, every control passed, 'Q128-N3F-C RULE: C-GATE, C-SAME' as predicted: with
+  0x843 the EDM's own secondaries are left as they were and the next transfer and render run.
+  *edm; HW; data: `render-closing-r41-n3f-h1:out/20261120-161456/c/`,
+  `render-closing-r41-n3f-h1:fold/`.*
+- `E1174` r41-n3f-h1 stage x (row X, module 83FBFD86, fork 423b436e7f80, emitsb_sbc43s, image crumb3
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row C's two jobs with bit 10 of
+  the sideband set: job 2's after-read of the EDM's own sa0-sa31 equal to the started entry's post
+  in all 32: sa12-sa27 equal to the started entry's pa0-pa15, sa1 0x04000010, sa3-sa5 and sa7-sa9
+  float words, sa0 and sa2 unchanged; BIF_FAULT 0x0004300f (list 15, page 0x00043000, the post sa13)
+  in snap9 before the gate and the gate's fill faulting at 0x4300f, the triangle after the recovery
+  exact; 'Q128-N3F-X RULE: X-FILL, X-REBASE; FAULT: BIF_FAULT is not 0 after the row and no outcome
+  names it', every prediction held; that the fault page is sa13 because the hardware takes it as a
+  page base is inferred.
+  *edm; HW, infer; data: `render-closing-r41-n3f-h1:out/20261120-161456/x/`,
+  `render-closing-r41-n3f-h1:fold/`.*
+- `E1175` r41-n3f-h2 stage y (row Y, module 83FBFD86, fork 423b436e7f80, emitsb_sb403s, image crumb3
+  at fw14, form=sb403, sideband 0x403, s2 0, flagged, user present): row X's two jobs with bit 10
+  and bits 1:0 only (no bits 6 and 11): job 2's after-read equal to the started entry's post,
+  sa12-sa27 equal to its pa0-pa15, sa1 0x04400000, sa3-sa10 changed, sa0 and sa2 unchanged;
+  BIF_FAULT 0x0004300f (page 0x00043000 = post sa13) in snap9 and the gate's fill faulting at
+  0x4300f, the triangle after the recovery exact; 'Q128-N3F-Y RULE: Y-FILL, Y-REBASE; FAULT:
+  BIF_FAULT is not 0 after the row and no outcome names it', every prediction held: bit 10 alone is
+  enough.
+  *edm; HW; data: `render-closing-r41-n3f-h2:out/20261120-161558/y/`,
+  `render-closing-r41-n3f-h2:fold/`.*
+- `E1176` r41-n3f-h3 stage lc (row LC, module 83FBFD86, fork 423b436e7f80, emitsb_sbc43s, image land
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): job 1 done, then BIF_FAULT
+  0x0000000f (list 15, page 0) in snap9, the tick stopped and job 2 (command 6) was never served;
+  the runner stopped (class hang, rc 4) and the kit's reset recovered it; 'Q128-N3F-LC RULE: CANNOT
+  TELL (control E0 FAILED)', E0 failing by a design slip of the scorer (it reads the cmd word at the
+  row's end, 6 for the unserved job 2); the readings, printed only, are LC-EARLY-like: post sa0 0,
+  sa2 0x0104b95b, sa12-sa27 = pa0-pa15.
+  *edm; HW, infer; data: `render-closing-r41-n3f-h3:out/20261120-161633/lc/`,
+  `render-closing-r41-n3f-h3:fold/`.*
+- `E1177` r41-n3f-h4 stage t (row T, module 83FBFD86, fork 423b436e7f80, emitsb_sbc43s, image crumb3
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): B11's one job, then the gate
+  triangle first: every control passed (BIF_FAULT 0 in snap9), the triangle faulted with BIF_FAULT
+  0x0004300f (list 15, page 0x00043000, the post sa13, the fills' page), not at the render queue's
+  head 0x01555000; the fill after the recovery exact; 'Q128-N3F-T RULE: T-OTHER', the prediction
+  T-HEAD failed.
+  *edm; HW, infer; data: `render-closing-r41-n3f-h4:out/20261120-161718/t/`,
+  `render-closing-r41-n3f-h4:fold/`.*
 
 ## By unit
 
@@ -10075,7 +10121,7 @@ E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E7
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
 E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161, E1162, E1163, E1164, E1165, E1166,
-E1167, E1168, E1169, E1170, E1171, E1172.
+E1167, E1168, E1169, E1170, E1171, E1172, E1173, E1174, E1175, E1176, E1177.
 
 ### firmware
 
