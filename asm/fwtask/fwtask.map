@@ -27,6 +27,118 @@
   "source": "emitsb14d.s",
   "source_sha256": "ecb4243525be9092bcc91f8871211d14d22c887e2ea76fa38f92167a3292c99a"
  },
+ "emitsb_sb001": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "d888f0f64c2a3d9eb7dc4140512863dc196dff396f52101d0e17892f7dcc1cb9",
+  "source": "emitsb_sb001.s",
+  "source_sha256": "ee8d2cddab6f2dcbabe46b93761546e3e5e0bfe9a9dcd6693a5b516c94277157"
+ },
+ "emitsb_sb002": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "8b90cc58233ebf85702bdd402004a008953d68edb811425d9870a8cb09069542",
+  "source": "emitsb_sb002.s",
+  "source_sha256": "ab79b355f6bc05b17b91101bdb10b4a29060f9dccbecb5bbd73a30a3794295bb"
+ },
+ "emitsb_sb003": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "44ed1d2e865ed0a4f223dfe7c2d8bfe7fe8c88a5c146d604d50ef59e51e24188",
+  "source": "emitsb_sb003.s",
+  "source_sha256": "cdd31a4cc4737f90586803afb79da44b1191a30e38bf138b5ada5024615f148a"
+ },
+ "emitsb_sb040": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "9313bc85189f3c427c7e74e6dca95e4c484a2dd4d5009ef659cd84d4ea7fb55e",
+  "source": "emitsb_sb040.s",
+  "source_sha256": "7471be2c37aa122874cdc2bb6b7fed1e76efea46b0aaa0032ce89946f8fb5c84"
+ },
+ "emitsb_sb041": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "f46efe187b0e31b36bbfa112a8922039712b32ab082294a19a3b2f8545cfad92",
+  "source": "emitsb_sb041.s",
+  "source_sha256": "909439c72cf867e34153c64ccea02f1e0673c026927210f88e6edd4acf536cbc"
+ },
+ "emitsb_sb042": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "a4a5d09a01fc41a445ad93d111ede3904aad49d112d72e6771ba79fce8ac820e",
+  "source": "emitsb_sb042.s",
+  "source_sha256": "bd9065bbbd50975c13ae2d8bb45a29024b7c90b9b0df158ba3faa4a5db52ce05"
+ },
+ "emitsb_sb043": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "03762b0025467fcadcba5a0325bf5240b3d0125410e1e1e15319aa176ac7c591",
+  "source": "emitsb_sb043.s",
+  "source_sha256": "c6edb11744a349e7bd9e2cdaf97f5cd6124e8b3db278f746bc0a1039bfb12660"
+ },
+ "emitsb_sb403": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "6e7209eb2f5f386a506ca996644ab0d4f1c7f1655d4a70be09c4c2258dd67373",
+  "source": "emitsb_sb403.s",
+  "source_sha256": "908befd94c0c259dd8ae0fd2fa27f1e827b61f017937baed5ca16625c35631ea"
+ },
+ "emitsb_sb800": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "b0d0d985f8b3450976e3b7126f5f9d03324ea53edc651287ec2d8ddb2d93f8a7",
+  "source": "emitsb_sb800.s",
+  "source_sha256": "7626a66634e420658f402254258e89dc276b2596c532ffe5b5e0fa1b3d838b75"
+ },
+ "emitsb_sb801": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "ec83f283cd310c4b1b163c8e709e219a3a05861ffe1499ad757b22834f857c72",
+  "source": "emitsb_sb801.s",
+  "source_sha256": "4fcd68e13f47ff2ec557563b5a7bf9f89b5f2941757c249b6f56be02d0f50c4f"
+ },
+ "emitsb_sb802": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "7e8289ccebe4478a5e8d3ab7e1d4b5595723896673e25ee13f6dd2c9929d042c",
+  "source": "emitsb_sb802.s",
+  "source_sha256": "fd38a6f60e8d01819ac3b0653bef9d6cd31a8ccb4d5b6ea3d392baee50d0ac7f"
+ },
+ "emitsb_sb803": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "da35b5ddac0ca2c57c9220c547d5b310e8cc5e15613498e7654f2ba1390621fe",
+  "source": "emitsb_sb803.s",
+  "source_sha256": "a35259e31e296ed6ecd966c4a8b5c06ca3c5f0e52e1e0515128a7417ee377fb6"
+ },
+ "emitsb_sb840": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "ec7d4429ad27185b304650b84a3aabaf4ad673a994014ed61240140019a3c62c",
+  "source": "emitsb_sb840.s",
+  "source_sha256": "8c0fa0e87554e54ac1552202e455cff5c3571b08cf8bfe25b4bbe91543494e46"
+ },
+ "emitsb_sb841": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "9ea0e7a1c3bef0afa799685ad23261253338ae7c39ac2035c92ba92fdfdade18",
+  "source": "emitsb_sb841.s",
+  "source_sha256": "9b824e15aa008714c65427708675ff527ab8ceed12d23e410560120f788a1013"
+ },
+ "emitsb_sb842": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "45459114ddc80b74e0c10c078b16488164ef89d4599188e4948c6c4df0c81e65",
+  "source": "emitsb_sb842.s",
+  "source_sha256": "85c257684ab99ec6233be18fa12d59c1bb0f55ec376ef440452ba1db5b58d85c"
+ },
+ "emitsb_sbc43": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "211bb43872a3d6c0c36b0c40baa711fe8f31a1422a13c9f4ec9f3e8e6f5893bf",
+  "source": "emitsb_sbc43.s",
+  "source_sha256": "4815db32eae84efe9c3aef53ba03ce385f029de7092b629e9be8f53595438407"
+ },
  "emitsk": {
   "bytes": 684,
   "insns": 72,

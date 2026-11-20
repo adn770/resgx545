@@ -55,7 +55,7 @@ def test_the_owned_form_with_its_operands_patched_is_accepted():
     "emitpds #0, r2, r3, r4, #0x0", "emitpds.tasks #0, r2, r3, r4, #0x0",
     "emitpds.taske #0, r2, r3, r4, #0x0", "emitpds.tasks.taske.freep #0, r2, r3, r4, #0x0",
     "emitpds.nosched.tasks.taske #0, r2, r3, r4, #0x0", "emitpds.end.tasks.taske #0, r2, r3, r4, #0x0",
-    "emitpds.tasks.taske #1, r2, r3, r4, #0x0", "emitpds.tasks.taske #0, r2, r3, r4, #0x1",
+    "emitpds.tasks.taske #1, r2, r3, r4, #0x0", "emitpds.tasks.taske #0, r2, r3, r4, #0x4",
     "emitpds.tasks.taske #0, r2, r3, r4, #0x2000", "emitpds.tasks.taske #0, r5, r3, r4, #0x0",
     "emitpds.tasks.taske #0, r2, r5, r4, #0x0", "emitpds.tasks.taske #0, r2, r3, r5, #0x0",
     "emitpds.tasks.taske #0, sa2, r3, r4, #0x0", "emitpds.tasks.taske #0, r2, sa3, r4, #0x0",
@@ -265,7 +265,7 @@ def test_the_crumb3_image_is_crumb_with_a_zero_third_row(tmp_path):
 
 
 def test_each_image_has_its_own_rows_and_control_word():
-    assert gen_verify.PDS_IMAGE_ROWS == {"v1": 2, "crumb": 2, "halt": 2, "crumb3": 3}
+    assert gen_verify.PDS_IMAGE_ROWS == {"v1": 2, "crumb": 2, "halt": 2, "crumb3": 3, "land": 3}
     for k, rows in gen_verify.PDS_IMAGE_ROWS.items():
         assert sum(1 for _, t in gen_verify.pds_listing(k) if t == "data") == 4 * rows, k
     assert [gen_verify.pds_ctl(k) for k in ("v1", "crumb", "halt")] == [0x01000100] * 3
@@ -276,7 +276,7 @@ def test_the_kernel_header_carries_every_image_with_its_rows_and_control():
     h = gen_verify.render_pds()
     assert "#define SGX_OWN_PDS_ROWS\t2" in h and "#define SGX_OWN_PDS_CTL\t0x01000100" in h
     for k, n, rows, ctl in (("crumb", 15, 2, 0x01000100), ("halt", 9, 2, 0x01000100),
-                            ("crumb3", 19, 3, 0x01800100)):
+                            ("crumb3", 19, 3, 0x01800100), ("land", 16, 3, 0x01800100)):
         u = k.upper()
         assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h, k
         assert f"#define SGX_OWN_PDS_{u}_ROWS\t{rows}" in h, k
@@ -566,9 +566,9 @@ def test_the_fw14_form_keeps_every_rule_of_the_owned_form():
 
 
 @pytest.mark.parametrize("word", [
-    "emitpds.tasks.taske #0, r2, r3, r4, #0xc43", "emitpds.tasks.taske #0, r2, r3, r4, #0x842",
+    "emitpds.tasks.taske #0, r2, r3, r4, #0xc03", "emitpds.tasks.taske #0, r2, r3, r4, #0x443",
     "emitpds.tasks.taske #0, r2, r3, r4, #0x844", "emitpds.tasks.taske #0, r2, r3, r4, #0x1843",
-    "emitpds.tasks.taske #0, r2, r3, r4, #0x43", "emitpds #0, r2, r3, r4, #0x843",
+    "emitpds.tasks.taske #0, r2, r3, r4, #0x847", "emitpds #0, r2, r3, r4, #0x843",
     "emitpds.tasks.taske.freep #0, r2, r3, r4, #0x843", "emitpds.tasks.taske #1, r2, r3, r4, #0x843",
     "emitpds.tasks.taske #0, r5, r3, r4, #0x843", "emitpds.tasks.taske #0, sa2, r3, r4, #0x843",
 ])
@@ -576,16 +576,36 @@ def test_every_other_sideband_or_field_with_it_is_still_unknown(word):
     assert why_of(SETUP + [word, "nop.end", "nop.end"]) == Y.UNKNOWN
 
 
-def test_no_single_bit_change_of_either_word_is_an_emit_form():
-    for w in (0xFB20B00000008184, FW14_WORD):
+SB_MASK = (0x3F << 22) | (0x3F << 35) | (3 << 54)        # the sideband's word bits (#149)
+
+
+def test_no_single_bit_change_outside_the_sideband_of_a_listed_word_is_an_emit_form():
+    """Round 40 (N3e): the list (below) differs in the sideband only; a change of any other bit of
+    any listed word is no emitpds form, and a sideband change is a listed word or none."""
+    listed = {w for _, _, w in fwtask.EMIT_FORMS}
+    for w in listed:
         for b in range(64):
-            assert fwtask.classify(w ^ 1 << b)[1] not in ("emitpds-own", "emitpds-fw14"), (hex(w), b)
+            k = fwtask.classify(w ^ 1 << b)
+            if SB_MASK >> b & 1:
+                assert (k[0] == "EMITPDS") == ((w ^ 1 << b) in listed), (hex(w), b)
+            else:
+                assert k[0] != "EMITPDS", (hex(w), b)
 
 
-def test_the_crafted_blobs_refuse_11_s_sideband():
+def test_the_crafted_blobs_refuse_sidebands_off_the_list():
+    """Round 40 (N3e): #11's 0x0c43 and our 0x001 are listed now; the crafted refusals take
+    sidebands the list leaves out: bit 2 (0x004), bit 10 with 0 and 1 and 11 but not 6 (0x0c03),
+    bit 12 (0x1843, no firmware value sets 13:12)."""
     rows = {n: (want, why) for n, _, want, why in gen_verify.crafted_blobs()}
-    assert rows["emitpds_sideband_11"] == ("EPERM", Y.UNKNOWN)
-    assert rows["emitpds_sideband"] == ("EPERM", Y.UNKNOWN)
+    for n in ("emitpds_sideband", "emitpds_sideband_c03", "emitpds_sideband_1843"):
+        assert rows[n] == ("EPERM", Y.UNKNOWN), n
+    assert "emitpds_sideband_11" not in rows
+    words = {n: d for n, d, _, _ in gen_verify.crafted_blobs()}
+    sb = {n: [sideband(w) for w in fwtask.parse_blob(words[n]).words
+              if w & ~SB_MASK == 0xFB20B00000008184 & ~SB_MASK]
+          for n in ("emitpds_sideband", "emitpds_sideband_c03", "emitpds_sideband_1843")}
+    assert sb == {"emitpds_sideband": [0x004], "emitpds_sideband_c03": [0xC03],
+                  "emitpds_sideband_1843": [0x1843]}
 
 
 def test_emitsk14_is_emitsk_with_the_fw14_word_and_nothing_else():
@@ -630,13 +650,12 @@ def test_emitsb14_is_emitsb_with_the_fw14_word_and_nothing_else():
         [w for w in bb.words if fwtask.classify(w)[0] != "EMITPDS"]
 
 
-def test_emitsb14_is_in_the_map_but_not_the_kernel_s_pinned_list():
-    """The fork's KUnit list at the pin (f9453424bf71) does not carry emitsb14: its module's
-    verifier accepts it unchanged (the shim run of round 40), the list is not regenerated."""
+def test_emitsb14_is_in_the_map_and_the_kernel_s_accepted_list():
+    """Round 40's kernel series (r40-kernel, N3e) carries it in the fork's KUnit list."""
     import json
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsb14"]["source"] == "emitsb14.s"
-    assert "emitsb14" not in gen_verify.OK_BLOBS
+    assert "emitsb14" in gen_verify.OK_BLOBS
 
 
 # ---- emitsb14d: emitsb14 with the landing survey (round 40, N3e row D0) -------------------------
@@ -737,8 +756,144 @@ def test_emitsb14d_is_emitsb14_plus_the_survey_only():
     assert fwtask.lint((fwtask.ASM / "emitsb14d.s").read_text()) == []
 
 
-def test_emitsb14d_is_in_the_map_but_not_the_kernel_s_pinned_list():
+def test_emitsb14d_is_in_the_map_and_the_kernel_s_accepted_list():
     import json
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     assert m["emitsb14d"]["source"] == "emitsb14d.s"
-    assert "emitsb14d" not in gen_verify.OK_BLOBS
+    assert "emitsb14d" in gen_verify.OK_BLOBS
+
+
+# ---- the sideband list (round 40, N3e §3.2, the user's decision A (a)) --------------------------
+# the design's table: form= name, sideband, word (computed there from our word with #149's field)
+N3E_LIST = [("own", 0x000, 0xFB20B00000008184), ("sb001", 0x001, 0xFB20B00000408184),
+            ("sb002", 0x002, 0xFB20B00000808184), ("sb003", 0x003, 0xFB20B00000C08184),
+            ("sb040", 0x040, 0xFB20B00800008184), ("sb041", 0x041, 0xFB20B00800408184),
+            ("sb042", 0x042, 0xFB20B00800808184), ("sb043", 0x043, 0xFB20B00800C08184),
+            ("sb800", 0x800, 0xFB20B10000008184), ("sb801", 0x801, 0xFB20B10000408184),
+            ("sb802", 0x802, 0xFB20B10000808184), ("sb803", 0x803, 0xFB20B10000C08184),
+            ("sb840", 0x840, 0xFB20B10800008184), ("sb841", 0x841, 0xFB20B10800408184),
+            ("sb842", 0x842, 0xFB20B10800808184), ("fw14", 0x843, 0xFB20B10800C08184),
+            ("sbc43", 0xC43, 0xFB20B18800C08184), ("sb403", 0x403, 0xFB20B08000C08184)]
+SB_FORMS = [n for n, _, _ in N3E_LIST if n.startswith("sb")]
+
+
+def test_the_emit_list_is_the_design_s_18_words_in_its_order():
+    """The 16 subsets of 0x843's set bits {0, 1, 6, 11}, then #11's 0xc43 and 0x403; own and fw14
+    keep their words (round 33's and round 39's, unchanged)."""
+    assert fwtask.EMIT_FORMS == N3E_LIST
+    subsets = {sum(b for j, b in enumerate((1, 2, 0x40, 0x800)) if k >> j & 1) for k in range(16)}
+    assert {s for _, s, _ in N3E_LIST} == subsets | {0xC43, 0x403} and len(N3E_LIST) == 18
+    for name, sb, w in N3E_LIST:
+        assert fwtask.emit_word(sb) == w, name
+        assert sideband(w) == sb, name
+        assert w & ~SB_MASK == 0xFB20B00000008184 & ~SB_MASK, name
+        (a,) = asm([f"emitpds.tasks.taske #0, r2, r3, r4, #0x{sb:x}"])
+        assert a == w, name
+    assert dict((n, w) for n, _, w in N3E_LIST)["fw14"] == FW14_WORD
+    assert dict((n, w) for n, _, w in N3E_LIST)["own"] == 0xFB20B00000008184
+
+
+def test_every_listed_word_is_an_emitpds_form_row_of_the_listing():
+    spec = pathlib.Path(gen_verify.spec_path()).read_text()
+    rows = [r for r in fwtask.FORMS if r[1] == "EMITPDS"]
+    assert [(r[0], r[3]) for r in rows] == [(f"emitpds-{n}", w) for n, _, w in N3E_LIST]
+    for name, kind, mask, value in rows:
+        assert mask == fwtask.ALL and gen_verify.in_spec(spec, mask, value), name
+        assert fwtask.classify(value) == ("EMITPDS", name)
+
+
+@pytest.mark.parametrize("name", [n for n, _, _ in N3E_LIST])
+def test_every_listed_word_keeps_every_rule_of_the_owned_form(name):
+    sb = dict((n, s) for n, s, _ in N3E_LIST)[name]
+    e = f"emitpds.tasks.taske #0, r2, r3, r4, #0x{sb:x}"
+    good = SETUP + [e, "nop.end", "nop.end"]
+    assert why_of(good) is None
+    assert why_of(good, []) == Y.EMIT_ARGS
+    assert why_of(good, entries=(0,)) == Y.EMIT_ENTRY
+    assert why_of(SETUP + [OWN_EMIT, e, "nop.end", "nop.end"], entries=(0, 6)) == Y.EMIT_ONCE
+
+
+def test_the_kernel_header_carries_the_form_list_and_its_names():
+    """sgx_own_regs.h: the enum own_arm's form= indexes (SGX_OWN_FORM_<NAME>, own first, then the
+    design's order) and the table of names and words the arm and sgx_own_emit_form() read."""
+    h = gen_verify.render(fwtask.load_regs())
+    enum = h[h.index("enum sgx_own_form {"):]
+    enum = enum[:enum.index("};")]
+    assert [ln.strip().rstrip(",") for ln in enum.splitlines()[1:]] == \
+        [f"SGX_OWN_FORM_{n.upper()}" for n, _, _ in N3E_LIST] + ["SGX_OWN_FORM_COUNT"]
+    tab = h[h.index("sgx_own_emit_forms[SGX_OWN_FORM_COUNT]"):]
+    tab = tab[:tab.index("};")]
+    for name, sb, w in N3E_LIST:
+        assert f'\t{{ "{name}", 0x{w:016x}ULL }},\t/* sideband 0x{sb:03x} */' in tab, name
+    assert tab.count("ULL }") == 18
+
+
+# ---- emitsb_<f>: emitsb14d with each listed word (round 40, N3e §3.2) --------------------------
+@pytest.mark.parametrize("name", SB_FORMS)
+def test_emitsb_form_is_emitsb14d_with_that_word_and_nothing_else(name):
+    """One blob per listed word: emitsb14d (row D0's survey included) with only the emit word
+    changed, so every row also reads D0's pre/post landing slots."""
+    import gen_blobs
+    sb, w = next((s, x) for n, s, x in N3E_LIST if n == name)
+    d = [ln for ln in gen_blobs.gen_emitsb14d().splitlines() if not ln.startswith(";")]
+    f = [ln for ln in gen_blobs.gen_emitsb_form(name).splitlines() if not ln.startswith(";")]
+    assert len(d) == len(f)
+    diff = [(a.strip(), b.strip()) for a, b in zip(d, f) if a != b]
+    assert diff == [(FW14_EMIT, f"emitpds.tasks.taske #0, r2, r3, r4, #0x{sb:x}")]
+    src = f"emitsb_{name}"
+    blob = fwtask.parse_blob(fwtask.blob_of(src))
+    db = fwtask.parse_blob(fwtask.blob_of("emitsb14d"))
+    assert [x for x in blob.words if fwtask.classify(x)[0] == "EMITPDS"] == [w]
+    assert blob.entries == db.entries and blob.patches == db.patches
+    assert [x for x in blob.words if fwtask.classify(x)[0] != "EMITPDS"] == \
+        [x for x in db.words if fwtask.classify(x)[0] != "EMITPDS"]
+    assert fwtask.refusal(fwtask.blob_of(src), REGS) is None
+    assert fwtask.lint((fwtask.ASM / f"{src}.s").read_text()) == []
+
+
+def test_the_emitsb_forms_are_in_the_map_and_the_kernel_s_accepted_list():
+    """Round 40's kernel series (r40-kernel) carries emitsb14, emitsb14d and every emitsb_<f>."""
+    import json
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    for name in SB_FORMS:
+        assert m[f"emitsb_{name}"]["source"] == f"emitsb_{name}.s"
+        assert f"emitsb_{name}" in gen_verify.OK_BLOBS
+    assert "emitsb_own" not in m and "emitsb_fw14" not in m
+    import gen_blobs
+    with pytest.raises(ValueError):
+        gen_blobs.gen_emitsb_form("fw14")       # that is emitsb14d itself
+    with pytest.raises(ValueError):
+        gen_blobs.gen_emitsb_form("sb004")
+
+
+# ---- the land image (round 40, N3e §3.2, the user's decision C (a)) ------------------------------
+LAND = [0, 0, 0, 0x00001800, 0x5A5A3A18, 0x5A5A3A1A, 0x00001A00, 0, 0, 0, 0, 0,
+        0x07040606, 0x07042CA6, 0x07000305, 0xAF000000]
+
+
+def test_the_land_image_is_crumb3_s_layout_with_markers_and_no_tim(tmp_path):
+    """crumb3's 3 rows and its douta, doutu and halt words (operands unchanged), its two tim lines
+    and T3's dword gone: dword 3 (ds1[1]) the douta control of attribute 24, dword 6 (ds1[2])
+    attribute 26, dwords 4 and 5 (ds0[2], ds0[3]) the markers Ma and Mb, constants of the image."""
+    img = gen_verify.pds_image("land")
+    assert img == LAND
+    c3 = gen_verify.pds_image("crumb3")
+    assert img[12:] == [w for w in c3[12:] if w not in (0x07001FE7, 0x07003547, 0x07003FE7)]
+    assert dis_n(tmp_path, img, 12) == ["data"] * 12 + dis_n(tmp_path, c3, 12)[13:15] + \
+        [dis_n(tmp_path, c3, 12)[16], "halt"]
+    assert img[3] >> 8 & 0xFFF == 24 and img[6] >> 8 & 0xFFF == 26
+    assert gen_verify.PDS_IMAGE_ROWS["land"] == 3
+    assert gen_verify.pds_ctl("land") == 0x01800100
+    assert 0x005A3305 not in img
+
+
+def test_the_kernel_fills_u0_alone_in_land():
+    """The kernel fills U0, V0 and V2 in every image but land, where dwords 4 and 5 are the markers:
+    the header says so per image (SGX_OWN_PDS_<K>_FILLV)."""
+    assert gen_verify.PDS_FILLV == {"v1": 1, "crumb": 1, "halt": 1, "crumb3": 1, "land": 0}
+    h = gen_verify.render_pds()
+    for k in ("crumb", "halt", "crumb3"):
+        assert f"#define SGX_OWN_PDS_{k.upper()}_FILLV\t1" in h, k
+    assert "#define SGX_OWN_PDS_LAND_FILLV\t0" in h
+    assert "#define SGX_OWN_PDS_LAND_WORDS\t16" in h and "#define SGX_OWN_PDS_LAND_CTL\t0x01800100" in h
+    assert "asm/fwtask/pds/land.s" in h

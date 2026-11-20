@@ -54,6 +54,29 @@ PDS_SLOTS = 3               # a pds patch's slot: 0 the control word, 1 the addr
 # the one emitpds form (N3): its sources, s0 to s2, are these registers (E488's operand order)
 EMIT_REGS = (2, 3, 4)
 EMIT_ENTRY = 1              # the blob's entry the kernel's PDS image starts (its doutu)
+# the emitpds words a task may hold: our word (`emitpds.tasks.taske #0, r2, r3, r4, #SB`) with one
+# of these 14-bit sidebands, every other field ours; own_arm's form= names them (own the default).
+# Round 33 (N3): own, 0; round 39 (N3d row Z): fw14, #14's 0x0843 (N3d O1); round 40 (N3e §3.2,
+# the user's decision A (a)): the 16 subsets of 0x843's set bits {0, 1, 6, 11} plus #11's 0x0c43
+# and 0x403 (bit 10 without 6 and 11), in the design's order. The kernel arms a blob only with the
+# form= that names its word (sgx_own_regs.h's sgx_own_emit_forms, generated from this list).
+EMIT_BASE = 0xFB20B00000008184
+EMIT_SIDEBANDS = (("own", 0x000), ("sb001", 0x001), ("sb002", 0x002), ("sb003", 0x003),
+                  ("sb040", 0x040), ("sb041", 0x041), ("sb042", 0x042), ("sb043", 0x043),
+                  ("sb800", 0x800), ("sb801", 0x801), ("sb802", 0x802), ("sb803", 0x803),
+                  ("sb840", 0x840), ("sb841", 0x841), ("sb842", 0x842), ("fw14", 0x843),
+                  ("sbc43", 0xC43), ("sb403", 0x403))
+
+
+def emit_word(sideband: int) -> int:
+    """Our emitpds word with a 14-bit sideband (usse-dis form #149: value bits 5:0 at word bits
+    27:22, 11:6 at 40:35, 13:12 at 55:54; N3d O1)."""
+    assert 0 <= sideband < 1 << 14
+    return (EMIT_BASE | (sideband & 0x3F) << 22 | (sideband >> 6 & 0x3F) << 35
+            | (sideband >> 12 & 3) << 54)
+
+
+EMIT_FORMS = [(n, sb, emit_word(sb)) for n, sb in EMIT_SIDEBANDS]
 EXIT_SLOT = 4               # a continue patch's slot 4: the shared exit, not a slot of PDS #13
 # the one firmware file the kernel resolves cont4 for (tools/fwcutter/README.md's cut, format v3)
 EXIT_FW_SHA256 = "6a00268e9d4ca552c02e52651a42a2b4db3887d7fe626f209888369985162b0a"
@@ -153,12 +176,11 @@ FORMS = [
     ("lapc", "LAPC", ALL, 0xF800008000000000),                                         # #125
     ("alu-test", "PLAIN", ALL & ~_ALU_FREE, 0x48081081000C0000),                       # #24: and, xor, no write
     ("ima32", "IMA32", ALL, 0xD002008081020089),                                       # #179
-    # round 33 (N3): the one emitpds form, exactly `emitpds.tasks.taske #0, r2, r3, r4, #0x0`; its
-    # sources must hold the kernel's patched values (pass 6) and it runs once per task (pass 7)
-    ("emitpds-own", "EMITPDS", ALL, 0xFB20B00000008184),                                # #149
-    # round 39 (N3d row Z): the same word with the 14-bit sideband of #14's own emit, 0x0843 (N3d
-    # O1: the only field that differs); the same rules; the kernel takes it only at form=fw14
-    ("emitpds-fw14", "EMITPDS", ALL, 0xFB20B10800C08184),                               # #149
+    # round 33 (N3): the emitpds form, exactly `emitpds.tasks.taske #0, r2, r3, r4, #SB` with SB
+    # one of EMIT_SIDEBANDS (round 33 own, 0; round 39 fw14, 0x0843; round 40 N3e's list); its
+    # sources must hold the kernel's patched values (pass 6) and it runs once per task (pass 7),
+    # whichever word; the kernel takes each only at the form= that names it
+    *[(f"emitpds-{n}", "EMITPDS", ALL, w) for n, _, w in EMIT_FORMS],                  # #149
     ("ldad", "LOAD_ABS", ALL & ~(DSTN | SRC0N | SRC1N), 0xE82B0002A0000000),               # #30
     ("stad", "STORE_ABS", ALL & ~_STR_FREE, 0xF022000080000000),                            # #33
     ("ldr-imm", "LDR", ALL & ~_LDR_FREE, 0xFE21000020000000),                          # #145

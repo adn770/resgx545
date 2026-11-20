@@ -518,7 +518,7 @@ srcversion, fork tip, laptop tools.
 
 ## Tool and fork versions
 
-- fork pin (`tools/forkpin.py`): f9453424bf71
+- fork pin (`tools/forkpin.py`): 423b436e7f80
 - module srcversion 0CDFCDB73D76F39FE9E593C: last named 2026-11-19, 6 sessions
 - module srcversion 88ADCEB5AD9F055D077A99C: last named 2026-11-19, 3 sessions
 - module srcversion 77917296568EB311B89B0DA: last named 2026-11-19, 3 sessions
@@ -596,6 +596,8 @@ stays with what a session must do around it.
   module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
 - `pds=halt`, `pds=crumb3` and `pdsat=fw14` arm only with the fork's branch `r38-kernel`
   (e1cf9d2b43ab, not built nor booted yet); the module of r37-kernel refuses them.
+- `pds=land` and every `form=` name but `fw14` arm only with the fork's branch `r40-kernel` (round
+  40, not built nor booted yet); the module of r39-kernel (0CDFCDB7) refuses them.
 - an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
   the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
   the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
