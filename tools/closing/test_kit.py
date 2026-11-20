@@ -3212,3 +3212,27 @@ def test_a_planned_gate_failure_is_scored_and_ends_the_session(repos):
     assert "planned end" in run and "SUMMARY:" in run, run
     att = next(mm.rglob("score-own.txt"))
     assert "SUMMARY" in att.read_text()
+
+
+GATE_WORLD = ("def gate(world, arm):\n"
+              "    if 'xbad' not in world or 'form=' in arm:\n"
+              "        return None\n"
+              "    return {'fill': 'job: faulted\\nFAIL fill\\n',\n"
+              "            'post': 'BIF_INT_STAT: 0x000d0400\\nBIF_FAULT: 0x0004300f\\n'}\n\n\n")
+
+
+def test_a_mock_world_shapes_the_gate_by_the_armed_line(repos):
+    """A session's world may give the fake gate's texts by world and arm line (`gate(world,
+    arm)`: fill, tri, the devcoredumps pre and post; None: the default), so one stage's gate can
+    fail while another's passes; ok is read from the texts as the real runner reads them."""
+    import gzip
+    kp, r = own_session(repos, expect={"xbad": (16, {"s0": 0, "own": 16})})
+    w = (kp / "mock/world.py").read_text()
+    (kp / "mock/world.py").write_text(w.replace("def answer(tool, argv, world):\n",
+                                                GATE_WORLD + "def answer(tool, argv, world):\n"))
+    m = kit(kp, r, "mock", "--world", "xbad")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kept = next(kp.glob("debug/mock.*/xbad")) / "out/xbad/own"
+    assert b"BIF_FAULT: 0x0004300f" in gzip.decompress((kept / "o1.devcd.txt.gz").read_bytes())
+    assert b"job: faulted" in gzip.decompress((kept / "o1.gate-fill.txt.gz").read_bytes())
+    assert gzip.decompress((kept / "o1.devcd-pre.txt.gz").read_bytes()) == b"devcd: none pending\n"

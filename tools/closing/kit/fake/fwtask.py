@@ -21,11 +21,12 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          slots, its sleep_ms recorded as slept {ms, ticks}; world ownstop2: the jobs after the
          first never report done (the same stop dump and rc 1)
   page   the results page, {"page": [1024 dwords]}
-  gate   {order, outdir} optional (round 41): the fill and triangle in that order, ok unless the
-         world has owngatebad (the fill fails); with outdir its gate-fill.txt and gate-tri.txt
-         (t30-shaped texts) and devcd-pre.txt, devcd.txt (the world's optional devcd(stage_world,
-         when) text, "pre" or "post", else "devcd: none pending"); the log line names a
-         non-default order
+  gate   {order, outdir} optional (round 41): the fill and triangle in that order (t30-shaped
+         texts; world owngatebad: the fill fails), or the texts the world's optional gate(world,
+         arm) gives by the armed line ({fill, tri, pre, post}, any of them; None: the defaults),
+         ok read from them as the real runner reads them; with outdir its gate-fill.txt,
+         gate-tri.txt, devcd-pre.txt and devcd.txt (pre and post, else "devcd: none pending");
+         the log line names a non-default order
   reset  disarm; ok
 
 Every call is logged in FAKE_DIR/own.log ("arm LINE", "run NAME n=N runid=R", "page", "gate",
@@ -197,15 +198,20 @@ def gate(a):
     log(f"gate {os.environ.get('FWTASK_HEALTH_TOOL', '-')}"
         + (f" {order}" if order != ORDERS[0] else ""))
     w, mod = world(), world_mod()
-    ok = "owngatebad" not in w
-    texts = {"fill": FILL_OK if ok else FILL_BAD, "tri": TRI_OK}
-    out = {"order": order, "ok": ok, "fill": "diff: 0 of 2048" if ok else "FAIL fill",
-           "tri": "diff: 0 of 4096"}
+    arm_line = open(fake("own")).read().strip() if armed() else ""
+    got = (getattr(mod, "gate", None) or (lambda w_, a_: None))(w, arm_line) or {}
+    texts = {"fill": got.get("fill", FILL_BAD if "owngatebad" in w else FILL_OK),
+             "tri": got.get("tri", TRI_OK)}
+    fill = [ln for ln in texts["fill"].splitlines() if ln.startswith("diff") or "FAIL" in ln][:3]
+    tri = [ln for ln in texts["tri"].splitlines()
+           if ln.startswith(("diff", "tri 64x64")) or "FAIL" in ln][:4]
+    out = {"order": order, "fill": "\n".join(fill), "tri": "\n".join(tri)}
+    out["ok"] = ("diff: 0 of 2048" in out["fill"] and "diff: 0 of 4096" in out["tri"]
+                 and "FAIL" not in out["fill"] + out["tri"])
     if "outdir" in a:
         os.makedirs(a["outdir"], exist_ok=True)
-        dev = getattr(mod, "devcd", None)
         for when, f in (("pre", "devcd-pre.txt"), ("post", "devcd.txt")):
-            text = (dev(w, when) if dev else None) or "devcd: none pending\n"
+            text = got.get(when) or "devcd: none pending\n"
             with open(os.path.join(a["outdir"], f), "w") as fh:
                 fh.write(text)
             out["devcd_pre" if when == "pre" else "devcd"] = \

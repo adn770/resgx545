@@ -459,7 +459,9 @@ tools saved as `NAME.devcd-pre.txt` and freed by a write to `data`, the one afte
 `owntask-gate NAME`. The stage key `on_gate_fail = "score"` (the session's last stage, an owntask
 one) makes the gate's failure (rc 16) the session's planned end: the driver copies it back, checks
 the kept files, scores it and ends with status 0. The fake's world `ownstop2` stops a list's
-second job.
+second job, and a session's world may give the fake gate's texts by the armed line (`gate(world,
+arm)`: fill, tri and the devcoredumps pre and post), so one stage's gate fails and another's
+passes.
 
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
