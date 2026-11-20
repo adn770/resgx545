@@ -134,6 +134,9 @@ pub struct State {
     tracer: Option<Box<dyn Tracer>>,
     /// The register whose read stopped the run, for the trace's refusal.
     last_refused: Option<u32>,
+    /// An own-task emit with sideband bit 10 rewrote the EDM's secondaries; until a reset the
+    /// next fill or triangle faults at the page in `sa13` (`Sgx::host_job`, Q128).
+    rebased: bool,
 }
 
 impl Default for State {
@@ -151,6 +154,7 @@ impl Default for State {
             hw: None,
             tracer: None,
             last_refused: None,
+            rebased: false,
         }
     }
 }
@@ -330,6 +334,53 @@ impl Carry {
         let i = |n: usize| (m.written.i >> n & 1 != 0).then_some(m.i[n]);
         (self.r20, self.r21) = (r(20).or(self.r20), r(21).or(self.r21));
         (self.i0, self.i1) = (i(0).or(self.i0), i(1).or(self.i1));
+    }
+}
+
+/// A host job the kernel sends after our own task's work: a transfer (a fill) or a render (a
+/// triangle). The sim runs neither; [`Sgx::host_job`] names the one fault the EDM's state
+/// measures to cause.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HostJob {
+    Fill,
+    Triangle,
+}
+
+impl Sgx {
+    /// The BIF_FAULT word the next `job` ends with, from the EDM state an own-task emit with
+    /// sideband bit 10 left (Q128): its rewritten `sa13` names the page, through the EDM's list
+    /// (CID 15). After 0xc43 or 0x403, with `sa13` 0x00043000, the next fill (E1172 2 of 2,
+    /// E1174, E1175) and the next triangle (E1177) faulted with BIF_FAULT 0x0004300f, until a
+    /// reset; with 0x843 both ran (E1173). That the page is `sa13`'s because something takes it
+    /// as a page base is inferred. `None`: no such state (the sim runs no host job, so this says
+    /// nothing else of how it ends). A rewritten `sa13` the sim does not know, or one that is not
+    /// page aligned (only 0x00043000 was read), is refused.
+    pub fn host_job(&self, job: HostJob) -> Result<Option<u32>, Error> {
+        if !self.st.rebased {
+            return Ok(None);
+        }
+        if self.st.sa_written >> 13 & 1 == 0 {
+            return Err(why(format!(
+                "{job:?} after an own-task emit with sideband bit 10: it faults at the page sa13 \
+                 holds (E1172, E1174, E1175, E1177), and sa13 (the started entry's pa1) is unknown"
+            )));
+        }
+        let page = self.st.sa[13];
+        if page & 0xfff != 0 {
+            return Err(why(format!(
+                "{job:?} after an own-task emit with sideband bit 10: sa13 {page:#010x} is not page \
+                 aligned; only 0x00043000 was read (E1174, E1175, E1177)"
+            )));
+        }
+        Ok(Some(page | 0xf))
+    }
+
+    /// A debugfs reset: the kernel rebuilds the firmware's buffers and boots the stock EDM. Bit
+    /// 10's state ends there (the kit's health fill and triangle after every reset, E1174,
+    /// E1175, E1177). The boot's secondaries are not modelled: they are unknown afterwards.
+    pub fn reset(&mut self) {
+        self.st.rebased = false;
+        self.st.sa_written = 0;
     }
 }
 
@@ -767,7 +818,8 @@ impl Unit<'_> {
                 return Err(why(format!(
                     "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
                      unmeasured (measured: 0x843 at 0, 2, 24, 26; 0x002, 0x003, 0x842 at 0, 2; \
-                     E1161-E1164, E1166, E1168, Q128)"
+                     E1161-E1164, E1166, E1168; with bit 10 the started entry's pa held words of \
+                     earlier runs, not told apart, E1174, E1175, E1177; Q128)"
                 )));
             }
         }
@@ -819,8 +871,9 @@ impl Bus for Unit<'_> {
         // 0x00020000, from a kick or a tick pass (0x843 E1156, E1157, E1159, E1160, E1162; 0x003
         // E1164; 0x842 E1166; 0x002 E1168): bits 6 and 11 are not needed with 2 or 3, so the
         // combinations of them not run (0x042, 0x043, 0x802, 0x803) run by that rule [infer].
-        // Bit 10 (0xc43) ran too, but the next fill failed until a reset and the started entry
-        // read other secondaries (E1172): not modelled, refused. Bits 12-13: never run.
+        // Bit 10 with bits 1:0 = 3 ran too, with 6 and 11 (0xc43: E1172, E1174, E1177) and
+        // without (0x403: E1175), and rewrote the issuer's secondaries (Unit::port, Doutu); bit 10
+        // with any other bits is unmeasured. Bits 12-13: never run.
         let mut bank = Bank::Secondary;
         if self.own {
             let sideband = text.rsplit_once('#').and_then(|(_, n)| n.trim().strip_prefix("0x"));
@@ -842,14 +895,13 @@ impl Bus for Unit<'_> {
                      bus fault at #14's page + 0x10 (E1165, E1171, Q128)"
                 )));
             }
-            if b & 0x400 != 0 {
+            if b & 0x400 != 0 && b != 0xc43 && b != 0x403 {
                 return Err(why(format!(
-                    "emitpds from our own task with sideband {b:#x}, bit 10: it ran, but the next \
-                     fill failed until a reset and the started entry read other secondaries, \
-                     not modelled (E1172, Q128)"
+                    "emitpds from our own task with sideband {b:#x}, bit 10: unmeasured (bit 10 ran \
+                     as 0xc43 and 0x403 only, E1172, E1174, E1175, E1177, Q128)"
                 )));
             }
-            if b & !0x843 != 0 {
+            if b & !0xc43 != 0 {
                 return Err(why(format!(
                     "emitpds from our own task with sideband {b:#x}: unmeasured (bits 1:0, 6, 10 \
                      and 11 were run, E1162-E1172, Q128)"
@@ -887,6 +939,20 @@ impl Bus for Unit<'_> {
                 let base = (cb & 0x01ff_ffff) << 7;
                 let (pc, temps) = ((w[0] >> 4 & 0xffff) as usize, (w[0] >> 24) as usize * 4);
                 let (pa, written) = (Box::new(self.pa), self.written);
+                // Sideband bit 10 (0xc43, 0x403): our entry 0 read, a job later, the EDM's own
+                // sa12-sa27 equal to the started entry's pa0-pa15, sa1 and words of sa3-sa10
+                // changed (E1174, E1175; the started entry read the same, E1172, E1177); with
+                // 0x843 nothing changed (E1173). Only that is modelled: every other sa is
+                // unknown, sa0-sa11 and sa28 on included (sa0 and sa2 stayed with crumb3 but
+                // not with land, E1176, CANNOT TELL). The rewrite lasts until a reset.
+                if matches!(self.bank, Bank::Own(b) if b & 0x400 != 0) {
+                    let mut known = 0u128;
+                    for k in 0..16 {
+                        self.st.sa[12 + k] = self.pa[k];
+                        known |= (self.written >> k & 1) << (12 + k);
+                    }
+                    (self.st.sa_written, self.st.rebased) = (known, true);
+                }
                 self.st.queue.push_back(Work::Task { base, pc, temps, pa, written });
                 Ok(())
             }
@@ -1760,9 +1826,10 @@ mod tests {
         for sb in [0x841, 0x001] {
             refused_with(sb, &["bits 1:0 1", "fault", "E1165", "E1171"]);
         }
-        // E1172 (0xc43): it ran, but the next fill failed until a reset: not modelled
-        refused_with(0xc43, &["bit 10", "E1172"]);
-        refused_with(0x403, &["bit 10", "E1172"]);
+        // bit 10 was run with bits 1:0 = 3 only, as 0xc43 and 0x403 (E1172, E1174, E1175)
+        refused_with(0x402, &["bit 10", "unmeasured"]);
+        refused_with(0xc42, &["bit 10", "unmeasured"]);
+        refused_with(0x443, &["bit 10", "unmeasured"]);
         // bits 12-13 were never run
         refused_with(0x1003, &["0x1003", "unmeasured"]);
     }
@@ -1850,6 +1917,111 @@ mod tests {
         refused(0x843, 0x0400); // attribute 4
         refused(0x003, 0x1800); // attribute 24 with 0x003
         refused(0x043, 0x0000); // a sideband that runs by the rule only
+    }
+
+    #[test]
+    fn an_own_task_emit_with_sideband_bit_10_runs_the_program_and_our_entry() {
+        // E1172 (B11, 0xc43, 2 of 2), E1174 (X, 0xc43), E1175 (Y, 0x403), E1177 (T, 0xc43): the
+        // program and the entry it started ran to done
+        for sb in [0xc43, 0x403] {
+            let (s, r) = own_emit(sb, 0);
+            r.unwrap_or_else(|e| panic!("{sb:#x}: {e:?}"));
+            assert_eq!(s.st.regs[&reg::EVENT_TIMER], 0x005a_3305);
+            assert_eq!(s.st.regs[&65], 0x5a5a_3302);
+        }
+    }
+
+    /// Row X's (E1174) pre sa0-sa31, read by our entry 0 before the emit.
+    const X_PRE: [u32; 32] = {
+        let mut sa = [0; 32];
+        (sa[0], sa[1], sa[2], sa[22], sa[23]) =
+            (0x3200_4000, 0x3200_5000, 0x3200_2000, 0x3200_0000, 0x03ed_8000);
+        sa
+    };
+
+    /// Row X's (E1174) started entry's pa0-pa15.
+    const X_PA: [u32; 16] = [
+        0x0000_0003,
+        0x0004_3000,
+        0x3241_1000,
+        0x0155_5620,
+        0x3200_4000,
+        0x0000_0000,
+        0x3200_2000,
+        0x03c3_cdac,
+        0x3200_4000,
+        0xdc53_1a54,
+        0x3200_2000,
+        0x5d50_716f,
+        0x3200_4000,
+        0x82e1_51b5,
+        0x3200_2000,
+        0x11b5_d77a,
+    ];
+
+    /// The EDM's sa as X's pre (all 128 known), then a program our task emitted with `sideband`
+    /// starts our entry with X's pa0-pa15 written (`written` of them) through its doutu.
+    fn own_doutu(sideband: u32, written: u128) -> Sgx {
+        let mut s = sgx();
+        s.st.sa[..32].copy_from_slice(&X_PRE);
+        s.st.sa_written = !0;
+        let mut pa = [0; 128];
+        pa[..16].copy_from_slice(&X_PA);
+        let mut u = Unit { st: &mut s.st, bank: Bank::Own(sideband), pa, written, own: false };
+        u.port(Port::Doutu, [code_word(OWN_INDEX as u32 + 8), 0, 0, 0]).unwrap();
+        s
+    }
+
+    #[test]
+    fn bit_10_rewrites_the_issuers_sa12_to_sa27_with_the_started_entrys_pa0_to_pa15() {
+        // E1174 (X, 0xc43), E1175 (Y, 0x403): our entry 0's after-read of the EDM's own sa, a job
+        // later, equal to what the started entry read: sa12-sa27 its pa0-pa15
+        for sb in [0xc43, 0x403] {
+            let s = own_doutu(sb, 0xffff);
+            assert_eq!(s.st.sa[12..28], X_PA, "{sb:#x}");
+            assert_eq!(s.st.sa_written >> 12 & 0xffff, 0xffff, "{sb:#x}");
+            // sa1 and words of sa3-sa10 changed to words not modelled (sa1 0x04000010 in X,
+            // 0x04400000 in Y and B11); sa0, sa2, sa11 and the rest are not modelled either:
+            // unknown, a read refused
+            assert_eq!(s.st.sa_written & 0xfff, 0, "{sb:#x}");
+            assert_eq!(s.st.sa_written >> 28, 0, "{sb:#x}");
+            // a pa the program did not write is unknown in sa too
+            let s = own_doutu(sb, 0xfffd);
+            assert_eq!(s.st.sa_written >> 12 & 0xffff, 0xfffd, "{sb:#x}");
+        }
+        // E1173 (C, 0x843): the EDM's own sa0-sa31 read as before
+        let s = own_doutu(0x843, 0xffff);
+        assert_eq!(s.st.sa[..32], X_PRE);
+        assert_eq!(s.st.sa_written, !0);
+    }
+
+    #[test]
+    fn after_bit_10_the_next_fill_and_triangle_fault_at_the_page_in_sa13_until_a_reset() {
+        // E1172 (B11: the fill, 2 of 2), E1174 (X: the fill), E1175 (Y: the fill), E1177 (T: the
+        // triangle first): BIF_FAULT 0x0004300f, list 15, page 0x00043000, the post sa13 (pa1)
+        for sb in [0xc43, 0x403] {
+            let mut s = own_doutu(sb, 0xffff);
+            for job in [HostJob::Fill, HostJob::Triangle] {
+                assert_eq!(s.host_job(job).unwrap(), Some(0x0004_300f), "{sb:#x} {job:?}");
+            }
+            // until a reset: the fill and the triangle after it ran (the kit's health after its
+            // reset, every row)
+            s.reset();
+            for job in [HostJob::Fill, HostJob::Triangle] {
+                assert_eq!(s.host_job(job).unwrap(), None, "{sb:#x} {job:?}");
+            }
+        }
+        // E1173 (C): with 0x843 the gate's fill and triangle were exact
+        let s = own_doutu(0x843, 0xffff);
+        assert_eq!(s.host_job(HostJob::Fill).unwrap(), None);
+        // sa13 unknown (pa1 not written by the program): the page is not known, refused
+        let s = own_doutu(0xc43, 0xfffd);
+        assert!(matches!(s.host_job(HostJob::Fill), Err(Error::Unsupported { ref why, .. })
+            if why.contains("sa13") && why.contains("E1174")));
+        // end to end, our tim-marking program writes no pa: it runs, and the page is unknown
+        let (s, r) = own_emit(0xc43, 0);
+        r.unwrap();
+        assert!(s.host_job(HostJob::Triangle).is_err());
     }
 
     #[test]
