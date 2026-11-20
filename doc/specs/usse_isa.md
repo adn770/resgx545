@@ -7316,6 +7316,11 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   its `douta` land is **[open]** (not `pa0` or `pa2` in any run; `sa0` and `sa2` hold those
   values anyway; a survey of sa0-sa31 before and after and of `pa0`-`pa15` found no change and no
   V0 or V2, so it landed nowhere that survey sees [infer], E1161).
+  Row L answered it for two attributes: an image whose `douta` wrote markers to attributes 24
+  and 26 put them in the started entry's `pa12` and `pa14`, not in `sa24` or `sa26` (E1163)
+  **[HW]**: from our task, an emitted program's `douta` reaches the primary attributes of the
+  task its `doutu` starts. pa = n - 12 fits both points and puts crumb3's attributes 0 and 2
+  below `pa0`, as D0 read (E1161's correction) **[infer]**.
 - **The sideband decides [HW].** One change at a time against that run (E1157-E1160): with
   #14's sideband 0x843 the emitted program ran and our entry to done from a kick pass or a tick
   pass, with `s2` 0 or 0x00020000 (4 of 4: E1156, E1157, E1159, E1160); with our sideband 0 it
@@ -7324,6 +7329,20 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   being 0; `s2` and the pass are not needed. What the sideband's bits mean (#11's emit carries
   0x0c43, #12's and #14's 0x0843), whether another nonzero value runs and what stops the tick
   with 0 are **[open]** (Q128).
+- **Bits 1:0 of the sideband decide the start [HW].** Eleven sidebands from our task, one job
+  each, crumb3 in #14's page, a tick pass (E1158, E1162-E1172): bits 1:0 = 0 never start the
+  program and the tick stops (0x000, 0x040, 0x800, 0x840); 1 faults the job, BIF_FAULT
+  0x30011010, #14's page + 0x10, our task not storing past the emit (0x001, 0x841); 2 or 3 run it
+  and our entry to done (0x002, 0x842, 0x003, 0x843, 0xc43). Bits 6, 10 and 11 are not needed;
+  bits 6 and 11 with 2 (0x002, 0x842) and with 3 (0x003, 0x843). Reading bits 1:0 as the data
+  master with 3 the event one fails on 0x002 and 0x842. The combinations not run (0x042, 0x043,
+  0x802, 0x803) are **[infer]** from the rule. Bit 10 (0xc43, #11's value) ran 2 of 2 and both
+  times the next fill failed (0xdeadbeef in every pixel) until a reset; that bit 10 leaves that
+  state is **[infer]**, and the entry it started read other secondaries than the issuer's
+  (E1172). Where crumb3's `douta` show depends on the sideband: with 0x843 no V0 or V2 in
+  `pa0`-`pa15` (E1161, E1162); with 0x002, 0x003, 0x842 and 0xc43, V0 in every fourth pa from
+  `pa0` and V2 in every fourth from `pa2` (E1164, E1166, E1168, E1172) **[HW]**, why is
+  **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172"]
 terms = []
 +++
 
@@ -146,3 +146,31 @@ V0 and V2 and held them before, so a landing there is not told apart from none, 
 and no pa0-pa15 took them. Still open: the destination bank (sa0 and sa2, another bank, or a
 dropped write), the sideband's bits, what stops the tick with sideband 0, and the client-side
 parts above. Not retired.
+
+Sideband bits and landing, 2026-11-20 (E1162 to E1172, r40-n3e-b0, -l, -b1, -b2, -b3, -b4, -b8,
+-b9, -b10, -b7 and -b11, flagged, module 83FBFD86 of fork r40-kernel 423b436e7f80, one boot; each
+row changes one thing against B0, which reproduced D0 on the new build): from our EDM task, bits
+1:0 of the emit's sideband decide the start [HW]. 0 never starts the program and the tick stops
+(0x000 E1158, 0x840 E1167, 0x040 E1169, 0x800 E1170); 1 faults the job, BIF_FAULT 0x30011010, the
+base of #14's page + 0x10, 0xf0 below our image at 0x30011100, our task not storing past the emit
+(0x841 E1165, 0x001 E1171); 2 or 3 run the program and our entry to done (0x002 E1168, 0x842
+E1166, 0x003 E1164, 0x843 E1162, 0xc43 E1172). Bits 6, 10 and 11 are not needed; bits 6 and 11
+neither with 2 nor with 3. H-DM (bits 1:0 the data master, 3 the event one, needed) is falsified
+by 0x842 and 0x002. The combinations not run (0x042, 0x043, 0x802, 0x803, bits 12-13) follow
+from the rule only [infer]. B5 (0x043) and B6 (0x803) were built and not run: the design ran them
+only if B1 (0x003) never started, and B1 ran. Bit 10 (0xc43, #11's value) ran 2 of 2, and both
+times the kit's gate fill after the ok end failed (every pixel 0xdeadbeef) with the triangle
+exact, cured by the reset; that bit 10 leaves state that breaks the next fill until a reset is
+inferred; the entry it started read other secondaries than the issuer's (sa1 0x04400000, sa12-sa27
+the words of its pa0-pa15).
+
+The landing (row L, E1163): an image whose two `douta` sent markers to attributes 24 and 26 put
+them in the started entry's pa12 and pa14 and left sa24 and sa26 at 0 [HW]: an emitted `douta`
+reaches the primary attributes of the task the `doutu` starts, not the issuer's secondaries.
+Any mapping for other attributes is inferred from those two points (pa = n - 12 fits them and
+puts crumb3's attributes 0 and 2 below pa0, which fits D0's and B0's empty pa0-pa15; E1161 gets a
+correction). With 0x002, 0x003, 0x842 and 0xc43, crumb3's V0 and V2 stood in every fourth pa from
+pa0 and pa2 (E1164, E1166, E1168, E1172) where 0x843 put them nowhere in pa0-pa15 [HW]. Still
+open: why the landing depends on the sideband and where attributes 0 to 11 go with 0x843; what
+bits 6, 10 and 11 do; what bit 10 leaves behind; what stops the tick with bits 1:0 = 0 and what
+the fault at #14's page + 0x10 is; the client-side parts above. Not retired.

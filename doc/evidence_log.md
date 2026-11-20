@@ -9943,6 +9943,110 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   fill exact.
   *edm; HW, infer; data: `render-closing-r40-d0-survey:out/20261119-191743/own/`,
   `render-closing-r40-d0-survey:out/20261119-191743/post/`, `render-closing-r40-d0-survey:fold/`.*
+- `E1162` r40-n3e-b0 stage own (row B0, module 83FBFD86, fork 423b436e7f80, emitsb14d, image crumb3
+  at fw14, form=fw14, sideband 0x843, s2 0, flagged, user present): D0's job (E1161) on the
+  r40-kernel build, the control of the sideband rows: our EDM task emitted #14's word on the first
+  tick pass; T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2: every control
+  passed (PG, E0, T0, B), 'Q128-B0 RULE: B0-DONE' as predicted, so the build reproduces ST and D0;
+  sa0-sa31 read the same before the emit and after, and pa0-pa15 of the started entry held no V0 or
+  V2, as D0's (E1161); post's triangle and fill exact.
+  *edm; HW; data: `render-closing-r40-n3e-b0:out/20261119-230303/own/`,
+  `render-closing-r40-n3e-b0:out/20261119-230303/post/`, `render-closing-r40-n3e-b0:fold/`.*
+- `E1163` r40-n3e-l stage own (row L, module 83FBFD86, fork 423b436e7f80, emitsb14d, image land at
+  fw14, no tim, douta of Ma 0x5a5a3a18 with control 0x1800 (attribute 24) and Mb 0x5a5a3a1a with
+  0x1a00 (attribute 26), form=fw14, sideband 0x843, s2 0, flagged, user present): B0's job with the
+  land image: S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2, T running (0x0100fc26, no tim in
+  the image): every control passed (PG, E0, T0, B, P0, P1); 'Q128-L RULE: L-PA' held where L-SA was
+  predicted: the started entry read Ma in pa12 and Mb in pa14 and in no other of pa0-pa15, sa24 and
+  sa26 read 0 before the emit and after and no sa of sa0-sa31 changed; so the emitted program's
+  douta landed in the primary attributes of the task its doutu started, attribute 24 at pa12 and 26
+  at pa14, not in the secondaries; one rule that fits both is pa = n - 12 (inferred from two points;
+  n/2 fits 24 but not 26); the tick kept counting; post's triangle and fill exact.
+  *edm; HW, infer; data: `render-closing-r40-n3e-l:out/20261119-230429/own/`,
+  `render-closing-r40-n3e-l:out/20261119-230429/post/`, `render-closing-r40-n3e-l:fold/`.*
+- `E1164` r40-n3e-b1 stage own (row B1, module 83FBFD86, fork 423b436e7f80, emitsb_sb003, image
+  crumb3 at fw14, form=sb003, sideband 0x003, s2 0, flagged, user present): B0's job with bits 6 and
+  11 of the sideband cleared: T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2:
+  every control passed, 'Q128-B1 RULE: B1-DONE' (H-DM predicted RUN: held; H-ALL predicted NEVER:
+  failed), so bits 6 and 11 are not needed for the start with bits 1:0 = 3; sa0-sa31 read the same
+  before the emit and after; the started entry read V0 (0x32004000) in pa0, pa4, pa8 and pa12 and V2
+  (0x32002000) in pa2, pa6, pa10 and pa14, where the rows with 0x843 read neither (E1161, E1162);
+  post exact.
+  *edm; HW; data: `render-closing-r40-n3e-b1:out/20261119-230535/own/`,
+  `render-closing-r40-n3e-b1:out/20261119-230535/post/`, `render-closing-r40-n3e-b1:fold/`.*
+- `E1165` r40-n3e-b2 stage own (row B2, module 83FBFD86, fork 423b436e7f80, emitsb_sb841, image
+  crumb3 at fw14, form=sb841, sideband 0x841, s2 0, flagged, user present): B0's job with bit 1 of
+  the sideband cleared: BIF_FAULT (0x0c08) read 0x30011010 in snap9 and in the runner's stop dump,
+  X0, S1 and M4 kept the host's fill (0xdeadc0de), state 0, T running (0x01053cd1, 0x010607af):
+  control B failed, 'Q128-B2 RULE: FAULT'; the runner stopped (class hang, rc 4) and the kit's reset
+  and health recovered it (fill and triangle ok); 0x30011010 is the base of #14's page (0x30011000)
+  + 0x10, 0xf0 below our image at 0x30011100.
+  *edm; HW; data: `render-closing-r40-n3e-b2:out/20261119-230639/own/`,
+  `render-closing-r40-n3e-b2:fold/`.*
+- `E1166` r40-n3e-b3 stage own (row B3, module 83FBFD86, fork 423b436e7f80, emitsb_sb842, image
+  crumb3 at fw14, form=sb842, sideband 0x842, s2 0, flagged, user present): B0's job with bit 0 of
+  the sideband cleared: T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2: every
+  control passed, 'Q128-B3 RULE: B3-DONE' where H-DM (bits 1:0 = 3, the event data master, needed)
+  and H-ALL predicted NEVER: both failed; sa0-sa31 read the same before the emit and after; the
+  started entry read V0 (0x32004000) in pa0, pa4, pa8 and pa12 and V2 (0x32002000) in pa2, pa6, pa10
+  and pa14, where the rows with 0x843 read neither (E1161, E1162); post exact.
+  *edm; HW; data: `render-closing-r40-n3e-b3:out/20261119-230732/own/`,
+  `render-closing-r40-n3e-b3:out/20261119-230732/post/`, `render-closing-r40-n3e-b3:fold/`.*
+- `E1167` r40-n3e-b4 stage own (row B4, module 83FBFD86, fork 423b436e7f80, emitsb_sb840, image
+  crumb3 at fw14, form=sb840, sideband 0x840, s2 0, flagged, user present): B0's job with bits 1:0
+  of the sideband cleared: X0 0x5a5a3303 (the issuer went on past the emit), S1 and M4 the host's
+  fill, state 0, T running (0x0104aad3, 0x01001169), BIF_FAULT 0: every control passed, 'Q128-B4
+  RULE: B4-NEVER' as predicted; the runner stopped (class hang, rc 4) and the kit's reset and health
+  recovered it.
+  *edm; HW; data: `render-closing-r40-n3e-b4:out/20261119-230834/own/`,
+  `render-closing-r40-n3e-b4:fold/`.*
+
+### 2026-11-20
+
+- `E1168` r40-n3e-b8 stage own (row B8, module 83FBFD86, fork 423b436e7f80, emitsb_sb002, image
+  crumb3 at fw14, form=sb002, sideband 0x002, s2 0, flagged, user present): B0's job with only bit 1
+  of the sideband set: T read 0x005a3305, S1 0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2: every
+  control passed, 'Q128-B8 RULE: B8-DONE' where H-DM and H-ALL predicted NEVER: both failed;
+  sa0-sa31 read the same before the emit and after; the started entry read V0 (0x32004000) in pa0,
+  pa4, pa8 and pa12 and V2 (0x32002000) in pa2, pa6, pa10 and pa14, where the rows with 0x843 read
+  neither (E1161, E1162); post exact.
+  *edm; HW; data: `render-closing-r40-n3e-b8:out/20261120-073805/own/`,
+  `render-closing-r40-n3e-b8:out/20261120-073805/post/`, `render-closing-r40-n3e-b8:fold/`.*
+- `E1169` r40-n3e-b9 stage own (row B9, module 83FBFD86, fork 423b436e7f80, emitsb_sb040, image
+  crumb3 at fw14, form=sb040, sideband 0x040, s2 0, flagged, user present): B0's job with only bit 6
+  of the sideband set: X0 0x5a5a3303, S1 and M4 the host's fill, state 0, T running (0x0106101a,
+  0x0100b3d2), BIF_FAULT 0: every control passed, 'Q128-B9 RULE: B9-NEVER' as predicted; the runner
+  stopped (class hang, rc 4) and the kit's reset and health recovered it.
+  *edm; HW; data: `render-closing-r40-n3e-b9:out/20261120-073902/own/`,
+  `render-closing-r40-n3e-b9:fold/`.*
+- `E1170` r40-n3e-b10 stage own (row B10, module 83FBFD86, fork 423b436e7f80, emitsb_sb800, image
+  crumb3 at fw14, form=sb800, sideband 0x800, s2 0, flagged, user present): B0's job with only bit
+  11 of the sideband set: X0 0x5a5a3303, S1 and M4 the host's fill, state 0, T running (0x0105227e,
+  0x01010611), BIF_FAULT 0: every control passed, 'Q128-B10 RULE: B10-NEVER' as predicted; the
+  runner stopped (class hang, rc 4) and the kit's reset and health recovered it.
+  *edm; HW; data: `render-closing-r40-n3e-b10:out/20261120-073929/own/`,
+  `render-closing-r40-n3e-b10:fold/`.*
+- `E1171` r40-n3e-b7 stage own (row B7, module 83FBFD86, fork 423b436e7f80, emitsb_sb001, image
+  crumb3 at fw14, form=sb001, sideband 0x001, s2 0, flagged, user present): B0's job with only bit 0
+  of the sideband set: BIF_FAULT 0x30011010 in snap9 and in the stop dump, as B2's (E1165), X0, S1
+  and M4 the host's fill, state 0, T running (0x0100c33d, 0x0105481f): control B failed, 'Q128-B7
+  RULE: FAULT'; the runner stopped (class hang, rc 4) and the kit's reset and health recovered it;
+  with E1158 and E1162-E1172, bits 1:0 of the sideband decide the start from our task: 0 never
+  starts, 1 faults at #14's page + 0x10, 2 or 3 runs.
+  *edm; HW, infer; data: `render-closing-r40-n3e-b7:out/20261120-073957/own/`,
+  `render-closing-r40-n3e-b7:fold/`.*
+- `E1172` r40-n3e-b11 stage own (row B11, module 83FBFD86, fork 423b436e7f80, emitsb_sbc43, image
+  crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): B0's job with bit 10 of
+  the sideband set too (the firmware's #11 value), two attempts: both T read 0x005a3305, S1
+  0x5a5a3304, M4 0x5a5a3302 and run id 1, state 2, every control passed, 'Q128-B11 RULE: B11-DONE'
+  (H-DM predicted RUN: held); both times the kit's owntask gate after the ok end failed on the fill
+  ('diff: 2048 of 2048 pixels, first (0, 0) 0xdeadbeef expected 0xff336699') with the triangle
+  exact, rc 16, and fill and triangle were ok after the kit's reset; the started entry's sa differed
+  from the issuer's (sa1 0x04400000, sa3-sa11 float-like words, sa12-sa27 the words of pa0-pa15) and
+  its pa read V0 and V2 in every fourth pa as B1's (attempt 2: pa0 0x00000003, pa2 0x32411000); that
+  bit 10 leaves state that breaks the next fill until a reset is inferred.
+  *edm; HW, infer; data: `render-closing-r40-n3e-b11:out/20261120-074024/own/`,
+  `render-closing-r40-n3e-b11:out/20261120-084102/own/`, `render-closing-r40-n3e-b11:fold/`.*
 
 ## By unit
 
@@ -9970,7 +10074,8 @@ E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E6
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
-E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161.
+E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161, E1162, E1163, E1164, E1165, E1166,
+E1167, E1168, E1169, E1170, E1171, E1172.
 
 ### firmware
 

@@ -1042,7 +1042,14 @@ a stopped 0, by design). The sideband decides: 0x843 ran from either pass with `
 7 ticks after the kick (E1158). So these stops follow an own-task emit whose 14-bit sideband is
 0; what in the EDM stops is open (Q128). Where the running program's `douta` lands is open
 too: sa0-sa31 read the same before the emit and after the program ran and `pa0`-`pa15` of the
-started entry held no V0 or V2 (E1161). A
+started entry held no V0 or V2 (E1161). Markers sent by `douta` to attributes 24 and 26 stood in
+the started entry's `pa12` and `pa14`, not in `sa24` or `sa26` (E1163): the `douta` of a program
+our task emits reaches the primary attributes of the task its `doutu` starts (pa = n - 12 fits
+both points, inferred). Bits 1:0 of the sideband decide the start (E1158, E1162-E1172): 0 never
+starts it and the tick stops (0x000, 0x040, 0x800, 0x840); 1 faults the job with BIF_FAULT
+0x30011010, #14's page + 0x10 (0x001, 0x841); 2 or 3 run it to done (0x002, 0x842, 0x003, 0x843,
+0xc43), bits 6, 10 and 11 not needed. After 0xc43 the next fill failed in 2 of 2 until a reset
+(E1172). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

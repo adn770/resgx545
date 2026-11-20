@@ -46,3 +46,17 @@ nowhere D0 can see; which of those it is, is inferred from the readings, not rea
 **What it does not show.** Where the `douta` land (the destination bank, whether sa0 and sa2 took
 them, or whether the write was dropped); the sideband's bits; whether another nonzero value runs;
 what stops the tick with sideband 0; one job only.
+
+**Correction 2026-11-20:** Row L (E1163, r40-n3e-l) wrote two markers with `douta` to attributes
+24 and 26 from the same job and read them in the started entry's pa12 and pa14, with sa24 and
+sa26 unchanged: an emitted program's `douta` lands in the primary attributes of the task its
+`doutu` starts, not in the issuer's secondaries. This record's design assumed the secondaries
+(closing29/n3e/design.md section 1.2): its scorer compared pa0 with V0 and pa2 with V2 and
+searched pa0-pa15 for them, as the landing of crumb3's two `douta`, which name attributes 0 and 2
+(asm/fwtask/pds/crumb3.s, controls 0 and 0x200). The readings above stand. The reading of them
+changes: the alternative "onto sa0 and sa2" is not supported (L's markers left the sa alone), and
+the pa that attributes 0 and 2 map to was not known when D0 was frozen. pa = n - 12, which fits
+L's two points, puts them below pa0, outside what D0 reads, which fits these readings [infer];
+pa = n/2 would put V0 in pa0 and V2 in pa1, and D0 read 0x00000000 and 0x00043000 there. So the
+`douta` landed outside pa0-pa15 [infer]; where, is open. The claim is not contradicted (it gave
+"outside what D0 reads" as one of its two inferred readings) and is left as it was.
