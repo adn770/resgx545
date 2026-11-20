@@ -19,7 +19,11 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          slot as the runner initfilled it), the kick's reply and, with ticks, ticks_from_kick
          (round 41) A job's slots are read into its record as the real runner's extra result
          slots, its sleep_ms recorded as slept {ms, ticks}; world ownstop2: the jobs after the
-         first never report done (the same stop dump and rc 1)
+         first never report done (the same stop dump and rc 1). Each job is posted first as the
+         real runner posts it (round 41, LC2): its slot and extra slots initfilled 0xdeadc0de,
+         its params, state 0, its run id, last its cmd word; a job never done leaves that on the
+         page, the stop dump and its record (cmd_after its command, as row LC's job 2 on the
+         laptop)
   page   the results page, {"page": [1024 dwords]}
   gate   {order, outdir} optional (round 41): the fill and triangle in that order (t30-shaped
          texts; world owngatebad: the fill fails), or the texts the world's optional gate(world,
@@ -39,6 +43,7 @@ import os
 import sys
 
 PAGE, MAGIC, CMD, STATE, RUNID, ECHO, RESULTS = 1024, 0, 1, 2, 3, 5, 0x40
+INITFILL = 0xdeadc0de          # fwtask_run.py's
 KEYS = {"arm": {"blob", "arm"}, "run": {"name", "outdir", "jobs"}, "page": set(), "gate": set(),
         "reset": set()}
 OPTIONAL = {"gate": {"order", "outdir"}}
@@ -142,11 +147,17 @@ def run(a):
         k0 = {"tick": 1000, "cmd": j["n"], "slot": [0xdeadc0de] * 4, "ms": 0.5}  # the initfill
         if "kick" in j:
             log(f"kick {j['kick']}")
+        # posted as fwtask_run.py's one_cmd posts it, before its poll (round 41, LC2): the slot
+        # and extra slots initfilled, the params, state 0, the run id, last the cmd word
+        for s in (j["n"], *j.get("slots", ())):
+            p[RESULTS + 4 * s:RESULTS + 4 * s + 4] = [INITFILL] * 4
+        for k, v in j.get("params", {}).items():
+            vals = v if isinstance(v, list) else [v]
+            p[int(k):int(k) + len(vals)] = vals
+        p[STATE], p[RUNID], p[CMD] = 0, j.get("runid", i + 1), j["n"]
+        save(p)
         done = armed() and not w & {"ownstop", "ownhang"} and not ("ownstop2" in w and i > 0)
         if done:
-            for k, v in j.get("params", {}).items():
-                vals = v if isinstance(v, list) else [v]
-                p[int(k):int(k) + len(vals)] = vals
             got = getattr(mod, "own_res", None)
             for k, v in ((got(j["n"], j.get("params", {}), w) if got else None) or {}).items():
                 p[int(k)] = v
