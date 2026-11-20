@@ -897,3 +897,91 @@ def test_the_kernel_fills_u0_alone_in_land():
     assert "#define SGX_OWN_PDS_LAND_FILLV\t0" in h
     assert "#define SGX_OWN_PDS_LAND_WORDS\t16" in h and "#define SGX_OWN_PDS_LAND_CTL\t0x01800100" in h
     assert "asm/fwtask/pds/land.s" in h
+
+
+# ---- emitsb_<f>s: an after-read of the EDM's own sa0-sa31 (round 41, N3f §3.1) ----------------
+# the forms N3f's rows arm (N3f §3.1, the user's decision A (a)): fw14 the
+# control (emitsb14s), sbc43 (rows X, LC, T) and sb403 (row Y)
+AFTER_FORMS = [("fw14", "emitsb14s", "emitsb14d"), ("sbc43", "emitsb_sbc43s", "emitsb_sbc43"),
+               ("sb403", "emitsb_sb403s", "emitsb_sb403")]
+AFTER_AT, M6, SLOT6 = 224, 0x5A5A3306, 0x40 + 4 * 6       # page dwords 224-255; slot 6 = 88-91
+
+
+def _after(name):
+    import gen_blobs
+    return _code(gen_blobs.gen_emitsb_after(name))
+
+
+def _base(name):
+    import gen_blobs
+    return _code(gen_blobs.gen_emitsb14d() if name == "fw14" else gen_blobs.gen_emitsb_form(name))
+
+
+@pytest.mark.parametrize("name,blob,base", AFTER_FORMS)
+def test_emitsb_after_is_its_base_plus_the_cmd_6_branch_only(name, blob, base):
+    """The dispatch's last `br @tail` becomes `br @more` (same place, so entry 1 and U0 do not
+    move); `more:` and `c6:` follow the base's last line. Without them and with the tail branch
+    back, the code is the base's, line for line."""
+    s, b = _after(name), _base(name)
+    i = s.index("work:")
+    assert s[i:i + 4] == ["work:", "xor.testtaz.chan0 !c0, p1, r2, #1", "p1 br @c1", "br @more"]
+    kept = s[:i + 3] + ["br @tail"] + s[i + 4:s.index("more:")]
+    assert kept == b
+    assert s.index("more:") > s.index("@entry 1") and s.index("more:") > s.index("pre:")
+
+
+@pytest.mark.parametrize("name,blob,base", AFTER_FORMS)
+def test_the_cmd_6_branch_stores_sa0_to_sa31_then_m6_and_ends_the_command(name, blob, base):
+    """more: cmd 6 goes to c6, any other to the tail. c6: sa0-sa31 into page dwords 224-255
+    (through r9), then M6 0x5a5a3306 and the run id in slot 6 (dwords 88-89), the echo, cmd 0, a
+    fence, state 2 and the tail call: no emit, no pa read, no other store."""
+    import gen_blobs
+    s = _after(name)
+    more = s[s.index("more:") + 1:s.index("c6:")]
+    assert more == ["xor.testtaz.chan0 !c0, p1, r2, #6", "p1 br @c6", "br @tail"]
+    c6 = s[s.index("c6:") + 1:]
+    assert c6[0] == "mov r9, #0xdeadbeef"
+    k = c6.index("mov r9, #0xdeadbeef", 1)
+    assert _reads_and_stores(c6[:k], "r9", AFTER_AT) == [(f"sa{j}", AFTER_AT + j) for j in range(32)]
+    assert c6[k:] == ["mov r9, #0xdeadbeef", "mov r7, #0x5a5a3306",
+                      "ldad.bypassl1 r5, [r1,+#3], drc0", "wdf drc0",
+                      "stad [r9,+#0], r7", "stad [r9,+#1], r5", "stad [r1,+#5], r5",
+                      "mov r4, #0x00000000", "stad [r1,+#1], r4", "idf drc0, bif", "wdf drc0",
+                      "mov r3, #0x00000002", "stad [r1,+#2], r3", "br @tail"]
+    src = gen_blobs.gen_emitsb_after(name)
+    assert "@patch res+%d" % (4 * AFTER_AT) in src and "@patch res+%d" % (4 * SLOT6) in src
+    assert not [x for x in c6 if x.startswith("emitpds") or " pa" in x]
+    assert sum(1 for x in s if x.startswith("emitpds")) == 1
+
+
+@pytest.mark.parametrize("name,blob,base", AFTER_FORMS)
+def test_emitsb_after_keeps_the_base_s_entries_emit_word_and_patches_and_is_accepted(name, blob,
+                                                                                    base):
+    """Entry 1's index (so the kernel's U0 and the firmware-page write) and the emit word are the
+    base's; the verifier takes it; it is in the map, not in the fork's KUnit list (the pin's
+    header: the round's KUnit shim runs it)."""
+    import json
+    b = fwtask.parse_blob(fwtask.blob_of(blob))
+    bb = fwtask.parse_blob(fwtask.blob_of(base))
+    assert b.entries == bb.entries
+    assert [w for w in b.words if fwtask.classify(w)[0] == "EMITPDS"] == \
+        [w for w in bb.words if fwtask.classify(w)[0] == "EMITPDS"]
+    assert {p.kind for p in b.patches} == {p.kind for p in bb.patches}
+    assert fwtask.refusal(fwtask.blob_of(blob), REGS) is None
+    assert fwtask.lint((fwtask.ASM / f"{blob}.s").read_text()) == []
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m[blob]["source"] == f"{blob}.s"
+    assert blob not in gen_verify.OK_BLOBS
+
+
+def test_emitsb_after_takes_only_the_design_s_three_forms():
+    import gen_blobs
+    assert gen_blobs.AFTER_FORMS == ("fw14", "sbc43", "sb403")
+    assert gen_blobs.after_blob("fw14") == "emitsb14s"
+    assert gen_blobs.after_blob("sbc43") == "emitsb_sbc43s"
+    for bad in ("own", "sb001", "sb402", "sbc4"):
+        with pytest.raises(ValueError):
+            gen_blobs.gen_emitsb_after(bad)
+    srcs = gen_blobs.all_sources()
+    assert {n for n in srcs if n.endswith("s") and n.startswith("emitsb")} >= \
+        {"emitsb14s", "emitsb_sbc43s", "emitsb_sb403s"}

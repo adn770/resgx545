@@ -27,6 +27,13 @@
   "source": "emitsb14d.s",
   "source_sha256": "ecb4243525be9092bcc91f8871211d14d22c887e2ea76fa38f92167a3292c99a"
  },
+ "emitsb14s": {
+  "bytes": 2660,
+  "insns": 314,
+  "sha256": "c3f9ce90c2ea24208d6b8bcafef3a1f77e105c03bc8c51b4bee5fbcd04e7fb39",
+  "source": "emitsb14s.s",
+  "source_sha256": "6c71a619539aa7b87079727183b3b0972882a797c6e5159a73aab1a5284f495f"
+ },
  "emitsb_sb001": {
   "bytes": 1988,
   "insns": 232,
@@ -83,6 +90,13 @@
   "source": "emitsb_sb403.s",
   "source_sha256": "908befd94c0c259dd8ae0fd2fa27f1e827b61f017937baed5ca16625c35631ea"
  },
+ "emitsb_sb403s": {
+  "bytes": 2660,
+  "insns": 314,
+  "sha256": "cb6af3a60fec1c6bd8a3b183533dd3207bb31fad6783b8e18831907ce3bd0318",
+  "source": "emitsb_sb403s.s",
+  "source_sha256": "3f34649b2dac9207884684d62244d3fd86ef0536cf6957982f3ed02e4ff83f9e"
+ },
  "emitsb_sb800": {
   "bytes": 1988,
   "insns": 232,
@@ -138,6 +152,13 @@
   "sha256": "211bb43872a3d6c0c36b0c40baa711fe8f31a1422a13c9f4ec9f3e8e6f5893bf",
   "source": "emitsb_sbc43.s",
   "source_sha256": "4815db32eae84efe9c3aef53ba03ce385f029de7092b629e9be8f53595438407"
+ },
+ "emitsb_sbc43s": {
+  "bytes": 2660,
+  "insns": 314,
+  "sha256": "987b0e4e1dc0ba9ec6e2583bb0edd77afef230d7121070daa18a8171dd4a86ad",
+  "source": "emitsb_sbc43s.s",
+  "source_sha256": "43d95280039823e01cb12e68f9de8d6d84e5350f79e73275daf2f19d0ebec3c7"
  },
  "emitsk": {
   "bytes": 684,

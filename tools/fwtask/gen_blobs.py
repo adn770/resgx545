@@ -683,6 +683,63 @@ def gen_emitsb_form(name):
                        survey=True)
 
 
+AFTER_AT, AFTER_MARK, AFTER_CMD = 224, 0x5a5a3306, 6     # N3f's after-read: dwords 224-255, M6
+AFTER_FORMS = ("fw14", "sbc43", "sb403")                # the forms N3f's rows arm (§3.1)
+
+
+def after_blob(name):
+    """The after-read blob of form= `name`: emitsb14s (fw14) or emitsb_<name>s."""
+    if name not in AFTER_FORMS:
+        raise ValueError(f"{name!r} is not one of N3f's forms {', '.join(AFTER_FORMS)}")
+    return "emitsb14s" if name == "fw14" else f"emitsb_{name}s"
+
+
+def gen_emitsb_after(name):
+    """Round 41 (N3f §3.1, the user's decision A (a)): emitsb14d (fw14) or emitsb_<name> with a cmd 6
+    branch and nothing else. The dispatch's last `br @tail` becomes `br @more` (same place: entry
+    1's index, the kernel's U0 and the firmware-page write stay the base's); after the base's last
+    line, `more:` takes cmd 6 to `c6:` and any other to the tail; c6 stores the issuer's own
+    sa0-sa31 into page dwords 224-255, then M6 0x5a5a3306 and the run id in slot 6 (dwords 88-89),
+    the echo, cmd 0, a fence, state 2 and the tail call: no emit. Cmd 1's path, entry 1 and the
+    emit word are the base's."""
+    blob = after_blob(name)
+    based = "emitsb14d" if name == "fw14" else f"emitsb_{name}"
+    base = gen_emitsb14d() if name == "fw14" else gen_emitsb_form(name)
+    import fwtask
+    sb = dict(fwtask.EMIT_SIDEBANDS)[name]
+    body = [ln for ln in base.split("\n") if ln and not ln.startswith(";")]
+    i = body.index("work:")
+    assert body[i + 3].strip() == "br @tail", body[i:i + 4]
+    body[i + 3] = body[i + 3].replace("br @tail", "br @more")
+    s = Src(blob, f"round 41 (N3f): {based} (sideband 0x{sb:03x}) with a cmd 6 branch that stores "
+            "the issuer's own sa0-sa31 into page dwords 224-255 (the after-read), no emit",
+            phase="r41",
+            emit=f"one emitpds (the {name} form, its sources the kernel's pds0 to pds2, E146, E488) "
+            "on cmd 1's path only")
+    s.out += body
+    s("more:",
+      "xor.testtaz.chan0 !c0, p1, r2, #%d" % AFTER_CMD,
+      "p1 br @c6",
+      "br @tail",
+      "c6:")
+    survey_block(s, "r9", AFTER_AT, "sa", 32)
+    result_base(s, AFTER_CMD)
+    s("mov r7, #0x%08x" % AFTER_MARK,
+      "ldad.bypassl1 r5, [r1,+#%d], drc0   ; the run id" % L.RUNID,
+      "wdf drc0")
+    store(s, 0, "r7")
+    store(s, 1, "r5")
+    s("stad [r1,+#%d], r5" % L.RUNID_ECHO,
+      "mov r4, #0x00000000",
+      "stad [r1,+#%d], r4                  ; cmd = 0" % L.CMD,
+      "idf drc0, bif",
+      "wdf drc0",
+      "mov r3, #0x%08x" % L.DONE,
+      "stad [r1,+#%d], r3                ; state = done" % L.STATE,
+      "br @tail")
+    return s.text()
+
+
 def survey_block(s, base, at, src, n):
     """`mov base, res+4*at`, then src0..src(n-1) in fours through r4-r7 to base+0..n-1."""
     s("mov %s, #0xdeadbeef                ; @patch res+%d" % (base, 4 * at))
@@ -781,6 +838,8 @@ def all_sources():
     for name, _, _ in fwtask.EMIT_FORMS:
         if name not in ("own", "fw14"):
             d[f"emitsb_{name}"] = gen_emitsb_form(name)
+    for name in AFTER_FORMS:
+        d[after_blob(name)] = gen_emitsb_after(name)
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

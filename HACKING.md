@@ -661,6 +661,14 @@ lets a reviewer check that they stay clean-room; each check is a test.
      two `douta` writing constant markers 0x5a5a3a18 and 0x5a5a3a1a to secondary attributes 24
      and 26, the `doutu` and `halt`, no `tim`; the kernel fills its U0 only. The fork's KUnit list
      carries `emitsb14`, `emitsb14d` and every `emitsb_NAME`.
+     Round 41's after-read blobs (N3f §3.1) are `emitsb14s`, `emitsb_sbc43s` and `emitsb_sb403s`
+     (`gen_blobs.gen_emitsb_after`, forms fw14, sbc43 and sb403 only): `emitsb14d` or
+     `emitsb_NAME` with a cmd 6 branch and nothing else. The dispatch's last `br @tail` becomes
+     `br @more` in place, so entry 1, the kernel's U0 and the firmware-page write stay the base's;
+     after the base's last line, cmd 6 stores the issuer's own sa0-sa31 into page dwords 224-255,
+     then M6 0x5a5a3306 and the run id in slot 6, the echo, cmd 0 and state 2, with no emit. The
+     module's verifier accepts them unchanged (a scratch KUnit shim run of the fork at
+     423b436e7f80 with one more suite on them); the fork's list at the pin does not carry them.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
