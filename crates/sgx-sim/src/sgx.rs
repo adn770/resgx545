@@ -587,6 +587,7 @@ impl Sgx {
             c.enter(&mut m);
         }
         let own = pc >= OWN_INDEX;
+        m.own_task = own;
         let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0, own };
         // Machine::run, one step at a time so that each instruction can be traced
         let limit = max - self.steps;
@@ -669,6 +670,7 @@ fn spin_key(m: &Machine) -> Vec<u32> {
         vertex_task,
         code_index,
         edm_task,
+        own_task,
         mov_dest,
         locks,
     } = m;
@@ -715,7 +717,14 @@ fn spin_key(m: &Machine) -> Vec<u32> {
     k.extend(firh_written.iter().map(|&b| flag(b)));
     k.extend(csc.map_or([u32::MAX; 5], |c| c));
     k.extend(phase.map_or([u32::MAX; 2], |(a, b)| [a as u32, b as u32]));
-    k.extend([flag(*vertex_task), *code_index, flag(*edm_task), flag(*mov_dest), u32::from(*locks)]);
+    k.extend([
+        flag(*vertex_task),
+        *code_index,
+        flag(*edm_task),
+        flag(*own_task),
+        flag(*mov_dest),
+        u32::from(*locks),
+    ]);
     k
 }
 
@@ -739,19 +748,17 @@ impl Unit<'_> {
         match self.bank {
             Bank::Primary => (self.pa[n], self.written) = (v, self.written | 1 << n),
             Bank::Secondary => (self.st.sa[n], self.st.sa_written) = (v, self.st.sa_written | 1 << n),
-            // With #14's sideband 0x843: attribute 24 at pa12 and 26 at pa14 (E1163) [HW]; any
-            // n from 12 at pa n - 12 is a rule from those two points [infer]; crumb3's attributes
-            // 0 and 2 reached no sa and no pa of pa0-pa15 (E1161, E1162), so below 12 nothing the
-            // started task sees is written [infer: below pa0].
-            Bank::Own(0x843) => {
-                if n >= 12 {
-                    (self.pa[n - 12], self.written) = (v, self.written | 1 << (n - 12));
-                }
+            // Only the measured (sideband, attribute) points. 0x843: attribute 24 at pa12 and 26 at
+            // pa14 (E1163); crumb3's attributes 0 and 2 reached no sa and no pa of pa0-pa15
+            // (E1161, E1162), so nothing the started task sees is written. pa = n - 12 for other
+            // attributes is inferred from two points, not modelled.
+            Bank::Own(0x843) if n == 24 || n == 26 => {
+                (self.pa[n - 12], self.written) = (v, self.written | 1 << (n - 12))
             }
-            // With 0x002, 0x003 or 0x842, crumb3's V0 (attribute 0) and V2 (attribute 2) stood in
-            // every fourth pa from pa0 and pa2 (E1164, E1166, E1168) [HW]; why is open (Q128),
-            // so only those two attributes are modelled
-            Bank::Own(_) if n == 0 || n == 2 => {
+            Bank::Own(0x843) if n == 0 || n == 2 => {}
+            // 0x002, 0x003, 0x842: crumb3's V0 (attribute 0) and V2 (attribute 2) stood in every
+            // fourth pa from pa0 and pa2 (E1164, E1166, E1168); why is open (Q128)
+            Bank::Own(0x002 | 0x003 | 0x842) if n == 0 || n == 2 => {
                 for k in 0..4 {
                     (self.pa[n + 4 * k], self.written) = (v, self.written | 1 << (n + 4 * k));
                 }
@@ -759,7 +766,8 @@ impl Unit<'_> {
             Bank::Own(b) => {
                 return Err(why(format!(
                     "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
-                     unmeasured (Q128)"
+                     unmeasured (measured: 0x843 at 0, 2, 24, 26; 0x002, 0x003, 0x842 at 0, 2; \
+                     E1161-E1164, E1166, E1168, Q128)"
                 )));
             }
         }
@@ -1824,6 +1832,24 @@ mod tests {
             assert_eq!(got, [[0x3200_4000; 4], [0x3200_2000; 4]].concat(), "{sb:#x}");
             assert_eq!(s.st.sa_written & 0b101, 0);
         }
+    }
+
+    #[test]
+    fn an_own_task_emits_douta_to_an_unmeasured_sideband_and_attribute_is_refused() {
+        // only (0x843, 24), (0x843, 26) (E1163), (0x843, 0 and 2) (E1161, E1162) and (0x002,
+        // 0x003 or 0x842, 0 and 2) (E1164, E1166, E1168) were measured; pa = n - 12 is inferred
+        let refused = |sb: u32, ca: u32| {
+            let (_, r) = own_douta(sb, (0x5a5a_3a18, ca), (0x5a5a_3a1a, 0x1a00), &[]);
+            assert!(
+                matches!(r, Err(Error::Unsupported { ref why, .. })
+                    if why.contains("douta") && why.contains("unmeasured")),
+                "{sb:#x} {ca:#x}: {r:?}"
+            );
+        };
+        refused(0x843, 0x1c00); // attribute 28
+        refused(0x843, 0x0400); // attribute 4
+        refused(0x003, 0x1800); // attribute 24 with 0x003
+        refused(0x043, 0x0000); // a sideband that runs by the rule only
     }
 
     #[test]

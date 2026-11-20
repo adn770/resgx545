@@ -447,6 +447,10 @@ pub struct Machine {
     /// Whether the task is one of the firmware's EDM tasks (Sgx::run_task) and not a fill's: its
     /// pa0 to pa4 are sa64 to sa68 (E748), and a mov to pa2 to pa4 follows E820 (write_dst).
     pub edm_task: bool,
+    /// Whether the task is our own entry started by a program our task emitted (Sgx::run_task,
+    /// instruction index from OWN_INDEX): the pa its starting program's `douta` wrote past pa4
+    /// read back at pa6, pa8, pa10, pa12 and pa14 (E1163, E1164, E1166, E1168).
+    pub own_task: bool,
     /// Set while a `mov` writes its destination: E380 measured `mov` to pa1 to pa7 in a fill,
     /// and no other instruction (E496 did ima32 to pa0 only).
     pub mov_dest: bool,
@@ -813,6 +817,7 @@ impl Default for Machine {
             vertex_task: false,
             code_index: 0,
             edm_task: false,
+            own_task: false,
             mov_dest: false,
             locks: 0,
         }
@@ -4305,11 +4310,12 @@ impl Machine {
     /// Read pa<r>. In an EDM task pa0 to pa4 are sa64 to sa68 (hardware, S2 e2r/e2w: pa_n read
     /// sa_(64+n) for n = 0..4, 3 of 3 jobs, and a write to sa67 or sa68 showed through pa3 or
     /// pa4 in the same pass and the next); pa5 and up are not measured there (Q098), except
-    /// one that the PDS program which started the task wrote with `douta`: an own-task emit's
-    /// markers read back in pa12 and pa14 of the entry it started (E1163).
+    /// in our entry started by an own-task emit, where pa6, pa8, pa10, pa12 and pa14 read what
+    /// the emitted program's `douta` wrote (E1163, E1164, E1166, E1168).
     fn read_pa(&self, r: usize) -> Result<u32, Error> {
         if self.edm_task {
-            if r >= 5 && self.written.pa >> r & 1 != 0 {
+            let measured = matches!(r, 6 | 8 | 10 | 12 | 14);
+            if self.own_task && measured && self.written.pa >> r & 1 != 0 {
                 return Ok(self.pa[r]);
             }
             if r >= 5 {
@@ -4894,6 +4900,26 @@ mod tests {
         let mut m = Machine { edm_task: true, ..Machine::default() };
         let r = m.run(&prog(&["lock #0", "release #0", "nop.end"]), &mut mem, 100);
         assert!(r.is_ok(), "{r:?}");
+    }
+
+    #[test]
+    fn an_edm_task_reads_a_pa_past_pa4_only_where_an_own_emits_douta_was_read() {
+        // E1163, E1164, E1166, E1168: our entry started by an own-task emit read pa6, pa8, pa10,
+        // pa12 and pa14 as the program's douta wrote them; nothing else past pa4 was measured
+        let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+        let run_pa = |own: bool, n: usize, mem: &mut Memory| {
+            let mut m = Machine { edm_task: true, own_task: own, ..Machine::default() };
+            m.pa[n] = 7;
+            m.written.pa |= 1 << n;
+            m.run(&prog(&[&format!("mov r1, pa{n}"), "nop.end"]), mem, 100)
+        };
+        for n in [6, 8, 10, 12, 14] {
+            assert!(run_pa(true, n, &mut mem).is_ok(), "pa{n}");
+            assert!(run_pa(false, n, &mut mem).is_err(), "pa{n} outside an own-started task");
+        }
+        for n in [5, 7, 13, 16] {
+            assert!(run_pa(true, n, &mut mem).is_err(), "pa{n}");
+        }
     }
 
     #[test]
