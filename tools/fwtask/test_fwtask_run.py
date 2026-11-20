@@ -287,3 +287,170 @@ def test_cmd_run_passes_the_job_s_kick(monkeypatch):
     monkeypatch.setattr(FR, "one_cmd", one)
     FR.cmd_run({"name": "o1", "outdir": "/nonexistent", "jobs": [{"n": 1, "kick": "miscinfo"}]})
     assert seen.get("kick") == "miscinfo"
+
+
+# ---- round 41 (N3f §3.1): a row of several jobs, a sleep before a job, the gate's order, its
+# full outputs and the devcoredump around it -----------------------------------------------------
+def run_setup(monkeypatch, calls):
+    monkeypatch.setattr(FR, "dmesg_len", lambda: 0)
+    monkeypatch.setattr(FR, "dmesg_new", lambda n0: [])
+    monkeypatch.setattr(FR, "kreg_all", lambda: {o: 0 for o in FR.REGS_WRITABLE})
+    monkeypatch.setattr(FR, "alive", lambda: {"advancing": True})
+    monkeypatch.setattr(FR, "health", lambda: {"ok": True})
+    tick = iter(range(1000, 100000, 1000))
+    monkeypatch.setattr(FR, "regs", lambda: ({}, {12: next(tick)}))
+    monkeypatch.setattr(FR.time, "sleep", lambda s: calls.append(("sleep", s)))
+    out = []
+    monkeypatch.setattr(FR, "emit", lambda obj: out.append(obj))
+
+    class ClosingRes(FakeRes):
+        def close(self):
+            pass
+    monkeypatch.setattr(FR, "Res", lambda: ClosingRes())
+
+    def one(res, n, params, runid, regs, timeout_ms=FR.DONE_MS, **k):
+        calls.append(("job", n, runid, k.get("extra"), k.get("kick")))
+        return {"done": True}
+    monkeypatch.setattr(FR, "one_cmd", one)
+    return out
+
+
+def test_a_job_list_runs_in_order_with_its_sleeps_slots_and_kicks(monkeypatch):
+    """Row LC: job 1, then job 2 at once, then job 3 after sleep_ms; each job's slots go to
+    one_cmd as its extra result slots; the sleep is recorded with the ticks it spanned (slept)."""
+    calls = []
+    out = run_setup(monkeypatch, calls)
+    jobs = [{"n": 1, "runid": 1}, {"n": 6, "runid": 2, "slots": [40, 41], "kick": "miscinfo"},
+            {"n": 6, "runid": 3, "slots": [40], "sleep_ms": 2000}]
+    assert FR.cmd_run({"name": "o1", "outdir": "/nonexistent", "jobs": jobs}) == 0
+    assert [c for c in calls if c[0] == "job"] == [("job", 1, 1, (), None),
+                                                   ("job", 6, 2, [40, 41], "miscinfo"),
+                                                   ("job", 6, 3, [40], None)]
+    i = calls.index(("job", 6, 3, [40], None))
+    assert calls[i - 1] == ("sleep", 2.0)
+    assert ("sleep", 2.0) not in calls[:calls.index(("job", 6, 2, [40, 41], "miscinfo"))]
+    recs = out[0]["records"]
+    assert "slept" not in recs[0] and "slept" not in recs[1]
+    assert recs[2]["slept"] == {"ms": 2000, "ticks": 1000}
+
+
+def test_the_runner_refuses_a_bad_sleep(monkeypatch):
+    calls = []
+    out = run_setup(monkeypatch, calls)
+    for bad in (-1, "2000", True, 1.5):
+        out.clear()
+        assert FR.cmd_run({"name": "o1", "outdir": "/nonexistent",
+                           "jobs": [{"n": 1, "sleep_ms": bad}]}) == 1
+        assert "sleep_ms" in out[0]["stop"] and not [c for c in calls if c[0] == "job"]
+
+
+def gate_setup(tmp_path, monkeypatch, outs=None, pending=(), new=()):
+    """A health tool by name and a devcoredump class directory: `pending` dumps before the gate,
+    `new` ones appear once the first tool ran. Calls are logged."""
+    calls = []
+    outs = outs or {"fill": "job: ok\ndiff: 0 of 2048 pixels\nfill: ok, 64x32\n",
+                    "tri": "tri: ok\njob: ok\ndiff: 0 of 4096 pixels\ntri 64x64 ok\n"}
+    cd = tmp_path / "devcoredump"
+    cd.mkdir()
+
+    def dump(name, text):
+        (cd / name).mkdir()
+        (cd / name / "data").write_text(text)
+    for n, t in pending:
+        dump(n, t)
+
+    def sh(cmd, check=True):
+        calls.append(cmd)
+        name = cmd.split()[1]
+        if len([c for c in calls if " fill" in c or " tri" in c]) == 1:
+            for n, t in new:
+                dump(n, t)
+        return outs[name]
+    monkeypatch.setenv("FWTASK_HEALTH_TOOL", "/home/u/t30")
+    monkeypatch.setattr(FR, "sh", sh)
+    monkeypatch.setattr(FR, "DEVCD", str(cd))
+
+    def free(path):                     # the kernel drops a dump once its data is written
+        calls.append(("free", path))
+        import shutil
+        shutil.rmtree(pathlib.Path(path).parent)
+    monkeypatch.setattr(FR, "devcd_free", free)
+    return calls, cd
+
+
+def test_the_gate_keeps_the_full_outputs_in_its_order(tmp_path, monkeypatch):
+    """Default order fill then tri; tri,fill the other way; each tool's whole output (its job:
+    line and stderr) in OUTDIR/gate-fill.txt and gate-tri.txt; the JSON summary as before."""
+    calls, _ = gate_setup(tmp_path, monkeypatch)
+    out = FR.gate(outdir=str(tmp_path / "g"))
+    tools = [c for c in calls if isinstance(c, str)]
+    assert [c.split()[1] for c in tools] == ["fill", "tri"]
+    assert all(c.startswith("/home/u/t30 ") and c.endswith(" 2>&1") for c in tools), tools
+    assert out["ok"] and out["order"] == "fill,tri"
+    assert out["fill"] == "diff: 0 of 2048 pixels" and out["tri"] == "diff: 0 of 4096 pixels\ntri 64x64 ok"
+    assert (tmp_path / "g/gate-fill.txt").read_text().startswith("job: ok\n")
+    assert "tri 64x64 ok" in (tmp_path / "g/gate-tri.txt").read_text()
+    (tmp_path / "b").mkdir()
+    calls, _ = gate_setup(tmp_path / "b", monkeypatch)
+    out = FR.gate(order="tri,fill", outdir=str(tmp_path / "b/g"))
+    assert [c.split()[1] for c in calls if isinstance(c, str)] == ["tri", "fill"]
+    assert out["order"] == "tri,fill" and out["ok"]
+
+
+def test_a_failed_gate_keeps_both_outputs(tmp_path, monkeypatch):
+    calls, _ = gate_setup(tmp_path, monkeypatch, outs={
+        "fill": "job: faulted, context lost (Input/output error)\nFAIL fill\n",
+        "tri": "job: ok\ndiff: 0 of 4096 pixels\ntri 64x64 ok\n"})
+    out = FR.gate(outdir=str(tmp_path / "g"))
+    assert not out["ok"] and "FAIL" in out["fill"]
+    assert "job: faulted" in (tmp_path / "g/gate-fill.txt").read_text()
+    assert (tmp_path / "g/gate-tri.txt").exists()
+
+
+def test_the_gate_takes_only_the_two_orders(tmp_path, monkeypatch):
+    import pytest
+    gate_setup(tmp_path, monkeypatch)
+    for bad in ("fill", "tri,tri", "fill,tri,fill", ""):
+        with pytest.raises(ValueError):
+            FR.gate(order=bad)
+
+
+def test_the_devcoredump_around_the_gate(tmp_path, monkeypatch):
+    """Before the tools every pending dump is saved to devcd-pre.txt and freed; after them the
+    new one is saved to devcd.txt (and freed); none: a line that says so."""
+    calls, cd = gate_setup(tmp_path, monkeypatch, pending=[("devcd3", "old dump\n")],
+                           new=[("devcd4", "BIF_INT_STAT: 0x000d0400\nBIF_FAULT: 0x0004300f\n")])
+    out = FR.gate(outdir=str(tmp_path / "g"))
+    pre = (tmp_path / "g/devcd-pre.txt").read_text()
+    post = (tmp_path / "g/devcd.txt").read_text()
+    assert "devcd3" in pre and "old dump" in pre and "BIF_FAULT" not in pre
+    assert "devcd4" in post and "BIF_FAULT: 0x0004300f" in post and "old dump" not in post
+    frees = [c for c in calls if isinstance(c, tuple)]
+    first_tool = next(i for i, c in enumerate(calls) if isinstance(c, str))
+    assert calls.index(("free", str(cd / "devcd3/data"))) < first_tool
+    assert ("free", str(cd / "devcd4/data")) in frees
+    assert out["devcd_pre"] == ["devcd3"] and out["devcd"] == ["devcd4"]
+    (tmp_path / "n").mkdir()
+    calls, cd = gate_setup(tmp_path / "n", monkeypatch)
+    out = FR.gate(outdir=str(tmp_path / "n/g"))
+    assert (tmp_path / "n/g/devcd-pre.txt").read_text() == "devcd: none pending\n"
+    assert (tmp_path / "n/g/devcd.txt").read_text() == "devcd: none pending\n"
+    assert out["devcd_pre"] == [] and out["devcd"] == []
+
+
+def test_a_gate_without_an_outdir_touches_no_devcoredump(tmp_path, monkeypatch):
+    calls, cd = gate_setup(tmp_path, monkeypatch, pending=[("devcd3", "old dump\n")])
+    out = FR.gate()
+    assert out["ok"] and not [c for c in calls if isinstance(c, tuple)]
+    assert (cd / "devcd3/data").exists()
+
+
+def test_cmd_gate_passes_the_order_and_outdir(tmp_path, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(FR, "gate", lambda **k: seen.update(k) or {"ok": True})
+    monkeypatch.setattr(FR, "emit", lambda obj: None)
+    FR.cmd_gate({"order": "tri,fill", "outdir": str(tmp_path)})
+    assert seen == {"order": "tri,fill", "outdir": str(tmp_path)}
+    seen.clear()
+    FR.cmd_gate({})
+    assert seen == {}

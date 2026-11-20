@@ -445,6 +445,21 @@ frozen quantity `res:I` (`kitscore.res_index`), and `own_slot` the four dwords o
 The fake laptop answers `fwtask_run.py` with `kit/fake/fwtask.py` (a fake task state a reset
 disarms, the world's optional `own_res(cmd, params, world)` giving the task's stores); its world
 tokens `ownarmbad`, `ownstop` and `owngatebad` stop the stage with rc 26, 4 and 16.
+Round 41 (N3f §3.1, K1-K4): a row's args may be a JSON list of 1 to 8 jobs, run in order by one
+`run` (one page and one gate after it; the run ids are counted over the stage's jobs, so a row's
+place when every row has one job); a job may carry `"sleep_ms": MS` (one fixed sleep before it,
+recorded as `slept` with the HostCtl ticks it spanned) and `"slots": [S...]` (result slots the
+runner initfills and reads into the job's record as `slots`); a row's sleeps and timeouts fit in
+`job_timeout`. The stage key `gate_order = "tri,fill"` (an owntask stage only; `fill,tri` the
+default) runs the gate's triangle first; the gate keeps each tool's whole output
+(`NAME.gate-fill.txt`, `.gate-tri.txt`: the `job:` line and stderr the JSON summary drops) and
+the devcoredumps around it (`/sys/class/devcoredump/devcd*/data`: every one pending before the
+tools saved as `NAME.devcd-pre.txt` and freed by a write to `data`, the one after them as
+`NAME.devcd.txt`), between the kernel-log marks `owntask-gate-begin NAME ORDER` and
+`owntask-gate NAME`. The stage key `on_gate_fail = "score"` (the session's last stage, an owntask
+one) makes the gate's failure (rc 16) the session's planned end: the driver copies it back, checks
+the kept files, scores it and ends with status 0. The fake's world `ownstop2` stops a list's
+second job.
 
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in

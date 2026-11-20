@@ -63,7 +63,12 @@
 # reset before it (a reset disarms the task): `run` with its one job (its JSON is NAME.txt), then
 # `page`, the results page as NAME.own_res.json, whatever the end; after a row that ended ok,
 # `gate` (NAME.gate.json; not ok: recovery, rc 16). At the stage's end `reset` disarms
-# (owntask.reset.json; not ok: rc 13) in place of the kit's last reset.
+# (owntask.reset.json; not ok: rc 13) in place of the kit's last reset. Round 41 (N3f K1, K2, K3):
+# a row's job line may be a JSON list (one run of several jobs, one page and one gate after it);
+# the gate runs in the arm line's order (its sixth column: fill,tri, the default, or tri,fill) and
+# keeps the tools' whole outputs (NAME.gate-fill.txt, .gate-tri.txt) and the devcoredumps pending
+# before and after it (NAME.devcd-pre.txt, .devcd.txt), between the marks owntask-gate-begin and
+# owntask-gate.
 # Hooks (run/hooks.sh, optional, staged): hook_reading NAME prints a control's `k=v` reading from
 # the job's files ($JW/NAME.out, .err, .dmesg, $W); hook_check NAME prints a reason to stop the
 # stage after a job that read ok (rc 24), or nothing; it runs in the runner's shell, so a count
@@ -102,7 +107,9 @@ if [ -f "$OWN_TSV" ]; then
 	OWN_SHA=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $4; exit }' "$OWN_TSV")
 	OWN_ARM=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $5; exit }' "$OWN_TSV")
 	OWN_JOBS=$(awk -F'\t' -v s="$STAGE" '$1 == "job" && $2 == s { printf " %s", $3 }' "$OWN_TSV")
+	OWN_GATE=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $6; exit }' "$OWN_TSV")
 fi
+OWN_GATE=${OWN_GATE:-fill,tri}
 if [ -n "$OWN_BLOB$OWN_SHA$OWN_ARM" ]; then
 	case " ${FLAGGED_STAGES:-} " in
 	*" $STAGE "*) ;;
@@ -112,6 +119,10 @@ if [ -n "$OWN_BLOB$OWN_SHA$OWN_ARM" ]; then
 		&& printf '%s\n' "$OWN_SHA" | grep -Eqx '[0-9a-f]{64}' \
 		&& printf '%s\n' "$OWN_ARM" | grep -Eqx 'slots=0x[0-9a-f]{1,2} entry=[0-9]{1,2}(,[0-9]{1,2})*( trc=[0-9]{1,2})?( pds=(crumb|halt|crumb3|land))?( pdsat=fw14)?( pds2=req)?( form=(sb001|sb002|sb003|sb040|sb041|sb042|sb043|sb800|sb801|sb802|sb803|sb840|sb841|sb842|fw14|sbc43|sb403))?' \
 		|| { echo "stage $STAGE: owntask blob '$OWN_BLOB', sha256 '$OWN_SHA' or arm line '$OWN_ARM' is not one the kit arms"; exit 7; }
+	case "$OWN_GATE" in
+	fill,tri|tri,fill) ;;
+	*) echo "stage $STAGE: owntask gate order '$OWN_GATE' is not fill,tri or tri,fill"; exit 7 ;;
+	esac
 fi
 # the registers kreg:OFF=V may write, frozen with kit/session.py's KREG_ALLOWED: OFF=DEFAULT/MAX
 # (CR_PDS_REG_0A78: E045 drew 0x00-0x3f exactly; 0x2c the firmware's value, E141)
@@ -292,8 +303,13 @@ EOF
 	if [ -n "$OWN_BLOB" ]; then
 		job=$(awk -F'\t' -v s="$STAGE" -v n="$name" '$1 == "job" && $2 == s && $3 == n { print $4; exit }' "$OWN_TSV")
 		echo "  owntask run: $job"
+		# a job-list row (round 41) is a JSON list already, a one-job row an object
+		case "$job" in
+		\[*) jobs=$job ;;
+		*) jobs="[$job]" ;;
+		esac
 		mark_case "$name"
-		owntask_call run "{\"name\": \"$name\", \"outdir\": \"$W\", \"jobs\": [$job]}" "$JW/$name.out" "$JW/$name.err" "$JOB_TIMEOUT"
+		owntask_call run "{\"name\": \"$name\", \"outdir\": \"$W\", \"jobs\": $jobs}" "$JW/$name.out" "$JW/$name.err" "$JOB_TIMEOUT"
 		rc=$?
 	else
 		eval "set -- $args"
@@ -353,9 +369,14 @@ EOF
 	fi
 	# an owntask row that ended ok: the health gate (fill and triangle) with the task armed
 	if [ -n "$OWN_BLOB" ] && [ "$class" = ok ]; then
-		owntask_call gate '{}' "$JW/gate.json" "$JW/gate.err" 120
+		# in the stage's order, the tools' whole outputs and the devcoredumps before and after it
+		# in $JW/gate (round 41), kept whatever the gate's end
+		mkdir -p "$JW/gate"
+		mark "owntask-gate-begin $name $OWN_GATE"
+		owntask_call gate "{\"order\": \"$OWN_GATE\", \"outdir\": \"$JW/gate\"}" "$JW/gate.json" "$JW/gate.err" 120
 		r=$?
 		keep "$name" "$JW/gate.json" ".gate.json"
+		for f in $(find "$JW/gate" -type f | sort); do keep "$name" "$f" ".${f##*/}"; done
 		mark "owntask-gate $name"
 		if [ "$r" -ne 0 ] || ! json_ok "$JW/gate.json"; then
 			echo "## STOP: the gate after $name failed (status $r, $(head -c 300 "$JW/gate.json" | tr '\n' ' ')): recovery, then stop"

@@ -430,8 +430,8 @@ def test_the_mock_waits_on_no_clock():
                                  r'|sleep "\$\{IDLE_WAIT:-\$idle\}"', ln), ln
     src = (KIT / "session.py").read_text()
     assert 'RESET_WAIT="0"' in src and 'HEALTH_WAIT="0"' in src
-    for f in (KIT / "fake").iterdir():
-        assert "sleep" not in f.read_text(), f.name
+    for f in (KIT / "fake").iterdir():      # a job's sleep_ms key (round 41) is no sleep
+        assert not re.search(r"sleep(?!_ms)", f.read_text()), f.name
 
 
 def test_every_command_the_readme_gives_names_its_interpreter_and_runs_at_mode_644(repos):
@@ -3023,3 +3023,192 @@ def test_the_mock_arms_row_l_s_words(repos):
     assert m.returncode == 0, m.stdout + m.stderr
     mm = next(kp.glob("debug/mock.*/model"))
     assert "arm slots=0x1 entry=0 pds=land pdsat=fw14 form=fw14" in own_log(mm)
+
+
+# ---- round 41 (N3f §3.1, K1-K4): a row of several jobs, sleep_ms, slots, the gate's order, its
+# kept outputs and devcoredump, and a gate failure as a stage's planned, scored end ---------------
+LIST_ROW = ('o1|fit|flagged|-|owntask|[{"cmd": 1, "params": {}, "timeout_ms": 100, "ticks": true}, '
+            '{"cmd": 6, "params": {"224": [1, 2]}, "timeout_ms": 100, "kick": "miscinfo", '
+            '"slots": [40, 41]}, {"cmd": 6, "params": {}, "timeout_ms": 100, "sleep_ms": 2000, '
+            '"slots": [40]}]\n'
+            'o2|fit|flagged|-|owntask|{"cmd": 1, "params": {}, "timeout_ms": 100}\n')
+
+
+def own_tsv(kp, r):
+    S.ENV = env_for(r)
+    try:
+        return S.generated(kp)["run/owntask.tsv"]
+    finally:
+        S.ENV = None
+
+
+def test_a_job_list_row_prepares_to_a_list_with_running_run_ids(repos):
+    """K1: a row's args may be a list of jobs: one line, a JSON list, the run ids counted over the
+    stage's jobs in order (one-job rows keep the object they always had)."""
+    import json
+    kp, r = own_session(repos, rows=LIST_ROW)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    jobs = {ln.split("\t")[2]: json.loads(ln.split("\t")[3]) for ln in own_tsv(kp, r).splitlines()
+            if ln.startswith("job\t")}
+    assert jobs["o1"] == [
+        {"n": 1, "params": {}, "runid": 1, "timeout_ms": 100, "ticks": True},
+        {"n": 6, "params": {"224": [1, 2]}, "runid": 2, "timeout_ms": 100, "kick": "miscinfo",
+         "slots": [40, 41]},
+        {"n": 6, "params": {}, "runid": 3, "timeout_ms": 100, "sleep_ms": 2000, "slots": [40]}]
+    assert jobs["o2"] == {"n": 1, "params": {}, "runid": 4, "timeout_ms": 100}
+
+
+@pytest.mark.parametrize("args,word", [
+    ('[]', "no job"),
+    ('[' + ", ".join(['{"cmd": 1, "params": {}, "timeout_ms": 10}'] * 9) + ']', "at most 8"),
+    ('[{"cmd": 1, "params": {}, "timeout_ms": 100}, 5]', "JSON object"),
+    ('[{"cmd": 1, "params": {}, "timeout_ms": 100}, {"cmd": 0, "params": {}, "timeout_ms": 1}]',
+     "cmd"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "sleep_ms": -1}', "sleep_ms"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "sleep_ms": true}', "sleep_ms"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "sleep_ms": 1.5}', "sleep_ms"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "slots": 40}', "slots"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "slots": [240]}', "slots"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "slots": [-1]}', "slots"),
+    ('{"cmd": 1, "params": {}, "timeout_ms": 100, "slots": []}', "slots"),
+    ('[{"cmd": 1, "params": {}, "timeout_ms": 100}, '
+     '{"cmd": 6, "params": {}, "timeout_ms": 100, "sleep_ms": JT}]', "job_timeout"),
+])
+def test_lint_refuses_a_bad_job_list_sleep_or_slots(repos, args, word):
+    kp, r = own_session(repos)
+    jt = S.tomllib.loads((kp / "session.toml").read_text()).get("job_timeout", 120)
+    args = args.replace("JT", str(jt * 1000))
+    (kp / "tables/own.txt").write_text("#stage own\n#limit 0\n" + OWN_ROWS
+                                       + f"o3|fit|flagged|-|owntask|{args}\n")
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and word in li.stdout, li.stdout
+
+
+def test_the_mock_runs_a_job_list_in_one_run_then_one_page_and_one_gate(repos):
+    """The runner hands the row's list to one fwtask_run.py run: every job in order, then the page
+    and the gate once; the fake records each job's slots and the sleep as the real one."""
+    import gzip
+    import json
+    kp, r = own_session(repos, rows=LIST_ROW)
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    own = ["gate" if x.startswith("gate") else x for x in own_log(mm)]
+    i = own.index("run o1 n=1 runid=1")
+    assert own[i:i + 7] == ["run o1 n=1 runid=1", "run o1 n=6 runid=2", "kick miscinfo",
+                            "run o1 n=6 runid=3", "page", "gate", "run o2 n=1 runid=4"], own
+    rec = json.loads(gzip.decompress((mm / "out/model/own/o1.txt.gz").read_bytes()))["records"]
+    assert [x["job"]["n"] for x in rec] == [1, 6, 6]
+    assert set(rec[1]["slots"]) == {"40", "41"} and set(rec[2]["slots"]) == {"40"}
+    assert rec[2]["slept"]["ms"] == 2000 and "slept" not in rec[1]
+
+
+def test_the_runner_takes_a_list_job_line(tmp_path):
+    tsv = OWN_TSV.replace('{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100}',
+                          '[{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100}, '
+                          '{"n": 6, "params": {}, "runid": 2, "timeout_ms": 100}]')
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=tsv)
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+def test_the_runner_hands_a_list_job_line_to_run_as_its_jobs():
+    rs = (KIT / "run_stage.sh").read_text()
+    assert '\\[*) jobs=$job ;;' in rs and '*) jobs="[$job]" ;;' in rs
+    assert '\\"jobs\\": $jobs}' in rs
+
+
+GATE_STAGE = OWN_STAGE.replace('owntask = {', 'gate_order = "tri,fill", owntask = {')
+
+
+def test_a_gate_order_reaches_the_arm_line_and_the_fake_gate(repos):
+    """K2: the stage's gate_order is the arm line's sixth column; the runner passes it to the
+    gate with the job's gate directory, whose files it keeps; a stage without it writes the arm
+    line as before (the runner's default: fill first)."""
+    kp, r = own_session(repos, stage=GATE_STAGE)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    arm = next(ln for ln in own_tsv(kp, r).splitlines() if ln.startswith("arm\t")).split("\t")
+    assert arm[5:] == ["tri,fill"], arm
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    gates = [x for x in own_log(mm) if x.startswith("gate")]
+    assert gates and all(g.endswith(" tri,fill") for g in gates), gates
+    kp2, r2 = own_session(dict(repos, tmp=repos["tmp"] / "plain"))
+    arm = next(ln for ln in own_tsv(kp2, r2).splitlines() if ln.startswith("arm\t")).split("\t")
+    assert len(arm) == 5, arm
+
+
+@pytest.mark.parametrize("stage,word", [
+    (OWN_STAGE.replace('owntask = {', 'gate_order = "fill", owntask = {'), "gate_order"),
+    (OWN_STAGE.replace('owntask = {', 'gate_order = "tri,tri", owntask = {'), "gate_order"),
+    (OWN_STAGE.replace('owntask = {', 'on_gate_fail = "end", owntask = {'), "on_gate_fail"),
+])
+def test_lint_refuses_a_bad_gate_order_or_on_gate_fail(repos, stage, word):
+    kp, r = own_session(repos, stage=stage)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and word in li.stdout, li.stdout
+
+
+def test_gate_keys_belong_to_the_last_owntask_stage(repos):
+    """gate_order on an owntask stage only; on_gate_fail = "score" on the session's last stage,
+    an owntask one (its gate failure is the session's planned end)."""
+    kp, r = own_session(repos, stage=OWN_STAGE + '\npost = { alarm = 60, class = "flagged" }'
+                        .replace("{ alarm", '{ gate_order = "tri,fill", alarm'))
+    (kp / "tables/post.txt").write_text("#stage post\n#limit 0\n")
+    (kp / "predictions/post.tsv").write_text("case\tquantity\tvalue\tmodel\tset\tsource\n")
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "gate_order" in li.stdout, li.stdout
+    kp, r = own_session(dict(repos, tmp=repos["tmp"] / "b"), stage=OWN_STAGE.replace(
+        'owntask = {', 'on_gate_fail = "score", owntask = {')
+        + '\npost = { alarm = 60, class = "flagged" }')
+    (kp / "tables/post.txt").write_text("#stage post\n#limit 0\n")
+    (kp / "predictions/post.tsv").write_text("case\tquantity\tvalue\tmodel\tset\tsource\n")
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "on_gate_fail" in li.stdout and "last" in li.stdout, li.stdout
+
+
+def test_the_runner_refuses_another_gate_order(tmp_path):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace("slots=0x1 entry=0\n",
+                                                               "slots=0x1 entry=0\tfill\n"))
+    assert r.returncode == 7 and "gate order" in r.stdout, (r.returncode, r.stdout)
+    (tmp_path / "b").mkdir()
+    r = own_runner_tree(tmp_path / "b", OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0\n", "slots=0x1 entry=0\ttri,fill\n"))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("world", ["model", "owngatebad"])
+def test_the_gate_s_outputs_and_devcoredumps_are_kept_whatever_its_end(repos, world):
+    """K2, K3: NAME.gate-fill.txt and .gate-tri.txt (the tools' whole outputs), NAME.devcd-pre.txt
+    and .devcd.txt; a gate-begin mark before the gate, the gate mark after it."""
+    rc = 0 if world == "model" else 16
+    kp, r = own_session(repos, expect={world: (rc, {"s0": 0, "own": rc})})
+    m = kit(kp, r, "mock", "--world", world)
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob(f"debug/mock.*/{world}"))
+    kept = mm / f"out/{world}/own"
+    for f in ("o1.gate-fill.txt.gz", "o1.gate-tri.txt.gz", "o1.devcd-pre.txt.gz",
+              "o1.devcd.txt.gz", "o1.gate.json.gz"):
+        assert (kept / f).exists(), (f, sorted(p.name for p in kept.iterdir()))
+    kmsg = (mm / "kmsg").read_text()
+    assert kmsg.index("owntask-gate-begin o1 fill,tri") < kmsg.index("owntask-gate o1 "), kmsg
+
+
+def test_a_planned_gate_failure_is_scored_and_ends_the_session(repos):
+    """K4: with on_gate_fail = "score" on the last stage, the runner's rc 16 after the gate is the
+    planned end: the copy back, the kept check and the scorer run, and the driver ends 0."""
+    stage = OWN_STAGE.replace('owntask = {', 'on_gate_fail = "score", owntask = {')
+    kp, r = own_session(repos, stage=stage, expect={"owngatebad": (0, {"s0": 0, "own": 16})})
+    sc = (kp / "score/score.py").read_text()     # the gate's failure leaves no disarm record
+    (kp / "score/score.py").write_text(sc.replace(', "owntask.reset.json")', ")"))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    m = kit(kp, r, "mock", "--world", "owngatebad")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/owngatebad"))
+    run = next(mm.rglob("run.log")).read_text()
+    assert "planned end" in run and "SUMMARY:" in run, run
+    att = next(mm.rglob("score-own.txt"))
+    assert "SUMMARY" in att.read_text()

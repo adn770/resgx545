@@ -44,7 +44,8 @@ reads was not kept, 44 the premise (a control with no reading), 45 a laptop comm
 missing (a "command not found" or "No such file" line in the stage's log), 142 a bounded command
 reached its limit. A runner status 24 (the stage stopped by its rule) goes on to the next stage,
 unless the stage declares `on_stop = "end"` in session.toml: then the session ends there, status
-24.
+24. A runner status 16 (the owntask gate failed) of a stage that declares `on_gate_fail = "score"`
+(the last stage, an owntask one) is its planned end: copied back, checked and scored, status 0.
 """
 import argparse
 import glob
@@ -171,8 +172,19 @@ OWNTASK_TRC_MAX = 31
 # ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window;
 # kick (round 39, N3d row K): "miscinfo", the one host kick the runner makes right after the
 # command write (K0, then one debugfs miscinfo read, a GETMISCINFO kick), nothing else
-OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks", "kick")
+OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks", "kick", "sleep_ms", "slots")
 OWNTASK_KICKS = ("miscinfo",)
+# round 41 (N3f §3.1, K1): a row's args may be a list of jobs (one fwtask_run.py run, one page and
+# one gate after it), at most OWNTASK_MAX_JOBS; a job's sleep_ms is one fixed sleep before it, its
+# slots the result slots (command numbers) the runner initfills and reads into its record; a row's
+# sleeps and timeouts together fit in job_timeout
+OWNTASK_MAX_JOBS = 8
+OWNTASK_RESULTS = 0x40
+# K2: the gate's order (stage key gate_order, an owntask stage only), the default first; K4: a stage
+# key on_gate_fail = "score" makes the gate's failure (the runner's rc 16) the session's planned
+# end, copied back and scored (the last stage, an owntask one); "stop" (the default) stops
+OWNTASK_GATE_ORDERS = ("fill,tri", "tri,fill")
+ON_GATE_FAIL = ("stop", "score")
 # the results page (tools/fwtask/layout.py): 1024 dwords, 0-5 the protocol's (magic, cmd, state,
 # run id, overlap, run id echo), which a job's params never write
 OWNTASK_PAGE = 1024
@@ -721,13 +733,56 @@ def owntask_job(args, job_timeout):
         bad.append(f"ticks {a['ticks']!r} is not true or false")
     if "kick" in a and a["kick"] not in OWNTASK_KICKS:
         bad.append(f"kick {a['kick']!r} is not one of {', '.join(OWNTASK_KICKS)}")
+    sl = a.get("sleep_ms", 0)
+    if type(sl) is not int or not 0 <= sl <= job_timeout * 1000:
+        bad.append(f"sleep_ms {sl!r} is not a whole number of ms, 0 to {job_timeout * 1000} "
+                   "(job_timeout)")
+    if "slots" in a:
+        sl = a["slots"]
+        if not (isinstance(sl, list) and sl and all(
+                type(x) is int and 0 <= x and OWNTASK_RESULTS + 4 * x + 4 <= OWNTASK_PAGE
+                for x in sl)):
+            bad.append(f"slots {sl!r} is not a list of result slots 0 to "
+                       f"{(OWNTASK_PAGE - OWNTASK_RESULTS) // 4 - 1}")
     if bad:
         return None, bad
     job = {"n": cmd, "params": params, "timeout_ms": tmo}
-    for k in ("ticks", "kick"):
+    for k in ("ticks", "kick", "sleep_ms", "slots"):
         if k in a:
             job[k] = a[k]
     return job, []
+
+
+def owntask_jobs(args, job_timeout):
+    """(the row's job or jobs, []) of an owntask row's args: one JSON object (one job, as
+    owntask_job) or a JSON list of 1 to OWNTASK_MAX_JOBS of them (round 41, N3f K1), whose sleeps
+    and timeouts together fit in job_timeout; or (None, [what is wrong])."""
+    import json
+    try:
+        a = json.loads(args)
+    except ValueError:
+        a = None
+    if not isinstance(a, list):
+        job, bad = owntask_job(args, job_timeout)
+        if job and job.get("sleep_ms", 0) + job["timeout_ms"] > job_timeout * 1000:
+            return None, [f"sleep_ms and timeout_ms take more than job_timeout ({job_timeout} s)"]
+        return job, bad
+    if not a:
+        return None, ["a job list with no job"]
+    if len(a) > OWNTASK_MAX_JOBS:
+        return None, [f"a job list of {len(a)} jobs: at most {OWNTASK_MAX_JOBS}"]
+    jobs, bad = [], []
+    for k, x in enumerate(a, 1):
+        if not isinstance(x, dict):
+            bad.append(f"job {k}: {x!r} is not a JSON object")
+            continue
+        job, b = owntask_job(json.dumps(x), job_timeout)
+        bad += [f"job {k}: {w}" for w in b]
+        jobs.append(job)
+    if not bad and sum(j.get("sleep_ms", 0) + j["timeout_ms"] for j in jobs) > job_timeout * 1000:
+        bad.append(f"the jobs' sleep_ms and timeout_ms take more than job_timeout "
+                   f"({job_timeout} s)")
+    return (None, bad) if bad else (jobs, [])
 
 
 def owntask_problems(kp, c=None):
@@ -745,6 +800,9 @@ def owntask_problems(kp, c=None):
     for st in stages(c):
         d = own.get(st)
         where = f"session.toml: stage {st}"
+        if d is None:
+            bad += [f"{where}: {k} on a stage that is not an owntask stage (the owntask gate's)"
+                    for k in ("gate_order", "on_gate_fail") if k in c["stages"][st]]
         if d is not None:
             if not isinstance(d, dict):
                 bad.append(f"{where}: owntask is not a table {{ blob, arm }}")
@@ -770,6 +828,16 @@ def owntask_problems(kp, c=None):
                 bad.append(f"{where}: owntask/{blob}.blob hashes to "
                            f"{sha_file(kp / 'owntask' / f'{blob}.blob')[:12]}, not the sha256 "
                            f"{OWNTASK_MAP} gives {blob} ({m[blob]['sha256'][:12]})")
+            gk = c["stages"][st]
+            if gk.get("gate_order", OWNTASK_GATE_ORDERS[0]) not in OWNTASK_GATE_ORDERS:
+                bad.append(f"{where}: gate_order {gk['gate_order']!r} is not one of "
+                           f"{', '.join(OWNTASK_GATE_ORDERS)}")
+            if gk.get("on_gate_fail", ON_GATE_FAIL[0]) not in ON_GATE_FAIL:
+                bad.append(f"{where}: on_gate_fail {gk['on_gate_fail']!r} is not one of "
+                           f"{', '.join(ON_GATE_FAIL)}")
+            elif gk.get("on_gate_fail") == "score" and st != stages(c)[-1]:
+                bad.append(f"{where}: on_gate_fail = \"score\" on a stage that is not the last "
+                           "(the gate's failure ends the session)")
             if "arm" not in d:
                 bad.append(f"{where}: owntask has no arm")
             else:
@@ -791,7 +859,7 @@ def owntask_problems(kp, c=None):
                 bad += [f"{w}: knob {k}: an owntask row takes only - and reads:K (no reset, "
                         "knob or register write between the arm and its disarm)"
                         for k in words if not OWNTASK_WORDS.match(k)]
-                bad += [f"{w}: {x}" for x in owntask_job(args, jt)[1]]
+                bad += [f"{w}: {x}" for x in owntask_jobs(args, jt)[1]]
         p = kp / "predictions" / f"{st}.tsv"
         if p.exists():
             for case, quants in kitscore.predictions(str(kp), st).items():
@@ -808,9 +876,11 @@ def owntask_problems(kp, c=None):
 
 
 def owntask_table(kp, c=None):
-    """run/owntask.tsv: `arm STAGE BLOB SHA256 ARM` of each owntask stage (the sha256 the map
-    gives the blob) and `job STAGE NAME JSON` of each of its rows (fwtask_run.py run's job, with
-    its run id, the row's place in the stage), tab-separated; the runner reads its stage's."""
+    """run/owntask.tsv: `arm STAGE BLOB SHA256 ARM [GATE_ORDER]` of each owntask stage (the sha256
+    the map gives the blob; the gate order only when the stage declares gate_order) and `job STAGE
+    NAME JSON` of each of its rows (fwtask_run.py run's job, or a list of them for a job-list row,
+    each with its run id, counted over the stage's jobs in order: a row's place in the stage when
+    every row has one job), tab-separated; the runner reads its stage's."""
     import json
     c = c or config(kp)
     own = owntask_stages(c)
@@ -825,14 +895,24 @@ def owntask_table(kp, c=None):
             continue
         blob = d.get("blob", "")
         sha = ((m or {}).get(blob) or {}).get("sha256", "-") if isinstance(blob, str) else "-"
-        out.append(f"arm\t{st}\t{blob}\t{sha}\t{d.get('arm', '')}")
+        order = c["stages"][st].get("gate_order")
+        out.append(f"arm\t{st}\t{blob}\t{sha}\t{d.get('arm', '')}"
+                   + (f"\t{order}" if order else ""))
         f = pathlib.Path(kp) / "tables" / f"{st}.txt"
         rows = _rows(f) if f.exists() else []
-        for i, row in enumerate(rows, 1):
-            job, _ = owntask_job(row[5], jt) if row[4] == OWNTASK_TOOL else (None, [])
-            if job:
+        runid = 0
+        for row in rows:
+            job, _ = owntask_jobs(row[5], jt) if row[4] == OWNTASK_TOOL else (None, [])
+            if isinstance(job, list):
+                one = []
+                for j in job:
+                    runid += 1
+                    one.append(dict(j, runid=runid))
+                out.append(f"job\t{st}\t{row[0]}\t" + json.dumps(one, sort_keys=True))
+            elif job:
+                runid += 1
                 out.append(f"job\t{st}\t{row[0]}\t"
-                           + json.dumps(dict(job, runid=i), sort_keys=True))
+                           + json.dumps(dict(job, runid=runid), sort_keys=True))
     return "\n".join(out) + "\n"
 
 
@@ -1197,7 +1277,10 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
         if found:
             say("STOP: a laptop command or file was missing:\n" + "\n".join(found[:10]))
             return 45, rcs
-        if r.returncode not in (0, 24):
+        # round 41 (N3f K4): the gate's failure (rc 16) of a stage with on_gate_fail = "score" (the
+        # last, an owntask stage) is the session's planned end: copied back, checked, scored
+        planned = r.returncode == 16 and c["stages"][st].get("on_gate_fail") == "score"
+        if r.returncode not in (0, 24) and not planned:
             say(f"STOP: stage {st} exited {r.returncode} (see {root}/{st}.log)"
                 + (f"; {ssh_hint(c, r)}" if r.returncode == 255 else ""))
             return r.returncode, rcs
@@ -1222,6 +1305,10 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
             if p.returncode:
                 say(p.stdout + f"STOP: the premise of {st}: a control with no reading")
                 return 44, rcs
+        if planned:
+            say(f"stage {st}: the gate failed (rc 16), its planned end (on_gate_fail = \"score\"): "
+                "scored; the session ends")
+            return 0, rcs
         if r.returncode == 24 and c["stages"][st].get("on_stop") == "end":
             say(f"stage {st} stopped by its rule (rc 24); on_stop = \"end\": the session ends")
             return 24, rcs

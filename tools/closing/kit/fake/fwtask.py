@@ -17,8 +17,15 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          window_ms as the real runner (0 ticks in world ownhang); a job with kick "miscinfo"
          (round 39) logs "kick miscinfo" after its run line and records k0 (cmd 1, the job's
          slot as the runner initfilled it), the kick's reply and, with ticks, ticks_from_kick
+         (round 41) A job's slots are read into its record as the real runner's extra result
+         slots, its sleep_ms recorded as slept {ms, ticks}; world ownstop2: the jobs after the
+         first never report done (the same stop dump and rc 1)
   page   the results page, {"page": [1024 dwords]}
-  gate   the fill and triangle, ok unless the world has owngatebad
+  gate   {order, outdir} optional (round 41): the fill and triangle in that order, ok unless the
+         world has owngatebad (the fill fails); with outdir its gate-fill.txt and gate-tri.txt
+         (t30-shaped texts) and devcd-pre.txt, devcd.txt (the world's optional devcd(stage_world,
+         when) text, "pre" or "post", else "devcd: none pending"); the log line names a
+         non-default order
   reset  disarm; ok
 
 Every call is logged in FAKE_DIR/own.log ("arm LINE", "run NAME n=N runid=R", "page", "gate",
@@ -33,7 +40,16 @@ import sys
 PAGE, MAGIC, CMD, STATE, RUNID, ECHO, RESULTS = 1024, 0, 1, 2, 3, 5, 0x40
 KEYS = {"arm": {"blob", "arm"}, "run": {"name", "outdir", "jobs"}, "page": set(), "gate": set(),
         "reset": set()}
-JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks", "kick"}
+OPTIONAL = {"gate": {"order", "outdir"}}
+JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks", "kick", "sleep_ms", "slots"}
+ORDERS = ("fill,tri", "tri,fill")
+FILL_OK = ("programs asm\njob: ok\njob time: 470 us\ntarget: 64x32 hash 0xb60c6095080bd325\n"
+           "diff: 0 of 2048 pixels\noutside: 0 dwords\n"
+           "fill: ok, 64x32 at (0, 0), stride 256, colour 0xff336699\n")
+FILL_BAD = "programs asm\njob: faulted, context lost (Input/output error)\nFAIL fill\n"
+TRI_OK = ("tri: render context for targets up to 64x64\njob: ok\n"
+          "target: 64x64 hash 0x99385a04ee01c585\ndiff: 0 of 4096 pixels\noutside: 0 dwords\n"
+          "tri: 1 renders ok\n")
 KICKS = ("miscinfo",)
 
 
@@ -125,7 +141,7 @@ def run(a):
         k0 = {"tick": 1000, "cmd": j["n"], "slot": [0xdeadc0de] * 4, "ms": 0.5}  # the initfill
         if "kick" in j:
             log(f"kick {j['kick']}")
-        done = armed() and not w & {"ownstop", "ownhang"}
+        done = armed() and not w & {"ownstop", "ownhang"} and not ("ownstop2" in w and i > 0)
         if done:
             for k, v in j.get("params", {}).items():
                 vals = v if isinstance(v, list) else [v]
@@ -138,6 +154,11 @@ def run(a):
         records.append({"done": done, "ms": 1.0 if done else float(j.get("timeout_ms", 100)),
                         "slot": p[base:base + 4], "echo": p[ECHO], "cmd_after": p[CMD],
                         "overlap": 0, "job": j, "H": {}, "restored": True})
+        if j.get("slots"):          # the real runner's extra result slots, read after the job
+            records[-1]["slots"] = {str(x): p[RESULTS + 4 * x:RESULTS + 4 * x + 4]
+                                    for x in j["slots"]}
+        if j.get("sleep_ms"):
+            records[-1]["slept"] = {"ms": j["sleep_ms"], "ticks": j["sleep_ms"]}
         if j.get("ticks"):          # the real runner's HostCtl dword 12 count over the window
             ms = records[-1]["ms"] + 30.0
             records[-1].update(ticks=0 if "ownhang" in w else int(ms), ticks_expected=ms * 0.997,
@@ -169,6 +190,33 @@ def run(a):
     return 1 if stop else 0
 
 
+def gate(a):
+    order = a.get("order", ORDERS[0])
+    if order not in ORDERS:
+        return usage(f"gate order {order!r}")
+    log(f"gate {os.environ.get('FWTASK_HEALTH_TOOL', '-')}"
+        + (f" {order}" if order != ORDERS[0] else ""))
+    w, mod = world(), world_mod()
+    ok = "owngatebad" not in w
+    texts = {"fill": FILL_OK if ok else FILL_BAD, "tri": TRI_OK}
+    out = {"order": order, "ok": ok, "fill": "diff: 0 of 2048" if ok else "FAIL fill",
+           "tri": "diff: 0 of 4096"}
+    if "outdir" in a:
+        os.makedirs(a["outdir"], exist_ok=True)
+        dev = getattr(mod, "devcd", None)
+        for when, f in (("pre", "devcd-pre.txt"), ("post", "devcd.txt")):
+            text = (dev(w, when) if dev else None) or "devcd: none pending\n"
+            with open(os.path.join(a["outdir"], f), "w") as fh:
+                fh.write(text)
+            out["devcd_pre" if when == "pre" else "devcd"] = \
+                [] if text.startswith("devcd: none") else ["devcd0"]
+        for name in order.split(","):
+            with open(os.path.join(a["outdir"], f"gate-{name}.txt"), "w") as fh:
+                fh.write(texts[name])
+    emit(out)
+    return 0
+
+
 def main(argv):
     if len(argv) < 2 or argv[1] not in KEYS:
         return usage(f"subcommand {argv[1:2]}")
@@ -177,18 +225,18 @@ def main(argv):
     except ValueError as e:
         return usage(f"JSON {argv[2]!r}: {e}")
     sub = argv[1]
-    if not isinstance(a, dict) or set(a) - KEYS[sub] or not KEYS[sub] <= set(a):
-        return usage(f"{sub} takes {sorted(KEYS[sub])}, not {a!r}")
+    opt = OPTIONAL.get(sub, set())
+    if not isinstance(a, dict) or set(a) - KEYS[sub] - opt or not KEYS[sub] <= set(a):
+        return usage(f"{sub} takes {sorted(KEYS[sub] | opt)}, not {a!r}")
     if sub == "arm":
         return arm(a)
     if sub == "run":
         return run(a)
-    log(f"gate {os.environ.get('FWTASK_HEALTH_TOOL', '-')}" if sub == "gate" else sub)
+    if sub == "gate":
+        return gate(a)
+    log(sub)
     if sub == "page":
         emit({"page": page()})
-    elif sub == "gate":
-        ok = "owngatebad" not in world()
-        emit({"fill": "diff: 0 of 2048", "tri": "diff: %d of 4096" % (0 if ok else 7), "ok": ok})
     else:
         if os.path.exists(fake("own")):
             os.remove(fake("own"))

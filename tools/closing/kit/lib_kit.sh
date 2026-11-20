@@ -19,9 +19,10 @@
 #    by the exit trap once any was written;
 #  - one of our own firmware tasks, an owntask stage's (round 36, run_stage.sh): the kit's copy of
 #    tools/fwtask/fwtask_run.py, through owntask_call alone (the one python line besides
-#    sessioncheck.py's premise and ownok), arms the staged blob once, runs one command a row,
-#    dumps the results page and gates after it, and resets at the stage's end; never in a hook,
-#    never in another stage;
+#    sessioncheck.py's premise and ownok), arms the staged blob once, runs a row's job (or its
+#    job list, round 41), dumps the results page and gates after it, and resets at the stage's
+#    end; never in a hook, never in another stage; the gate's only write outside debugfs frees a
+#    pending devcoredump (a write to /sys/class/devcoredump/devcdN/data, once saved);
 #  - every laptop command that can block is bounded by `timeout -k`; no wait loop (no while or
 #    until), single fixed sleeps whose length the mock sets to 0;
 #  - at least MIN_FREE_MB free on ~ before each job; the kernel log of a job is its slice after

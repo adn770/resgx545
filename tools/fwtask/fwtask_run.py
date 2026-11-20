@@ -9,6 +9,7 @@ object; the Mac side (run_stage.py) decides what to do next and keeps the data.
 Never writes a clock-gate register: the only register writes are `kreg` writes to 0x0814 and
 0x0a78 (REGS_WRITABLE below), by name in this file, and the kernel's kreg list refuses the rest.
 """
+import glob
 import json
 import os
 import random
@@ -189,13 +190,73 @@ def health_tool():
     return os.environ.get("FWTASK_HEALTH_TOOL") or "/home/jtorra/sgxfive-test"
 
 
-def gate():
-    """fill and triangle on the render node, exact; the stock firmware (own_arm 0)."""
+# the gate's orders (round 41, N3f K2): the fill first (the default), or the triangle first
+GATE_ORDERS = ("fill,tri", "tri,fill")
+# the kernel's devcoredump class (round 41, N3f K3): a recovery reset's error state is
+# DEVCD/devcdN/data until it is written to (or five minutes pass), one per device at a time
+DEVCD = os.environ.get("FWTASK_DEVCD", "/sys/class/devcoredump")
+
+
+def devcd_free(path):
+    """A write to a devcoredump's data frees it (the kernel's devcoredump)."""
+    fd = os.open(path, os.O_WRONLY)
+    try:
+        os.write(fd, b"1")
+    finally:
+        os.close(fd)
+
+
+def devcd_take(path):
+    """Every pending devcoredump (DEVCD/devcd*/data, by name): its text saved to `path`, each led by
+    a `==== devcdN ====` line, then freed; "devcd: none pending" when there is none. Their names."""
+    names = sorted(os.path.basename(os.path.dirname(p))
+                   for p in glob.glob(os.path.join(DEVCD, "devcd*", "data")))
+    out = []
+    for n in names:
+        p = os.path.join(DEVCD, n, "data")
+        try:
+            with open(p, errors="replace") as f:
+                text = f.read()
+        except OSError as e:        # a dump that went away is itself a result
+            text = f"error {e}\n"
+        out.append(f"==== {n} ====\n{text}")
+        try:
+            devcd_free(p)
+        except OSError as e:
+            out.append(f"(not freed: {e})\n")
+    with open(path, "w") as f:
+        f.write("".join(out) if out else "devcd: none pending\n")
+    return names
+
+
+def gate(order="fill,tri", outdir=None):
+    """fill and triangle on the render node, exact; the stock firmware (own_arm 0). `order` runs the
+    triangle first when "tri,fill". With `outdir` (round 41, N3f K2 and K3): each tool's whole
+    output (its job: line and stderr) is OUTDIR/gate-fill.txt and gate-tri.txt, every devcoredump
+    pending before the tools is saved to devcd-pre.txt and freed, and the one pending after them
+    to devcd.txt."""
+    if order not in GATE_ORDERS:
+        raise ValueError(f"gate order {order!r} is not one of {', '.join(GATE_ORDERS)}")
     t = health_tool()
-    fill = sh(f"{t} fill 2>&1 | grep -E '^diff|FAIL' | head -3", check=False)
-    tri = sh(f"{t} tri 2>&1 | grep -E '^diff|FAIL|^tri 64x64' | head -4", check=False)
-    ok = "diff: 0 of 2048" in fill and "diff: 0 of 4096" in tri and "FAIL" not in fill + tri
-    return {"fill": fill.strip(), "tri": tri.strip(), "ok": ok}
+    out = {"order": order}
+    if outdir:
+        os.makedirs(outdir, exist_ok=True)
+        out["devcd_pre"] = devcd_take(os.path.join(outdir, "devcd-pre.txt"))
+    full = {}
+    for name in order.split(","):
+        full[name] = sh(f"{t} {name} 2>&1", check=False)
+        if outdir:
+            with open(os.path.join(outdir, f"gate-{name}.txt"), "w") as f:
+                f.write(full[name])
+    if outdir:
+        out["devcd"] = devcd_take(os.path.join(outdir, "devcd.txt"))
+    fill = [ln for ln in full["fill"].splitlines() if ln.startswith("diff") or "FAIL" in ln][:3]
+    tri = [ln for ln in full["tri"].splitlines()
+           if ln.startswith(("diff", "tri 64x64")) or "FAIL" in ln][:4]
+    out["fill"], out["tri"] = "\n".join(fill).strip(), "\n".join(tri).strip()
+    out["ok"] = ("diff: 0 of 2048" in out["fill"] and "diff: 0 of 4096" in out["tri"]
+                 and "FAIL" not in out["fill"] + out["tri"])
+    return out
 
 
 def miscinfo():
@@ -265,7 +326,12 @@ def cmd_reset(a):
 
 
 def cmd_gate(a):
-    emit(gate())
+    """{order, outdir} both optional (gate()); another order: ok false, rc 2."""
+    try:
+        emit(gate(**{k: a[k] for k in ("order", "outdir") if k in a}))
+    except ValueError as e:
+        emit({"ok": False, "error": str(e)})
+        return 2
 
 
 KICKS = ("miscinfo",)       # a job's kick: the one host command read right after its cmd write
@@ -344,8 +410,23 @@ def hang_dump(outdir, tag):
     open(f"{outdir}/{tag}-dmesg.txt", "w").write(sh("dmesg | tail -60", check=False))
 
 
+SLEEP_MAX_MS = 60000
+
+
+def sleep_before(ms):
+    """A job's sleep_ms (round 41, N3f K1: row LC's heal read): one fixed sleep before the job,
+    {ms, the HostCtl dword 12 count over it}; None without one."""
+    if not ms:
+        return None
+    t0 = regs()[1].get(12)
+    time.sleep(ms / 1000)
+    t1 = regs()[1].get(12)
+    return {"ms": ms, "ticks": None if t0 is None or t1 is None else (t1 - t0) & 0xffffffff}
+
+
 def cmd_run(a):
-    """A list of experiments: each {n, params, regs, repeat}; stops at the first trigger."""
+    """A list of experiments: each {n, params, regs, repeat}; stops at the first trigger. A job's
+    sleep_ms sleeps before it (sleep_before), its slots are extra result slots (one_cmd)."""
     outdir, name = a["outdir"], a["name"]
     n0 = dmesg_len()
     res = Res()
@@ -357,11 +438,19 @@ def cmd_run(a):
     records, stop = [], None
     resets = 0
     for i, j in enumerate(jobs):
+        sl = j.get("sleep_ms", 0)
+        if type(sl) is not int or not 0 <= sl <= SLEEP_MAX_MS:
+            stop = f"job {i}: sleep_ms {sl!r} is not a whole number of ms, 0 to {SLEEP_MAX_MS}"
+            break
+    for i, j in enumerate(jobs if stop is None else ()):
         try:
+            slept = sleep_before(j.get("sleep_ms", 0))
             rec = one_cmd(res, j["n"], j.get("params", {}), j.get("runid", i + 1), j.get("regs", {}),
                           j.get("timeout_ms", DONE_MS), ticks=j.get("ticks", False),
                           extra=j.get("slots", ()), kick=j.get("kick"))
             rec["job"] = j
+            if slept:
+                rec["slept"] = slept
             # host-side proof that a str landed: the register itself, then restore
             now = kreg_all()
             rec["H"] = {hex(k): now[k] for k in REGS_WRITABLE}
