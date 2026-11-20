@@ -48,6 +48,9 @@ pub enum Bank {
     /// The EDM's secondary attributes: an `emitpds` launch (PDS #11 DMAs
     /// TA3DCtl into `sa`, hw_spec 11.1).
     Secondary,
+    /// A program our own task emitted, with this sideband: its `douta` reach the primary
+    /// attributes of the task its `doutu` starts, not the issuer's `sa` (E1163, Q128).
+    Own(u32),
 }
 
 /// What happened, in order.
@@ -736,6 +739,29 @@ impl Unit<'_> {
         match self.bank {
             Bank::Primary => (self.pa[n], self.written) = (v, self.written | 1 << n),
             Bank::Secondary => (self.st.sa[n], self.st.sa_written) = (v, self.st.sa_written | 1 << n),
+            // With #14's sideband 0x843: attribute 24 at pa12 and 26 at pa14 (E1163) [HW]; any
+            // n from 12 at pa n - 12 is a rule from those two points [infer]; crumb3's attributes
+            // 0 and 2 reached no sa and no pa of pa0-pa15 (E1161, E1162), so below 12 nothing the
+            // started task sees is written [infer: below pa0].
+            Bank::Own(0x843) => {
+                if n >= 12 {
+                    (self.pa[n - 12], self.written) = (v, self.written | 1 << (n - 12));
+                }
+            }
+            // With 0x002, 0x003 or 0x842, crumb3's V0 (attribute 0) and V2 (attribute 2) stood in
+            // every fourth pa from pa0 and pa2 (E1164, E1166, E1168) [HW]; why is open (Q128),
+            // so only those two attributes are modelled
+            Bank::Own(_) if n == 0 || n == 2 => {
+                for k in 0..4 {
+                    (self.pa[n + 4 * k], self.written) = (v, self.written | 1 << (n + 4 * k));
+                }
+            }
+            Bank::Own(b) => {
+                return Err(why(format!(
+                    "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
+                     unmeasured (Q128)"
+                )));
+            }
         }
         Ok(())
     }
@@ -774,37 +800,54 @@ impl Bus for Unit<'_> {
         if !text.starts_with("emitpds") {
             return Err(why(format!("{text}: no unit for this emit")));
         }
-        // From our own task the sideband decides (Q128). With our old word, sideband 0, the
-        // issuer went on past the emit, the started entry never stored and the EDM's tick
-        // stopped (E1148-E1150); the crumb images' first `movs tim` never reached 0x0acc, so the
-        // program never ran [infer, E1152]. Not the program, its page, rows or control word
-        // (E1153, E1154), not s2 or the pass (E1155 from a kick pass, CANNOT TELL; E1158 with s2
-        // 0x00020000 from a kick pass, NEVER). The simulator keeps no EDM tick: refused. With
-        // #14's sideband 0x843 the program ran and its doutu started our entry to done, with s2
-        // 0x00020000 or 0, from a kick pass or a tick pass (E1156, E1157, E1159, E1160): it runs
-        // as the firmware's emits do. Where its douta land is the model's (the secondary bank);
-        // those rows read pa0 and pa2 not the douta values and sa0 and sa2 equal to them, which
-        // they held anyway, so the landing is not contradicted, nor measured [infer]. Any other
-        // sideband is unmeasured from our task.
+        // From our own task bits 1:0 of the 14-bit sideband decide (Q128). 0: the issuer went on
+        // past the emit, the started entry never stored and the EDM's tick stopped; the crumb
+        // images' first `movs tim` never reached 0x0acc, so the program never ran [infer, E1152]:
+        // our old word, sideband 0 (E1148-E1150, E1153, E1154, E1155, E1158), and 0x840, 0x040,
+        // 0x800 (E1167, E1169, E1170), whatever the program, page, rows, s2 or pass. 1: the job
+        // faulted, BIF_FAULT 0x30011010 (#14's page + 0x10), the issuer not storing past the emit
+        // (0x841 E1165, 0x001 E1171). The simulator keeps no EDM tick and no BIF: both refused.
+        // 2 or 3: the program ran and its doutu started our entry to done, with s2 0 or
+        // 0x00020000, from a kick or a tick pass (0x843 E1156, E1157, E1159, E1160, E1162; 0x003
+        // E1164; 0x842 E1166; 0x002 E1168): bits 6 and 11 are not needed with 2 or 3, so the
+        // combinations of them not run (0x042, 0x043, 0x802, 0x803) run by that rule [infer].
+        // Bit 10 (0xc43) ran too, but the next fill failed until a reset and the started entry
+        // read other secondaries (E1172): not modelled, refused. Bits 12-13: never run.
+        let mut bank = Bank::Secondary;
         if self.own {
             let sideband = text.rsplit_once('#').and_then(|(_, n)| n.trim().strip_prefix("0x"));
-            match sideband.and_then(|n| u32::from_str_radix(n, 16).ok()) {
-                Some(0x843) => {}
-                Some(0) => {
-                    let tail = "the emitted program did not start [infer], the tick stopped";
-                    return Err(why(format!(
-                        "emitpds from our own task with sideband 0: {tail} \
-                         (E1148-E1150, E1153, E1154, E1155, E1158, Q128)"
-                    )));
-                }
-                b => {
-                    let b = b.map_or("unread".into(), |b| format!("{b:#x}"));
-                    return Err(why(format!(
-                        "emitpds from our own task with sideband {b}: unmeasured (only 0 and 0x843 \
-                         were run, E1158, E1160, Q128)"
-                    )));
-                }
+            let b = match sideband.and_then(|n| u32::from_str_radix(n, 16).ok()) {
+                Some(b) => b,
+                None => return Err(why("emitpds from our own task with sideband unread (Q128)")),
+            };
+            if b & 3 == 0 {
+                let tail = "the emitted program did not start [infer], the tick stopped";
+                return Err(why(format!(
+                    "emitpds from our own task with sideband {b:#x}, bits 1:0 0{}: {tail} \
+                     (E1148-E1150, E1153, E1154, E1155, E1158, E1167, E1169, E1170, Q128)",
+                    if b == 0 { " (sideband 0)" } else { "" }
+                )));
             }
+            if b & 3 == 1 {
+                return Err(why(format!(
+                    "emitpds from our own task with sideband {b:#x}, bits 1:0 1: the job took a \
+                     bus fault at #14's page + 0x10 (E1165, E1171, Q128)"
+                )));
+            }
+            if b & 0x400 != 0 {
+                return Err(why(format!(
+                    "emitpds from our own task with sideband {b:#x}, bit 10: it ran, but the next \
+                     fill failed until a reset and the started entry read other secondaries, \
+                     not modelled (E1172, Q128)"
+                )));
+            }
+            if b & !0x843 != 0 {
+                return Err(why(format!(
+                    "emitpds from our own task with sideband {b:#x}: unmeasured (bits 1:0, 6, 10 \
+                     and 11 were run, E1162-E1172, Q128)"
+                )));
+            }
+            bank = Bank::Own(b);
         }
         self.st.effect()?;
         self.st.trace(|| Ev::Emit { s });
@@ -817,7 +860,7 @@ impl Bus for Unit<'_> {
             ir0: self.st.emit_s2_is_ir0.then_some(s[2]),
             ir1: None,
             tim: if running { self.st.emit_tim } else { None },
-            bank: Bank::Secondary,
+            bank,
         });
         Ok(())
     }
@@ -1676,13 +1719,111 @@ mod tests {
                 "{r:?}"
             );
         }
-        // any other sideband is unmeasured from our task (#11's 0xc43 included)
-        let (_, r) = own_emit(0xc43, 0);
-        assert!(
-            matches!(r, Err(Error::Unsupported { ref why, .. })
-                if why.contains("own task") && why.contains("0xc43") && why.contains("unmeasured")),
-            "{r:?}"
+    }
+
+    #[test]
+    fn an_own_task_emit_runs_when_bits_1_0_of_the_sideband_are_2_or_3() {
+        // E1162 (0x843), E1164 (0x003), E1166 (0x842), E1168 (0x002), r40-n3e: the program and
+        // the entry it started ran to done; bits 6 and 11 are not needed with 2 or with 3, so the
+        // combinations not run (0x042, 0x043, 0x802, 0x803) run by the rule [infer]
+        for sb in [0x843, 0x003, 0x842, 0x002, 0x042, 0x043, 0x802, 0x803] {
+            let (s, r) = own_emit(sb, 0);
+            r.unwrap_or_else(|e| panic!("{sb:#x}: {e:?}"));
+            assert_eq!(s.st.regs[&reg::EVENT_TIMER], 0x005a_3305);
+            assert_eq!(s.st.regs[&65], 0x5a5a_3302);
+        }
+    }
+
+    #[test]
+    fn an_own_task_emit_with_bits_1_0_of_the_sideband_0_or_1_is_refused() {
+        let refused_with = |sb: u32, words: &[&str]| {
+            let (_, r) = own_emit(sb, 0);
+            assert!(
+                matches!(r, Err(Error::Unsupported { ref why, .. })
+                    if why.contains("own task") && words.iter().all(|w| why.contains(w))),
+                "{sb:#x}: {r:?}"
+            );
+        };
+        // E1167 (0x840), E1169 (0x040), E1170 (0x800): never started, the tick stopped
+        for sb in [0x840, 0x040, 0x800] {
+            refused_with(sb, &["bits 1:0 0", "E1167", "E1169", "E1170"]);
+        }
+        // E1165 (0x841), E1171 (0x001): the job faulted at #14's page + 0x10
+        for sb in [0x841, 0x001] {
+            refused_with(sb, &["bits 1:0 1", "fault", "E1165", "E1171"]);
+        }
+        // E1172 (0xc43): it ran, but the next fill failed until a reset: not modelled
+        refused_with(0xc43, &["bit 10", "E1172"]);
+        refused_with(0x403, &["bit 10", "E1172"]);
+        // bits 12-13 were never run
+        refused_with(0x1003, &["0x1003", "unmeasured"]);
+    }
+
+    /// Our own task emits a program of two douta (`a` with control `ca`, `b` with `cb`) and a
+    /// doutu with `sideband`; the started entry stores the pa named in `reads` to registers 66 on.
+    fn own_douta(
+        sideband: u32,
+        (a, ca): (u32, u32),
+        (b, cb): (u32, u32),
+        reads: &[usize],
+    ) -> (Sgx, Result<(), Error>) {
+        let emit = format!(
+            "mov r0, pa0\nmov r2, pa2\nmov r4, pa4\n\
+             emitpds.tasks.taske #0 /* incp */, r0, r2, r4, #0x{sideband:08x}\nnop.end"
         );
+        let mut entry = String::new();
+        for (i, n) in reads.iter().enumerate() {
+            entry += &format!("mov r1, pa{n}\nstr #{}, r1\n", 66 + i);
+        }
+        entry += "nop.end";
+        let prog = "movs douta, ds0[2], ds1[1], ds0[2], ds0[2]\n\
+                    movs douta, ds0[3], ds1[2], ds0[3], ds0[3]\n\
+                    movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]\nhalt";
+        let mut s = sgx();
+        s.st.mem.map(DATA, &[0; 16]);
+        s.st.mem.map(CODE, &vec![0; 0x20000]);
+        let data = [code_word(OWN_INDEX as u32 + 8), 0, 0, ca, a, b, cb, 0, 0, 0, 0, 0];
+        s.st.mem.map(CODE + 0x80100, &pds(&data, prog));
+        let mut code = usse(&emit);
+        code.resize(8 * 8, 0);
+        code.extend(usse(&entry));
+        s.st.mem.map(CODE + 8 * OWN_INDEX as u32, &code);
+        s.code_len = Some(OWN_INDEX + 8 + 2 * reads.len() + 1);
+        let mut pa = [0; 128];
+        (pa[0], pa[2], pa[4]) = (3 << 23 | 0x100, (CODE + 0x80100) >> 4, 0);
+        s.st.queue.push_back(Work::Task {
+            base: CODE,
+            pc: OWN_INDEX,
+            temps: 8,
+            pa: Box::new(pa),
+            written: 0b10101,
+        });
+        let r = s.run(10_000);
+        (s, r)
+    }
+
+    #[test]
+    fn an_own_task_emits_douta_lands_in_the_started_entrys_pa_not_in_sa() {
+        // E1163 (r40-n3e-l): with 0x843, Ma to attribute 24 and Mb to 26 stood in the started
+        // entry's pa12 and pa14; sa24 and sa26 stayed 0
+        let (s, r) = own_douta(0x843, (0x5a5a_3a18, 0x1800), (0x5a5a_3a1a, 0x1a00), &[12, 14]);
+        r.unwrap();
+        assert_eq!((s.st.regs[&66], s.st.regs[&67]), (0x5a5a_3a18, 0x5a5a_3a1a));
+        assert_eq!(s.st.sa_written >> 24 & 0b101, 0);
+        // E1161, E1162: with 0x843, crumb3's douta to attributes 0 and 2 reached no sa and no pa
+        // of pa0-pa15
+        let (s, r) = own_douta(0x843, (0x3200_4000, 0), (0x3200_2000, 0x200), &[]);
+        r.unwrap();
+        assert_eq!(s.st.sa_written & 0b101, 0);
+        // E1164, E1166, E1168: with 0x003, 0x842 or 0x002 they stood in every fourth pa from pa0
+        // and pa2
+        for sb in [0x003, 0x842, 0x002] {
+            let (s, r) = own_douta(sb, (0x3200_4000, 0), (0x3200_2000, 0x200), &[0, 4, 8, 12, 2, 6, 10, 14]);
+            r.unwrap();
+            let got: Vec<u32> = (66..74).map(|i| s.st.regs[&i]).collect();
+            assert_eq!(got, [[0x3200_4000; 4], [0x3200_2000; 4]].concat(), "{sb:#x}");
+            assert_eq!(s.st.sa_written & 0b101, 0);
+        }
     }
 
     #[test]

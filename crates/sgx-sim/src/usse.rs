@@ -4304,9 +4304,14 @@ impl Machine {
 
     /// Read pa<r>. In an EDM task pa0 to pa4 are sa64 to sa68 (hardware, S2 e2r/e2w: pa_n read
     /// sa_(64+n) for n = 0..4, 3 of 3 jobs, and a write to sa67 or sa68 showed through pa3 or
-    /// pa4 in the same pass and the next); pa5 and up are not measured there (Q098).
+    /// pa4 in the same pass and the next); pa5 and up are not measured there (Q098), except
+    /// one that the PDS program which started the task wrote with `douta`: an own-task emit's
+    /// markers read back in pa12 and pa14 of the entry it started (E1163).
     fn read_pa(&self, r: usize) -> Result<u32, Error> {
         if self.edm_task {
+            if r >= 5 && self.written.pa >> r & 1 != 0 {
+                return Ok(self.pa[r]);
+            }
             if r >= 5 {
                 return Err(why(format!("a read of pa{r} in an EDM task (only pa0 to pa4 measured, Q098)")));
             }
