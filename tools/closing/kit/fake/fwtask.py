@@ -23,7 +23,10 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          real runner posts it (round 41, LC2): its slot and extra slots initfilled 0xdeadc0de,
          its params, state 0, its run id, last its cmd word; a job never done leaves that on the
          page, the stop dump and its record (cmd_after its command, as row LC's job 2 on the
-         laptop)
+         laptop). Each record keeps bif {pre, post}, [BIF_INT_STAT, BIF_FAULT] before the command
+         and after the poll as the real runner's (round 42, K5): zeros, or the world's optional
+         bif(index, n, world) ({pre, post}); world bifjob2: a fault after job 1 (0x000d0400,
+         0x0004300f) in every later job's pre and post
   page   the results page, {"page": [1024 dwords]}
   gate   {order, outdir} optional (round 41): the fill and triangle in that order (t30-shaped
          texts; world owngatebad: the fill fails), or the texts the world's optional gate(world,
@@ -57,6 +60,7 @@ TRI_OK = ("tri: render context for targets up to 64x64\njob: ok\n"
           "target: 64x64 hash 0x99385a04ee01c585\ndiff: 0 of 4096 pixels\noutside: 0 dwords\n"
           "tri: 1 renders ok\n")
 KICKS = ("miscinfo",)
+BIF_FAULTED = [0x000D0400, 0x0004300F]    # world bifjob2's words (B11's fill fault, E1172)
 
 
 def fake(name):
@@ -163,9 +167,12 @@ def run(a):
                 p[int(k)] = v
             p[CMD], p[STATE], p[RUNID], p[ECHO] = 0, 2, j.get("runid", i + 1), j.get("runid", i + 1)
             save(p)
+        word = list(BIF_FAULTED) if "bifjob2" in w and i > 0 else [0, 0]
+        bif = (getattr(mod, "bif", None) or (lambda *x: None))(i, j["n"], w) or \
+            {"pre": word, "post": list(word)}
         records.append({"done": done, "ms": 1.0 if done else float(j.get("timeout_ms", 100)),
                         "slot": p[base:base + 4], "echo": p[ECHO], "cmd_after": p[CMD],
-                        "overlap": 0, "job": j, "H": {}, "restored": True})
+                        "overlap": 0, "bif": bif, "job": j, "H": {}, "restored": True})
         if j.get("slots"):          # the real runner's extra result slots, read after the job
             records[-1]["slots"] = {str(x): p[RESULTS + 4 * x:RESULTS + 4 * x + 4]
                                     for x in j["slots"]}

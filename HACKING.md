@@ -464,6 +464,14 @@ second job, and a session's world may give the fake gate's texts by the armed li
 arm)`: fill, tri and the devcoredumps pre and post), so one stage's gate fails and another's
 passes.
 
+Round 42 (N3g §4, K5): every job's record keeps `bif`, `{"pre": [BIF_INT_STAT, BIF_FAULT],
+"post": [...]}`, read from debugfs `regs` right before its command write (the read `ticks`
+takes its first count from) and right after its poll, nothing written; a failed read is kept
+as `{"error": WHY}` and never stops the job. It tells which pass faulted between two jobs; no
+outcome is scored on it. The fake runner records zeros, or a world's `bif(index, n, world)`;
+its world `bifjob2` raises a fault after job 1 (0x000d0400, 0x0004300f) that every later job's
+pre and post read.
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset

@@ -3143,6 +3143,25 @@ def test_the_mock_runs_a_job_list_in_one_run_then_one_page_and_one_gate(repos):
     assert rec[2]["slept"]["ms"] == 2000 and "slept" not in rec[1]
 
 
+def test_the_mock_keeps_each_job_s_bif_words(repos):
+    """K5 (round 42, N3g §4): the fake runner's records carry [BIF_INT_STAT, BIF_FAULT] before
+    each job's command and after its poll, as fwtask_run.py's; zeros in a healthy world. In world
+    bifjob2 a fault raised after job 1 (BIF_INT_STAT 0x000d0400, BIF_FAULT 0x0004300f) shows in
+    every later job's pre and post, never in job 1's."""
+    import gzip
+    import json
+    kp, r = own_session(repos, rows=LIST_ROW, expect={"model": (0, {"s0": 0, "own": 0}),
+                                                      "bifjob2": (0, {"s0": 0, "own": 0})})
+    for world, want in (("model", [[0, 0]] * 3), ("bifjob2", [[0, 0]] + [[0xD0400, 0x4300F]] * 2)):
+        m = kit(kp, r, "mock", "--world", world)
+        assert m.returncode == 0, m.stdout + m.stderr
+        mm = sorted(kp.glob(f"debug/mock.*/{world}"))[-1]
+        rec = json.loads(gzip.decompress((mm / f"out/{world}/own/o1.txt.gz").read_bytes()))[
+            "records"]
+        assert [x["bif"]["pre"] for x in rec] == want, (world, rec)
+        assert [x["bif"]["post"] for x in rec] == want, (world, rec)
+
+
 def test_the_runner_takes_a_list_job_line(tmp_path):
     tsv = OWN_TSV.replace('{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100}',
                           '[{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100}, '

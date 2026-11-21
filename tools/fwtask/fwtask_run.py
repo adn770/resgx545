@@ -335,6 +335,17 @@ def cmd_gate(a):
 
 
 KICKS = ("miscinfo",)       # a job's kick: the one host command read right after its cmd write
+BIF_REGS = (0xc04, 0xc08)   # BIF_INT_STAT, BIF_FAULT: K5's words around each job (round 42)
+
+
+def bif_read():
+    """K5 (round 42, N3g §4): ([BIF_INT_STAT, BIF_FAULT], the HostCtl dwords) of one read of the
+    debugfs regs file, or ({"error": why}, None) when it fails: printed only, never a stop."""
+    try:
+        r, hc = regs()
+    except OSError as e:
+        return {"error": str(e)}, None
+    return [r.get(o) for o in BIF_REGS], hc
 
 
 def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=True, ticks=False,
@@ -343,7 +354,9 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     extra: the other result slots (command numbers) the task fills, initfilled and read too.
     kick "miscinfo" (round 39, N3d K): right after the cmd write, K0 (HostCtl dword 12, cmd and
     the job's slot), then one read of debugfs miscinfo (a GETMISCINFO kick: a non-tick EDM pass,
-    E746), its reply or error kept; the poll and its timeout start after it."""
+    E746), its reply or error kept; the poll and its timeout start after it. K5 (round 42, N3g
+    §4): the record's bif keeps [BIF_INT_STAT, BIF_FAULT] read right before the cmd write (the
+    read ticks takes tk0 from) and right after the poll, {pre, post}; nothing is written."""
     if kick is not None and kick not in KICKS:
         raise ValueError(f"kick {kick!r} is not one of {', '.join(KICKS)}")
     base = RESULTS + 4 * n
@@ -358,7 +371,8 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
         res.w(int(k), v)
     res.w(STATE, 0)
     res.w(RUNID, runid)
-    tk0 = regs()[1].get(12) if ticks else None
+    bif_pre, hc0 = bif_read()
+    tk0 = (hc0 if hc0 is not None else regs()[1]).get(12) if ticks else None
     t0 = time.monotonic()
     res.w(CMD, n)                      # last: the task sees complete parameters
     k0 = kicked = None
@@ -376,8 +390,10 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
             done = True
             break
     ms = (time.monotonic() - t0) * 1000
+    bif_post = bif_read()[0]
     out = {"done": done, "ms": ms, "slot": res.r(base, 4), "echo": res.r(ECHO)[0],
-           "cmd_after": res.r(CMD)[0], "overlap": res.r(OVERLAP)[0]}
+           "cmd_after": res.r(CMD)[0], "overlap": res.r(OVERLAP)[0],
+           "bif": {"pre": bif_pre, "post": bif_post}}
     if extra:
         out["slots"] = {str(s): res.r(RESULTS + 4 * s, 4) for s in extra}
     if kick:

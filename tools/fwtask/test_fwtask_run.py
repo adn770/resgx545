@@ -454,3 +454,76 @@ def test_cmd_gate_passes_the_order_and_outdir(tmp_path, monkeypatch):
     seen.clear()
     FR.cmd_gate({})
     assert seen == {}
+
+
+# ---- round 42 (N3g §4, K5): each job's BIF words before its command and after its poll ----------
+def bif_setup(monkeypatch, calls, words, ticks_from=100):
+    """regs() as the laptop's: BIF_INT_STAT (0x0c04) and BIF_FAULT (0x0c08) from `words` in turn
+    (a raised OSError for an Exception item), HostCtl dword 12 counting."""
+    seq, tick = iter(words), iter(range(ticks_from, 10000, 7))
+
+    def regs():
+        calls.append(("regs",))
+        w = next(seq)
+        if isinstance(w, Exception):
+            raise w
+        return {0xc04: w[0], 0xc08: w[1], 0x118: 0x400}, {12: next(tick)}
+    monkeypatch.setattr(FR, "regs", regs)
+    monkeypatch.setattr(FR.time, "sleep", lambda s: None)
+
+
+class PollRes(KickRes):
+    """KickRes whose task reports done at its first poll (state 2 when the poll reads it)."""
+
+    def r(self, dword, n=1):
+        if dword == FR.STATE and self.page[FR.CMD]:
+            self.page[FR.STATE] = 2
+        return super().r(dword, n)
+
+
+def test_a_job_keeps_the_bif_words_before_its_command_and_after_its_poll(monkeypatch):
+    """K5: one regs() read right before the cmd write (the one ticks takes tk0 from) and one after
+    the poll; the record's bif is {pre, post}, each [BIF_INT_STAT, BIF_FAULT]. Nothing written."""
+    calls = []
+    res = PollRes(calls)
+    bif_setup(monkeypatch, calls, [(0, 0), (0xD0400, 0x4300F), (0xD0400, 0x4300F)])
+    out = FR.one_cmd(res, 1, {}, 1, {}, ticks=True)
+    i_cmd = calls.index(("w", FR.CMD))
+    i_poll = calls.index(("r", FR.STATE, 1))
+    regs_at = [i for i, c in enumerate(calls) if c == ("regs",)]
+    assert regs_at[0] < i_cmd and regs_at[1] > i_poll and len(regs_at) == 3, calls
+    assert out["bif"] == {"pre": [0, 0], "post": [0xD0400, 0x4300F]}
+    assert out["ticks"] == 14                           # tk0 is the pre read's, tk1 the third
+    assert not [c for c in calls if c[0] == "w" and c[1] not in
+                (FR.RESULTS + 4, FR.OVERLAP, FR.STATE, FR.RUNID, FR.CMD)]
+
+
+def test_a_job_without_ticks_keeps_its_bif_words_too(monkeypatch):
+    calls = []
+    res = PollRes(calls)
+    bif_setup(monkeypatch, calls, [(0x10000, 0), (0, 0)])
+    out = FR.one_cmd(res, 1, {}, 1, {})
+    assert out["bif"] == {"pre": [0x10000, 0], "post": [0, 0]} and "ticks" not in out
+    assert calls.count(("regs",)) == 2
+
+
+def test_a_bif_read_that_fails_is_kept_and_the_job_goes_on(monkeypatch):
+    """A dead regs file is itself a reading: kept as an error, never a stop (K5 is printed only)."""
+    calls = []
+    res = PollRes(calls)
+    bif_setup(monkeypatch, calls, [(0, 0), OSError(5, "Input/output error")])
+    out = FR.one_cmd(res, 1, {}, 1, {})
+    assert out["done"] and out["bif"]["pre"] == [0, 0]
+    assert "Input/output error" in out["bif"]["post"]["error"]
+
+
+def test_a_kick_job_keeps_its_bif_words_around_the_kick(monkeypatch):
+    """With a kick the pre read is before the cmd write and the kick, the post after the poll."""
+    calls = []
+    res = KickRes(calls)
+    kick_setup(monkeypatch, calls, res)
+    out = FR.one_cmd(res, 1, {}, 1, {}, ticks=True, kick="miscinfo")
+    assert set(out["bif"]) == {"pre", "post"}
+    i_kick = calls.index(("rd", "miscinfo"))
+    regs_at = [i for i, c in enumerate(calls) if c == ("regs",)]
+    assert regs_at[0] < calls.index(("w", FR.CMD)) and regs_at[2] > i_kick
