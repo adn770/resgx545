@@ -684,13 +684,14 @@ def gen_emitsb_form(name):
 
 
 AFTER_AT, AFTER_MARK, AFTER_CMD = 224, 0x5a5a3306, 6     # N3f's after-read: dwords 224-255, M6
-AFTER_FORMS = ("fw14", "sbc43", "sb403")                # the forms N3f's rows arm (§3.1)
+# the forms N3f's rows arm (§3.1), and sb402 (round 42, N3g §2: row Q)
+AFTER_FORMS = ("fw14", "sbc43", "sb403", "sb402")
 
 
 def after_blob(name):
     """The after-read blob of form= `name`: emitsb14s (fw14) or emitsb_<name>s."""
     if name not in AFTER_FORMS:
-        raise ValueError(f"{name!r} is not one of N3f's forms {', '.join(AFTER_FORMS)}")
+        raise ValueError(f"{name!r} is not one of the after-read forms {', '.join(AFTER_FORMS)}")
     return "emitsb14s" if name == "fw14" else f"emitsb_{name}s"
 
 

@@ -83,6 +83,27 @@
   "source": "emitsb_sb043.s",
   "source_sha256": "c6edb11744a349e7bd9e2cdaf97f5cd6124e8b3db278f746bc0a1039bfb12660"
  },
+ "emitsb_sb400": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "7fc110ade5068833ec3fa36eb88257696881972d35495676548fdf1bc908fbf8",
+  "source": "emitsb_sb400.s",
+  "source_sha256": "6330eee26fe402d98278cafb721d4c8328b93143a465414e96a28ecf1b7bc0f8"
+ },
+ "emitsb_sb402": {
+  "bytes": 1988,
+  "insns": 232,
+  "sha256": "090d50b6648bd6003cd4c21e25276240d469464f98a962e063611528aecd26d2",
+  "source": "emitsb_sb402.s",
+  "source_sha256": "d676aab42471865481213893737e8a2478aa608c36a97f2a1c1da969b2bc30bb"
+ },
+ "emitsb_sb402s": {
+  "bytes": 2660,
+  "insns": 314,
+  "sha256": "3b66cfda6ea082c61da7478f5f67fafd0ec990695b4b1d6084c7215036539ba7",
+  "source": "emitsb_sb402s.s",
+  "source_sha256": "e3400a63eff4cd7ffe83a587aebaae33bb621783078a3c5ad43d0d539c16e78a"
+ },
  "emitsb_sb403": {
   "bytes": 1988,
   "insns": 232,

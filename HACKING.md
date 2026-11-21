@@ -686,6 +686,15 @@ lets a reviewer check that they stay clean-room; each check is a test.
      then M6 0x5a5a3306 and the run id in slot 6, the echo, cmd 0 and state 2, with no emit. The
      module's verifier accepts them unchanged (a scratch KUnit shim run of the fork at
      423b436e7f80 with one more suite on them); the fork's list at the pin does not carry them.
+     Round 42's kernel (N3g §2, the user's decisions A (a), B (a) and F (a)) appends `sb402`
+     (0x402, bit 10 with bits 1:0 = 2) and `sb400` (0x400, the word only, no row) to the list, so
+     no earlier index moves, with their `emitsb_NAME` blobs; `emitsb_sb402s` is the after-read of
+     sb402 (`emitsb_sbc43s` but the word, entry 1 at index 30, U0 0x080401ef). Two images more:
+     `pds=mark` (`asm/fwtask/pds/mark.s`) is crumb3 with markers in its third row, M13
+     0x005d3000 to attribute 13 and M1 0x005d1000 to attribute 1, by two `douta` after crumb3's
+     two (21 dwords); `pds=landv` (`asm/fwtask/pds/landv.s`) is land with crumb3's two `douta` of
+     V0 and V2 to attributes 0 and 2 first, its markers from the third row (18 dwords). Both keep
+     0x01800100, and the kernel fills U0, V0 and V2 in both.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),

@@ -265,7 +265,8 @@ def test_the_crumb3_image_is_crumb_with_a_zero_third_row(tmp_path):
 
 
 def test_each_image_has_its_own_rows_and_control_word():
-    assert gen_verify.PDS_IMAGE_ROWS == {"v1": 2, "crumb": 2, "halt": 2, "crumb3": 3, "land": 3}
+    assert gen_verify.PDS_IMAGE_ROWS == {"v1": 2, "crumb": 2, "halt": 2, "crumb3": 3, "land": 3,
+                                         "mark": 3, "landv": 3}
     for k, rows in gen_verify.PDS_IMAGE_ROWS.items():
         assert sum(1 for _, t in gen_verify.pds_listing(k) if t == "data") == 4 * rows, k
     assert [gen_verify.pds_ctl(k) for k in ("v1", "crumb", "halt")] == [0x01000100] * 3
@@ -276,7 +277,8 @@ def test_the_kernel_header_carries_every_image_with_its_rows_and_control():
     h = gen_verify.render_pds()
     assert "#define SGX_OWN_PDS_ROWS\t2" in h and "#define SGX_OWN_PDS_CTL\t0x01000100" in h
     for k, n, rows, ctl in (("crumb", 15, 2, 0x01000100), ("halt", 9, 2, 0x01000100),
-                            ("crumb3", 19, 3, 0x01800100), ("land", 16, 3, 0x01800100)):
+                            ("crumb3", 19, 3, 0x01800100), ("land", 16, 3, 0x01800100),
+                            ("mark", 21, 3, 0x01800100), ("landv", 18, 3, 0x01800100)):
         u = k.upper()
         assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h, k
         assert f"#define SGX_OWN_PDS_{u}_ROWS\t{rows}" in h, k
@@ -774,13 +776,17 @@ N3E_LIST = [("own", 0x000, 0xFB20B00000008184), ("sb001", 0x001, 0xFB20B00000408
             ("sb840", 0x840, 0xFB20B10800008184), ("sb841", 0x841, 0xFB20B10800408184),
             ("sb842", 0x842, 0xFB20B10800808184), ("fw14", 0x843, 0xFB20B10800C08184),
             ("sbc43", 0xC43, 0xFB20B18800C08184), ("sb403", 0x403, 0xFB20B08000C08184)]
-SB_FORMS = [n for n, _, _ in N3E_LIST if n.startswith("sb")]
+# round 42 (N3g §2 item 1, the user's decisions A (a) and F (a)): sb402 (bit 10 with bits 1:0 = 2,
+# row Q) and sb400 (bit 10 alone: the word only, no row), after N3e's list so no index moves
+N3G_LIST = [("sb402", 0x402, 0xFB20B08000808184), ("sb400", 0x400, 0xFB20B08000008184)]
+EMIT_LIST = N3E_LIST + N3G_LIST
+SB_FORMS = [n for n, _, _ in EMIT_LIST if n.startswith("sb")]
 
 
 def test_the_emit_list_is_the_design_s_18_words_in_its_order():
     """The 16 subsets of 0x843's set bits {0, 1, 6, 11}, then #11's 0xc43 and 0x403; own and fw14
     keep their words (round 33's and round 39's, unchanged)."""
-    assert fwtask.EMIT_FORMS == N3E_LIST
+    assert fwtask.EMIT_FORMS[:18] == N3E_LIST
     subsets = {sum(b for j, b in enumerate((1, 2, 0x40, 0x800)) if k >> j & 1) for k in range(16)}
     assert {s for _, s, _ in N3E_LIST} == subsets | {0xC43, 0x403} and len(N3E_LIST) == 18
     for name, sb, w in N3E_LIST:
@@ -793,18 +799,31 @@ def test_the_emit_list_is_the_design_s_18_words_in_its_order():
     assert dict((n, w) for n, _, w in N3E_LIST)["own"] == 0xFB20B00000008184
 
 
+def test_n3g_adds_sb402_and_sb400_after_n3e_s_list():
+    """sb402 is sb403's word with bit 22 clear (n3e §0's field placement), sb400 with bits 22 and 23
+    clear; both ours but the sideband, appended so every N3e index (the kernel's enum) stays."""
+    assert fwtask.EMIT_FORMS == EMIT_LIST and len(EMIT_LIST) == 20
+    sb403 = dict((n, w) for n, _, w in N3E_LIST)["sb403"]
+    assert dict((n, w) for n, _, w in EMIT_LIST)["sb402"] == sb403 & ~(1 << 22)
+    assert dict((n, w) for n, _, w in EMIT_LIST)["sb400"] == sb403 & ~(3 << 22)
+    for name, sb, w in N3G_LIST:
+        assert fwtask.emit_word(sb) == w and sideband(w) == sb, name
+        (a,) = asm([f"emitpds.tasks.taske #0, r2, r3, r4, #0x{sb:x}"])
+        assert a == w, name
+
+
 def test_every_listed_word_is_an_emitpds_form_row_of_the_listing():
     spec = pathlib.Path(gen_verify.spec_path()).read_text()
     rows = [r for r in fwtask.FORMS if r[1] == "EMITPDS"]
-    assert [(r[0], r[3]) for r in rows] == [(f"emitpds-{n}", w) for n, _, w in N3E_LIST]
+    assert [(r[0], r[3]) for r in rows] == [(f"emitpds-{n}", w) for n, _, w in EMIT_LIST]
     for name, kind, mask, value in rows:
         assert mask == fwtask.ALL and gen_verify.in_spec(spec, mask, value), name
         assert fwtask.classify(value) == ("EMITPDS", name)
 
 
-@pytest.mark.parametrize("name", [n for n, _, _ in N3E_LIST])
+@pytest.mark.parametrize("name", [n for n, _, _ in EMIT_LIST])
 def test_every_listed_word_keeps_every_rule_of_the_owned_form(name):
-    sb = dict((n, s) for n, s, _ in N3E_LIST)[name]
+    sb = dict((n, s) for n, s, _ in EMIT_LIST)[name]
     e = f"emitpds.tasks.taske #0, r2, r3, r4, #0x{sb:x}"
     good = SETUP + [e, "nop.end", "nop.end"]
     assert why_of(good) is None
@@ -820,12 +839,12 @@ def test_the_kernel_header_carries_the_form_list_and_its_names():
     enum = h[h.index("enum sgx_own_form {"):]
     enum = enum[:enum.index("};")]
     assert [ln.strip().rstrip(",") for ln in enum.splitlines()[1:]] == \
-        [f"SGX_OWN_FORM_{n.upper()}" for n, _, _ in N3E_LIST] + ["SGX_OWN_FORM_COUNT"]
+        [f"SGX_OWN_FORM_{n.upper()}" for n, _, _ in EMIT_LIST] + ["SGX_OWN_FORM_COUNT"]
     tab = h[h.index("sgx_own_emit_forms[SGX_OWN_FORM_COUNT]"):]
     tab = tab[:tab.index("};")]
-    for name, sb, w in N3E_LIST:
+    for name, sb, w in EMIT_LIST:
         assert f'\t{{ "{name}", 0x{w:016x}ULL }},\t/* sideband 0x{sb:03x} */' in tab, name
-    assert tab.count("ULL }") == 18
+    assert tab.count("ULL }") == 20
 
 
 # ---- emitsb_<f>: emitsb14d with each listed word (round 40, N3e §3.2) --------------------------
@@ -834,7 +853,7 @@ def test_emitsb_form_is_emitsb14d_with_that_word_and_nothing_else(name):
     """One blob per listed word: emitsb14d (row D0's survey included) with only the emit word
     changed, so every row also reads D0's pre/post landing slots."""
     import gen_blobs
-    sb, w = next((s, x) for n, s, x in N3E_LIST if n == name)
+    sb, w = next((s, x) for n, s, x in EMIT_LIST if n == name)
     d = [ln for ln in gen_blobs.gen_emitsb14d().splitlines() if not ln.startswith(";")]
     f = [ln for ln in gen_blobs.gen_emitsb_form(name).splitlines() if not ln.startswith(";")]
     assert len(d) == len(f)
@@ -890,7 +909,8 @@ def test_the_land_image_is_crumb3_s_layout_with_markers_and_no_tim(tmp_path):
 def test_the_kernel_fills_u0_alone_in_land():
     """The kernel fills U0, V0 and V2 in every image but land, where dwords 4 and 5 are the markers:
     the header says so per image (SGX_OWN_PDS_<K>_FILLV)."""
-    assert gen_verify.PDS_FILLV == {"v1": 1, "crumb": 1, "halt": 1, "crumb3": 1, "land": 0}
+    assert gen_verify.PDS_FILLV == {"v1": 1, "crumb": 1, "halt": 1, "crumb3": 1, "land": 0,
+                                    "mark": 1, "landv": 1}
     h = gen_verify.render_pds()
     for k in ("crumb", "halt", "crumb3"):
         assert f"#define SGX_OWN_PDS_{k.upper()}_FILLV\t1" in h, k
@@ -903,7 +923,8 @@ def test_the_kernel_fills_u0_alone_in_land():
 # the forms N3f's rows arm (N3f §3.1, the user's decision A (a)): fw14 the
 # control (emitsb14s), sbc43 (rows X, LC, T) and sb403 (row Y)
 AFTER_FORMS = [("fw14", "emitsb14s", "emitsb14d"), ("sbc43", "emitsb_sbc43s", "emitsb_sbc43"),
-               ("sb403", "emitsb_sb403s", "emitsb_sb403")]
+               ("sb403", "emitsb_sb403s", "emitsb_sb403"),
+               ("sb402", "emitsb_sb402s", "emitsb_sb402")]       # round 42 (N3g row Q)
 AFTER_AT, M6, SLOT6 = 224, 0x5A5A3306, 0x40 + 4 * 6       # page dwords 224-255; slot 6 = 88-91
 
 
@@ -974,14 +995,109 @@ def test_emitsb_after_keeps_the_base_s_entries_emit_word_and_patches_and_is_acce
     assert blob not in gen_verify.OK_BLOBS
 
 
-def test_emitsb_after_takes_only_the_design_s_three_forms():
+def test_emitsb_after_takes_only_the_design_s_four_forms():
     import gen_blobs
-    assert gen_blobs.AFTER_FORMS == ("fw14", "sbc43", "sb403")
+    assert gen_blobs.AFTER_FORMS == ("fw14", "sbc43", "sb403", "sb402")
     assert gen_blobs.after_blob("fw14") == "emitsb14s"
     assert gen_blobs.after_blob("sbc43") == "emitsb_sbc43s"
-    for bad in ("own", "sb001", "sb402", "sbc4"):
+    assert gen_blobs.after_blob("sb402") == "emitsb_sb402s"
+    for bad in ("own", "sb001", "sb400", "sbc4"):
         with pytest.raises(ValueError):
             gen_blobs.gen_emitsb_after(bad)
     srcs = gen_blobs.all_sources()
     assert {n for n in srcs if n.endswith("s") and n.startswith("emitsb")} >= \
-        {"emitsb14s", "emitsb_sbc43s", "emitsb_sb403s"}
+        {"emitsb14s", "emitsb_sbc43s", "emitsb_sb403s", "emitsb_sb402s"}
+
+
+# ---- round 42 (N3g §2): emitsb_sb402s, and the images mark and landv ------------------------------
+def test_emitsb_sb402s_is_emitsb_sbc43s_but_the_word():
+    """Row Q's blob (N3g §2): emitsb_sbc43s (X's) with the emit word of sideband 0x402 and nothing
+    else: every other code line, the entries, the patches; entry 1 at index 30, so the kernel's U0
+    is 0x080401ef as every after-read blob's (H1-H4, LC2) and the firmware-page write is crumb3's."""
+    import gen_blobs
+    q = _code(gen_blobs.gen_emitsb_after("sb402"))
+    x = _code(gen_blobs.gen_emitsb_after("sbc43"))
+    assert len(q) == len(x)
+    assert [(a, b) for a, b in zip(x, q) if a != b] == [
+        ("emitpds.tasks.taske #0, r2, r3, r4, #0xc43", "emitpds.tasks.taske #0, r2, r3, r4, #0x402")]
+    bq = fwtask.parse_blob(fwtask.blob_of("emitsb_sb402s"))
+    bx = fwtask.parse_blob(fwtask.blob_of("emitsb_sbc43s"))
+    assert bq.entries == bx.entries and bq.patches == bx.patches
+    assert [w for w in bq.words if fwtask.classify(w)[0] == "EMITPDS"] == [0xFB20B08000808184]
+    assert [w for w in bq.words if fwtask.classify(w)[0] != "EMITPDS"] == \
+        [w for w in bx.words if fwtask.classify(w)[0] != "EMITPDS"]
+    e1 = bq.entries[1]
+    assert e1 == 30 and (8 << 24 | (0x4000 + e1) << 4 | 0xF) == 0x080401EF
+
+
+R41_AFTER_SHA = {  # round 41's map (main cfd5d523): rows C and S arm emitsb14s, M and LV emitsb_sbc43s
+    "emitsb14s": "c3f9ce90c2ea24208d6b8bcafef3a1f77e105c03bc8c51b4bee5fbcd04e7fb39",
+    "emitsb14d": "52c6c8a23db4540d338799ac2b73438f5a0b92dbc68a2b51e8fb0119990867d1",
+    "emitsb_sbc43s": "987b0e4e1dc0ba9ec6e2583bb0edd77afef230d7121070daa18a8171dd4a86ad",
+    "emitsb_sbc43": "211bb43872a3d6c0c36b0c40baa711fe8f31a1422a13c9f4ec9f3e8e6f5893bf",
+}
+
+
+def test_fw14_s_and_sbc43_s_words_and_blobs_are_unchanged_by_round_42():
+    """N3g adds words after the list and one after-read blob: fw14's and sbc43's words, their
+    after-read blobs (rows C, S, M and LV arm them) and their map entries stay round 41's."""
+    import json
+    w = dict((n, x) for n, _, x in fwtask.EMIT_FORMS)
+    assert w["fw14"] == 0xFB20B10800C08184 and w["sbc43"] == 0xFB20B18800C08184
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    for name, sha in R41_AFTER_SHA.items():
+        assert m[name]["sha256"] == sha, name
+
+
+MARK_DATA = [0, 0, 0, 0, 0, 0, 0x200, 0x005A3305, 0x005D3000, 0x005D1000, 0x00000D00, 0x00000100]
+LANDV_DATA = [0, 0, 0, 0, 0, 0, 0x200, 0x1800, 0x5A5A3A18, 0x5A5A3A1A, 0x1A00, 0]
+
+
+def test_the_mark_image_is_crumb3_with_two_markers_in_its_third_row(tmp_path):
+    """N3g §2 item 2, decision B (a): crumb3's 8 data dwords; its third row M13 0x005d3000 (ds0[4]),
+    M1 0x005d1000 (ds0[5]) and their douta controls, attribute 13 (ds1[4]) and 1 (ds1[5]); crumb3's
+    T1 and two douta, then the two marker douta, then crumb3's T2, doutu, T3 and halt: 21 dwords."""
+    img = gen_verify.pds_image("mark")
+    c3 = gen_verify.pds_image("crumb3")
+    assert img[:12] == MARK_DATA and img[:8] == c3[:8] and len(img) == 21
+    assert img[12:15] == c3[12:15] and img[17:] == c3[15:]
+    assert img[10] >> 8 & 0xFFF == 13 and img[11] >> 8 & 0xFFF == 1
+    d = dis_n(tmp_path, img, 12)
+    assert d == ["data"] * 12 + dis_n(tmp_path, c3, 12)[12:15] + [
+        "movs douta, ds0[4], ds1[4], ds0[4], ds0[4]",
+        "movs douta, ds0[5], ds1[5], ds0[5], ds0[5]"] + dis_n(tmp_path, c3, 12)[15:]
+    assert gen_verify.PDS_IMAGE_ROWS["mark"] == 3 and gen_verify.pds_ctl("mark") == 0x01800100
+    assert gen_verify.PDS_FILLV["mark"] == 1
+    # the markers name pages below 0x10000000, none of round 41's kept words (n3g §2 item 2)
+    assert all(x < 0x10000000 for x in img[8:10])
+
+
+def test_the_landv_image_is_land_with_v0_and_v2_to_attributes_0_and_2(tmp_path):
+    """N3g §2 item 3: dwords 0-3 U0, U1, U2, the douta control of attribute 0; 4-7 V0, V2 (the
+    kernel's), attribute 2's control, attribute 24's; 8-11 Ma, Mb, attribute 26's, 0. Program:
+    crumb3's two douta (V0, V2), douta Ma (ds0[4], ds1[3]) and Mb (ds0[5], ds1[4]), land's doutu
+    and halt; no tim. 18 dwords, the kernel fills U0, V0 and V2."""
+    img = gen_verify.pds_image("landv")
+    c3, land = gen_verify.pds_image("crumb3"), gen_verify.pds_image("land")
+    assert img[:12] == LANDV_DATA and len(img) == 18
+    assert [img[3] >> 8 & 0xFFF, img[6] >> 8 & 0xFFF, img[7] >> 8 & 0xFFF,
+            img[10] >> 8 & 0xFFF] == [0, 2, 24, 26]
+    assert img[12:14] == c3[13:15] and img[16:] == land[14:]
+    assert dis_n(tmp_path, img, 12) == ["data"] * 12 + [
+        "movs douta, ds0[2], ds1[1], ds0[2], ds0[2]",
+        "movs douta, ds0[3], ds1[2], ds0[3], ds0[3]",
+        "movs douta, ds0[4], ds1[3], ds0[4], ds0[4]",
+        "movs douta, ds0[5], ds1[4], ds0[5], ds0[5]",
+        "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]",
+        "halt"]
+    assert not [w for w in img[12:] if w in (0x07001FE7, 0x07003547, 0x07003FE7)]
+    assert gen_verify.PDS_IMAGE_ROWS["landv"] == 3 and gen_verify.pds_ctl("landv") == 0x01800100
+    assert gen_verify.PDS_FILLV["landv"] == 1
+
+
+def test_the_kernel_header_carries_mark_and_landv():
+    h = gen_verify.render_pds()
+    for k, n in (("mark", 21), ("landv", 18)):
+        u = k.upper()
+        assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h and f"#define SGX_OWN_PDS_{u}_FILLV\t1" in h
+        assert f"asm/fwtask/pds/{k}.s" in h

@@ -58,14 +58,16 @@ EMIT_ENTRY = 1              # the blob's entry the kernel's PDS image starts (it
 # of these 14-bit sidebands, every other field ours; own_arm's form= names them (own the default).
 # Round 33 (N3): own, 0; round 39 (N3d row Z): fw14, #14's 0x0843 (N3d O1); round 40 (N3e §3.2,
 # the user's decision A (a)): the 16 subsets of 0x843's set bits {0, 1, 6, 11} plus #11's 0x0c43
-# and 0x403 (bit 10 without 6 and 11), in the design's order. The kernel arms a blob only with the
-# form= that names its word (sgx_own_regs.h's sgx_own_emit_forms, generated from this list).
+# and 0x403 (bit 10 without 6 and 11), in the design's order; round 42 (N3g §2 item 1, the user's
+# decisions A (a) and F (a)): 0x402 (bit 10 with bits 1:0 = 2, row Q) and 0x400 (bit 10 alone, the
+# word only), appended so no earlier index moves. The kernel arms a blob only with the form= that
+# names its word (sgx_own_regs.h's sgx_own_emit_forms, generated from this list).
 EMIT_BASE = 0xFB20B00000008184
 EMIT_SIDEBANDS = (("own", 0x000), ("sb001", 0x001), ("sb002", 0x002), ("sb003", 0x003),
                   ("sb040", 0x040), ("sb041", 0x041), ("sb042", 0x042), ("sb043", 0x043),
                   ("sb800", 0x800), ("sb801", 0x801), ("sb802", 0x802), ("sb803", 0x803),
                   ("sb840", 0x840), ("sb841", 0x841), ("sb842", 0x842), ("fw14", 0x843),
-                  ("sbc43", 0xC43), ("sb403", 0x403))
+                  ("sbc43", 0xC43), ("sb403", 0x403), ("sb402", 0x402), ("sb400", 0x400))
 
 
 def emit_word(sideband: int) -> int:
