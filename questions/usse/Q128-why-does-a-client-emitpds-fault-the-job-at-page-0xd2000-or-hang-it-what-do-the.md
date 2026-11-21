@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178"]
 terms = []
 +++
 
@@ -194,3 +194,14 @@ design slip of the scorer; its printed readings fit the predicted early stop (sa
 0x0104b95b, BIF_FAULT 0x0000000f, the tick stopped). Still open: where sa1 and sa3-sa10 come from;
 whether the rewrite heals without a reset; whether the timer matters; what bits 6, 10 and 11 mean;
 the parts above. Not retired.
+
+Row LC rerun, 2026-11-21 (E1178, r41-n3f-lc2, flagged, the same module, no rebuild or boot): H3's
+row with control E0 read in job 1's record read 'Q128-N3F-LC RULE: LC-EARLY', as predicted. With
+land (no V0 or V2, the timer running) and 0xc43 the EDM stopped after job 1, BIF_FAULT 0x0000000f
+(list 15, page 0), the tick stopped and job 2 was never served [HW], so whether bit 10's rewrite
+heals on later stock passes is not readable with land, and LC-FILL, LC-FILLOK and LC-HEAL could not
+tell. The printed post words repeat H3's pattern (sa12-sa27 = the started entry's pa0-pa15, sa13 =
+pa1 = 0x00043000, sa0 0, sa1 0x04400000, sa2 0x01030b00, not H3's 0x0104b95b); that the copy came
+before the stop and that sa13's word is this run's pa1 are inferred, since the started entry's pa
+can hold words of earlier rows (E1177). Still open: as above, and which pointer faults at page 0
+with land. Not retired.

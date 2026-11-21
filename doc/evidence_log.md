@@ -10094,6 +10094,19 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *edm; HW, infer; data: `render-closing-r41-n3f-h4:out/20261120-161718/t/`,
   `render-closing-r41-n3f-h4:fold/`.*
 
+### 2026-11-21
+
+- `E1178` r41-n3f-lc2 stage lc (row LC rerun with control E0 read in job 1's record, module
+  83FBFD86, fork 423b436e7f80, emitsb_sbc43s, image land at fw14, form=sbc43, sideband 0xc43, s2 0,
+  flagged, user present): job 1 done, then BIF_FAULT 0x0000000f (list 15, page 0) in snap9, the tick
+  stopped and job 2 (command 6) was never served; the runner stopped (class hang, rc 4) and the
+  kit's reset recovered it; 'Q128-N3F-LC RULE: LC-EARLY', the prediction held, PG, E0, T0 and J1
+  passed, B read by LC-EARLY; LC-FILL, LC-FILLOK and LC-HEAL cannot tell, LC-REBASE not reached; the
+  printed survey reads post sa0 0, sa1 0x04400000, sa2 0x01030b00, sa12-sa27 = pa0-pa15; that the
+  copy came before the stop is inferred.
+  *edm; HW, infer; data: `render-closing-r41-n3f-lc2:out/20261121-073816/lc/`,
+  `render-closing-r41-n3f-lc2:fold/`.*
+
 ## By unit
 
 ### bif
@@ -10121,7 +10134,7 @@ E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E7
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
 E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161, E1162, E1163, E1164, E1165, E1166,
-E1167, E1168, E1169, E1170, E1171, E1172, E1173, E1174, E1175, E1176, E1177.
+E1167, E1168, E1169, E1170, E1171, E1172, E1173, E1174, E1175, E1176, E1177, E1178.
 
 ### firmware
 

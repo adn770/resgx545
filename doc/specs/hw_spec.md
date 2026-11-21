@@ -1056,7 +1056,8 @@ of `sa3`-`sa10` change and `sa0` and `sa2` stay; with 0x843 nothing changes. `sa
 list (CID 15) at that page, BIF_FAULT 0x0004300f (E1172, E1174, E1175, E1177); the triangle does
 not fault at the render queue's head `sa15`. That `sa13` is used as a page base is inferred.
 With the land image, which writes no V0 or V2, the EDM stopped after the emit with BIF_FAULT
-0x0000000f (E1176, CANNOT TELL by a control's design slip). A
+0x0000000f (E1176, CANNOT TELL by a control's design slip; its rerun, E1178, read that early stop as
+predicted). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

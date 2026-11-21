@@ -46,3 +46,11 @@ stale sa0 or sa2 was the faulting pointer is not read.
 
 **What it does not show.** Whether the rewrite heals on later stock passes (no after-read ran);
 whether the fill fails with the timer running; why sa0 became 0 and sa2 0x0104b95b.
+
+**Correction 2026-11-21:** Row LC now has a scored outcome: its rerun r41-n3f-lc2 (E1178), the same
+blob, image, arm, jobs and predictions with control E0 read in job 1's record, read 'Q128-N3F-LC
+RULE: LC-EARLY', the prediction held (PG, E0, T0 and J1 passed; B read by LC-EARLY): job 1 done,
+then BIF_FAULT 0x0000000f, the tick stopped and job 2 was never served, as here [HW]. This record's
+kept stage rescored with that scorer reads E0 PASS and LC-EARLY too, for information only
+(closing29/r41-lc2-logs/rescore-h3-under-lc2.txt). This record's frozen verdict, CANNOT TELL, and
+its readings stand; the rerun read post sa2 0x01030b00 where this one read 0x0104b95b.
