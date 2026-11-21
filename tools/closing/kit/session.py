@@ -162,11 +162,16 @@ OWNTASK_KEYS = ("blob", "arm")
 # pds2=req sets the emit's s2 to the request #14 emits with, none 0, and form=fw14 arms a blob
 # whose emit is the word with #14's sideband, none our own word (round 39, N3d row Z); round 40
 # (N3e §3.2): form= names any word of the kernel's list (tools/fwtask/fwtask.py EMIT_SIDEBANDS,
-# own the default, never spelled) and pds=land the image of two douta markers to sa24 and sa26
+# own the default, never spelled) and pds=land the image of two douta markers to sa24 and sa26;
+# round 42 (N3g §2): form=sb402 and sb400 (the list's two new words), pds=mark (crumb3 with
+# markers to attributes 13 and 1) and pds=landv (land with V0 and V2 to attributes 0 and 2)
 OWNTASK_FORMS = ("sb001", "sb002", "sb003", "sb040", "sb041", "sb042", "sb043", "sb800", "sb801",
-                 "sb802", "sb803", "sb840", "sb841", "sb842", "fw14", "sbc43", "sb403")
+                 "sb802", "sb803", "sb840", "sb841", "sb842", "fw14", "sbc43", "sb403", "sb402",
+                 "sb400")
+OWNTASK_IMAGES = ("crumb", "halt", "crumb3", "land", "mark", "landv")
 OWNTASK_ARM = re.compile(r"slots=0x([0-9a-f]{1,2}) entry=([0-9]{1,2}(?:,[0-9]{1,2})*)"
-                         r"(?: trc=([0-9]{1,2}))?(?: pds=(crumb|halt|crumb3|land))?(?: pdsat=(fw14))?"
+                         r"(?: trc=([0-9]{1,2}))?(?: pds=(" + "|".join(OWNTASK_IMAGES) + r"))?"
+                         r"(?: pdsat=(fw14))?"
                          r"(?: pds2=(req))?(?: form=(" + "|".join(OWNTASK_FORMS) + r"))?")
 OWNTASK_TRC_MAX = 31
 # ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window;
@@ -684,7 +689,7 @@ def owntask_arm_problem(arm):
     m = OWNTASK_ARM.fullmatch(arm) if isinstance(arm, str) else None
     if m is None:
         return (f"arm {arm!r} is not `slots=0xMASK entry=E[,E...]` with an optional `trc=T` "
-                "and optional `pds=crumb|halt|crumb3|land`, `pdsat=fw14`, `pds2=req` and "
+                f"and optional `pds={'|'.join(OWNTASK_IMAGES)}`, `pdsat=fw14`, `pds2=req` and "
                 f"`form={'|'.join(OWNTASK_FORMS)}`, "
                 "in that order "
                 "(lower-case hex mask, decimal entries)")

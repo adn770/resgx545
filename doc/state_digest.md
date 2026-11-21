@@ -588,6 +588,8 @@ stays with what a session must do around it.
 - own_arm's words arm only with the module that knows them. The laptop's module 83FBFD86
   (fork branch `r40-kernel`, 423b436e7f80, booted 2026-11-19) takes every image (`crumb`, `halt`,
   `crumb3`, `land`), `pdsat=fw14`, `pds2=` and every `form=` name a session has used up to round 41.
+  Round 42's words (`pds=mark`, `pds=landv`, `form=sb402`, `form=sb400`) need the fork branch
+  `r42-kernel`'s module, which a session of that round pins once it is built and booted.
   The older modules (r37-kernel, r38-kernel 88ADCEB5, r39-kernel 0CDFCDB7, kept on the laptop as
   `.0CDFCDB7`) refuse the words added after them, so a session pins its module's srcversion and the
   preflight refuses any other. A new word needs a fork commit, a cachix build and a one-shot boot.
