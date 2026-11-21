@@ -3236,3 +3236,41 @@ def test_a_mock_world_shapes_the_gate_by_the_armed_line(repos):
     assert b"BIF_FAULT: 0x0004300f" in gzip.decompress((kept / "o1.devcd.txt.gz").read_bytes())
     assert b"job: faulted" in gzip.decompress((kept / "o1.gate-fill.txt.gz").read_bytes())
     assert gzip.decompress((kept / "o1.devcd-pre.txt.gz").read_bytes()) == b"devcd: none pending\n"
+
+
+# ---- round 41 (LC2): the fake posts each job as the real runner does before it polls ------------
+def fake_fw(tmp_path, world, sub, arg):
+    import json
+    env = dict(os.environ, FAKE_DIR=str(tmp_path), FAKE_WORLD=world, PYTHONDONTWRITEBYTECODE="1")
+    env.pop("KIT_WORLD", None)
+    r = subprocess.run([sys.executable, str(KIT / "fake/fwtask.py"), sub, json.dumps(arg)],
+                       capture_output=True, text=True, env=env)
+    return r.returncode, json.loads(r.stdout) if r.stdout.strip() else None
+
+
+def test_a_job_never_done_leaves_its_posted_command_on_the_fake_page(tmp_path):
+    """fwtask_run.py's one_cmd initfills the job's slot and its extra slots, writes its params,
+    state 0, its run id and last the cmd word, then polls: a job that never reports done leaves
+    that posted state on the page, the stop dump and its record (row LC, r41-n3f-h3: job 2's cmd
+    word 6 stood on the page after the stop). The job before it keeps its own record: its slot and
+    cmd word as they stood when it ended, before the next job was posted."""
+    import json
+    blob = tmp_path / "x.blob"
+    blob.write_bytes(b"\0")
+    assert fake_fw(tmp_path, "ownstop2", "arm", {"blob": str(blob), "arm": "slots=0x1"})[0] == 0
+    rc, out = fake_fw(tmp_path, "ownstop2", "run", {
+        "name": "o1", "outdir": str(tmp_path / "out"),
+        "jobs": [{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100},
+                 {"n": 6, "params": {"224": [1, 2]}, "runid": 2, "timeout_ms": 100,
+                  "slots": [40]}]})
+    assert rc == 1 and out["stop"].startswith("no done"), out
+    r1, r2 = out["records"]
+    assert r1["done"] is True and r1["cmd_after"] == 0 and r1["slot"] == [0xdeadc0de] * 4
+    assert r2["done"] is False and r2["cmd_after"] == 6
+    assert r2["slot"] == [0xdeadc0de] * 4     # slot 40 is dwords 224-227: initfilled, then params
+    assert r2["slots"]["40"] == [1, 2, 0xdeadc0de, 0xdeadc0de]
+    for p in (fake_fw(tmp_path, "ownstop2", "page", {})[1]["page"],
+              json.loads((tmp_path / "out/stop1-own_res.json").read_text())):
+        assert p[1:4] == [6, 0, 2], p[:8]
+        assert p[0x40 + 4 * 6:0x40 + 4 * 7] == [0xdeadc0de] * 4
+        assert p[224:226] == [1, 2]
