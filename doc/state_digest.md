@@ -585,18 +585,12 @@ stays with what a session must do around it.
   only for r30-pde's VA windows (code 0 [0, 16K) and [4M - 8K, 4M); codes 1-4 [S - 8K, S + 8K)
   and [2S - 8K, 2S + 8K); code 5 [4M - 16K, 4M); codes 6 and 7 [16K, 32K), read only): a row
   outside them changes that test first.
-- `pds=crumb` arms only with the fork's branch `r37-kernel` (own_arm's image choice); the
-  module C01FB320 (r33-kernel) refuses the word, and arms `emitsb` with the v1 image.
-- `pds=halt`, `pds=crumb3` and `pdsat=fw14` arm only with the fork's branch `r38-kernel`
-  (e1cf9d2b43ab, not built nor booted yet); the module of r37-kernel refuses them.
-- `pds=land` and every `form=` name but `fw14` arm only with the fork's branch `r40-kernel` (round
-  40, not built nor booted yet); the module of r39-kernel (0CDFCDB7) refuses them.
-- an own task's `emitpds` runs only with the fork's branch `r33-kernel` (the verifier's one form,
-  the kernel's PDS image, `XB_OWNPDS` at KERNEL_CODE + 0x22000), not landed nor booted yet; with
-  the module the laptop runs now (7CE8E38E) `own_code` refuses `emitsa` as an unknown form. The
-  kit has no own-task job kind: a session runs `emitsa` through `tools/fwtask/fwtask_run.py`
-  (`arm` with `slots=0x1 entry=0`, then `run` jobs of `n` 1 with `slots` [2, 3, 4], the reader's
-  `pa0`-`pa3`, `sa0`-`sa3` and its marker), as phases 11.29 to 11.33 ran own tasks.
+- own_arm's words arm only with the module that knows them. The laptop's module 83FBFD86
+  (fork branch `r40-kernel`, 423b436e7f80, booted 2026-11-19) takes every image (`crumb`, `halt`,
+  `crumb3`, `land`), `pdsat=fw14`, `pds2=` and every `form=` name a session has used up to round 41.
+  The older modules (r37-kernel, r38-kernel 88ADCEB5, r39-kernel 0CDFCDB7, kept on the laptop as
+  `.0CDFCDB7`) refuse the words added after them, so a session pins its module's srcversion and the
+  preflight refuses any other. A new word needs a fork commit, a cachix build and a one-shot boot.
 
 ## Simulator coverage baseline
 
