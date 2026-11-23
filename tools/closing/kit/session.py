@@ -201,7 +201,17 @@ ON_GATE_FAIL = ("stop", "score")
 # a fault or a failed gate always draws both. own_gate = "none": no gate after an ok row. A
 # stage that is not its session's first may leave its begin draws out; the driver runs it only
 # right after the stage before it
-OWNTASK_DRAWS = ("fill,tri", "fill", "tri", "none")
+OWNTASK_DRAWS = ("fill,tri", "fill", "tri", "none")      # the default first; a list (K8) too
+DRAW_ITEMS = ("fill", "tri")
+MAX_DRAWS = 3
+
+
+def draws_ok(v):
+    """K8 (round 44): "none", or a comma list of 1 to 3 items from fill and tri, in order."""
+    if v == "none":
+        return True
+    items = v.split(",") if isinstance(v, str) else []
+    return 1 <= len(items) <= MAX_DRAWS and all(i in DRAW_ITEMS for i in items)
 DRAW_KEYS = ("begin_draws", "end_draws")
 OWN_GATES = ("none",)
 # the results page (tools/fwtask/layout.py): 1024 dwords, 0-5 the protocol's (magic, cmd, state,
@@ -869,9 +879,10 @@ def owntask_problems(kp, c=None):
                 bad.append(f"{where}: on_gate_fail = \"score\" on a stage that is not the last "
                            "(the gate's failure ends the session)")
             for k in DRAW_KEYS:
-                if gk.get(k, OWNTASK_DRAWS[0]) not in OWNTASK_DRAWS:
-                    bad.append(f"{where}: {k} {gk[k]!r} is not one of "
-                               f"{', '.join(OWNTASK_DRAWS)}")
+                if not draws_ok(gk.get(k, OWNTASK_DRAWS[0])):
+                    bad.append(f"{where}: {k} {gk[k]!r} is not none or a comma list of 1 to "
+                               f"{MAX_DRAWS} of {', '.join(DRAW_ITEMS)} (no empty item, no none "
+                               "inside a list)")
             if gk.get("begin_draws", OWNTASK_DRAWS[0]) != OWNTASK_DRAWS[0] and \
                     st == stages(c)[0]:
                 bad.append(f"{where}: begin_draws {gk['begin_draws']!r} on the session's first "

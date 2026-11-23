@@ -492,6 +492,15 @@ line of run/owntask.tsv and the arm line's gate column `none`; the health marks 
 and the driver refuses (status 46) to start an attempt at a stage that declares one: it runs only
 right after the stage before it. The fake runner answers `reghealth` (world `regbad`: not ok).
 
+Round 44 (K8): `begin_draws` and `end_draws` also take a comma list of 1 to 3 items from `fill`
+and `tri`, run in order (`"fill,fill"`, `"tri,fill"`, `"fill,tri,fill"`), or `"none"`. The default
+`"fill,tri"` keeps today's `health` path (retries after a reset); any other list runs once through
+`health_ok`, and one draw that is not exact is the failed boundary above (reset, both draws, rc
+16). An explicit list keeps each draw's output under its own name, `NAME.fill<HN>.<i>` (fill) and
+`NAME.health<HN>.<i>` (triangle); the default keeps `NAME.fill<HN>` and `NAME.health<HN>`. The
+health mark names the list (`health NAME try N fill,fill`). Lint and `run_stage.sh` refuse an empty
+item, a word other than `fill` and `tri`, more than 3 items and `none` inside a list (exit 7).
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset

@@ -3463,7 +3463,7 @@ def test_draw_keys_reach_the_runner_s_table(repos):
 
 @pytest.mark.parametrize("keys1,keys2,first,word", [
     ('begin_draws = "all", ', "", False, "begin_draws"),
-    ('end_draws = "tri,fill", ', "", False, "end_draws"),
+    ('end_draws = "fill,none", ', "", False, "end_draws"),      # tri,fill is a K8 list
     ('own_gate = "tri", ', "", False, "own_gate"),
     ('own_gate = "none", gate_order = "tri,fill", ', "", False, "own_gate"),
     ('own_gate = "none", on_gate_fail = "score", ', "", False, "own_gate"),
@@ -3600,6 +3600,122 @@ def test_the_driver_refuses_to_start_at_a_stage_that_skips_its_begin_draws(repos
         assert rc == 46 and rcs == {}, (rc, said)
         assert any("own2" in x and "begin_draws" in x for x in said), said
         rc, rcs = S.run(kp, att="a2", only=["own2"], say=said.append)
+        assert rc == 46 and rcs == {}
+    finally:
+        S.ENV = None
+
+
+# ---- round 44 (N3i §2, K8): draw lists ------------------------------------------------------------
+DRAW_WORLD = ("def answer(tool, argv, world):\n"
+              "    if argv in (['fill'], ['tri']) and 'health-bad' not in world:\n"
+              "        n = 2048 if argv == ['fill'] else 4096\n"
+              "        return {'out': 'diff: 0 of %d pixels\\n' % n, 'kmsg': ['DRAW ' + argv[0]]}\n"
+              "    return answer0(tool, argv, world)\n\n\n"
+              "def answer0(tool, argv, world):\n")
+
+
+def draw_log(mm):
+    """The kernel log's health marks and the draws between them, in order."""
+    return re.findall(r"health (\S+) try \d+ (\S+) |DRAW (fill|tri)", (mm / "kmsg").read_text())
+
+
+def k8_mock(repos, keys2, world="model", keys1='end_draws = "none", ', expect=None):
+    kp, r = k7_session(repos, keys1=keys1, keys2=keys2, expect=expect)
+    w = (kp / "mock/world.py").read_text()
+    (kp / "mock/world.py").write_text(w.replace("def answer(tool, argv, world):\n", DRAW_WORLD, 1))
+    m = kit(kp, r, "mock", "--world", world)
+    assert m.returncode == 0, m.stdout + m.stderr
+    return kp, next(kp.glob(f"debug/mock.*/{world}"))
+
+
+@pytest.mark.parametrize("draws,order", [("fill,fill", ["fill", "fill"]),
+                                         ("tri,fill", ["tri", "fill"]),
+                                         ("fill,tri,fill", ["fill", "tri", "fill"])])
+def test_a_draw_list_runs_its_draws_in_order_under_distinct_names(repos, draws, order):
+    """K8: begin_draws as a list runs once through health_ok, in order; the mark names the list;
+    each draw's output is kept under its own name NAME.fill<HN>.<i> or NAME.health<HN>.<i>."""
+    kp, mm = k8_mock(repos, f'begin_draws = "{draws}", ')
+    seq = [(a, b, c) for a, b, c in draw_log(mm)]
+    i = seq.index(("begin", draws, ""), 3)
+    assert [c for _, _, c in seq[i + 1:i + 1 + len(order)]] == order, seq
+    kept = sorted(p.name for p in (mm / "out/model/own2").iterdir()
+                  if p.name.startswith(("begin.fill", "begin.health")))
+    want = sorted(f"begin.{'fill' if d == 'fill' else 'health'}1.{n}.txt.gz"
+                  for n, d in enumerate(order, 1))
+    assert kept == want, (kept, want)
+
+
+def test_the_default_list_keeps_its_retry_and_names(repos):
+    kp, mm = k8_mock(repos, 'begin_draws = "fill,tri", ')
+    kept = sorted(p.name for p in (mm / "out/model/own2").iterdir() if p.name.startswith("begin."))
+    assert "begin.fill1.txt.gz" in kept and "begin.health1.txt.gz" in kept, kept
+
+
+def test_a_failed_second_draw_recovers_with_both_draws_and_stops(repos):
+    """K8: a list that does not draw exactly resets, draws both (the recovery) and stops (rc 16),
+    as K7's one-draw forms do. World healthbad2: the second draw of the list fails."""
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2='begin_draws = "fill,fill", ',
+                       expect={"fill2bad": (16, {"s0": 0, "own": 0, "own2": 16})})
+    w = (kp / "mock/world.py").read_text()
+    bad = ("def answer(tool, argv, world):\n"
+           "    import os\n"
+           "    f = os.path.join(os.environ['FAKE_DIR'], 'lastdraw')\n"
+           "    last = open(f).read() if os.path.exists(f) else ''\n"
+           "    if argv in (['fill'], ['tri']):\n"
+           "        open(f, 'w').write(argv[0])\n"
+           "        if argv == ['fill'] and last == 'fill' and 'fill2bad' in world:\n"
+           "            open(f, 'w').write('failed')\n"
+           "            return {'out': 'FAIL fill\\n', 'rc': 1, 'kmsg': ['DRAW fill']}\n"
+           "        n = 2048 if argv == ['fill'] else 4096\n"
+           "        return {'out': 'diff: 0 of %d pixels\\n' % n, 'kmsg': ['DRAW ' + argv[0]]}\n"
+           "    return answer0(tool, argv, world)\n\n\n"
+           "def answer0(tool, argv, world):\n")
+    (kp / "mock/world.py").write_text(w.replace("def answer(tool, argv, world):\n", bad, 1))
+    m = kit(kp, r, "mock", "--world", "fill2bad")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/fill2bad"))
+    seq = [c for _, _, c in draw_log(mm) if c]
+    marks = [(a, b) for a, b, c in draw_log(mm) if a]
+    assert marks[-2:] == [("begin", "fill,fill"), ("begin", "fill,tri")], marks
+    assert seq[-4:] == ["fill", "fill", "fill", "tri"], seq
+    w = (mm / "out/fill2bad/own2/runner.log").read_text()
+    assert "## STOP: the fill,fill draw at begin failed" in w, w
+
+
+@pytest.mark.parametrize("val", ["", "fill,", ",fill", "fill,,tri", "fill,x", "fill,fill,fill,fill",
+                                 "none,fill", "fill,none", "fill, tri", "tri,tri,tri,tri"])
+def test_lint_and_the_runner_refuse_a_bad_draw_list(repos, tmp_path, val):
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2=f'begin_draws = "{val}", ')
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "begin_draws" in li.stdout, li.stdout
+    if val:           # an empty column is the default to the runner; lint is what refuses it
+        rr = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV + f"draws\town\t{val}\tnone\n")
+        assert rr.returncode == 7 and "draws" in rr.stdout, (rr.returncode, rr.stdout)
+
+
+@pytest.mark.parametrize("val", ["fill,fill", "tri,fill", "fill,tri,fill", "tri,tri"])
+def test_lint_takes_a_draw_list_and_the_runner_tsv_carries_it(repos, tmp_path, val):
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2=f'begin_draws = "{val}", ')
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    draws = {ln.split("\t")[1]: ln.split("\t")[2:] for ln in own_tsv(kp, r).splitlines()
+             if ln.startswith("draws\t")}
+    assert draws["own2"] == [val, "fill,tri"], draws
+    rr = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV + f"draws\town\t{val}\tnone\n")
+    assert rr.returncode == 1 and "is not the frozen one" in rr.stdout, (rr.returncode, rr.stdout)
+
+
+def test_a_draw_list_on_a_first_stage_is_refused(repos):
+    kp, r = k7_session(repos, keys1='begin_draws = "fill,fill", ', first=True)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "first stage" in li.stdout, li.stdout
+
+
+def test_the_driver_will_not_start_at_a_stage_with_a_draw_list(repos):
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2='begin_draws = "tri,fill", ')
+    S.ENV = env_for(r)
+    try:
+        rc, rcs = S.run(kp, att="a1", frm="own2", say=[].append)
         assert rc == 46 and rcs == {}
     finally:
         S.ENV = None

@@ -120,9 +120,19 @@ OWN_GATE=${OWN_GATE:-fill,tri}
 BEGIN_DRAWS=${BEGIN_DRAWS:-fill,tri}
 END_DRAWS=${END_DRAWS:-fill,tri}
 for dw in "$BEGIN_DRAWS" "$END_DRAWS"; do
+	# K8 (round 44): none, or a comma list of 1 to 3 items from fill and tri (no empty item)
 	case "$dw" in
-	fill,tri|fill|tri|none) ;;
-	*) echo "stage $STAGE: draws '$dw' is not fill,tri, fill, tri or none"; exit 7 ;;
+	none) ;;
+	*[!a-z,]*|,*|*,|*,,*|*none*) echo "stage $STAGE: draws '$dw' is not none or a list of fill and tri"; exit 7 ;;
+	*)
+		IFS=, read -r -a dwl <<< "$dw"
+		[ "${#dwl[@]}" -ge 1 ] && [ "${#dwl[@]}" -le 3 ] || { echo "stage $STAGE: draws '$dw' is not 1 to 3 items"; exit 7; }
+		for di in "${dwl[@]}"; do
+			case "$di" in
+			fill|tri) ;;
+			*) echo "stage $STAGE: draws '$dw' has the item '$di', not fill or tri"; exit 7 ;;
+			esac
+		done ;;
 	esac
 done
 if [ -z "${OWN_BLOB:-}" ] && [ "$BEGIN_DRAWS $END_DRAWS" != "fill,tri fill,tri" ]; then

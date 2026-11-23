@@ -325,21 +325,26 @@ unmet_end() {
 
 # ---- health ---------------------------------------------------------------------------------------
 HN=0
-health_ok() { # NAME [DRAWS]: one fill and one plain 64x64 triangle with the health tool (DRAWS fill or tri: that one alone, K7), kept; 0 if each drew exactly
-	local ht d=${2:-fill,tri} ok=0
+health_ok() { # NAME [DRAWS]: the draws with the health tool, in order, each kept; 0 if each drew exactly. DRAWS: fill,tri (the default: one fill, one 64x64 triangle, kept as NAME.fill<HN> and NAME.health<HN>), or an explicit list of 1 to 3 items from fill and tri (K8, round 44): each draw's output is kept under its own name, NAME.fill<HN>.<i> (fill) or NAME.health<HN>.<i> (tri)
+	local ht d=${2:-fill,tri} ok=0 i=0 item suf out
+	local -a items
 	ht=$(tool_path "$HEALTH_TOOL")
 	HN=$((HN + 1))
 	mark "health $1 try $HN $d"
-	if [ "$d" != tri ]; then
-		sudo -n timeout -k 10 60 "$ht" fill > "$JW/fill.$HN.out" 2>&1 </dev/null
-		keep "$1.fill$HN" "$JW/fill.$HN.out"
-		grep -q "^diff: 0 of" "$JW/fill.$HN.out" || ok=1
-	fi
-	if [ "$d" != fill ]; then
-		sudo -n timeout -k 10 60 "$ht" tri > "$JW/health.$HN.out" 2>&1 </dev/null
-		keep "$1.health$HN" "$JW/health.$HN.out"
-		grep -q "^diff: 0 of 4096" "$JW/health.$HN.out" || ok=1
-	fi
+	IFS=, read -r -a items <<< "$d"
+	for item in "${items[@]}"; do
+		i=$((i + 1))
+		suf=""; [ -n "${2:-}" ] && suf=".$i"
+		out=$JW/$item.$HN$suf.out
+		sudo -n timeout -k 10 60 "$ht" "$item" > "$out" 2>&1 </dev/null
+		if [ "$item" = fill ]; then
+			keep "$1.fill$HN$suf" "$out"
+			grep -q "^diff: 0 of" "$out" || ok=1
+		else
+			keep "$1.health$HN$suf" "$out"
+			grep -q "^diff: 0 of 4096" "$out" || ok=1
+		fi
+	done
 	return $ok
 }
 reg_health() { # NAME: the register health without a draw (K7): fwtask_run.py reghealth, kept; 0 if ok
@@ -351,11 +356,11 @@ reg_health() { # NAME: the register health without a draw (K7): fwtask_run.py re
 	keep "$1.reghealth$HN" "$JW/reghealth.$HN.json"
 	[ "$r" -eq 0 ] && json_ok "$JW/reghealth.$HN.json"
 }
-stage_health() { # NAME DRAWS: a stage boundary's health as the stage declares it (K7, round 43): fill,tri the health of every round; fill or tri that draw alone; none the register health alone. Not ok: a reset, both draws (the recovery), then stop (rc 16)
+stage_health() { # NAME DRAWS: a stage boundary's health as the stage declares it (K7, round 43): fill,tri the health of every round; fill or tri that draw alone, or a list of 1 to 3 draws run once in order (K8, round 44); none the register health alone. Not ok: a reset, both draws (the recovery), then stop (rc 16)
 	case "$2" in
 	fill,tri) health "$1"; return 0 ;;
-	fill|tri) sleep "${HEALTH_WAIT:-3}"; health_ok "$1" "$2" && return 0 ;;
 	none) reg_health "$1" && return 0 ;;
+	fill|tri|fill,*|tri,*) sleep "${HEALTH_WAIT:-3}"; health_ok "$1" "$2" && return 0 ;;
 	*) echo "stage_health: draws $2"; exit 7 ;;
 	esac
 	if [ "$2" = none ]; then
