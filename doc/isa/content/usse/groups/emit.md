@@ -119,9 +119,16 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   (a fill) and the next render (a triangle) fault through the EDM's list at that page (E1172,
   E1174, E1175, E1177, E1180, E1182). A `douta` to attribute 13 puts its word in `pa1`, `sa13`
   and the fault page (E1180), and the word stays across resets (E1181): the 0x00043000 of the
-  earlier rows was a stale word there **[HW]**. That `sa13` is taken as a page base is
-  **[infer]**; where `sa1` and `sa3`-`sa10` come from is **[open]** (`sa1` read the word sent to
-  attribute 1 in E1180 and another with no write to it in E1182) (Q128).
+  earlier rows was a stale word there **[HW]**. The first non-tick pass on the rewritten bank
+  faults: a bare GETMISCINFO kick pass with our task idle faults at `sa13`'s page by the time its
+  reply returns, and the EDM then answers no kick and serves no command until a reset (E1187);
+  with no pass after the emit nothing faults (E1184, E1186) **[HW]**. `sa1` reads attribute 1: a
+  word sent there with 0xc43 is `sa1` in the same row (E1180, E1184, E1186) and stays across
+  resets, a boot, kicks and ticks with no client draw (E1185), and one stock fill rewrote it to
+  0x01000000 (E1187) **[HW]**; which draw left the 0x04400000 of other rows is **[infer]**. With
+  the tick running (landv) the EDM stops after the emit's pass at `sa1`'s page (E1183, E1185)
+  **[HW]**. That `sa13` is taken as a page base is **[infer]**; where `sa3`-`sa10` come from and
+  why land's stop faults at page 0 are **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

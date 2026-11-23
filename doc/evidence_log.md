@@ -10158,6 +10158,47 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *edm; HW, infer; data: `render-closing-r42-n3g-g3:out/20261122-163956/lv/`,
   `render-closing-r42-n3g-g3:fold/`.*
 
+### 2026-11-23
+
+- `E1184` r43-n3h-n1 stage w (row W, module 079DD0D1, fork ec6511d5de87, emitsb_sbc43s, image mark
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row M's image (E1180) as one
+  job, T3 stopping the tick, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 = pa1
+  = M13 0x005d3000, sa0 = V0, sa2 = V2, sa12-sa27 = pa0-pa15; K5 BIF_FAULT 0 before and after and in
+  snap9; every control passed, 'Q128-N3H-W RULE: W-QUIET, W-SA1, W-SA13', every prediction held: sa1
+  holds the word sent to attribute 1 and, with no pass after the emit, nothing faults.
+  *edm; HW, infer; data: `render-closing-r43-n3h-n1:out/20261123-164401/w/`,
+  `render-closing-r43-n3h-n1:fold/`.*
+- `E1185` r43-n3h-n1 stage v (row V, module 079DD0D1, fork ec6511d5de87, emitsb_sbc43s, image landv
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after row W (E1184) with no
+  client draw between (only resets, the register health and the arm, K7): job 1 done with post sa1 =
+  M1 0x005d1000, sa0 = V0, sa2 = V2, sa13 = M13; then, before job 2 was served, BIF_FAULT 0x005d100f
+  (list 15, page 0x005d1000, the post sa1), the tick stopped and job 2 was never served; the runner
+  stopped (class hang, rc 4) and the kit's reset recovered it; 'Q128-N3H-V RULE: V-EARLY1, V-KEEP,
+  V-V', every prediction held: attribute 1 keeps its word across a stage boundary without draws, and
+  landv's early stop faults at the page in sa1.
+  *edm; HW, infer; data: `render-closing-r43-n3h-n1:out/20261123-164401/v/`,
+  `render-closing-r43-n3h-n1:fold/`.*
+- `E1186` r43-n3h-n2 stage w2 (row W2, row W again, module 079DD0D1, fork ec6511d5de87,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after
+  N1's recovery draws, row W (E1184) byte for byte: job 1's post sa1 = M1 0x005d1000, sa13 = pa1 =
+  M13, the post sa0-sa31 equal to W's; K5 BIF_FAULT 0 before and after and in snap9; every control
+  passed, 'Q128-N3H-W2 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced.
+  *edm; HW; data: `render-closing-r43-n3h-n2:out/20261123-164448/w2/`,
+  `render-closing-r43-n3h-n2:fold/`.*
+- `E1187` r43-n3h-n2 stage f (row F, module 079DD0D1, fork ec6511d5de87, emitsb_sbc43s, image crumb3
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after row W2 (E1186) and one
+  stock fill as the begin draws (K7): job 1's post sa1 0x01000000 (neither M1 nor 0x04000010), sa13
+  = pa1 = M13 0x005d3000; job 2 a kick-only pass (K6): K5 pre BIF_FAULT 0, the GETMISCINFO kick
+  answered, K5 mid (right after the reply) and post BIF_FAULT 0x005d300f (list 15, page 0x005d3000,
+  the post sa13); job 3 command 6 on a kick: the kick not answered, the command not served; the
+  runner stopped (class hang, rc 4) and the kit's reset recovered it; 'Q128-N3H-F RULE: K-KICK,
+  K-QUIET, K-REPLY, K-STALL'; F-FILL4 FAILED against its prediction (held), F-KEEP failed as
+  predicted, F-OTHER (printed) held, every other prediction held, F-GATE not reached: one fill
+  rewrote attribute 1, and the bare kick pass faults at the page in sa13, after which the EDM serves
+  nothing.
+  *edm; HW, infer; data: `render-closing-r43-n3h-n2:out/20261123-164448/f/`,
+  `render-closing-r43-n3h-n2:fold/`.*
+
 ## By unit
 
 ### bif
@@ -10186,7 +10227,7 @@ E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E8
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
 E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161, E1162, E1163, E1164, E1165, E1166,
 E1167, E1168, E1169, E1170, E1171, E1172, E1173, E1174, E1175, E1176, E1177, E1178, E1179, E1180,
-E1181, E1182, E1183.
+E1181, E1182, E1183, E1184, E1185, E1186, E1187.
 
 ### firmware
 

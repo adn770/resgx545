@@ -63,3 +63,10 @@ restoring them does not prevent it. That the early stop follows a pointer throug
 secondaries (page 0 with sa0 0 here and in E1178, sa1's word with sa0 valid in LV) is **[infer]**.
 The 0x00043000 in this record's sa13 was a stale word of attribute 13 (E1180, E1181). This record's
 frozen verdict, CANNOT TELL, and its readings stand.
+
+**Correction 2026-11-23:** Row V of round 43 (E1185), landv with M1 planted in attribute 1, stopped
+early at the page in sa1 (0x005d1000), as LV at its sa1 0x04400000 **[HW]**: with sa0 valid the
+early stop follows sa1. This record's page 0, and LC2's with sa1 0x04400000 (E1178), are not
+explained by that; the reading of a stop through sa0 = 0 in this record's earlier correction stays
+**[infer]**, not supported by a row. This record's frozen verdict, CANNOT TELL, and its readings
+stand.

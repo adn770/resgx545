@@ -47,3 +47,14 @@ H-BLOCK stays **[infer]**, with this counter-reading.
 **What it does not show.** Which of the two readings of sa1 holds; where sa3-sa10 come from; which
 access of job 2 faulted; that the fill faulted afresh (BIF_FAULT was latched from job 2, as in M);
 one run.
+
+**Correction 2026-11-23:** Round 43 read who writes attribute 1. Rows W and W2 (E1184, E1186) sent
+M1 to attribute 1 with 0xc43 and read it in sa1 in the same row; row V (E1185) read it kept in sa1
+across a stage boundary of resets, a boot, kicks and ticks with no client draw; row F (E1187), the
+same boundary with one stock fill, read sa1 0x01000000 **[HW]**. So attribute 1 is rewritten by a
+client draw and by nothing else seen, and sa1 reads attribute 1 in every row that planted it (M, W,
+W2, V) **[HW]**. This record's sa1 0x04400000, read with no write to attribute 1, came after row M's
+end draws, the next session's begin draws and row S's gate and draws: that one of those draws left
+0x04400000 there is **[infer]** (one fill alone left 0x01000000). The counter-reading to H-BLOCK
+then needs no other cause; H-BLOCK holds at attributes 1 and 13 **[HW]**. This record's verdict and
+readings stand.

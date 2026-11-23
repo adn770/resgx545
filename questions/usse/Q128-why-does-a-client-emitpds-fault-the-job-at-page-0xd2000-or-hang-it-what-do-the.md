@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187"]
 terms = []
 +++
 
@@ -227,3 +227,23 @@ first secondaries is [infer]. Whether the rewrite heals without a reset stays un
 task (with the tick running the EDM stops first). Still open: where sa1 and sa3-sa10 come from and
 whether sa1 is attribute 1; who wrote 0x00043000; which access of job 2 faults; what bits 6, 10 and
 11 mean; the parts above. Not retired.
+
+Attribute 1, the tick pass and the kick pass, 2026-11-23 (E1184 to E1187, r43-n3h-n1 and -n2,
+flagged, module 079DD0D1 of fork r42-kernel ec6511d5de87, no rebuild or boot; the kit's K6 kick-only
+job and K7 per-stage draws). Rows W and W2 (E1184, E1186) sent M1 to attribute 1 with 0xc43 and read
+it in `sa1` in the same row, one job and no pass after the emit, with no fault [HW]. Row V (E1185),
+landv after W with no client draw between (resets, the register health, the arm's boot, kicks and
+ticks only), read `sa1` = M1 still, then stopped early at M1's page, 0x005d100f [HW]: attribute 1
+keeps its word without draws, and the early stop's fault page follows `sa1` (LV's 0x04400000 was
+LV's `sa1`). Row F (E1187), crumb3 after W2 and one stock fill, read `sa1` 0x01000000 [HW]: one fill
+rewrote attribute 1, but not with the slot-3 event word H-EVT predicted (F-FILL4 failed against its
+prediction, held); that the top byte is a count is not claimed [infer]. So `sa1` reads attribute 1
+in every row that planted it (M, W, W2, V) and a client draw rewrites it; Q's 0x04400000 (E1182)
+fits draws between the rows [infer]. In F a bare GETMISCINFO kick pass, our task idle, faulted at
+the page in `sa13` (M13) by the time its reply returned, and job 3's kick was not answered nor its
+command served [HW]: the kick pass itself faults on the rewritten bank, our after-read is not
+needed, and the EDM serves nothing after the first fault; that the gate fills of rounds 41 and 42
+met an EDM already stalled since job 2 is [infer]. Still open: what the fill's word means and what
+the triangle writes into attribute 1; where `sa3`-`sa10` come from; why land's early stop faults at
+page 0 (E1176, E1178); who wrote 0x00043000; what bits 6, 10 and 11 mean; the parts above. Not
+retired.

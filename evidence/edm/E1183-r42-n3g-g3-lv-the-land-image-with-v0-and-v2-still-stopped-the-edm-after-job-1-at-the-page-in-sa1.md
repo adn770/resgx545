@@ -53,3 +53,10 @@ task: with the tick running the EDM stops first.
 
 **What it does not show.** Which access faulted; why sa1 holds 0x04400000; whether a valid sa1 would
 let the EDM survive; whether the fill fails with the timer running; one run.
+
+**Correction 2026-11-23:** Row V of round 43 (E1185) ran this row's image, landv, after planting M1
+0x005d1000 in attribute 1 (E1184) with no draw between: post sa1 = M1, and the early stop faulted at
+page 0x005d1000 **[HW]**. So the early stop's fault page follows the word in sa1, and this record's
+0x04400000 was this row's sa1, attribute 1's word, which a client draw leaves there (E1187)
+**[HW]**; which draw left 0x04400000 is **[infer]**. LC's page 0 (E1176, E1178) is not explained by
+that. This record's verdict and readings stand.

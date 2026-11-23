@@ -59,3 +59,16 @@ attribute 13's page; that the gate's fill faulted afresh: BIF_FAULT already held
 alone cannot tell a fresh fault from the latched one; where sa3-sa10 come from; whether sa1 is
 attribute 1; that the hardware or the firmware takes sa13 as a page base (**[infer]**, as in E1174);
 the sa past sa31; one run.
+
+**Correction 2026-11-23:** Round 43 read who writes attribute 1. Rows W and W2 (E1184, E1186) sent
+M1 to attribute 1 with 0xc43 and read it in sa1 in the same row; row V (E1185) read it kept in sa1
+across a stage boundary of resets, a boot, kicks and ticks with no client draw; row F (E1187), the
+same boundary with one stock fill, read sa1 0x01000000 **[HW]**. So attribute 1 is rewritten by a
+client draw and by nothing else seen, and sa1 reads attribute 1 in every row that planted it (M, W,
+W2, V) **[HW]**. This record's M-SA1 stands, and Q's counter-reading (E1182) fits a client draw
+between the rows rewriting attribute 1 **[infer]**. H-BLOCK holds at attributes 1 and 13 **[HW]**;
+for every n of one block it stays **[infer]**. On which access of job 2 faulted: in row F a
+GETMISCINFO kick pass with no command, our task idle, faulted at the page in sa13 by the time its
+reply returned, and the EDM served nothing after **[HW]**; that this row's fault came from the stock
+part of job 2's kick pass, after our command 6 had stored the after-read, is **[infer]**. This
+record's verdict and readings stand.

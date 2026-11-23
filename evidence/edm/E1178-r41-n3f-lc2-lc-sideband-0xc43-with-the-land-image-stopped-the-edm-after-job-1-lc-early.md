@@ -70,3 +70,10 @@ and V2 do not prevent the early stop. This record's page 0 fits a stop through s
 through sa1, the next one: that the early stop follows a pointer through the first secondaries is
 **[infer]**. The 0x00043000 in this record's sa13 was a stale word of attribute 13 that none of our
 rows wrote (E1179-E1181) **[HW]**. This record's verdict and readings stand.
+
+**Correction 2026-11-23:** Row V of round 43 (E1185), landv with M1 planted in attribute 1, stopped
+early at the page in sa1 (0x005d1000), as LV (E1183) at its sa1 **[HW]**: with landv the early stop
+follows sa1. This record's printed sa1 was 0x04400000 too, yet it faulted at page 0: if that word is
+what the pass read (the record infers that the copy came before the stop), land's early stop does
+not follow sa1. Why it faults at page 0 is not explained; a stop through sa0 = 0 stays **[infer]**.
+This record's verdict and readings stand.
