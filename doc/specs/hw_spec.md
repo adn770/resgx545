@@ -1049,15 +1049,23 @@ both points, inferred). Bits 1:0 of the sideband decide the start (E1158, E1162-
 starts it and the tick stops (0x000, 0x040, 0x800, 0x840); 1 faults the job with BIF_FAULT
 0x30011010, #14's page + 0x10 (0x001, 0x841); 2 or 3 run it to done (0x002, 0x842, 0x003, 0x843,
 0xc43), bits 6, 10 and 11 not needed. After 0xc43 the next fill failed in 2 of 2 until a reset
-(E1172). Bit 10 rewrites the issuer's own secondaries (E1173-E1175, read by our entry 0 in a later
-job): after 0xc43 or 0x403 `sa12`-`sa27` equal the started entry's `pa0`-`pa15`, `sa1` and words
-of `sa3`-`sa10` change and `sa0` and `sa2` stay; with 0x843 nothing changes. `sa13` then holds
-`pa1` (0x00043000), and until a reset the next fill and the next triangle fault through the EDM's
-list (CID 15) at that page, BIF_FAULT 0x0004300f (E1172, E1174, E1175, E1177); the triangle does
-not fault at the render queue's head `sa15`. That `sa13` is used as a page base is inferred.
-With the land image, which writes no V0 or V2, the EDM stopped after the emit with BIF_FAULT
-0x0000000f (E1176, CANNOT TELL by a control's design slip; its rerun, E1178, read that early stop as
-predicted). A
+(E1172). Bit 10 rewrites the issuer's own secondaries (E1173-E1175, E1182, read by our entry 0 in a
+later job): after 0xc43, 0x403 or 0x402 (bits 1:0 = 2 or 3 alike) `sa12`-`sa27` equal the started
+entry's `pa0`-`pa15`, `sa1` and words of `sa3`-`sa10` change and `sa0` and `sa2` stay; with 0x843
+nothing changes (E1173, E1179, E1181). `sa13` then holds `pa1`, the word in attribute 13: a marker
+our program sent to attribute 13 stood in `pa1` and `sa13` (E1180), and the word there stays across
+resets and a reboot until rewritten (E1179, E1181), so the 0x00043000 of the earlier rows was a
+stale word of attribute 13. Until a reset the next fill and the next triangle fault through the
+EDM's list (CID 15) at that page, BIF_FAULT 0x0004300f, or 0x005d300f with the marker (E1172,
+E1174, E1175, E1177, E1180, E1182); the triangle does not fault at the render queue's head `sa15`.
+With the marker the fault arose in the job after the emit (a kick and an own-task command), not on
+the emit's pass (E1180, E1182, per-job BIF reads). That `sa13` is used as a page base is inferred,
+and so is that `sa1` reads attribute 1 (it read the marker sent there in E1180, and 0x04400000 with
+no write to it in E1182). With 0x402 crumb3's V0 and V2 stand in every fourth `pa` as with 0x002
+(E1182). With the land image, which writes no V0 or V2, the EDM stopped after the emit with
+BIF_FAULT 0x0000000f (E1176, CANNOT TELL by a control's design slip; its rerun, E1178, read that
+early stop as predicted); with V0 and V2 added (landv) it stopped the same way, at the page in
+`sa1`, with `sa0` and `sa2` valid (E1183). A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

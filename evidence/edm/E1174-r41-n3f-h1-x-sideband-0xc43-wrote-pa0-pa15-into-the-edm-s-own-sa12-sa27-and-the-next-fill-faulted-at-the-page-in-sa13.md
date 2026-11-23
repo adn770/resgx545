@@ -50,3 +50,14 @@ the firmware takes sa13 as a page base (the firmware's transfer queue head, desi
 **What it does not show.** Where sa1 and sa3-sa10 come from (B11 read sa1 0x04400000, this row
 0x04000010); which access faulted before the gate (after job 1, by the end of job 2's kick and
 command 6; B11, one job and no kick, read BIF_FAULT 0 there); the sa past sa31; what bit 10 means.
+
+**Correction 2026-11-23:** Round 42 read where the page 0x00043000 comes from. Row M (E1180) sent a
+marker, M13 0x005d3000, to attribute 13 with 0xc43: the started entry's pa1, the issuer's sa13 and
+the next fill's fault page all took it; row S (E1181) read it kept in pa1 across three resets, and
+R-BOOT (E1179) read 0x00043000 in pa1 through the boot of a new module **[HW]**. So 0x00043000 was a
+stale word of attribute 13 that none of our rows wrote, and the fault page is the word in attribute
+13 **[HW]**; who wrote it first is not read, and that the hardware or the firmware takes sa13 as a
+page base stays **[infer]**. On which access faulted before the gate: in row M, these two jobs with
+the mark image, the per-job BIF words (K5) read BIF_FAULT 0 after job 1 and 0x005d300f after job 2,
+the kick and command 6 **[HW]**; that this row's fault arose in job 2 the same way is **[infer]**.
+This record's verdict and readings stand.

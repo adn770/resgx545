@@ -37,3 +37,13 @@ and X's fault at the page in sa13 **[HW]**; 0x003 without bit 10 left the gate's
 
 **What it does not show.** Where sa1 and sa3-sa10 come from (they differ from X's); which access
 faulted before the gate; one run.
+
+**Correction 2026-11-23:** Round 42 read where the page 0x00043000 comes from. Row M (E1180) sent a
+marker, M13 0x005d3000, to attribute 13 with 0xc43: the started entry's pa1, the issuer's sa13 and
+the next fill's fault page all took it; row S (E1181) read it kept in pa1 across three resets, and
+R-BOOT (E1179) read 0x00043000 in pa1 through the boot of a new module **[HW]**. So 0x00043000 was a
+stale word of attribute 13 that none of our rows wrote, and the fault page is the word in attribute
+13 **[HW]**; who wrote it first is not read, and that the hardware or the firmware takes sa13 as a
+page base stays **[infer]**. Row Q (E1182), bit 10 with bits 1:0 = 2 (0x402), behaved as this row:
+the rewrite of sa12-sa27, the fault at the page in sa13 (there M13), the fault arising in job 2 by
+K5, and sa1 0x04400000 as here **[HW]**. This record's verdict and readings stand.

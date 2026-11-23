@@ -107,18 +107,21 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   times the next fill failed (0xdeadbeef in every pixel) until a reset; that bit 10 leaves that
   state is **[infer]**, and the entry it started read other secondaries than the issuer's
   (E1172). Where crumb3's `douta` show depends on the sideband: with 0x843 no V0 or V2 in
-  `pa0`-`pa15` (E1161, E1162); with 0x002, 0x003, 0x842 and 0xc43, V0 in every fourth pa from
-  `pa0` and V2 in every fourth from `pa2` (E1164, E1166, E1168, E1172) **[HW]**, why is
-  **[open]** (Q128).
+  `pa0`-`pa15` (E1161, E1162); with 0x002, 0x003, 0x842, 0xc43 and 0x402, V0 in every fourth pa
+  from `pa0` and V2 in every fourth from `pa2` (E1164, E1166, E1168, E1172, E1182) **[HW]**, why
+  is **[open]** (Q128).
 - **Bit 10 of the sideband rewrites the issuer's secondaries [HW].** From our task, with
-  bits 1:0 = 3: after an emit with bit 10 (0xc43 or 0x403, so bits 6 and 11 are not needed) our
-  own entry 0, in a later job, reads `sa12`-`sa27` equal to the started entry's `pa0`-`pa15`,
-  with `sa1` and words of `sa3`-`sa10` changed and `sa0` and `sa2` kept (crumb3); with 0x843 its
-  `sa0`-`sa31` are as before (E1173-E1175). The rewrite stays until a reset: `sa13` then holds
-  `pa1` (0x00043000 in every run), and the next transfer (a fill) and the next render (a
-  triangle) fault through the EDM's list at the page `sa13` holds, BIF_FAULT 0x0004300f (E1172,
-  E1174, E1175, E1177). That `sa13` is taken as a page base is **[infer]**; where `sa1` and
-  `sa3`-`sa10` come from is **[open]** (they differ from run to run) (Q128).
+  bits 1:0 = 2 or 3: after an emit with bit 10 (0xc43, 0x403 or 0x402, so bits 6 and 11 are not
+  needed) our own entry 0, in a later job, reads `sa12`-`sa27` equal to the started entry's
+  `pa0`-`pa15`, with `sa1` and words of `sa3`-`sa10` changed and `sa0` and `sa2` kept (crumb3);
+  with 0x843 its `sa0`-`sa31` are as before (E1173-E1175, E1179, E1181, E1182). The rewrite
+  stays until a reset: `sa13` then holds `pa1`, the word in attribute 13, and the next transfer
+  (a fill) and the next render (a triangle) fault through the EDM's list at that page (E1172,
+  E1174, E1175, E1177, E1180, E1182). A `douta` to attribute 13 puts its word in `pa1`, `sa13`
+  and the fault page (E1180), and the word stays across resets (E1181): the 0x00043000 of the
+  earlier rows was a stale word there **[HW]**. That `sa13` is taken as a page base is
+  **[infer]**; where `sa1` and `sa3`-`sa10` come from is **[open]** (`sa1` read the word sent to
+  attribute 1 in E1180 and another with no write to it in E1182) (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

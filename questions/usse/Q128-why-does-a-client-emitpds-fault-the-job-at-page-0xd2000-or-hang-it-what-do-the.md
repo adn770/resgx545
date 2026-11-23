@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183"]
 terms = []
 +++
 
@@ -205,3 +205,25 @@ pa1 = 0x00043000, sa0 0, sa1 0x04400000, sa2 0x01030b00, not H3's 0x0104b95b); t
 before the stop and that sa13's word is this run's pa1 are inferred, since the started entry's pa
 can hold words of earlier rows (E1177). Still open: as above, and which pointer faults at page 0
 with land. Not retired.
+
+Attribute 13, sb402 and landv, 2026-11-22 (E1179 to E1183, r42-n3g-g1 to -g3, flagged, module
+079DD0D1 of fork r42-kernel ec6511d5de87, built and booted once for the round). The build
+reproduced row C (E1179), and the started entry's odd pa read the words of the nine earlier rows
+through the boot, pa1 0x00043000 included [HW, printed]. Row M (E1180) sent markers to attributes 13
+and 1 with 0xc43: pa1, sa13 and the next fill's fault page took M13 0x005d3000, sa1 took M1 [HW];
+row S (E1181) read M13 still in pa1 after three resets, with 0x843 doing nothing to the EDM's sa
+[HW]. So the fault page is the word in attribute 13, and 0x00043000 was a stale word there that
+none of our rows wrote [HW]; who wrote it is not read. Row Q (E1182): 0x402, bit 10 with bits 1:0 =
+2, behaves as 0xc43 and 0x403 (the rewrite of sa12-sa27 from pa0-pa15, the fault at the page in
+sa13), and puts crumb3's V0 and V2 in every fourth pa as 0x002 [HW]. Per-job BIF words (K5) put the
+fault in M and Q in job 2, the kick and command 6, not after job 1 [HW]; the gate's fill then met a
+fault already latched, so its reading alone does not show a fresh fault. H-BLOCK (bit 10 makes the
+issuer's sa n read attribute n of one block) is not settled: M's sa1 = M1 fits it, but Q's sa1 read
+0x04400000 with no write to attribute 1, so either attribute 1 was rewritten between the rows or
+sa1 is not attribute 1 in every case [infer]. Row LV (E1183), land with V0 and V2, stopped early
+like LC (E1178) with sa0 = V0 and sa2 = V2, at page 0x04400000, the post sa1, on a stock pass
+before job 2 [HW]: V0 and V2 do not prevent the early stop; that it follows a pointer through the
+first secondaries is [infer]. Whether the rewrite heals without a reset stays unreadable from our
+task (with the tick running the EDM stops first). Still open: where sa1 and sa3-sa10 come from and
+whether sa1 is attribute 1; who wrote 0x00043000; which access of job 2 faults; what bits 6, 10 and
+11 mean; the parts above. Not retired.

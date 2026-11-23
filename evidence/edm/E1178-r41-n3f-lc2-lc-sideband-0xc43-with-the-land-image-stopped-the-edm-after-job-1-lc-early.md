@@ -63,3 +63,10 @@ whether the fill fails with the timer running; the sa past sa31.
 **H3 under this scorer (information).** H3's kept stage, copied into the session's tests/h3/ and
 rescored with this scorer, reads E0 PASS and LC-EARLY too
 (closing29/r41-lc2-logs/rescore-h3-under-lc2.txt); H3's frozen verdict stays CANNOT TELL (E1176).
+
+**Correction 2026-11-23:** Which pointer faults with land: row LV of round 42 (E1183), land with V0
+and V2, stopped early too, at page 0x04400000, the post sa1, with sa0 = V0 and sa2 = V2 **[HW]**: V0
+and V2 do not prevent the early stop. This record's page 0 fits a stop through sa0 = 0, and LV's
+through sa1, the next one: that the early stop follows a pointer through the first secondaries is
+**[infer]**. The 0x00043000 in this record's sa13 was a stale word of attribute 13 that none of our
+rows wrote (E1179-E1181) **[HW]**. This record's verdict and readings stand.

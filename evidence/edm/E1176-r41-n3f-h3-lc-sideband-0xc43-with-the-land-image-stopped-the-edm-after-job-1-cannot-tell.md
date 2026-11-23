@@ -54,3 +54,12 @@ then BIF_FAULT 0x0000000f, the tick stopped and job 2 was never served, as here 
 kept stage rescored with that scorer reads E0 PASS and LC-EARLY too, for information only
 (closing29/r41-lc2-logs/rescore-h3-under-lc2.txt). This record's frozen verdict, CANNOT TELL, and
 its readings stand; the rerun read post sa2 0x01030b00 where this one read 0x0104b95b.
+
+**Correction 2026-11-23:** Row LV of round 42 (E1183) ran this row with V0 and V2 sent to attributes
+0 and 2 (the landv image): the started entry's sa0 and sa2 read V0 and V2, and the EDM still stopped
+after job 1, BIF_FAULT 0x0440000f, at page 0x04400000, the post sa1 **[HW]**. This record's
+inference that sa0 and sa2 losing TA3DCtl and the CCB control word led to the stop is weakened:
+restoring them does not prevent it. That the early stop follows a pointer through the first
+secondaries (page 0 with sa0 0 here and in E1178, sa1's word with sa0 valid in LV) is **[infer]**.
+The 0x00043000 in this record's sa13 was a stale word of attribute 13 (E1180, E1181). This record's
+frozen verdict, CANNOT TELL, and its readings stand.

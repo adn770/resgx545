@@ -38,3 +38,13 @@ whatever reads sa13 as a page is on both paths.
 
 **What it does not show.** Which access of the render faulted; whether a second render without a
 reset would fault again (the recovery reset came first); one run.
+
+**Correction 2026-11-23:** Round 42 read where the page 0x00043000 comes from. Row M (E1180) sent a
+marker, M13 0x005d3000, to attribute 13 with 0xc43: the started entry's pa1, the issuer's sa13 and
+the next fill's fault page all took it; row S (E1181) read it kept in pa1 across three resets, and
+R-BOOT (E1179) read 0x00043000 in pa1 through the boot of a new module **[HW]**. So 0x00043000 was a
+stale word of attribute 13 that none of our rows wrote, and the fault page is the word in attribute
+13 **[HW]**; who wrote it first is not read, and that the hardware or the firmware takes sa13 as a
+page base stays **[infer]**. The triangle's fault page here is therefore the word in attribute 13 as
+well; with land's markers in pa12 and pa14 it is a second sign that the started entry's pa keep
+words of earlier rows. This record's verdict and readings stand.

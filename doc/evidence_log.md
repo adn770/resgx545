@@ -10107,6 +10107,57 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *edm; HW, infer; data: `render-closing-r41-n3f-lc2:out/20261121-073816/lc/`,
   `render-closing-r41-n3f-lc2:fold/`.*
 
+### 2026-11-22
+
+- `E1179` r42-n3g-g1 stage c (row C, the build control, module 079DD0D1, fork ec6511d5de87,
+  emitsb14s, image crumb3 at fw14, form=fw14, sideband 0x843, s2 0, flagged, user present): E1173's
+  two jobs on the new build, first after its boot: job 2's after-read equal to job 1's pre in all
+  32, the gate's fill and triangle exact, BIF_FAULT 0 before and after each job, every control
+  passed, 'Q128-N3G-C RULE: C-GATE, C-SAME' as predicted; printed: job 1's post odd pa (pa1
+  0x00043000, pa3, ..., pa15) the words of the nine kept rows of rounds 40 and 41, 8 of 8, through
+  the module change and the reboot.
+  *edm; HW; data: `render-closing-r42-n3g-g1:out/20261122-160857/c/`,
+  `render-closing-r42-n3g-g1:fold/`.*
+- `E1180` r42-n3g-g1 stage m (row M, module 079DD0D1, fork ec6511d5de87, emitsb_sbc43s, image mark
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): crumb3 with two douta more, M13
+  0x005d3000 to attribute 13 and M1 0x005d1000 to attribute 1, then X's two jobs (E1174): job 1's
+  post pa1 = M13, job 2's after-read equal to job 1's post in all 32 with sa13 = M13 and sa1 = M1;
+  K5: BIF_FAULT 0 after job 1, 0x005d300f (list 15, page 0x005d3000) after job 2; the gate's fill
+  faulting at 0x5d300f, the triangle after the recovery exact; 'Q128-N3G-M RULE: M-FILL, M-PA,
+  M-REBASE, M-SA1, M-SA13; FAULT: BIF_FAULT is not 0 after the row and no outcome names it', every
+  prediction held: the fault page follows the word in attribute 13.
+  *edm; HW, infer; data: `render-closing-r42-n3g-g1:out/20261122-160857/m/`,
+  `render-closing-r42-n3g-g1:fold/`.*
+- `E1181` r42-n3g-g2 stage s (row S, row C again, module 079DD0D1, fork ec6511d5de87, emitsb14s,
+  image crumb3 at fw14, form=fw14, sideband 0x843, s2 0, flagged, user present): after row M
+  (E1180), its watchdog's and the kit's resets and the session's begin reset: job 1's post pa1 = M13
+  0x005d3000 and the other odd pa unchanged; job 2's after-read equal to job 1's pre, the gate
+  exact, BIF_FAULT 0 before and after each job, every control passed; 'Q128-N3G-S RULE: C-GATE,
+  C-SAME, S-KEEP' as predicted, S-BACK failed: attribute 13 keeps the word written to it across
+  resets, so 0x00043000 there was a stale word.
+  *edm; HW, infer; data: `render-closing-r42-n3g-g2:out/20261122-163902/s/`,
+  `render-closing-r42-n3g-g2:fold/`.*
+- `E1182` r42-n3g-g2 stage q (row Q, module 079DD0D1, fork ec6511d5de87, emitsb_sb402s, image crumb3
+  at fw14, form=sb402, sideband 0x402, s2 0, flagged, user present): bit 10 with bits 1:0 = 2: job
+  1's post pa0, pa4, pa8, pa12 = V0 and pa2, pa6, pa10, pa14 = V2, pa1 = M13 0x005d3000; job 2's
+  after-read equal to job 1's post in all 32, sa12-sa27 = pa0-pa15, sa13 = M13, sa1 0x04400000 (not
+  row M's M1); K5: BIF_FAULT 0 after job 1, 0x005d300f after job 2; the gate's fill faulting at
+  0x5d300f, the triangle after the recovery exact; 'Q128-N3G-Q RULE: Q-FILL, Q-REBASE, Q-REP; FAULT:
+  BIF_FAULT is not 0 after the row and no outcome names it', every prediction held: sb402 behaves as
+  0xc43 and 0x403.
+  *edm; HW, infer; data: `render-closing-r42-n3g-g2:out/20261122-163902/q/`,
+  `render-closing-r42-n3g-g2:fold/`.*
+- `E1183` r42-n3g-g3 stage lv (row LV, module 079DD0D1, fork ec6511d5de87, emitsb_sbc43s, image
+  landv at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): LC2's row (E1178) with V0
+  and V2 sent to attributes 0 and 2: job 1 done with post sa0 = V0 and sa2 = V2, then, before job 2
+  was posted, BIF_FAULT 0x0440000f (list 15, page 0x04400000, the post sa1), the tick stopped and
+  job 2 was never served; the runner stopped (class hang, rc 4) and the kit's reset recovered it;
+  'Q128-N3G-LV RULE: LV-EARLY, LV-V', LV-V held as predicted, LV-EARLY held against its prediction;
+  LV-REBASE, LV-FILL and LV-HEAL not reached, LV-FILLOK cannot tell: V0 and V2 do not prevent the
+  early stop.
+  *edm; HW, infer; data: `render-closing-r42-n3g-g3:out/20261122-163956/lv/`,
+  `render-closing-r42-n3g-g3:fold/`.*
+
 ## By unit
 
 ### bif
@@ -10134,7 +10185,8 @@ E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E7
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
 E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902, E1130, E1148, E1149, E1150, E1151,
 E1153, E1154, E1155, E1156, E1157, E1158, E1159, E1160, E1161, E1162, E1163, E1164, E1165, E1166,
-E1167, E1168, E1169, E1170, E1171, E1172, E1173, E1174, E1175, E1176, E1177, E1178.
+E1167, E1168, E1169, E1170, E1171, E1172, E1173, E1174, E1175, E1176, E1177, E1178, E1179, E1180,
+E1181, E1182, E1183.
 
 ### firmware
 
