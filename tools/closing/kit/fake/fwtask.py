@@ -26,7 +26,11 @@ subcommand with the JSON object the real runner prints, from a fake own-task sta
          laptop). Each record keeps bif {pre, post}, [BIF_INT_STAT, BIF_FAULT] before the command
          and after the poll as the real runner's (round 42, K5): zeros, or the world's optional
          bif(index, n, world) ({pre, post}); world bifjob2: a fault after job 1 (0x000d0400,
-         0x0004300f) in every later job's pre and post
+         0x0004300f) in every later job's pre and post. Round 43 (K6): a job n 0 (with a kick and
+         expect notdone, else rc 2) posts no command and ends not done, its reply served, and
+         the list goes on (world kickdone: it ends done and the run stops); every kicked job's
+         bif keeps mid (the world's, else its post)
+  reghealth  K7's register health: ok, not ok in world regbad
   page   the results page, {"page": [1024 dwords]}
   gate   {order, outdir} optional (round 41): the fill and triangle in that order (t30-shaped
          texts; world owngatebad: the fill fails), or the texts the world's optional gate(world,
@@ -48,9 +52,9 @@ import sys
 PAGE, MAGIC, CMD, STATE, RUNID, ECHO, RESULTS = 1024, 0, 1, 2, 3, 5, 0x40
 INITFILL = 0xdeadc0de          # fwtask_run.py's
 KEYS = {"arm": {"blob", "arm"}, "run": {"name", "outdir", "jobs"}, "page": set(), "gate": set(),
-        "reset": set()}
+        "reset": set(), "reghealth": set()}
 OPTIONAL = {"gate": {"order", "outdir"}}
-JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks", "kick", "sleep_ms", "slots"}
+JOB_KEYS = {"n", "params", "runid", "timeout_ms", "ticks", "kick", "sleep_ms", "slots", "expect"}
 ORDERS = ("fill,tri", "tri,fill")
 FILL_OK = ("programs asm\njob: ok\njob time: 470 us\ntarget: 64x32 hash 0xb60c6095080bd325\n"
            "diff: 0 of 2048 pixels\noutside: 0 dwords\n"
@@ -145,22 +149,30 @@ def run(a):
             return usage(f"job {j!r}")
         if j.get("kick", "miscinfo") not in KICKS:
             return usage(f"kick {j['kick']!r}")
+        only = j["n"] == 0          # K6: a kick-only job, as fwtask_run.py's cmd_run checks it
+        if only != ("expect" in j) or only and (j.get("expect") != "notdone" or "kick" not in j
+                                                or j.get("params") or j.get("slots")):
+            return usage(f"job {j!r}: n 0 goes with a kick and expect notdone only")
         log(f"run {a['name']} n={j['n']} runid={j.get('runid', i + 1)}")
         p = page()
         base = RESULTS + 4 * j["n"]
-        k0 = {"tick": 1000, "cmd": j["n"], "slot": [0xdeadc0de] * 4, "ms": 0.5}  # the initfill
+        k0 = {"tick": 1000, "cmd": j["n"], "slot": p[base:base + 4] if only else [INITFILL] * 4,
+              "ms": 0.5}                    # the initfill (a kick-only job initfills nothing)
         if "kick" in j:
             log(f"kick {j['kick']}")
         # posted as fwtask_run.py's one_cmd posts it, before its poll (round 41, LC2): the slot
         # and extra slots initfilled, the params, state 0, the run id, last the cmd word
-        for s in (j["n"], *j.get("slots", ())):
+        for s in () if only else (j["n"], *j.get("slots", ())):
             p[RESULTS + 4 * s:RESULTS + 4 * s + 4] = [INITFILL] * 4
         for k, v in j.get("params", {}).items():
             vals = v if isinstance(v, list) else [v]
             p[int(k):int(k) + len(vals)] = vals
-        p[STATE], p[RUNID], p[CMD] = 0, j.get("runid", i + 1), j["n"]
+        p[STATE], p[RUNID] = 0, j.get("runid", i + 1)
+        if not only:
+            p[CMD] = j["n"]
         save(p)
-        done = armed() and not w & {"ownstop", "ownhang"} and not ("ownstop2" in w and i > 0)
+        done = armed() and not w & {"ownstop", "ownhang"} and not ("ownstop2" in w and i > 0) \
+            and (not only or "kickdone" in w)
         if done:
             got = getattr(mod, "own_res", None)
             for k, v in ((got(j["n"], j.get("params", {}), w) if got else None) or {}).items():
@@ -170,6 +182,10 @@ def run(a):
         word = list(BIF_FAULTED) if "bifjob2" in w and i > 0 else [0, 0]
         bif = (getattr(mod, "bif", None) or (lambda *x: None))(i, j["n"], w) or \
             {"pre": word, "post": list(word)}
+        if "kick" in j:             # K6: every kicked job's mid read, right after the reply
+            bif.setdefault("mid", list(bif["post"]))
+        elif "mid" in bif:
+            bif = {k: v for k, v in bif.items() if k != "mid"}
         records.append({"done": done, "ms": 1.0 if done else float(j.get("timeout_ms", 100)),
                         "slot": p[base:base + 4], "echo": p[ECHO], "cmd_after": p[CMD],
                         "overlap": 0, "bif": bif, "job": j, "H": {}, "restored": True})
@@ -183,13 +199,16 @@ def run(a):
             records[-1].update(ticks=0 if "ownhang" in w else int(ms), ticks_expected=ms * 0.997,
                                window_ms=ms)
         if "kick" in j:
-            reply = {"ms": 2.0, "lines": 1, "text": "fake miscinfo\n"} if done else \
+            reply = {"ms": 2.0, "lines": 1, "text": "fake miscinfo\n"} if done or only else \
                 {"error": "[Errno 110] Connection timed out"}
             records[-1].update(k0=k0, kick={"kind": j["kick"], "reply": reply})
             if j.get("ticks"):
                 records[-1]["ticks_from_kick"] = max(records[-1]["ticks"] - 1, 0)
-        if not done:
+        if only and done:
+            stop = f"the kick-only job {i} ended done (expected not done)"
+        elif not done and not only:
             stop = f"no done within {j.get('timeout_ms', 100)} ms (job {i})"
+        if stop:
             os.makedirs(a["outdir"], exist_ok=True)
             for n, body in (("regs.txt", "sgxfive regs 1\n"), ("status.txt", "bif_faults 0\n"),
                             ("own_res.json", json.dumps(p)), ("dmesg.txt", "")):
@@ -258,6 +277,11 @@ def main(argv):
         return run(a)
     if sub == "gate":
         return gate(a)
+    if sub == "reghealth":          # K7: the register health; world regbad: not ok
+        log(sub)
+        bad = "regbad" in world()
+        emit({"health": dict(health(), ok=not bad), "alive": alive(), "ok": not bad})
+        return 0
     log(sub)
     if sub == "page":
         emit({"page": page()})

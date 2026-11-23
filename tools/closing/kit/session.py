@@ -42,7 +42,8 @@ for a stage that stopped (after the copy back), and 20 the freeze does not verif
 failed or printed no SUMMARY, 39 the attempt's stage directory exists, 43 a file the scorer
 reads was not kept, 44 the premise (a control with no reading), 45 a laptop command or file was
 missing (a "command not found" or "No such file" line in the stage's log), 142 a bounded command
-reached its limit. A runner status 24 (the stage stopped by its rule) goes on to the next stage,
+reached its limit, 46 a stage without its begin draws (K7) asked to run without the stage before
+it. A runner status 24 (the stage stopped by its rule) goes on to the next stage,
 unless the stage declares `on_stop = "end"` in session.toml: then the session ends there, status
 24. A runner status 16 (the owntask gate failed) of a stage that declares `on_gate_fail = "score"`
 (the last stage, an owntask one) is its planned end: copied back, checked and scored, status 0.
@@ -177,8 +178,12 @@ OWNTASK_TRC_MAX = 31
 # ticks (a bool): the runner reads HostCtl dword 12 before the command and after the window;
 # kick (round 39, N3d row K): "miscinfo", the one host kick the runner makes right after the
 # command write (K0, then one debugfs miscinfo read, a GETMISCINFO kick), nothing else
-OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks", "kick", "sleep_ms", "slots")
+OWNTASK_JOB_KEYS = ("cmd", "params", "timeout_ms", "ticks", "kick", "sleep_ms", "slots", "expect")
 OWNTASK_KICKS = ("miscinfo",)
+# K6 (round 43, N3h §2): a kick-only job, cmd 0 with a kick and expect "notdone" (no command
+# written: entry 0 dispatches nothing and tail-calls), whose not done is its expected end and the
+# list goes on; expect belongs to that job only
+OWNTASK_EXPECT = "notdone"
 # round 41 (N3f §3.1, K1): a row's args may be a list of jobs (one fwtask_run.py run, one page and
 # one gate after it), at most OWNTASK_MAX_JOBS; a job's sleep_ms is one fixed sleep before it, its
 # slots the result slots (command numbers) the runner initfills and reads into its record; a row's
@@ -190,6 +195,15 @@ OWNTASK_RESULTS = 0x40
 # end, copied back and scored (the last stage, an owntask one); "stop" (the default) stops
 OWNTASK_GATE_ORDERS = ("fill,tri", "tri,fill")
 ON_GATE_FAIL = ("stop", "score")
+# K7 (round 43, N3h §2): an owntask stage's health at its begin (after the first reset, before
+# the arm) and at its end (after the disarm): both draws (the default), the fill or the triangle
+# alone, or none (the register health, fwtask_run.py reghealth, alone); the recovery after a stop,
+# a fault or a failed gate always draws both. own_gate = "none": no gate after an ok row. A
+# stage that is not its session's first may leave its begin draws out; the driver runs it only
+# right after the stage before it
+OWNTASK_DRAWS = ("fill,tri", "fill", "tri", "none")
+DRAW_KEYS = ("begin_draws", "end_draws")
+OWN_GATES = ("none",)
 # the results page (tools/fwtask/layout.py): 1024 dwords, 0-5 the protocol's (magic, cmd, state,
 # run id, overlap, run id echo), which a job's params never write
 OWNTASK_PAGE = 1024
@@ -718,9 +732,17 @@ def owntask_job(args, job_timeout):
     bad = [f"args key {k!r} is not one of {', '.join(OWNTASK_JOB_KEYS)}"
            for k in a if k not in OWNTASK_JOB_KEYS]
     cmd, params, tmo = a.get("cmd"), a.get("params", {}), a.get("timeout_ms")
-    if type(cmd) is not int or not 1 <= cmd <= 0xffff:
+    if cmd == 0 and type(cmd) is int:
+        if (a.get("kick") not in OWNTASK_KICKS or a.get("expect") != OWNTASK_EXPECT
+                or params or "slots" in a):
+            bad.append(f"cmd 0 is a kick-only job (K6): it needs a kick and expect "
+                       f"\"{OWNTASK_EXPECT}\", and takes no params or slots")
+    elif type(cmd) is not int or not 1 <= cmd <= 0xffff:
         bad.append(f"cmd {cmd!r} is not a command number 1 to 0xffff (0 is the tick's own "
-                   "tail call)")
+                   "tail call, or a kick-only job's)")
+    elif "expect" in a:
+        bad.append(f"expect {a['expect']!r} on a command job: expect \"{OWNTASK_EXPECT}\" is a "
+                   "kick-only job's (cmd 0, K6)")
     if not isinstance(params, dict):
         bad.append(f"params {params!r} is not an object {{dword: value}}")
         params = {}
@@ -752,7 +774,7 @@ def owntask_job(args, job_timeout):
     if bad:
         return None, bad
     job = {"n": cmd, "params": params, "timeout_ms": tmo}
-    for k in ("ticks", "kick", "sleep_ms", "slots"):
+    for k in ("ticks", "kick", "sleep_ms", "slots", "expect"):
         if k in a:
             job[k] = a[k]
     return job, []
@@ -807,7 +829,10 @@ def owntask_problems(kp, c=None):
         where = f"session.toml: stage {st}"
         if d is None:
             bad += [f"{where}: {k} on a stage that is not an owntask stage (the owntask gate's)"
-                    for k in ("gate_order", "on_gate_fail") if k in c["stages"][st]]
+                    for k in ("gate_order", "on_gate_fail", "own_gate") if k in c["stages"][st]]
+            bad += [f"{where}: {k} on a stage that is not an owntask stage (K7: the register "
+                    "health a stage without draws keeps is the kit's fwtask_run.py, an owntask "
+                    "stage's)" for k in DRAW_KEYS if k in c["stages"][st]]
         if d is not None:
             if not isinstance(d, dict):
                 bad.append(f"{where}: owntask is not a table {{ blob, arm }}")
@@ -843,6 +868,20 @@ def owntask_problems(kp, c=None):
             elif gk.get("on_gate_fail") == "score" and st != stages(c)[-1]:
                 bad.append(f"{where}: on_gate_fail = \"score\" on a stage that is not the last "
                            "(the gate's failure ends the session)")
+            for k in DRAW_KEYS:
+                if gk.get(k, OWNTASK_DRAWS[0]) not in OWNTASK_DRAWS:
+                    bad.append(f"{where}: {k} {gk[k]!r} is not one of "
+                               f"{', '.join(OWNTASK_DRAWS)}")
+            if gk.get("begin_draws", OWNTASK_DRAWS[0]) != OWNTASK_DRAWS[0] and \
+                    st == stages(c)[0]:
+                bad.append(f"{where}: begin_draws {gk['begin_draws']!r} on the session's first "
+                           "stage (no stage before it in the session ended its own draws: K7)")
+            if "own_gate" in gk:
+                if gk["own_gate"] not in OWN_GATES:
+                    bad.append(f"{where}: own_gate {gk['own_gate']!r} is not one of "
+                               f"{', '.join(OWN_GATES)} (leave it out for the gate)")
+                bad += [f"{where}: own_gate = \"none\" with {k} (no gate runs)"
+                        for k in ("gate_order", "on_gate_fail") if k in gk]
             if "arm" not in d:
                 bad.append(f"{where}: owntask has no arm")
             else:
@@ -882,7 +921,9 @@ def owntask_problems(kp, c=None):
 
 def owntask_table(kp, c=None):
     """run/owntask.tsv: `arm STAGE BLOB SHA256 ARM [GATE_ORDER]` of each owntask stage (the sha256
-    the map gives the blob; the gate order only when the stage declares gate_order) and `job STAGE
+    the map gives the blob; the gate order only when the stage declares gate_order, "none" when
+    it declares own_gate = "none"), `draws STAGE BEGIN END` when it declares begin_draws or
+    end_draws other than the default (K7, round 43) and `job STAGE
     NAME JSON` of each of its rows (fwtask_run.py run's job, or a list of them for a job-list row,
     each with its run id, counted over the stage's jobs in order: a row's place in the stage when
     every row has one job), tab-separated; the runner reads its stage's."""
@@ -900,9 +941,13 @@ def owntask_table(kp, c=None):
             continue
         blob = d.get("blob", "")
         sha = ((m or {}).get(blob) or {}).get("sha256", "-") if isinstance(blob, str) else "-"
-        order = c["stages"][st].get("gate_order")
+        gk = c["stages"][st]
+        order = "none" if gk.get("own_gate") == "none" else gk.get("gate_order")
         out.append(f"arm\t{st}\t{blob}\t{sha}\t{d.get('arm', '')}"
                    + (f"\t{order}" if order else ""))
+        draws = [gk.get(k, OWNTASK_DRAWS[0]) for k in DRAW_KEYS]
+        if draws != [OWNTASK_DRAWS[0]] * 2:
+            out.append(f"draws\t{st}\t{draws[0]}\t{draws[1]}")
         f = pathlib.Path(kp) / "tables" / f"{st}.txt"
         rows = _rows(f) if f.exists() else []
         runid = 0
@@ -1230,6 +1275,22 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
     kp = pathlib.Path(kp)
     c = config(kp)
     att = att or time.strftime("%Y%m%d-%H%M%S")
+    todo = stages(c)
+    if only:
+        todo = [s for s in todo if s in only]
+    elif frm:
+        todo = todo[todo.index(frm):]
+    # K7 (round 43): a stage that leaves its begin draws out runs only right after the stage
+    # before it in the session, in the same attempt
+    for k, st in enumerate(todo):
+        if c["stages"][st].get("begin_draws", OWNTASK_DRAWS[0]) == OWNTASK_DRAWS[0]:
+            continue
+        i = stages(c).index(st)
+        if i == 0 or k == 0 or todo[k - 1] != stages(c)[i - 1]:
+            say(f"STOP: stage {st} declares begin_draws "
+                f"{c['stages'][st]['begin_draws']!r}: it runs only right after the stage before "
+                "it in the session, in the same attempt (run from that stage)")
+            return 46, {}
     out_root = pathlib.Path(out_root or kp / "out")
     root = out_root / att
     root.mkdir(parents=True, exist_ok=True)
@@ -1240,11 +1301,6 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
     lr = f"scratch/{c['prefix']}"
     py = _py(c)
     sc = str(kp / "score/score.py")
-    todo = stages(c)
-    if only:
-        todo = [s for s in todo if s in only]
-    elif frm:
-        todo = todo[todo.index(frm):]
     rcs = {}
     say(f"attempt {att}: {root}; FROZEN.sha256 {fsha}")
     for st in todo:

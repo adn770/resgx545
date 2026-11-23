@@ -3332,3 +3332,274 @@ def test_a_job_never_done_leaves_its_posted_command_on_the_fake_page(tmp_path):
         assert p[1:4] == [6, 0, 2], p[:8]
         assert p[0x40 + 4 * 6:0x40 + 4 * 7] == [0xdeadc0de] * 4
         assert p[224:226] == [1, 2]
+
+
+# ---- round 43 (N3h §2, K6): a kick-only job, K5's mid after each kick reply ---------------------
+KICK_ONLY = '{"cmd": 0, "kick": "miscinfo", "expect": "notdone", "timeout_ms": 50}'
+K6_ROW = ('o1|fit|flagged|-|owntask|[{"cmd": 1, "params": {}, "timeout_ms": 100}, ' + KICK_ONLY
+          + ', {"cmd": 6, "params": {}, "timeout_ms": 100, "kick": "miscinfo"}]\n')
+
+
+def test_a_kick_only_job_lints_and_prepares_to_n_0_with_its_expect(repos):
+    import json
+    kp, r = own_session(repos, rows=K6_ROW)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    jobs = {ln.split("\t")[2]: json.loads(ln.split("\t")[3]) for ln in own_tsv(kp, r).splitlines()
+            if ln.startswith("job\t")}
+    assert jobs["o1"][1] == {"n": 0, "params": {}, "runid": 2, "timeout_ms": 50,
+                             "kick": "miscinfo", "expect": "notdone"}
+    assert "expect" not in jobs["o1"][0] and "expect" not in jobs["o1"][2]
+
+
+@pytest.mark.parametrize("job,word", [
+    ('{"cmd": 0, "params": {}, "timeout_ms": 50}', "kick-only"),
+    ('{"cmd": 0, "kick": "miscinfo", "timeout_ms": 50}', "kick-only"),
+    ('{"cmd": 0, "expect": "notdone", "timeout_ms": 50}', "kick-only"),
+    ('{"cmd": 6, "params": {}, "kick": "miscinfo", "expect": "notdone", "timeout_ms": 50}',
+     "expect"),
+    ('{"cmd": 0, "kick": "miscinfo", "expect": "done", "timeout_ms": 50}', "expect"),
+    ('{"cmd": 0, "params": {"224": 1}, "kick": "miscinfo", "expect": "notdone", '
+     '"timeout_ms": 50}', "kick-only"),
+    ('{"cmd": 0, "kick": "miscinfo", "expect": "notdone", "timeout_ms": 50, "slots": [40]}',
+     "kick-only"),
+])
+def test_lint_refuses_n_0_or_expect_off_the_kick_only_shape(repos, job, word):
+    kp, r = own_session(repos)
+    (kp / "tables/own.txt").write_text(
+        "#stage own\n#limit 0\n" + OWN_ROWS
+        + f'o3|fit|flagged|-|owntask|[{{"cmd": 1, "params": {{}}, "timeout_ms": 100}}, {job}]\n')
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and word in li.stdout, li.stdout
+
+
+KICK_WORLD = ("def bif(i, n, world):\n"
+              "    if 'kickfault' not in world:\n"
+              "        return None\n"
+              "    f = [0x000d0400, 0x005d300f]\n"
+              "    return {'pre': [0, 0] if i < 2 else f, 'mid': f, 'post': f} if i else None\n\n\n")
+
+
+def test_the_mock_runs_a_kick_only_job_to_its_expected_end_and_goes_on(repos):
+    """K6: the fake runner posts no command for n 0, ends it not done, records mid for every
+    kicked job, and the list goes on to job 3; a world's bif() puts the kick's fault in job 2's
+    mid and post."""
+    import gzip
+    import json
+    kp, r = own_session(repos, rows=K6_ROW, expect={"model": (0, {"s0": 0, "own": 0}),
+                                                    "kickfault": (0, {"s0": 0, "own": 0})})
+    w = (kp / "mock/world.py").read_text()
+    (kp / "mock/world.py").write_text(w.replace("def answer(tool, argv, world):\n",
+                                                KICK_WORLD + "def answer(tool, argv, world):\n"))
+    for world in ("model", "kickfault"):
+        m = kit(kp, r, "mock", "--world", world)
+        assert m.returncode == 0, m.stdout + m.stderr
+        mm = sorted(kp.glob(f"debug/mock.*/{world}"))[-1]
+        own = own_log(mm)
+        i = own.index("run o1 n=1 runid=1")
+        assert own[i:i + 6] == ["run o1 n=1 runid=1", "run o1 n=0 runid=2", "kick miscinfo",
+                                "run o1 n=6 runid=3", "kick miscinfo", "page"], own
+        rec = json.loads(gzip.decompress((mm / f"out/{world}/own/o1.txt.gz").read_bytes()))
+        assert rec["stop"] is None and rec["ran"] == 3, rec
+        r1, r2, r3 = rec["records"]
+        assert r2["done"] is False and r2["cmd_after"] == 0 and r2["k0"]["cmd"] == 0
+        assert "error" not in r2["kick"]["reply"]
+        assert "mid" not in r1["bif"] and "mid" in r2["bif"] and "mid" in r3["bif"]
+        if world == "kickfault":
+            assert r2["bif"]["pre"] == [0, 0] and r2["bif"]["mid"] == [0xD0400, 0x5D300F]
+
+
+def test_a_kick_only_job_that_ends_done_stops_the_fake_run(tmp_path):
+    blob = tmp_path / "x.blob"
+    blob.write_bytes(b"\0")
+    assert fake_fw(tmp_path, "kickdone", "arm", {"blob": str(blob), "arm": "slots=0x1"})[0] == 0
+    rc, out = fake_fw(tmp_path, "kickdone", "run", {
+        "name": "o1", "outdir": str(tmp_path / "out"),
+        "jobs": [{"n": 1, "params": {}, "runid": 1, "timeout_ms": 100},
+                 {"n": 0, "params": {}, "runid": 2, "timeout_ms": 50, "kick": "miscinfo",
+                  "expect": "notdone"},
+                 {"n": 6, "params": {}, "runid": 3, "timeout_ms": 100}]})
+    assert rc == 1 and "kick-only" in out["stop"] and out["ran"] == 2, out
+
+
+# ---- round 43 (N3h §2, K7): draws per stage, own_gate none --------------------------------------
+def k7_session(repos, keys1="", keys2="", rows2=OWN_ROW, first=False, expect=None):
+    """Two owntask stages own then own2 (after the scaffold's safe s0, or first when `first`),
+    the stage keys KEYS1 and KEYS2 inserted before their owntask tables."""
+    st = OWN_STAGE.replace("owntask = {", keys1 + "owntask = {") + "\n" + \
+        OWN_STAGE.replace("own = {", "own2 = {").replace("owntask = {", keys2 + "owntask = {")
+    kp, r = own_session(repos, stage=st, rows=OWN_ROW,
+                        expect=expect or {"model": (0, {"s0": 0, "own": 0,
+                                                     "own2": 0})})
+    (kp / "tables/own2.txt").write_text("#stage own2\n#limit 0\n" + rows2.replace("o1|", "p1|"))
+    (kp / "predictions/own2.tsv").write_text("case\tquantity\tvalue\tmodel\tset\tsource\n")
+    sc = (kp / "score/score.py").read_text()
+    (kp / "score/score.py").write_text(sc.replace(OWN_REQUIRED, OWN_REQUIRED + ", "
+                                                  + OWN_REQUIRED.replace('"own"', '"own2"')))
+    if first:
+        t = (kp / "session.toml").read_text()
+        (kp / "session.toml").write_text(t.replace("s0 = { alarm = 1800 }\n", ""))
+        (kp / "tables/s0.txt").unlink()
+        (kp / "predictions/s0.tsv").unlink()
+        w = (kp / "mock/world.py").read_text()
+        (kp / "mock/world.py").write_text(w.replace('"s0": 0, ', ""))
+    return kp, r
+
+
+def test_draw_keys_reach_the_runner_s_table(repos):
+    """K7: begin_draws and end_draws (an owntask stage's) are a `draws STAGE BEGIN END` line of
+    run/owntask.tsv when either is not the default; own_gate "none" is the arm line's gate
+    column; a stage with neither keeps the lines it always had."""
+    kp, r = k7_session(repos, keys2='begin_draws = "none", end_draws = "fill", ',
+                       keys1='own_gate = "none", end_draws = "none", ')
+    li = kit(kp, r, "lint")
+    assert li.returncode == 0, li.stdout + li.stderr
+    tsv = own_tsv(kp, r).splitlines()
+    arms = {ln.split("\t")[1]: ln.split("\t") for ln in tsv if ln.startswith("arm\t")}
+    draws = {ln.split("\t")[1]: ln.split("\t")[2:] for ln in tsv if ln.startswith("draws\t")}
+    assert arms["own"][5:] == ["none"] and len(arms["own2"]) == 5, arms
+    assert draws == {"own": ["fill,tri", "none"], "own2": ["none", "fill"]}, draws
+
+
+@pytest.mark.parametrize("keys1,keys2,first,word", [
+    ('begin_draws = "all", ', "", False, "begin_draws"),
+    ('end_draws = "tri,fill", ', "", False, "end_draws"),
+    ('own_gate = "tri", ', "", False, "own_gate"),
+    ('own_gate = "none", gate_order = "tri,fill", ', "", False, "own_gate"),
+    ('own_gate = "none", on_gate_fail = "score", ', "", False, "own_gate"),
+    ('begin_draws = "none", ', "", True, "first stage"),
+    ('begin_draws = "fill", ', "", True, "first stage"),
+])
+def test_lint_refuses_a_bad_draw_or_gate_key(repos, keys1, keys2, first, word):
+    kp, r = k7_session(repos, keys1=keys1, keys2=keys2, first=first)
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and word in li.stdout, li.stdout
+
+
+def test_draw_keys_belong_to_an_owntask_stage(repos):
+    kp, r = own_session(repos)
+    t = (kp / "session.toml").read_text()
+    (kp / "session.toml").write_text(t.replace("s0 = { alarm = 1800 }",
+                                               's0 = { alarm = 1800, end_draws = "none" }'))
+    li = kit(kp, r, "lint")
+    assert li.returncode == 1 and "end_draws" in li.stdout and "owntask" in li.stdout, li.stdout
+
+
+def health_marks(mm):
+    """The kernel-log health marks in order: (NAME, DRAWS)."""
+    return re.findall(r"resgx545 \S+ health (\S+) try \d+ (\S+) ", (mm / "kmsg").read_text())
+
+
+def test_a_stage_without_draws_keeps_the_register_health_and_its_checks(repos):
+    """K7, N1's shape: own (W: own_gate none, end_draws none) then own2 (V: begin_draws none).
+    W's row runs no gate; W's end and V's begin draw nothing and run the register health
+    (reghealth) instead; the resets, the arm and the disarm stay; V's end draws both."""
+    kp, r = k7_session(repos, keys1='own_gate = "none", end_draws = "none", ',
+                       keys2='begin_draws = "none", ')
+    sc = (kp / "score/score.py").read_text()      # no gate: own keeps no gate record
+    (kp / "score/score.py").write_text(sc.replace('"own": (".txt", ".own_res.json", ".gate.json", ',
+                                                  '"own": (".txt", ".own_res.json", '))
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert health_marks(mm) == [("begin", "fill,tri"), ("end", "fill,tri"),
+                                ("begin", "fill,tri"), ("end", "none"),
+                                ("begin", "none"), ("end", "fill,tri")], health_marks(mm)
+    own = own_log(mm)
+    i, j = own.index("run o1 n=1 runid=1"), own.index("run p1 n=1 runid=1")
+    assert own[i:i + 3] == ["run o1 n=1 runid=1", "page", "reset"], own
+    assert [x for x in own[i:j] if x.startswith("gate")] == []
+    assert own[i + 3:j].count("reghealth") == 2, own
+    assert [x for x in own[j:] if x.startswith("gate")] != []
+    kmsg = (mm / "kmsg").read_text()
+    assert "owntask-nogate o1 " in kmsg and "owntask-nogate p1" not in kmsg
+    w = (mm / "out/model/own/runner.log").read_text()
+    assert "## end: 1 jobs of own" in w, w
+    kept = mm / "out/model/own"
+    assert (kept / "end.reghealth1.txt.gz").exists() or list(kept.glob("end.reghealth*")), \
+        sorted(p.name for p in kept.iterdir())
+
+
+def test_a_fill_only_begin_draws_the_fill_alone(repos):
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2='begin_draws = "fill", ')
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert health_marks(mm)[3:5] == [("end", "none"), ("begin", "fill")], health_marks(mm)
+    kept = mm / "out/model/own2"
+    assert list(kept.glob("begin.fill*")) and not list(kept.glob("begin.health*")), \
+        sorted(p.name for p in kept.iterdir())
+
+
+def test_a_stop_in_a_stage_without_draws_still_draws_both_in_recovery(repos):
+    """K7 never skips the recovery: a runner stop (world ownstop) in a stage whose begin and end
+    draw nothing resets and runs the fill and the triangle (strict health) before it stops."""
+    kp, r = k7_session(repos, keys1='end_draws = "none", ',
+                       keys2='begin_draws = "none", end_draws = "none", own_gate = "none", ',
+                       expect={"ownstop": (4, {"s0": 0, "own": 4})})
+    m = kit(kp, r, "mock", "--world", "ownstop")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/ownstop"))
+    marks = health_marks(mm)
+    assert marks[-1] == ("o1", "fill,tri"), marks
+    w = (mm / "out/ownstop/own/runner.log").read_text()
+    assert "## STOP: unexplained failure in o1" in w, w
+
+
+def test_a_failed_register_health_recovers_with_both_draws_and_stops(repos):
+    """K7: a stage boundary without draws whose register health is not ok: a reset, both draws
+    (the recovery), then the stage stops (rc 16)."""
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2='begin_draws = "none", ',
+                       expect={"regbad": (16, {"s0": 0, "own": 16})})
+    m = kit(kp, r, "mock", "--world", "regbad")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/regbad"))
+    assert health_marks(mm)[-2:] == [("end", "none"), ("end", "fill,tri")], health_marks(mm)
+    w = (mm / "out/regbad/own/runner.log").read_text()
+    assert "## STOP: the register health at end" in w, w
+
+
+@pytest.mark.parametrize("line,word", [
+    ("draws\town\tall\tnone\n", "draws"),
+    ("draws\town\tnone\tfill,tri,none\n", "draws"),
+])
+def test_the_runner_refuses_another_draws_word(tmp_path, line, word):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV + line)
+    assert r.returncode == 7 and word in r.stdout, (r.returncode, r.stdout)
+
+
+def test_the_runner_takes_the_k7_words(tmp_path):
+    for k, tsv in enumerate((OWN_TSV + "draws\town\tnone\tfill\n",
+                             OWN_TSV.replace("slots=0x1 entry=0\n", "slots=0x1 entry=0\tnone\n"))):
+        (tmp_path / str(k)).mkdir()
+        r = own_runner_tree(tmp_path / str(k), OWN_ROW, tsv=tsv)
+        assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+def test_the_recovery_paths_always_draw_both():
+    """K7 touches only the stage's own boundaries: health and strict_health (the recovery after
+    a stop, a fault, a failed gate) call health_ok with no draws word, which draws both."""
+    lib = (KIT / "lib_kit.sh").read_text()
+    for fn in ("health", "strict_health"):
+        body = re.search(r"^" + fn + r"\(\) \{[^\n]*\n(.*?)^\}", lib, re.M | re.S).group(1)
+        calls = re.findall(r"health_ok [^;|&\n]*", body)
+        assert calls and all(c.strip() == 'health_ok "$1"' for c in calls), (fn, calls)
+    rs = (KIT / "run_stage.sh").read_text()
+    assert rs.count("stage_health ") == 1 and "stage_health end" in rs
+    assert re.search(r"^\tstage_health begin ", lib, re.M)
+
+
+def test_the_driver_refuses_to_start_at_a_stage_that_skips_its_begin_draws(repos):
+    """K7: a stage without the default begin draws runs only right after the stage before it in
+    the same attempt (--from or --only that starts there is refused before any laptop call)."""
+    kp, r = k7_session(repos, keys1='end_draws = "none", ', keys2='begin_draws = "none", ')
+    S.ENV = env_for(r)
+    try:
+        said = []
+        rc, rcs = S.run(kp, att="a1", frm="own2", say=said.append)
+        assert rc == 46 and rcs == {}, (rc, said)
+        assert any("own2" in x and "begin_draws" in x for x in said), said
+        rc, rcs = S.run(kp, att="a2", only=["own2"], say=said.append)
+        assert rc == 46 and rcs == {}
+    finally:
+        S.ENV = None

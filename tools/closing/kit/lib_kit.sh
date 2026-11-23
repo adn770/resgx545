@@ -325,16 +325,45 @@ unmet_end() {
 
 # ---- health ---------------------------------------------------------------------------------------
 HN=0
-health_ok() { # NAME: one fill and one plain 64x64 triangle with the health tool, kept; 0 if both drew exactly
-	local ht
+health_ok() { # NAME [DRAWS]: one fill and one plain 64x64 triangle with the health tool (DRAWS fill or tri: that one alone, K7), kept; 0 if each drew exactly
+	local ht d=${2:-fill,tri} ok=0
 	ht=$(tool_path "$HEALTH_TOOL")
 	HN=$((HN + 1))
-	mark "health $1 try $HN"
-	sudo -n timeout -k 10 60 "$ht" fill > "$JW/fill.$HN.out" 2>&1 </dev/null
-	keep "$1.fill$HN" "$JW/fill.$HN.out"
-	sudo -n timeout -k 10 60 "$ht" tri > "$JW/health.$HN.out" 2>&1 </dev/null
-	keep "$1.health$HN" "$JW/health.$HN.out"
-	grep -q "^diff: 0 of" "$JW/fill.$HN.out" && grep -q "^diff: 0 of 4096" "$JW/health.$HN.out"
+	mark "health $1 try $HN $d"
+	if [ "$d" != tri ]; then
+		sudo -n timeout -k 10 60 "$ht" fill > "$JW/fill.$HN.out" 2>&1 </dev/null
+		keep "$1.fill$HN" "$JW/fill.$HN.out"
+		grep -q "^diff: 0 of" "$JW/fill.$HN.out" || ok=1
+	fi
+	if [ "$d" != fill ]; then
+		sudo -n timeout -k 10 60 "$ht" tri > "$JW/health.$HN.out" 2>&1 </dev/null
+		keep "$1.health$HN" "$JW/health.$HN.out"
+		grep -q "^diff: 0 of 4096" "$JW/health.$HN.out" || ok=1
+	fi
+	return $ok
+}
+reg_health() { # NAME: the register health without a draw (K7): fwtask_run.py reghealth, kept; 0 if ok
+	local r
+	HN=$((HN + 1))
+	mark "health $1 try $HN none"
+	owntask_call reghealth '{}' "$JW/reghealth.$HN.json" "$JW/reghealth.$HN.err" 60
+	r=$?
+	keep "$1.reghealth$HN" "$JW/reghealth.$HN.json"
+	[ "$r" -eq 0 ] && json_ok "$JW/reghealth.$HN.json"
+}
+stage_health() { # NAME DRAWS: a stage boundary's health as the stage declares it (K7, round 43): fill,tri the health of every round; fill or tri that draw alone; none the register health alone. Not ok: a reset, both draws (the recovery), then stop (rc 16)
+	case "$2" in
+	fill,tri) health "$1"; return 0 ;;
+	fill|tri) sleep "${HEALTH_WAIT:-3}"; health_ok "$1" "$2" && return 0 ;;
+	none) reg_health "$1" && return 0 ;;
+	*) echo "stage_health: draws $2"; exit 7 ;;
+	esac
+	if [ "$2" = none ]; then
+		echo "## STOP: the register health at $1 was not ok ($(head -c 300 "$JW/reghealth.$HN.json" | tr '\n' ' ')): recovery (fill and triangle), then stop"
+	else
+		echo "## STOP: the $2 draw at $1 failed: recovery (fill and triangle), then stop"
+	fi
+	reset_gpu; health "$1"; exit 16
 }
 health() { # NAME: exact draws; a reset and two more attempts, written out one by one; then stop (rc 5)
 	sleep "${HEALTH_WAIT:-3}"
@@ -427,6 +456,6 @@ begin() {
 	STARTED=1
 	mark "row begin"
 	reset_gpu || { echo "the first debugfs reset failed"; exit 13; }
-	health begin </dev/null
+	stage_health begin "${BEGIN_DRAWS:-fill,tri}" </dev/null
 	rm_work "$JW"
 }

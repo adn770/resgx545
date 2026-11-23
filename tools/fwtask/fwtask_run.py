@@ -325,6 +325,14 @@ def cmd_reset(a):
     emit(out)
 
 
+def cmd_reghealth(a):
+    """K7 (round 43, N3h §2): the register health a stage boundary without draws keeps, health()
+    (EVENT_STATUS2, the BIF words, faults) and alive() (the tick); reads only, runs no tool."""
+    out = {"health": health(), "alive": alive()}
+    out["ok"] = bool(out["health"].get("ok")) and bool(out["alive"].get("advancing"))
+    emit(out)
+
+
 def cmd_gate(a):
     """{order, outdir} both optional (gate()); another order: ok false, rc 2."""
     try:
@@ -356,11 +364,16 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     the job's slot), then one read of debugfs miscinfo (a GETMISCINFO kick: a non-tick EDM pass,
     E746), its reply or error kept; the poll and its timeout start after it. K5 (round 42, N3g
     §4): the record's bif keeps [BIF_INT_STAT, BIF_FAULT] read right before the cmd write (the
-    read ticks takes tk0 from) and right after the poll, {pre, post}; nothing is written."""
+    read ticks takes tk0 from) and right after the poll, {pre, post}; nothing is written. K6
+    (round 43, N3h §2): a kicked job's bif also keeps mid, read right after the kick's reply
+    returns; n 0 is a kick-only job: no initfill, no params, no cmd write (CMD stays 0, so entry
+    0 dispatches nothing and tail-calls), only state 0 and the run id, then the kick."""
     if kick is not None and kick not in KICKS:
         raise ValueError(f"kick {kick!r} is not one of {', '.join(KICKS)}")
+    if n == 0 and (kick is None or params or extra):
+        raise ValueError("a kick-only job (n 0) needs a kick and takes no params or slots")
     base = RESULTS + 4 * n
-    if initfill:
+    if initfill and n:
         res.w(base, [INITFILL] * 4)
         for s in extra:
             res.w(RESULTS + 4 * s, [INITFILL] * 4)
@@ -374,8 +387,9 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     bif_pre, hc0 = bif_read()
     tk0 = (hc0 if hc0 is not None else regs()[1]).get(12) if ticks else None
     t0 = time.monotonic()
-    res.w(CMD, n)                      # last: the task sees complete parameters
-    k0 = kicked = None
+    if n:
+        res.w(CMD, n)                  # last: the task sees complete parameters
+    k0 = kicked = bif_mid = None
     if kick:
         k0 = {"tick": regs()[1].get(12), "cmd": res.r(CMD)[0], "slot": res.r(base, 4),
               "ms": (time.monotonic() - t0) * 1000}
@@ -383,6 +397,7 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
             kicked = {"kind": kick, "reply": miscinfo()}
         except OSError as e:            # no MISCINFO_READY (the kernel gives up at 500 ms)
             kicked = {"kind": kick, "reply": {"error": str(e)}}
+        bif_mid = bif_read()[0]         # K6: right after the reply, before the poll
     tp = time.monotonic()               # the poll's start: the cmd write, or the kick's end
     done = False
     while (time.monotonic() - tp) * 1000 < timeout_ms:
@@ -394,6 +409,8 @@ def one_cmd(res, n, params, runid, regs_to_set, timeout_ms=DONE_MS, initfill=Tru
     out = {"done": done, "ms": ms, "slot": res.r(base, 4), "echo": res.r(ECHO)[0],
            "cmd_after": res.r(CMD)[0], "overlap": res.r(OVERLAP)[0],
            "bif": {"pre": bif_pre, "post": bif_post}}
+    if kick:
+        out["bif"]["mid"] = bif_mid
     if extra:
         out["slots"] = {str(s): res.r(RESULTS + 4 * s, 4) for s in extra}
     if kick:
@@ -427,6 +444,8 @@ def hang_dump(outdir, tag):
 
 
 SLEEP_MAX_MS = 60000
+# K6 (round 43, N3h §2): the one expected end a job may declare, a kick-only job's (n 0)
+EXPECT_NOTDONE = "notdone"
 
 
 def sleep_before(ms):
@@ -442,7 +461,9 @@ def sleep_before(ms):
 
 def cmd_run(a):
     """A list of experiments: each {n, params, regs, repeat}; stops at the first trigger. A job's
-    sleep_ms sleeps before it (sleep_before), its slots are extra result slots (one_cmd)."""
+    sleep_ms sleeps before it (sleep_before), its slots are extra result slots (one_cmd). K6
+    (round 43): a kick-only job, n 0 with a kick and expect "notdone", ends not done and the list
+    goes on (done, it stops); n 0 or expect in any other shape stops before the first job."""
     outdir, name = a["outdir"], a["name"]
     n0 = dmesg_len()
     res = Res()
@@ -457,6 +478,13 @@ def cmd_run(a):
         sl = j.get("sleep_ms", 0)
         if type(sl) is not int or not 0 <= sl <= SLEEP_MAX_MS:
             stop = f"job {i}: sleep_ms {sl!r} is not a whole number of ms, 0 to {SLEEP_MAX_MS}"
+            break
+        kick_only = j.get("n") == 0
+        if kick_only != ("expect" in j) or (kick_only and (
+                j.get("expect") != EXPECT_NOTDONE or not j.get("kick"))):
+            stop = (f"job {i}: n 0 (a kick-only job) goes with a kick and expect "
+                    f"\"{EXPECT_NOTDONE}\", and expect with n 0 only (n {j.get('n')!r}, kick "
+                    f"{j.get('kick')!r}, expect {j.get('expect')!r})")
             break
     for i, j in enumerate(jobs if stop is None else ()):
         try:
@@ -476,7 +504,10 @@ def cmd_run(a):
             back = kreg_all()
             rec["restored"] = all(back[o] == v for o, v in keep.items())
             records.append(rec)
-            if not rec["done"]:
+            if j.get("expect") == EXPECT_NOTDONE:
+                if rec["done"]:         # K6: a kick-only job's task posted without a command
+                    raise Stop(f"the kick-only job {i} ended done (expected not done)")
+            elif not rec["done"]:
                 raise Stop(f"no done within {j.get('timeout_ms', DONE_MS)} ms (job {i})")
             if not rec["restored"]:
                 raise Stop("register not restored")
@@ -717,6 +748,7 @@ def main():
     c = sys.argv[1]
     fn = {"status": cmd_status, "stock": cmd_stock, "arm": cmd_arm, "reset": cmd_reset,
           "gate": cmd_gate, "run": cmd_run, "page": cmd_page, "write": cmd_wait_clear,
+          "reghealth": cmd_reghealth,
           "ticks": cmd_sleep_ticks, "pair": cmd_pair, "events": cmd_events, "tailpair": cmd_tailpair}[c]
     sys.exit(fn(a) or 0)
 

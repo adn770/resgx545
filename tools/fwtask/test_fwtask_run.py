@@ -523,7 +523,137 @@ def test_a_kick_job_keeps_its_bif_words_around_the_kick(monkeypatch):
     res = KickRes(calls)
     kick_setup(monkeypatch, calls, res)
     out = FR.one_cmd(res, 1, {}, 1, {}, ticks=True, kick="miscinfo")
-    assert set(out["bif"]) == {"pre", "post"}
+    assert set(out["bif"]) == {"pre", "mid", "post"}
     i_kick = calls.index(("rd", "miscinfo"))
     regs_at = [i for i, c in enumerate(calls) if c == ("regs",)]
     assert regs_at[0] < calls.index(("w", FR.CMD)) and regs_at[2] > i_kick
+
+
+# ---- round 43 (N3h §2, K6): a kick-only job, K5's mid read right after each kick reply ----------
+class IdleRes(KickRes):
+    """KickRes whose task never reports done (entry 0 with CMD 0 dispatches nothing)."""
+
+
+def k6_setup(monkeypatch, calls, words, reply="ok"):
+    """regs() gives BIF words from `words` in turn ((stat, fault); an Exception item raises),
+    HostCtl dword 12 counting; miscinfo answers (or fails) and runs no task."""
+    seq, tick = iter(words), iter(range(100, 10000, 7))
+
+    def regs():
+        calls.append(("regs",))
+        w = next(seq, (0, 0))
+        if isinstance(w, Exception):
+            raise w
+        return {0xc04: w[0], 0xc08: w[1]}, {12: next(tick)}
+
+    def rd(name):
+        calls.append(("rd", name))
+        assert name == "miscinfo"
+        if reply == "error":
+            raise OSError(110, "Connection timed out")
+        return "GETMISCINFO answered after 288 us\n"
+    monkeypatch.setattr(FR, "regs", regs)
+    monkeypatch.setattr(FR, "rd", rd)
+    monkeypatch.setattr(FR.time, "sleep", lambda s: None)
+
+
+def test_a_kicked_job_reads_bif_right_after_the_kick_reply(monkeypatch):
+    """K6: every kicked job keeps bif {pre, mid, post}: mid is one regs() read right after the
+    miscinfo reply returns, before the poll; a job without a kick keeps {pre, post}."""
+    calls = []
+    res = KickRes(calls)
+    k6_setup(monkeypatch, calls, [(0, 0), (0, 0), (0xD0400, 0x5D300F), (0xD0400, 0x5D300F)])
+    out = FR.one_cmd(res, 1, {}, 1, {}, timeout_ms=5, kick="miscinfo")
+    i_kick = calls.index(("rd", "miscinfo"))
+    i_poll = calls.index(("r", FR.STATE, 1))
+    regs_at = [i for i, c in enumerate(calls) if c == ("regs",)]
+    assert i_kick < regs_at[2] < i_poll, calls
+    assert out["bif"] == {"pre": [0, 0], "mid": [0xD0400, 0x5D300F],
+                          "post": [0xD0400, 0x5D300F]}
+    calls.clear()
+    out = FR.one_cmd(KickRes(calls), 1, {}, 1, {}, timeout_ms=5)
+    assert set(out["bif"]) == {"pre", "post"}
+
+
+def test_a_failed_kick_reply_still_reads_mid(monkeypatch):
+    calls = []
+    k6_setup(monkeypatch, calls, [(0, 0), (0, 0), (0, 0x5D300F)], reply="error")
+    out = FR.one_cmd(KickRes(calls), 1, {}, 1, {}, timeout_ms=5, kick="miscinfo")
+    assert "error" in out["kick"]["reply"] and out["bif"]["mid"] == [0, 0x5D300F]
+
+
+def test_a_kick_only_job_writes_no_command(monkeypatch):
+    """K6: n 0 with a kick: no initfill, no cmd write (CMD stays 0: entry 0 dispatches nothing
+    and tail-calls), state 0 and the run id posted, the kick, mid, the poll to its timeout."""
+    calls = []
+    res = IdleRes(calls)
+    k6_setup(monkeypatch, calls, [(0, 0), (0, 0), (0, 0x5D300F), (0, 0x5D300F)])
+    out = FR.one_cmd(res, 0, {}, 2, {}, timeout_ms=5, kick="miscinfo")
+    assert ("w", FR.CMD) not in calls and res.page[FR.CMD] == 0
+    assert ("w", FR.RESULTS) not in calls                   # slot 0 is not initfilled
+    assert ("w", FR.STATE) in calls and ("w", FR.RUNID) in calls
+    assert ("rd", "miscinfo") in calls
+    assert out["done"] is False and out["cmd_after"] == 0
+    assert out["bif"] == {"pre": [0, 0], "mid": [0, 0x5D300F], "post": [0, 0x5D300F]}
+
+
+def test_a_kick_only_job_needs_its_kick_and_takes_no_params(monkeypatch):
+    import pytest
+    for kw in ({}, {"kick": "miscinfo", "params": {"224": 1}},
+               {"kick": "miscinfo", "extra": (40,)}):
+        k = dict(kw)
+        params = k.pop("params", {})
+        with pytest.raises(ValueError):
+            FR.one_cmd(FakeRes(), 0, params, 1, {}, **k)
+
+
+def test_an_expected_notdone_kick_only_job_does_not_stop_the_list(monkeypatch):
+    """K6: expect "notdone" on a kick-only job: not done is its expected end and the next job
+    runs; the same job done stops the list (a task that posted without a command)."""
+    calls = []
+    out = run_setup(monkeypatch, calls)
+    done = {1: True, 0: False, 6: False}
+    monkeypatch.setattr(FR, "one_cmd", lambda res, n, *a, **k: (
+        calls.append(("job", n, k.get("kick"))) or {"done": done[n]}))
+    monkeypatch.setattr(FR, "hang_dump", lambda outdir, tag: None)
+    jobs = [{"n": 1, "runid": 1}, {"n": 0, "runid": 2, "kick": "miscinfo", "expect": "notdone"},
+            {"n": 6, "runid": 3, "kick": "miscinfo"}]
+    assert FR.cmd_run({"name": "f1", "outdir": "/nonexistent", "jobs": jobs}) == 1
+    assert [c for c in calls if c[0] == "job"] == [("job", 1, None), ("job", 0, "miscinfo"),
+                                                   ("job", 6, "miscinfo")]
+    assert out[0]["stop"].startswith("no done") and "job 2" in out[0]["stop"]
+    assert out[0]["ran"] == 3
+    out.clear()
+    calls.clear()
+    done[0] = True
+    assert FR.cmd_run({"name": "f1", "outdir": "/nonexistent", "jobs": jobs}) == 1
+    assert "kick-only" in out[0]["stop"] and out[0]["ran"] == 2
+
+
+def test_the_runner_refuses_expect_and_n_0_off_the_kick_only_shape(monkeypatch):
+    calls = []
+    out = run_setup(monkeypatch, calls)
+    for bad in ([{"n": 0, "kick": "miscinfo"}], [{"n": 0, "expect": "notdone"}],
+                [{"n": 6, "kick": "miscinfo", "expect": "notdone"}],
+                [{"n": 0, "kick": "miscinfo", "expect": "done"}]):
+        out.clear()
+        assert FR.cmd_run({"name": "o1", "outdir": "/nonexistent", "jobs": bad}) == 1
+        assert ("expect" in out[0]["stop"] or "n 0" in out[0]["stop"]), out[0]["stop"]
+        assert not [c for c in calls if c[0] == "job"]
+
+
+# ---- round 43 (N3h §2, K7): the register health a stage without draws keeps ---------------------
+def test_reghealth_is_the_register_health_and_the_tick(monkeypatch):
+    """K7: `reghealth` reads health() (EVENT_STATUS2, BIF words, faults) and alive(), writes
+    nothing, and is ok only when both are; it runs no tool (no draw)."""
+    out = []
+    monkeypatch.setattr(FR, "emit", lambda obj: out.append(obj))
+    monkeypatch.setattr(FR, "sh", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a)))
+    monkeypatch.setattr(FR, "wr", lambda *a: (_ for _ in ()).throw(AssertionError(a)))
+    for h, adv, ok in ((True, True, True), (False, True, False), (True, False, False)):
+        out.clear()
+        monkeypatch.setattr(FR, "health", lambda h=h: {"ok": h, "bif_fault": 0})
+        monkeypatch.setattr(FR, "alive", lambda adv=adv: {"advancing": adv})
+        FR.cmd_reghealth({})
+        assert out[0]["ok"] is ok and out[0]["health"]["ok"] is h
+        assert out[0]["alive"]["advancing"] is adv

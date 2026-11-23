@@ -68,7 +68,11 @@
 # the gate runs in the arm line's order (its sixth column: fill,tri, the default, or tri,fill) and
 # keeps the tools' whole outputs (NAME.gate-fill.txt, .gate-tri.txt) and the devcoredumps pending
 # before and after it (NAME.devcd-pre.txt, .devcd.txt), between the marks owntask-gate-begin and
-# owntask-gate.
+# owntask-gate. Round 43 (N3h K6, K7): a job may be kick-only (n 0, expect notdone: no command,
+# its not done the expected end); an owntask stage's `draws STAGE BEGIN END` line sets the draws of
+# its begin and end health (fill,tri the default, fill, tri, or none: the register health alone,
+# fwtask_run.py reghealth), and the arm line's gate column `none` runs no gate after an ok row
+# (mark owntask-nogate); every recovery (after a stop, a fault, a failed gate) draws both.
 # Hooks (run/hooks.sh, optional, staged): hook_reading NAME prints a control's `k=v` reading from
 # the job's files ($JW/NAME.out, .err, .dmesg, $W); hook_check NAME prints a reason to stop the
 # stage after a job that read ok (rc 24), or nothing; it runs in the runner's shell, so a count
@@ -108,8 +112,22 @@ if [ -f "$OWN_TSV" ]; then
 	OWN_ARM=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $5; exit }' "$OWN_TSV")
 	OWN_JOBS=$(awk -F'\t' -v s="$STAGE" '$1 == "job" && $2 == s { printf " %s", $3 }' "$OWN_TSV")
 	OWN_GATE=$(awk -F'\t' -v s="$STAGE" '$1 == "arm" && $2 == s { print $6; exit }' "$OWN_TSV")
+	# K7 (round 43): the stage's begin and end draws, when not the default
+	BEGIN_DRAWS=$(awk -F'\t' -v s="$STAGE" '$1 == "draws" && $2 == s { print $3; exit }' "$OWN_TSV")
+	END_DRAWS=$(awk -F'\t' -v s="$STAGE" '$1 == "draws" && $2 == s { print $4; exit }' "$OWN_TSV")
 fi
 OWN_GATE=${OWN_GATE:-fill,tri}
+BEGIN_DRAWS=${BEGIN_DRAWS:-fill,tri}
+END_DRAWS=${END_DRAWS:-fill,tri}
+for dw in "$BEGIN_DRAWS" "$END_DRAWS"; do
+	case "$dw" in
+	fill,tri|fill|tri|none) ;;
+	*) echo "stage $STAGE: draws '$dw' is not fill,tri, fill, tri or none"; exit 7 ;;
+	esac
+done
+if [ -z "${OWN_BLOB:-}" ] && [ "$BEGIN_DRAWS $END_DRAWS" != "fill,tri fill,tri" ]; then
+	echo "stage $STAGE: draws other than fill,tri in a stage that is not an owntask stage"; exit 7
+fi
 if [ -n "$OWN_BLOB$OWN_SHA$OWN_ARM" ]; then
 	case " ${FLAGGED_STAGES:-} " in
 	*" $STAGE "*) ;;
@@ -120,8 +138,8 @@ if [ -n "$OWN_BLOB$OWN_SHA$OWN_ARM" ]; then
 		&& printf '%s\n' "$OWN_ARM" | grep -Eqx 'slots=0x[0-9a-f]{1,2} entry=[0-9]{1,2}(,[0-9]{1,2})*( trc=[0-9]{1,2})?( pds=(crumb|halt|crumb3|land|mark|landv))?( pdsat=fw14)?( pds2=req)?( form=(sb001|sb002|sb003|sb040|sb041|sb042|sb043|sb800|sb801|sb802|sb803|sb840|sb841|sb842|fw14|sbc43|sb403|sb402|sb400))?' \
 		|| { echo "stage $STAGE: owntask blob '$OWN_BLOB', sha256 '$OWN_SHA' or arm line '$OWN_ARM' is not one the kit arms"; exit 7; }
 	case "$OWN_GATE" in
-	fill,tri|tri,fill) ;;
-	*) echo "stage $STAGE: owntask gate order '$OWN_GATE' is not fill,tri or tri,fill"; exit 7 ;;
+	fill,tri|tri,fill|none) ;;
+	*) echo "stage $STAGE: owntask gate order '$OWN_GATE' is not fill,tri, tri,fill or none"; exit 7 ;;
 	esac
 fi
 # the registers kreg:OFF=V may write, frozen with kit/session.py's KREG_ALLOWED: OFF=DEFAULT/MAX
@@ -367,8 +385,12 @@ EOF
 		fi
 		mark "kreg-restored $name"
 	fi
-	# an owntask row that ended ok: the health gate (fill and triangle) with the task armed
-	if [ -n "$OWN_BLOB" ] && [ "$class" = ok ]; then
+	# an owntask row that ended ok: the health gate (fill and triangle) with the task armed, unless
+	# the stage declares own_gate = "none" (K7, round 43)
+	if [ -n "$OWN_BLOB" ] && [ "$class" = ok ] && [ "$OWN_GATE" = none ]; then
+		echo "  owntask: no gate after $name (own_gate none)"
+		mark "owntask-nogate $name"
+	elif [ -n "$OWN_BLOB" ] && [ "$class" = ok ]; then
 		# in the stage's order, the tools' whole outputs and the devcoredumps before and after it
 		# in $JW/gate (round 41), kept whatever the gate's end
 		mkdir -p "$JW/gate"
@@ -459,6 +481,7 @@ JW=$WROOT/end; mkdir -p "$JW"
 if [ -z "$OWN_BLOB" ]; then
 	reset_gpu || { echo "## STOP: the reset after the last job failed"; exit 13; }
 fi
-health end </dev/null
+# the stage's end draws (K7: fill,tri by default; none the register health alone)
+stage_health end "$END_DRAWS" </dev/null
 rm_work "$JW"
 echo "## end: $njob jobs of $STAGE"

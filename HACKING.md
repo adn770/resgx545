@@ -472,6 +472,26 @@ outcome is scored on it. The fake runner records zeros, or a world's `bif(index,
 its world `bifjob2` raises a fault after job 1 (0x000d0400, 0x0004300f) that every later job's
 pre and post read.
 
+Round 43 (N3h §2, K6): a kicked job's `bif` also keeps `mid`, read right after the kick's reply
+returns. A job may be kick-only, `{"cmd": 0, "kick": "miscinfo", "expect": "notdone",
+"timeout_ms": T}`: no initfill, no params, no command write (CMD stays 0, so entry 0 dispatches
+nothing and tail-calls), only state 0 and its run id, then the kick and the poll; not done is its
+expected end and the list goes on, done stops it. Lint refuses `cmd` 0 without the kick and the
+expect, or with params or slots, and `expect` on a command job; fwtask_run.py refuses the same
+before the first job.
+
+Round 43 (K7): an owntask stage may declare `begin_draws` and `end_draws`, `"fill,tri"` (the
+default), `"fill"`, `"tri"` or `"none"`, for its health after the first reset and after the
+disarm, and `own_gate = "none"` (no gate after an ok row; not with `gate_order` or
+`on_gate_fail`). `none` keeps the resets, the arm's and the disarm's checks, and runs the
+register health instead (`fwtask_run.py reghealth`: `health()` and `alive()`, no tool); a failed
+boundary resets, draws both and stops (rc 16). The recovery after a stop, a fault or a failed gate
+(`health`, `strict_health`) always draws both. They reach the runner as a `draws STAGE BEGIN END`
+line of run/owntask.tsv and the arm line's gate column `none`; the health marks name the draws
+(`health NAME try N DRAWS`). Lint refuses a non-default `begin_draws` on a session's first stage,
+and the driver refuses (status 46) to start an attempt at a stage that declares one: it runs only
+right after the stage before it. The fake runner answers `reghealth` (world `regbad`: not ok).
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset
