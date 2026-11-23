@@ -141,6 +141,14 @@ pub struct State {
     /// (0xc43, E1180). It stays across a reset (E1181) and our later tasks start with it in
     /// `pa1`; `None`: unknown (E1179 read 0x00043000 there, a word none of our rows wrote).
     attr13: Option<u32>,
+    /// The word in attribute 1 once a measured `douta` wrote it (0xc43, E1184, E1186). The
+    /// issuer's `sa1` reads it after a bit 10 rewrite with 0xc43 (E1180, E1184, E1186); it stays
+    /// across resets, boots, kicks and ticks (E1185) and a client draw rewrites it (one fill left
+    /// 0x01000000, E1187: one value, so `Sgx::host_job` makes it unknown).
+    attr1: Option<u32>,
+    /// The BIF_FAULT word the EDM stalled with: after a GETMISCINFO kick pass faulted on the
+    /// rewritten bank it answered no kick and served no command until a reset (E1187).
+    stalled: Option<u32>,
 }
 
 impl Default for State {
@@ -160,6 +168,8 @@ impl Default for State {
             last_refused: None,
             rebased: false,
             attr13: None,
+            attr1: None,
+            stalled: None,
         }
     }
 }
@@ -351,6 +361,13 @@ pub enum HostJob {
     Triangle,
 }
 
+/// What a GETMISCINFO kick did.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Kick {
+    pub answered: bool,
+    pub bif_fault: Option<u32>,
+}
+
 impl Sgx {
     /// The BIF_FAULT word the next `job` ends with, from the EDM state an own-task emit with
     /// sideband bit 10 left (Q128): its rewritten `sa13` names the page, through the EDM's list
@@ -361,8 +378,14 @@ impl Sgx {
     /// `sa13`'s because something takes it as a page base is inferred. `None`: no such state (the
     /// sim runs no host job, so this says nothing else of how it ends). A rewritten `sa13` the sim
     /// does not know, or one that is not page aligned (0x00043000 and 0x005d3000 were read), is
-    /// refused.
-    pub fn host_job(&self, job: HostJob) -> Result<Option<u32>, Error> {
+    /// refused. A client draw rewrites attribute 1 (E1187, one fill), with a word not modelled:
+    /// attribute 1 is unknown afterwards. On a stalled EDM (`Sgx::kick_miscinfo`) the job meets
+    /// the fault already latched, as the gate fills of rows M and Q did (E1180, E1182).
+    pub fn host_job(&mut self, job: HostJob) -> Result<Option<u32>, Error> {
+        self.st.attr1 = None;
+        if let Some(word) = self.st.stalled {
+            return Ok(Some(word));
+        }
         if !self.st.rebased {
             return Ok(None);
         }
@@ -382,12 +405,48 @@ impl Sgx {
         Ok(Some(page | 0xf))
     }
 
+    /// A GETMISCINFO kick that writes no command for our task: whether the EDM answered it and
+    /// the BIF_FAULT word by the time the reply returned. On a healthy EDM it is answered with no
+    /// fault (every arm's kick). After an own-task emit with sideband bit 10, the kick's own pass
+    /// faults at the page in `sa13`, through the EDM's list (CID 15), by the time its reply
+    /// returns, and the EDM then answers no kick and serves no command until a reset: row F's
+    /// kick-only job read 0x005d300f with our task idle, and its next kick was not answered nor
+    /// its command 6 served (E1187; the kick and command 6 of E1174, E1175, E1180 and E1182 were
+    /// served and faulted after). Which access of the pass reads the page is not modelled. A
+    /// rewritten `sa13` the sim does not know is refused, as in `host_job`.
+    pub fn kick_miscinfo(&mut self) -> Result<Kick, Error> {
+        if let Some(word) = self.st.stalled {
+            return Ok(Kick { answered: false, bif_fault: Some(word) });
+        }
+        if !self.st.rebased {
+            return Ok(Kick { answered: true, bif_fault: None });
+        }
+        if self.st.sa_written >> 13 & 1 == 0 {
+            return Err(why(
+                "a GETMISCINFO kick after an own-task emit with sideband bit 10: its pass faults at \
+                 the page sa13 holds (E1187), and sa13 (the started entry's pa1) is unknown"
+                    .to_string(),
+            ));
+        }
+        let page = self.st.sa[13];
+        if page & 0xfff != 0 {
+            return Err(why(format!(
+                "a GETMISCINFO kick after an own-task emit with sideband bit 10: sa13 {page:#010x} \
+                 is not page aligned; only 0x005d3000 was read with a kick (E1187)"
+            )));
+        }
+        let word = page | 0xf;
+        self.st.stalled = Some(word);
+        Ok(Kick { answered: true, bif_fault: Some(word) })
+    }
+
     /// A debugfs reset: the kernel rebuilds the firmware's buffers and boots the stock EDM. Bit
     /// 10's state ends there (the kit's health fill and triangle after every reset, E1174,
     /// E1175, E1177). The boot's secondaries are not modelled: they are unknown afterwards. The
-    /// word in attribute 13 stays (E1181).
+    /// word in attribute 13 stays (E1181), and so does the word in attribute 1 (E1185); a stall
+    /// ends (E1187).
     pub fn reset(&mut self) {
-        self.st.rebased = false;
+        (self.st.rebased, self.st.stalled) = (false, None);
         self.st.sa_written = 0;
     }
 }
@@ -828,11 +887,15 @@ impl Unit<'_> {
             Bank::Own(0xc43) if n == 13 => {
                 (self.pa[1], self.written, self.st.attr13) = (v, self.written | 2, Some(v))
             }
+            // 0xc43: a marker sent to attribute 1 was the issuer's sa1 after the rewrite (E1180,
+            // E1184, E1186) and reached no pa of pa0-pa15; it stays (E1185)
+            Bank::Own(0xc43) if n == 1 => self.st.attr1 = Some(v),
             Bank::Own(b) => {
                 return Err(why(format!(
                     "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
                      unmeasured (measured: 0x843 at 0, 2, 24, 26; 0x002, 0x003, 0x842, 0x402 at \
-                     0, 2; 0xc43 at 13; E1161-E1164, E1166, E1168, E1180, E1182; with bit 10 the \
+                     0, 2; 0xc43 at 1 and 13; E1161-E1164, E1166, E1168, E1180, E1182, E1184; \
+                     with bit 10 the \
                      started entry's pa held words of earlier runs, not told apart, E1174, E1175, \
                      E1177; Q128)"
                 )));
@@ -955,9 +1018,10 @@ impl Bus for Unit<'_> {
                 let base = (cb & 0x01ff_ffff) << 7;
                 let (pc, temps) = ((w[0] >> 4 & 0xffff) as usize, (w[0] >> 24) as usize * 4);
                 // The word in attribute 13 stays across resets: rows S (0x843, E1181) and Q
-                // (0x402, E1182) started our entry with row M's marker in pa1 (E1180). Only those
-                // two sidebands read it back; with others pa1 stays unknown unless written.
-                if matches!(self.bank, Bank::Own(0x843 | 0x402)) && self.written >> 1 & 1 == 0 {
+                // (0x402, E1182) started our entry with row M's marker in pa1 (E1180), and rows V
+                // and F (0xc43, E1185, E1187) with W's (E1184, E1186). Only those three sidebands
+                // read it back; with others pa1 stays unknown unless written.
+                if matches!(self.bank, Bank::Own(0x843 | 0x402 | 0xc43)) && self.written >> 1 & 1 == 0 {
                     if let Some(v) = self.st.attr13 {
                         (self.pa[1], self.written) = (v, self.written | 2);
                     }
@@ -975,6 +1039,12 @@ impl Bus for Unit<'_> {
                     for k in 0..16 {
                         self.st.sa[12 + k] = self.pa[k];
                         known |= (self.written >> k & 1) << (12 + k);
+                    }
+                    // sa1 reads attribute 1 when a measured douta put a word there (0xc43:
+                    // E1180, E1184-E1186); else it stays unknown (0x04000010, 0x04400000 and
+                    // 0x01000000 were left by client draws, E1174, E1182, E1187)
+                    if let (Bank::Own(0xc43), Some(v)) = (self.bank, self.st.attr1) {
+                        (self.st.sa[1], known) = (v, known | 2);
                     }
                     (self.st.sa_written, self.st.rebased) = (known, true);
                 }
@@ -1942,9 +2012,8 @@ mod tests {
         refused(0x843, 0x0400); // attribute 4
         refused(0x003, 0x1800); // attribute 24 with 0x003
         refused(0x043, 0x0000); // a sideband that runs by the rule only
-        // E1180: with 0xc43 only attribute 13's landing was read (pa1); M1's to attribute 1 stood
-        // in no pa of pa0-pa15, and sa1 read it in M but not in Q (E1182)
-        refused(0xc43, 0x0100); // attribute 1
+        // E1180, E1184, E1186: with 0xc43 only attributes 13 (pa1, sa13) and 1 (sa1) were read
+        refused(0xc43, 0x0300); // attribute 3
         refused(0x403, 0x0d00); // attribute 13 with another bit 10 sideband
     }
 
@@ -1956,7 +2025,7 @@ mod tests {
         // E1180 (M): the mark image sent M13 to attribute 13 with 0xc43: it stood in the started
         // entry's pa1 (M-PA), the issuer's sa13 read it a job later (M-SA13), and the gate's fill
         // faulted at its page, BIF_FAULT 0x005d300f (M-FILL)
-        let (s, r) = own_douta(0xc43, (M13, 0x0d00), (M13, 0x0d00), &[1]);
+        let (mut s, r) = own_douta(0xc43, (M13, 0x0d00), (M13, 0x0d00), &[1]);
         r.unwrap();
         assert_eq!(s.st.regs[&66], M13);
         assert_eq!((s.st.sa[13], s.st.sa_written >> 13 & 1), (M13, 1));
@@ -1993,6 +2062,75 @@ mod tests {
         // a word nobody of ours wrote there is not known (E1179's 0x00043000 is a reading)
         let mut s = sgx();
         assert_eq!(started_pa1(&mut s, 0x843), None);
+    }
+
+    /// Row W's (E1184) marker sent to attribute 1.
+    const M1: u32 = 0x005d_1000;
+
+    #[test]
+    fn a_douta_to_attribute_1_with_0xc43_is_the_issuers_sa1_after_the_rewrite() {
+        // E1184 (W), E1186 (W2), as E1180 (M): the mark image sent M1 to attribute 1 and M13 to
+        // attribute 13 with 0xc43; job 1's post sa1 = M1 and sa13 = pa1 = M13. M1 reached no pa
+        // of pa0-pa15 (pa = n - 12 puts attribute 1 below pa0)
+        let (s, r) = own_douta(0xc43, (M1, 0x0100), (M13, 0x0d00), &[1]);
+        r.unwrap();
+        assert_eq!(s.st.regs[&66], M13);
+        assert_eq!((s.st.sa[1], s.st.sa_written >> 1 & 1), (M1, 1));
+        assert_eq!((s.st.sa[13], s.st.sa_written >> 13 & 1), (M13, 1));
+        // with 0x403 or 0x402 a word in attribute 1 was never planted: sa1 stays unknown
+        let (s, r) = own_douta(0x402, (0x3200_4000, 0), (0x3200_2000, 0x200), &[]);
+        r.unwrap();
+        assert_eq!(s.st.sa_written >> 1 & 1, 0);
+    }
+
+    #[test]
+    fn attribute_1_keeps_its_word_across_resets_and_a_client_draw_forgets_it() {
+        // E1185 (V): after W's plant, W's disarm and exit resets, V's begin reset (no draw) and
+        // V's arm, V's started entry (0xc43, no write to attributes 1 or 13) read sa1 = M1 and
+        // sa13 = pa1 = M13 (V-KEEP, V-V)
+        let (mut s, r) = own_douta(0xc43, (M1, 0x0100), (M13, 0x0d00), &[]);
+        r.unwrap();
+        for _ in 0..3 {
+            s.reset();
+        }
+        assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
+        assert_eq!((s.st.sa[1], s.st.sa_written >> 1 & 1), (M1, 1));
+        assert_eq!(s.st.sa[13], M13);
+        // E1187 (F): the same boundary with one stock fill read sa1 0x01000000, not M1; one value
+        // only, so a client draw leaves attribute 1 unknown; sa13 = pa1 = M13 still
+        s.reset();
+        assert_eq!(s.host_job(HostJob::Fill).unwrap(), None);
+        assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
+        assert_eq!(s.st.sa_written >> 1 & 1, 0);
+    }
+
+    #[test]
+    fn after_bit_10_a_kick_pass_faults_at_sa13s_page_and_the_edm_then_serves_nothing() {
+        // a GETMISCINFO kick on a healthy EDM is answered (every arm's, E1187's job 2 before the
+        // rewrite's pass ran)
+        let mut s = sgx();
+        assert_eq!(s.kick_miscinfo().unwrap(), Kick { answered: true, bif_fault: None });
+        // E1187 (F): after W2's plant (M13 in attribute 13) and a fill, crumb3 with 0xc43; job 2,
+        // a kick with no command (our task idle): answered, BIF_FAULT 0x005d300f by the reply
+        // (K-REPLY, K-KICK); job 3, a kick with command 6: not answered, BIF unchanged, not
+        // served (K-STALL)
+        let (mut s, r) = own_douta(0xc43, (M1, 0x0100), (M13, 0x0d00), &[]);
+        r.unwrap();
+        s.reset();
+        assert_eq!(s.host_job(HostJob::Fill).unwrap(), None);
+        started_pa1(&mut s, 0xc43);
+        let fault = Some(0x005d_300f);
+        assert_eq!(s.kick_miscinfo().unwrap(), Kick { answered: true, bif_fault: fault });
+        assert_eq!(s.kick_miscinfo().unwrap(), Kick { answered: false, bif_fault: fault });
+        // E1180, E1182: a fill sent after that met the fault already latched
+        assert_eq!(s.host_job(HostJob::Fill).unwrap(), fault);
+        // the kit's reset recovered it (health ok after both sessions)
+        s.reset();
+        assert_eq!(s.kick_miscinfo().unwrap(), Kick { answered: true, bif_fault: None });
+        // sa13 unknown after the rewrite: the page is not known, refused
+        let mut s = own_doutu(0xc43, 0xfffd);
+        assert!(matches!(s.kick_miscinfo(), Err(Error::Unsupported { ref why, .. })
+            if why.contains("sa13") && why.contains("E1187")));
     }
 
     #[test]
@@ -2089,14 +2227,14 @@ mod tests {
             }
         }
         // E1173 (C): with 0x843 the gate's fill and triangle were exact
-        let s = own_doutu(0x843, 0xffff);
+        let mut s = own_doutu(0x843, 0xffff);
         assert_eq!(s.host_job(HostJob::Fill).unwrap(), None);
         // sa13 unknown (pa1 not written by the program): the page is not known, refused
-        let s = own_doutu(0xc43, 0xfffd);
+        let mut s = own_doutu(0xc43, 0xfffd);
         assert!(matches!(s.host_job(HostJob::Fill), Err(Error::Unsupported { ref why, .. })
             if why.contains("sa13") && why.contains("E1174")));
         // end to end, our tim-marking program writes no pa: it runs, and the page is unknown
-        let (s, r) = own_emit(0xc43, 0);
+        let (mut s, r) = own_emit(0xc43, 0);
         r.unwrap();
         assert!(s.host_job(HostJob::Triangle).is_err());
     }
