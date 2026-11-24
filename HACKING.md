@@ -423,9 +423,8 @@ must be `class = "flagged"`, as a kreg row's stage. `session.py lint` (and the g
 freeze) refuses a missing blob, a blob that is not the map's, a name the map lacks, an arm line
 that is not `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the
 hazard word is never armed), an optional `pds=crumb`, `pds=halt`, `pds=crumb3`, `pds=land`,
-`pds=mark` or `pds=landv` (the kernel's other PDS images, below; with no `pds=` word the kernel
-arms the v1 image), an optional
-`pdsat=fw14` (the image in the slack of the firmware's PDS #14 page, round 38; with none, the
+`pds=mark`, `pds=landv`, `pds=crumbz` or `pds=landq` (the kernel's other PDS images, below; with
+no `pds=` word the kernel arms the v1 image), an optional `pdsat=fw14` (the image in the slack of the firmware's PDS #14 page, round 38; with none, the
 kernel's own page), and optional `pds2=req` and `form=NAME` last, in that order (round 39: the
 emit's `s2` the request 0x00020000; round 40: NAME one of the kernel's listed emit words,
 `fwtask.EMIT_SIDEBANDS` but `own`, e.g. `fw14` for #14's sideband; with none, 0 and our word), a
@@ -1008,6 +1007,9 @@ stays with what a session must do around it.
   `crumb3`, `land`), `pdsat=fw14`, `pds2=` and every `form=` name a session has used up to round 41.
   Round 42's words (`pds=mark`, `pds=landv`, `form=sb402`, `form=sb400`) need the fork branch
   `r42-kernel`'s module, which a session of that round pins once it is built and booted.
+  Round 45's words (`pds=crumbz`, `pds=landq`) need the fork branch `r45-kernel`'s module: `crumbz`
+  (`asm/fwtask/pds/crumbz.s`) is crumb3 without its two `douta` (it writes no attribute), `landq`
+  (`asm/fwtask/pds/landq.s`) is land with Q0 and M1 to attributes 0 and 1 from its third row.
   The older modules (r37-kernel, r38-kernel 88ADCEB5, r39-kernel 0CDFCDB7, kept on the laptop as
   `.0CDFCDB7`) refuse the words added after them, so a session pins its module's srcversion and the
   preflight refuses any other. A new word needs a fork commit, a cachix build and a one-shot boot.

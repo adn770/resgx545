@@ -2550,7 +2550,11 @@ BAD_ARMS = ["slots=0x1", "slots=0x0 entry=0", "slots=0x1 entry=0 trc_hazard=1",
             "slots=0x1 entry=0 pds=MARK", "slots=0x1 entry=0 pds=marks", "slots=0x1 entry=0 pds=landv2",
             "slots=0x1 entry=0 pds=land_v", "slots=0x1 entry=0 pdsat=fw14 pds=mark",
             "slots=0x1 entry=0 form=sb401", "slots=0x1 entry=0 form=sb404", "slots=0x1 entry=0 form=sb42",
-            "slots=0x1 entry=0 form=sb402 pds=mark", "slots=0x1 entry=0 pds=mark pds=landv"]
+            "slots=0x1 entry=0 form=sb402 pds=mark", "slots=0x1 entry=0 pds=mark pds=landv",
+            # round 45 (N3j): pds=crumbz|landq only, in their places
+            "slots=0x1 entry=0 pds=CRUMBZ", "slots=0x1 entry=0 pds=crumbz2", "slots=0x1 entry=0 pds=landq2",
+            "slots=0x1 entry=0 pds=land_q", "slots=0x1 entry=0 pdsat=fw14 pds=crumbz",
+            "slots=0x1 entry=0 pds=crumbz pds=landq"]
 
 
 @pytest.mark.parametrize("arm", BAD_ARMS)
@@ -2575,6 +2579,8 @@ def test_lint_accepts_the_arm_forms_of_the_runner(repos):
                 "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 pds2=req form=sbc43",
                 "slots=0x1 entry=0 pds=mark pdsat=fw14 form=sbc43",
                 "slots=0x1 entry=0 pds=landv pdsat=fw14 form=sbc43",
+                "slots=0x1 entry=0 pds=crumbz pdsat=fw14 form=sbc43",
+                "slots=0x1 entry=0 pds=landq pdsat=fw14 form=sbc43",
                 "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 form=sb402", "slots=0x1 entry=0 form=sb400"):
         kp, r = own_session(dict(repos, tmp=repos["tmp"] / arm.replace(" ", "_")),
                             stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
@@ -2992,7 +2998,7 @@ def test_the_kit_s_form_names_are_fwtask_s_list_but_own():
     assert list(S.OWNTASK_FORMS) == names and len(names) == 19
     rs = (KIT / "run_stage.sh").read_text()
     assert "( form=(" + "|".join(names) + "))?" in rs
-    assert "( pds=(crumb|halt|crumb3|land|mark|landv))?" in rs
+    assert "( pds=(crumb|halt|crumb3|land|mark|landv|crumbz|landq))?" in rs
 
 
 @pytest.mark.parametrize("name", [n for n in ("sb001", "sb002", "sb003", "sb040", "sb041", "sb042",
@@ -3056,6 +3062,33 @@ def test_the_runner_refuses_other_round_42_arm_words(tmp_path, words):
 @pytest.mark.parametrize("words", ["pds=mark pdsat=fw14 form=sbc43", "pds=crumb3 pdsat=fw14 form=sb402",
                                    "pds=landv pdsat=fw14 form=sbc43"])
 def test_the_mock_arms_rows_m_q_and_lv_s_words(repos, words):
+    kp, r = own_session(dict(repos, tmp=repos["tmp"] / words.split()[0]), stage=OWN_STAGE.replace(
+        "entry=0", "entry=0 " + words))
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert "arm slots=0x1 entry=0 " + words in own_log(mm)
+
+
+# ---- round 45 (N3j §9): pds=crumbz and pds=landq -------------------------------------------------
+@pytest.mark.parametrize("words", ["pds=crumbz pdsat=fw14 form=sbc43", "pds=landq pdsat=fw14 form=sbc43",
+                                   "pds=crumbz", "pds=landq"])
+def test_the_runner_takes_the_round_45_arm_words(tmp_path, words):
+    """N3j rows Z (crumbz) and Q (landq)."""
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pds=crumbz2", "pds=CRUMBZ", "pds=landq2", "pdsat=fw14 pds=landq"])
+def test_the_runner_refuses_other_round_45_arm_words(tmp_path, words):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pds=crumbz pdsat=fw14 form=sbc43", "pds=landq pdsat=fw14 form=sbc43"])
+def test_the_mock_arms_rows_z_and_q_s_words(repos, words):
     kp, r = own_session(dict(repos, tmp=repos["tmp"] / words.split()[0]), stage=OWN_STAGE.replace(
         "entry=0", "entry=0 " + words))
     m = kit(kp, r, "mock", "--world", "model")

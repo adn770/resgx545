@@ -617,6 +617,9 @@ stays with what a session must do around it.
   `crumb3`, `land`), `pdsat=fw14`, `pds2=` and every `form=` name a session has used up to round 41.
   Round 42's words (`pds=mark`, `pds=landv`, `form=sb402`, `form=sb400`) need the fork branch
   `r42-kernel`'s module, which a session of that round pins once it is built and booted.
+  Round 45's words (`pds=crumbz`, `pds=landq`) need the fork branch `r45-kernel`'s module: `crumbz`
+  (`asm/fwtask/pds/crumbz.s`) is crumb3 without its two `douta` (it writes no attribute), `landq`
+  (`asm/fwtask/pds/landq.s`) is land with Q0 and M1 to attributes 0 and 1 from its third row.
   The older modules (r37-kernel, r38-kernel 88ADCEB5, r39-kernel 0CDFCDB7, kept on the laptop as
   `.0CDFCDB7`) refuse the words added after them, so a session pins its module's srcversion and the
   preflight refuses any other. A new word needs a fork commit, a cachix build and a one-shot boot.

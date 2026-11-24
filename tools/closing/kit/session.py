@@ -169,7 +169,9 @@ OWNTASK_KEYS = ("blob", "arm")
 OWNTASK_FORMS = ("sb001", "sb002", "sb003", "sb040", "sb041", "sb042", "sb043", "sb800", "sb801",
                  "sb802", "sb803", "sb840", "sb841", "sb842", "fw14", "sbc43", "sb403", "sb402",
                  "sb400")
-OWNTASK_IMAGES = ("crumb", "halt", "crumb3", "land", "mark", "landv")
+# round 45 (N3j §9): pds=crumbz (crumb3 without its two douta) and pds=landq (land with Q0 and M1
+# to attributes 0 and 1)
+OWNTASK_IMAGES = ("crumb", "halt", "crumb3", "land", "mark", "landv", "crumbz", "landq")
 OWNTASK_ARM = re.compile(r"slots=0x([0-9a-f]{1,2}) entry=([0-9]{1,2}(?:,[0-9]{1,2})*)"
                          r"(?: trc=([0-9]{1,2}))?(?: pds=(" + "|".join(OWNTASK_IMAGES) + r"))?"
                          r"(?: pdsat=(fw14))?"
