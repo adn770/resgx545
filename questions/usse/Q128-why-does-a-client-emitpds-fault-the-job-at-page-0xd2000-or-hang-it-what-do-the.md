@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200"]
 terms = []
 +++
 
@@ -247,3 +247,29 @@ met an EDM already stalled since job 2 is [infer]. Still open: what the fill's w
 the triangle writes into attribute 1; where `sa3`-`sa10` come from; why land's early stop faults at
 page 0 (E1176, E1178); who wrote 0x00043000; what bits 6, 10 and 11 mean; the parts above. Not
 retired.
+
+Draw sequences and attribute 1, and land's stop with a planted sa1, 2026-11-24 (E1188 to E1200,
+r44-n3i-n1, -n2 and -n3, flagged, module 079DD0D1 of fork r42-kernel ec6511d5de87, no rebuild or
+boot; the kit's K8 draw lists). Six plants (rows WA-WD, WL, WF: E1188, E1190, E1192, E1194, E1197,
+E1199) put M1 in `sa1` with no fault, as W [HW]. The crumb3 read after each, with a firmware load
+and the declared begin draws between, read `sa1` 0x04400000 after fill, triangle (FT, E1189: FT-SAME
+held), M1 kept after fill, fill (FF, E1191), 0x02400000 after a triangle alone (T, E1193) and after
+triangle, fill (TF, E1195), and with no plant one fill after a fill-then-triangle stage read
+0x05400000 (F2, E1196) [HW]. FF-N, T-N, TF-N and F2-N FAILED against their predictions (held),
+X-KEEP (FF) and T-K FAILED against their predictions (failed): H-N, the event count, is falsified,
+and none of H-LAST, H-K and H-ACC fits the five reads [HW against the frozen predictions]. So the
+0x04400000 of the earlier rows is the word a fill then a triangle leave, over any word before [HW, 7
+of 8 reads with that sequence, X's 0x04000010 the other]; a triangle writes attribute 1 and a fill
+after it leaves the triangle's word [HW]; and a fill does not always write it: one fill after a
+plant left 0x01000000 in F (E1187) and M1 in LF (E1200), and two fills left M1 [HW]. Row LM (E1198),
+land on W's bank with no draws, read `sa0` = V0, `sa1` = M1, `sa2` = V2 and stopped at M1's page, as
+landv did (LM-EARLY1, LM-KEEP and LM-V0 held) [HW]: land's image does not cause a page-0 stop (H-IMG
+fails). Row LF (E1200), land after W's plant and one fill, read `sa0` 0x00000002, `sa1` = M1, `sa2`
+0x01049b60 and stopped at page 0 (LF-EARLY0 held; LF-SA1 and LF-EVT FAILED against their
+predictions) [HW]. So land's stop faults at `sa1`'s page with `sa0` = V0 (LM) and at page 0 with
+`sa0` below one page (LF, and LC's `sa0` 0 in E1176 and E1178) [HW]; that the tick pass reads
+through `sa0`, then `sa1` (H-SA0), and that LC's page 0 was `sa0`'s, are [infer]. Still open: what
+writes `sa1` in some draw sequences and not in others (one fill has left three outcomes); what the
+words 0x04400000, 0x02400000 and 0x05400000 mean; where `sa0`'s 2 comes from and whether `sa0` and
+`sa2` read attributes 0 and 2; which access of the tick pass reads the page; where `sa3`-`sa10` come
+from; who wrote 0x00043000; what bits 6, 10 and 11 mean; the parts above. Not retired.

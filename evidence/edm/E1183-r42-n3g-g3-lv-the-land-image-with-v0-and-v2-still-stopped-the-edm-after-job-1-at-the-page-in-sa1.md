@@ -60,3 +60,9 @@ page 0x005d1000 **[HW]**. So the early stop's fault page follows the word in sa1
 0x04400000 was this row's sa1, attribute 1's word, which a client draw leaves there (E1187)
 **[HW]**; which draw left 0x04400000 is **[infer]**. LC's page 0 (E1176, E1178) is not explained by
 that. This record's verdict and readings stand.
+
+**Correction 2026-11-24:** Round 44's row FT (E1189) read 0x04400000 in sa1 after W's plant and a
+fill and a triangle **[HW]**: this record's 0x04400000, after the same begin draws, is the word that
+sequence leaves, which the earlier correction left **[infer]**. Row LM (E1198) ran land on V's bank
+and stopped at sa1's page as this record's landv did: the early stop's page does not depend on
+landv's V0 and V2 `douta` **[HW]**. This record's verdict and readings stand.

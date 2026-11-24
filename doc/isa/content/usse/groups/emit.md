@@ -124,11 +124,16 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   reply returns, and the EDM then answers no kick and serves no command until a reset (E1187);
   with no pass after the emit nothing faults (E1184, E1186) **[HW]**. `sa1` reads attribute 1: a
   word sent there with 0xc43 is `sa1` in the same row (E1180, E1184, E1186) and stays across
-  resets, a boot, kicks and ticks with no client draw (E1185), and one stock fill rewrote it to
-  0x01000000 (E1187) **[HW]**; which draw left the 0x04400000 of other rows is **[infer]**. With
-  the tick running (landv) the EDM stops after the emit's pass at `sa1`'s page (E1183, E1185)
-  **[HW]**. That `sa13` is taken as a page base is **[infer]**; where `sa3`-`sa10` come from and
-  why land's stop faults at page 0 are **[open]** (Q128).
+  resets, a boot, kicks and ticks with no client draw (E1185, E1198) **[HW]**. Client draws after
+  a firmware load rewrite it by sequence, one run each: a fill then a triangle 0x04400000 over a
+  planted word, the word of the earlier rows (E1189); a triangle alone, and a triangle then a fill,
+  0x02400000 (E1193, E1195); two fills left the planted word (E1191); one fill has left
+  0x01000000, the planted word and, with no plant, 0x05400000 (E1187, E1200, E1196) **[HW]**; what
+  decides whether a draw writes it is **[open]**. With the tick running (landv, and land on the
+  same bank) the EDM stops after the emit's pass at `sa1`'s page with `sa0` = V0 (E1183, E1185,
+  E1198), and at page 0 with `sa0` 2 after a fill (E1200) **[HW]**; that the pass reads through
+  `sa0`, then `sa1`, which LC's page 0 with `sa0` 0 fits, is **[infer]**. That `sa13` is taken as
+  a page base is **[infer]**; where `sa3`-`sa10` come from is **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

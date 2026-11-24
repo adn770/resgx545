@@ -1051,28 +1051,38 @@ starts it and the tick stops (0x000, 0x040, 0x800, 0x840); 1 faults the job with
 0xc43), bits 6, 10 and 11 not needed. After 0xc43 the next fill failed in 2 of 2 until a reset
 (E1172). Bit 10 rewrites the issuer's own secondaries (E1173-E1175, E1182, read by our entry 0 in a
 later job): after 0xc43, 0x403 or 0x402 (bits 1:0 = 2 or 3 alike) `sa12`-`sa27` equal the started
-entry's `pa0`-`pa15`, `sa1` and words of `sa3`-`sa10` change and `sa0` and `sa2` stay; with 0x843
-nothing changes (E1173, E1179, E1181). `sa13` then holds `pa1`, the word in attribute 13: a marker
-our program sent to attribute 13 stood in `pa1` and `sa13` (E1180), and the word there stays across
-resets and a reboot until rewritten (E1179, E1181), so the 0x00043000 of the earlier rows was a
-stale word of attribute 13. Until a reset the next fill and the next triangle fault through the
-EDM's list (CID 15) at that page, BIF_FAULT 0x0004300f, or 0x005d300f with the marker (E1172,
-E1174, E1175, E1177, E1180, E1182); the triangle does not fault at the render queue's head `sa15`.
+entry's `pa0`-`pa15`, `sa1` and words of `sa3`-`sa10` change and `sa0` and `sa2` stay with crumb3
+and with land and no draws (E1198), but read 2 and 0x01049b60 with land after one fill (E1200);
+with 0x843 nothing changes (E1173, E1179, E1181). `sa13` then holds `pa1`, the word in attribute
+13: a marker our program sent to attribute 13 stood in `pa1` and `sa13` (E1180), and the word there
+stays across resets and a reboot until rewritten (E1179, E1181), so the 0x00043000 of the earlier
+rows was a stale word of attribute 13. Until a reset the next fill and the next triangle fault
+through the EDM's list (CID 15) at that page, BIF_FAULT 0x0004300f, or 0x005d300f with the marker
+(E1172, E1174, E1175, E1177, E1180, E1182); the triangle does not fault at the render queue's
+head `sa15`.
 With the marker the fault arose in the job after the emit (a kick and an own-task command), not on
 the emit's pass (E1180, E1182, per-job BIF reads); with no pass after the emit nothing faults
 (E1184, E1186). A bare GETMISCINFO kick pass, our task idle and no command written, faults at the
 page in `sa13` by the time its reply returns, and after that fault the EDM answers no kick and
 serves no command until a reset (E1187), so the after-read is not needed for the fault. That
 `sa13` is used as a page base is inferred. `sa1` reads attribute 1: a word our program sent there
-with 0xc43 was `sa1` in the same row (E1180, E1184, E1186) and in the next stage after resets, a
-boot, kicks and ticks with no client draw (E1185); one stock fill rewrote it, to 0x01000000
-(E1187), so the 0x04400000 of rows with no write there (E1182, E1183) is a word a client draw
-left, which draw is inferred. With 0x402 crumb3's V0 and V2 stand in every fourth `pa` as with
+with 0xc43 was `sa1` in the same row (E1180, E1184, E1186, E1188, E1190, E1192, E1194, E1197,
+E1199), with no fault and no pass after, and in the next stage after resets, a boot, kicks and
+ticks with no client draw (E1185, E1198). Client draws after a firmware load
+rewrite it by sequence (E1189, E1191, E1193, E1195, E1196, one run each): a fill then a triangle
+left 0x04400000 over a planted word, the word of the earlier rows with no write there (E1182, E1183;
+X read 0x04000010, E1174); a triangle alone, and a triangle then a fill, 0x02400000; two fills left
+the planted word. One fill has left three outcomes: 0x01000000 after a plant (E1187), the planted
+word (E1200) and, with no plant, 0x05400000 (E1196), so what decides whether a draw writes
+attribute 1 is open. With 0x402 crumb3's V0 and V2 stand in every fourth `pa` as with
 0x002 (E1182). With the land image, which writes no V0 or V2, the EDM stopped after the emit with
 BIF_FAULT 0x0000000f (E1176, CANNOT TELL by a control's design slip; its rerun, E1178, read that
 early stop as predicted); with V0 and V2 added (landv) it stopped the same way, at the page in
 `sa1`, with `sa0` and `sa2` valid (E1183), and at the page of a marker planted in attribute 1
-(E1185): the early stop's fault page follows `sa1`. Why land's stop faults at page 0 is open. A
+(E1185); land itself on that bank (`sa0` = V0, `sa1` the marker, no draws) stopped at the
+marker's page too (E1198), and after one fill (`sa0` 2, `sa1` the marker) at page 0 (E1200). So the
+early stop faults at `sa1`'s page with `sa0` = V0 and at page 0 with `sa0` below one page, as LC's
+`sa0` 0 did; that the tick pass reads through `sa0`, then `sa1`, is inferred. A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

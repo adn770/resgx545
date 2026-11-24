@@ -70,3 +70,12 @@ early stop follows sa1. This record's page 0, and LC2's with sa1 0x04400000 (E11
 explained by that; the reading of a stop through sa0 = 0 in this record's earlier correction stays
 **[infer]**, not supported by a row. This record's frozen verdict, CANNOT TELL, and its readings
 stand.
+
+**Correction 2026-11-24:** Round 44 ran land itself on the bank V had: row LM (E1198), W's plant and
+no draws, read post sa0 = V0, sa1 = M1, sa2 = V2 and stopped at the page in sa1 (M1); row LF
+(E1200), W's plant and one fill, read post sa0 0x00000002, sa1 = M1, sa2 0x01049b60 and stopped at
+page 0 **[HW]**. So land's image does not cause a page-0 stop (H-IMG fails), and the stop faults at
+page 0 when sa0 holds a word below one page and at sa1's page when sa0 is V0 **[HW, rows LM and
+LF]**. This record's page 0 with post sa0 0 fits that: a stop through sa0, then sa1, is **[infer]**,
+now supported by two rows of round 44. This record's frozen verdict, CANNOT TELL, and its readings
+stand.

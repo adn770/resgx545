@@ -143,7 +143,7 @@ list.
 - `Q098` usse, medium: why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to
   pa_n being lost, and why does an unwritten one read the job's ... (E496, E748, E820)
 - `Q128` usse, medium: why does a client emitpds fault the job at page 0xd2000 or hang it, what do
-  the s0, s1 and s2 operands of the started PDS program become ... (E1185, E1186, E1187)
+  the s0, s1 and s2 operands of the started PDS program become ... (E1198, E1199, E1200)
 - `Q132` usse, medium: where does a write to a temporary or a register past the task's allocation go
   (does it land in the register whose index is the register's ... (E486, E519, E535)
 - `Q134` usse, medium: which register does a client str change (the order of a client str then ldr
@@ -275,9 +275,48 @@ list.
 
 ## Recent records
 
-9 records of 2026-11-22 to 2026-11-23 (the last 2 days to the newest record's date), newest first;
+17 records of 2026-11-23 to 2026-11-24 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1200` edm, 2026-11-24: r44-n3i-n3 stage lf (row LF, module 079DD0D1, fork ec6511d5de87,
+  emitsb_sbc43s, image land at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after
+  the plant WF (E1199) and one stock ...
+- `E1199` edm, 2026-11-24: r44-n3i-n3 stage wf (row W, the plant before LF, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): row W (E1184) byte ...
+- `E1198` edm, 2026-11-24: r44-n3i-n2 stage lm (row LM, module 079DD0D1, fork ec6511d5de87,
+  emitsb_sbc43s, image land at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after
+  the plant WL (E1197) with no client ...
+- `E1197` edm, 2026-11-24: r44-n3i-n2 stage wl (row W, the plant before LM, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): row W (E1184) byte ...
+- `E1196` edm, 2026-11-24: r44-n3i-n1 stage f2 (row F2, no plant, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): after TF (E1195) and its ...
+- `E1195` edm, 2026-11-24: r44-n3i-n1 stage tf (row TF, module 079DD0D1, fork ec6511d5de87,
+  emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
+  after the plant WD (E1194, M1 in ...
+- `E1194` edm, 2026-11-24: r44-n3i-n1 stage wd (row W, the plant before TF, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): row W (E1184) byte ...
+- `E1193` edm, 2026-11-24: r44-n3i-n1 stage t (row T, module 079DD0D1, fork ec6511d5de87,
+  emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
+  after the plant WC (E1192, M1 in ...
+- `E1192` edm, 2026-11-24: r44-n3i-n1 stage wc (row W, the plant before T, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): row W (E1184) byte for ...
+- `E1191` edm, 2026-11-24: r44-n3i-n1 stage ff (row FF, module 079DD0D1, fork ec6511d5de87,
+  emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
+  after the plant WB (E1190, M1 in ...
+- `E1190` edm, 2026-11-24: r44-n3i-n1 stage wb (row W, the plant before FF, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): row W (E1184) byte ...
+- `E1189` edm, 2026-11-24: r44-n3i-n1 stage ft (row FT, the control, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): after the plant WA (E1188, ...
+- `E1188` edm, 2026-11-24: r44-n3i-n1 stage wa (row W, the plant before FT, module 079DD0D1, fork
+  ec6511d5de87, emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user
+  present): row W (E1184) byte ...
 - `E1187` edm, 2026-11-23: r43-n3h-n2 stage f (row F, module 079DD0D1, fork ec6511d5de87,
   emitsb_sbc43s, image crumb3 at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
   after row W2 (E1186) and one stock fill ...
@@ -290,27 +329,15 @@ the claims are cut at 200 characters.
 - `E1184` edm, 2026-11-23: r43-n3h-n1 stage w (row W, module 079DD0D1, fork ec6511d5de87,
   emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row
   M's image (E1180) as one job, T3 ...
-- `E1183` edm, 2026-11-22: r42-n3g-g3 stage lv (row LV, module 079DD0D1, fork ec6511d5de87,
-  emitsb_sbc43s, image landv at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
-  LC2's row (E1178) with V0 and V2 sent to ...
-- `E1182` edm, 2026-11-22: r42-n3g-g2 stage q (row Q, module 079DD0D1, fork ec6511d5de87,
-  emitsb_sb402s, image crumb3 at fw14, form=sb402, sideband 0x402, s2 0, flagged, user present): bit
-  10 with bits 1:0 = 2: job 1's post ...
-- `E1181` edm, 2026-11-22: r42-n3g-g2 stage s (row S, row C again, module 079DD0D1, fork
-  ec6511d5de87, emitsb14s, image crumb3 at fw14, form=fw14, sideband 0x843, s2 0, flagged, user
-  present): after row M (E1180), its ...
-- `E1180` edm, 2026-11-22: r42-n3g-g1 stage m (row M, module 079DD0D1, fork ec6511d5de87,
-  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present):
-  crumb3 with two douta more, M13 0x005d3000 ...
-- `E1179` edm, 2026-11-22: r42-n3g-g1 stage c (row C, the build control, module 079DD0D1, fork
-  ec6511d5de87, emitsb14s, image crumb3 at fw14, form=fw14, sideband 0x843, s2 0, flagged, user
-  present): E1173's two jobs on the new ...
 
 ## Closing sessions
 
-144 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+147 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r44-n3i-n3`: 2026-11-24; module 079DD0D13F231EEAC52FE0F; tools ~/sgxfive-test-t30
+- `render/closing-r44-n3i-n2`: 2026-11-24; module 079DD0D13F231EEAC52FE0F; tools ~/sgxfive-test-t30
+- `render/closing-r44-n3i-n1`: 2026-11-24; module 079DD0D13F231EEAC52FE0F; tools ~/sgxfive-test-t30
 - `render/closing-r43-n3h-n2`: 2026-11-23; module 079DD0D13F231EEAC52FE0F; tools ~/sgxfive-test-t30
 - `render/closing-r43-n3h-n1`: 2026-11-23; module 079DD0D13F231EEAC52FE0F; tools ~/sgxfive-test-t30
 - `render/closing-r42-n3g-g3`: 2026-11-22; module 079DD0D13F231EEAC52FE0F; tools ~/sgxfive-test-t30
@@ -510,7 +537,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): ec6511d5de87
-- module srcversion 079DD0D13F231EEAC52FE0F: last named 2026-11-23, 5 sessions
+- module srcversion 079DD0D13F231EEAC52FE0F: last named 2026-11-24, 8 sessions
 - module srcversion 83FBFD860D4E0D4CE691F48: last named 2026-11-21, 16 sessions
 - module srcversion 0CDFCDB73D76F39FE9E593C: last named 2026-11-19, 6 sessions
 - module srcversion 88ADCEB5AD9F055D077A99C: last named 2026-11-19, 3 sessions
@@ -596,4 +623,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-54 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+67 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

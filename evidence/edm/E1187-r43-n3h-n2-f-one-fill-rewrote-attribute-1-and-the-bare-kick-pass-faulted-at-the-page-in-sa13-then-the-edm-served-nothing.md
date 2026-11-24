@@ -71,3 +71,12 @@ job 2 is **[infer]**.
 **What it does not show.** What the fill's word means, and what the triangle writes there; which
 access of the kick pass read sa13's page; whether the stall stops the tick (T3 had stopped it
 already); one run.
+
+**Correction 2026-11-24:** Round 44 read attribute 1 after other draw sequences. One fill after the
+same plant and boundary left M1 in row LF (E1200), and two fills left it in row FF (E1191); one fill
+with no plant after a fill-then-triangle stage left 0x05400000 in row F2 (E1196) **[HW]**. So this
+record's "one fill rewrote attribute 1" holds for this row only: a fill does not always write
+attribute 1, and one fill has left three outcomes (0x01000000, the word kept, 0x05400000) **[HW]**;
+what decides it is **[open]**. A triangle alone left 0x02400000 and a triangle then a fill the same
+(E1193, E1195) **[HW]**. This record's frozen verdict (F-FILL4 FAILED against its prediction) and
+readings stand.

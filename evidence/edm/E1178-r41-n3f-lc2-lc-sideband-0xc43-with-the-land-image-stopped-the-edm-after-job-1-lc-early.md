@@ -77,3 +77,13 @@ follows sa1. This record's printed sa1 was 0x04400000 too, yet it faulted at pag
 what the pass read (the record infers that the copy came before the stop), land's early stop does
 not follow sa1. Why it faults at page 0 is not explained; a stop through sa0 = 0 stays **[infer]**.
 This record's verdict and readings stand.
+
+**Correction 2026-11-24:** Round 44 ran land itself on the bank V had: row LM (E1198), W's plant and
+no draws, read post sa0 = V0, sa1 = M1, sa2 = V2 and stopped at the page in sa1 (M1); row LF
+(E1200), W's plant and one fill, read post sa0 0x00000002, sa1 = M1, sa2 0x01049b60 and stopped at
+page 0 **[HW]**. So land's image does not cause a page-0 stop (H-IMG fails), and the stop faults at
+page 0 when sa0 holds a word below one page and at sa1's page when sa0 is V0 **[HW, rows LM and
+LF]**. This record's page 0 with post sa0 0 and sa1 0x04400000 fits that: a stop through sa0, then
+sa1, is **[infer]**, now supported by two rows of round 44; the earlier correction's "land's early
+stop does not follow sa1" is narrowed to: it follows sa1 when sa0 is V0. This record's verdict and
+readings stand.

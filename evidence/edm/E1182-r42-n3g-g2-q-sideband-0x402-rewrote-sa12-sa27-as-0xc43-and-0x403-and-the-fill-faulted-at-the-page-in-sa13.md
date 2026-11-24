@@ -58,3 +58,10 @@ end draws, the next session's begin draws and row S's gate and draws: that one o
 0x04400000 there is **[infer]** (one fill alone left 0x01000000). The counter-reading to H-BLOCK
 then needs no other cause; H-BLOCK holds at attributes 1 and 13 **[HW]**. This record's verdict and
 readings stand.
+
+**Correction 2026-11-24:** Round 44's row FT (E1189), W's plant then a fill and a triangle after a
+firmware load, read sa1 0x04400000 **[HW]**: that draw sequence leaves this record's word over a
+planted one. So the 0x04400000 here is the word Q's own begin draws, a fill then a triangle, left
+**[infer, one plant-based read and the seven rows of n3i's section 0.1]**. One fill does not always
+rewrite attribute 1 (E1191, E1200), so the earlier correction's "one fill alone left 0x01000000" was
+one outcome of three (E1187, E1196, E1200). This record's verdict and readings stand.
