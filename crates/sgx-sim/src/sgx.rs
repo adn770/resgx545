@@ -155,22 +155,17 @@ pub struct State {
 }
 
 impl State {
-    /// The word in attribute 1 at a read after the client draws since the last reset, where
-    /// every read of that sequence after a planted word gave one word (round 44, one run each):
-    /// none keeps it (E1185); two fills keep it (E1191); a triangle alone, and a triangle then
-    /// a fill, leave 0x02400000 (E1193, E1195). Reads disagree for one fill (0x01000000 in
-    /// E1187, the planted word in round 44's row LF with land, 0x05400000 with no plant in
-    /// E1196) and for a fill then a triangle (0x04400000 in E1189 and six rows with no plant,
-    /// 0x04000010 in X, E1174): unknown. Every other sequence was never read: unknown, so a read
-    /// refuses.
+    /// The word in attribute 1 at a read after the client draws since the last reset, known
+    /// only where more than one read of that sequence after a planted word agreed (round 43's
+    /// rule): no draws keeps it (E1185). Two fills (the planted word, E1191), a triangle
+    /// alone and a triangle then a fill (0x02400000, E1193, E1195) were read once each:
+    /// unknown until a second read agrees. Reads disagree for one fill (0x01000000 in E1187,
+    /// the planted word in round 44's row LF with land, 0x05400000 with no plant in E1196) and
+    /// for a fill then a triangle (0x04400000 in E1189 and six rows with no plant, 0x04000010
+    /// in X, E1174): unknown. Every other sequence was never read: unknown, so a read refuses.
     fn attr1_now(&self) -> Option<u32> {
-        use HostJob::{Fill, Triangle};
         let word = self.attr1?;
-        match self.draws[..] {
-            [] | [Fill, Fill] => Some(word),
-            [Triangle] | [Triangle, Fill] => Some(0x0240_0000),
-            _ => None,
-        }
+        self.draws.is_empty().then_some(word)
     }
 }
 
@@ -2153,13 +2148,14 @@ mod tests {
     }
 
     #[test]
-    fn the_draws_after_a_plant_leave_attribute_1_by_sequence_where_every_read_agrees() {
+    fn the_draws_after_a_plant_leave_attribute_1_known_only_where_two_reads_agree() {
         use HostJob::{Fill, Triangle};
-        // E1191 (FF): two fills after W's plant left M1 in attribute 1
-        assert_eq!(sa1_after(&[Fill, Fill]), Some(M1));
-        // E1193 (T): a triangle alone left 0x02400000; E1195 (TF): a fill after it left the same
-        assert_eq!(sa1_after(&[Triangle]), Some(0x0240_0000));
-        assert_eq!(sa1_after(&[Triangle, Fill]), Some(0x0240_0000));
+        // read once each, so unknown until a second read agrees (round 43's rule): two fills
+        // left M1 (E1191), a triangle alone and a triangle then a fill left 0x02400000 (E1193,
+        // E1195)
+        assert_eq!(sa1_after(&[Fill, Fill]), None);
+        assert_eq!(sa1_after(&[Triangle]), None);
+        assert_eq!(sa1_after(&[Triangle, Fill]), None);
         // fill, then triangle: 0x04400000 over the plant (E1189) and in six unplanted rows, but
         // 0x04000010 in X (E1174): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill, Triangle]), None);
@@ -2186,15 +2182,13 @@ mod tests {
         assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
         assert_eq!(s.st.sa_written >> 1 & 1, 0);
         // a draw before the plant does not count: the plant rows ran fill, triangle first
-        // (E1188), then the read stage's draws alone decide (E1191)
+        // (E1188), then with no draws after it the plant stays (E1185)
         let mut s = sgx();
         s.host_job(Fill).unwrap();
         s.host_job(Triangle).unwrap();
         let (mut s, r) = own_douta_on(s, 0xc43, (M1, 0x0100), (M13, 0x0d00), &[]);
         r.unwrap();
         s.reset();
-        s.host_job(Fill).unwrap();
-        s.host_job(Fill).unwrap();
         assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
         assert_eq!((s.st.sa[1], s.st.sa_written >> 1 & 1), (M1, 1));
     }
