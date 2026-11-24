@@ -3719,3 +3719,166 @@ def test_the_driver_will_not_start_at_a_stage_with_a_draw_list(repos):
         assert rc == 46 and rcs == {}
     finally:
         S.ENV = None
+
+
+# ---- K9: the command count from the kernel's `ccb_sent` (round 45, n3j design section 2) -------
+#
+# Round 44's 14 kept stages: ccb_sent at each firmware load rises by 2 + 2 per fill + 6 per
+# triangle from the begin load to the arm's load, and from the disarm's load to the exit's by 2 +
+# the end draws' kicks (H-KC, E768). kitscore.kc reads the count from a stage's kernel.log and
+# DK is its control: the delta equals the expected one, else failed; a log missing a `loaded`
+# line is cannot tell (None), a begin health at try 2 (a retry) is failed.
+R44 = "render/closing-r44-n3i-"
+R44_STAGES = (
+    # (session dir, stage, begin list, begin load, arm load, end list, disarm load, exit load)
+    ("n1/out/20261124-005624/ff", "fill,fill", 314, 320, "fill,tri", 322, 332),
+    ("n1/out/20261124-005624/t", "tri", 348, 356, "fill,tri", 358, 368),
+    ("n1/out/20261124-005624/tf", "tri,fill", 384, 394, "fill,tri", 396, 406),
+    ("n1/out/20261124-005624/f2", "fill", 407, 411, "fill,tri", 413, 423),
+    ("n1/out/20261124-005624/ft", "fill,tri", 276, 286, "fill,tri", 288, 298),
+    ("n1/out/20261124-005624/wa", "fill,tri", 261, 271, "none", 273, 275),
+    ("n2/out/20261124-010001/lm", "none", 447, 449, None, None, None),
+    ("n3/out/20261124-010057/lf", "fill", 484, 488, None, None, None),
+)
+
+
+def kc_log(begin_draws="fill,tri", n0=100, n1=110, end_draws="fill,tri", e0=112, e1=122,
+           try_=1, loaded=True):
+    """A kernel.log as the kit and the kernel write it around one stage: the begin load, the
+    begin health mark, the arm mark, the arm's load, the disarm mark, its load, the end health
+    mark and the exit's load."""
+    def ld(n):
+        return (f"Nov 24 00:57:35 cedar kernel: gma500 0000:00:02.0: [drm] loaded 1 live 1 "
+                f"sw_events 0 bif_faults 0 ccb_sent {n} deferred 0")
+
+    def mk(s):
+        return f"Nov 24 00:57:35 cedar unknown: resgx545 r45j1 {s} 1795478253-20968"
+    out = [mk("row begin")] + ([ld(n0)] if loaded else [])
+    out += [mk(f"health begin try {try_} {begin_draws}"), mk("owntask-arm s emitsb_sbc43s x"),
+            ld(n1), mk("owntask-disarm s emitsb_sbc43s"), ld(e0)]
+    if end_draws:
+        out += [mk(f"health end try 2 {end_draws}"), mk("exit knobs restored"), ld(e1)]
+    return "\n".join(out) + "\n"
+
+
+def kc_dir(tmp, text):
+    d = tmp / "stage"
+    d.mkdir()
+    (d / "kernel.log").write_text(text)
+    return str(d)
+
+
+@pytest.mark.parametrize("draws,want", [("none", 2), ("fill", 4), ("tri", 8), ("fill,fill", 6),
+                                        ("tri,fill", 10), ("fill,tri", 10), ("tri,tri", 14),
+                                        ("fill,tri,fill", 12)])
+def test_kc_expects_2_plus_2_per_fill_plus_6_per_triangle(draws, want):
+    import kitscore
+    assert kitscore.kc_expected(draws) == want
+
+
+def test_kc_refuses_a_word_that_is_no_draw():
+    import kitscore
+    with pytest.raises(ValueError):
+        kitscore.kc_expected("fill,kick")
+
+
+@pytest.mark.parametrize("rel,begin,n0,n1,end,e0,e1", R44_STAGES)
+def test_kc_reads_round_44_s_kept_stages(rel, begin, n0, n1, end, e0, e1):
+    import kitscore
+    p = DATA / (R44 + rel + "/kernel.log")
+    if not p.exists():
+        pytest.skip(f"{p} is not here (RESGX545_DATA)")
+    d = str(p.parent)
+    got = kitscore.kc(d, begin=begin)
+    b = got["begin"]
+    assert (b["n0"], b["n1"], b["delta"], b["draws"], b["state"]) == \
+        (n0, n1, n1 - n0, begin, "ok"), b
+    assert b["expected"] == kitscore.kc_expected(begin) == n1 - n0
+    if end is None:
+        return
+    e = got["end"]
+    assert (e["n0"], e["n1"], e["draws"], e["state"]) == (e0, e1, end, "ok"), e
+    assert e["expected"] == kitscore.kc_expected(end) == e1 - e0
+
+
+def test_kc_ok_on_a_clean_log(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log("fill,fill", 314, 320, "fill,tri", 322, 332)),
+                      begin="fill,fill", end="fill,tri")
+    assert got["begin"]["state"] == "ok" and got["end"]["state"] == "ok"
+    assert kitscore.kc_state(got) == "ok"
+
+
+@pytest.mark.parametrize("kw", [dict(n1=111), dict(n1=109), dict(e1=121), dict(e1=124)])
+def test_kc_fails_when_a_command_we_did_not_count_ran(tmp_path, kw):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log(**kw)), begin="fill,tri", end="fill,tri")
+    side = "begin" if "n1" in kw else "end"
+    assert got[side]["state"] == "failed", got
+    assert kitscore.kc_state(got, side) == "failed"
+
+
+def test_kc_cannot_tell_when_a_loaded_line_is_missing(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log(loaded=False)), begin="fill,tri")
+    assert got["begin"]["state"] is None and got["begin"]["why"], got
+    assert kitscore.kc_state(got, "begin") is None
+
+
+def test_kc_cannot_tell_without_a_kernel_log(tmp_path):
+    import kitscore
+    got = kitscore.kc(str(tmp_path), begin="fill")
+    assert got["begin"]["state"] is None and got["end"]["state"] is None
+
+
+def test_kc_fails_on_a_begin_health_retry(tmp_path):
+    """A `health ... try 2` mark at the begin: a retry adds a reset and draws."""
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log(try_=2)), begin="fill,tri")
+    assert got["begin"]["state"] == "failed" and "try 2" in got["begin"]["why"], got
+
+
+def test_kc_fails_when_the_begin_draws_were_not_the_declared_list(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log("fill", 100, 104)), begin="tri")
+    assert got["begin"]["state"] == "failed", got
+
+
+def test_kc_reads_the_list_from_the_mark_when_none_is_declared(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log("tri,tri", 100, 114)))
+    assert got["begin"]["draws"] == "tri,tri" and got["begin"]["state"] == "ok"
+
+
+def test_kc_text_prints_the_counts_and_the_expected_sum(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log("fill,fill", 314, 320, "fill,tri", 322, 332)),
+                      begin="fill,fill")
+    lines = kitscore.kc_text("ff1-a", got)
+    assert lines[0] == ("KC ff1-a: begin N0 314, arm N1 320, delta 6, expected 2 + 2 x 2 + "
+                        "6 x 0 = 6 (ok)")
+    assert lines[1] == ("KC ff1-a: end N0 322, exit N1 332, delta 10, expected 2 + 2 x 1 + "
+                        "6 x 1 = 10 (ok)")
+
+
+@pytest.mark.parametrize("draws,base,want", [
+    ("fill", 1, ["fill 1: 3:4 K 2 0x02000010"]),
+    ("tri", 1, ["tri 1: 3:22 K 2 0x02400000; 3:4 K 2 0x02000010"]),
+    ("fill,fill", 1, ["fill 1: 3:4 K 2 0x02000010", "fill 2: 3:4 K 4 0x04000010"]),
+    ("tri,tri", 1, ["tri 1: 3:22 K 2 0x02400000; 3:4 K 2 0x02000010",
+                    "tri 2: 3:22 K 8 0x08400000; 3:4 K 8 0x08000010"]),
+    ("tri,fill", 1, ["tri 1: 3:22 K 2 0x02400000; 3:4 K 2 0x02000010",
+                     "fill 2: 3:4 K 8 0x08000010"]),
+    ("fill,tri", 2, ["fill 1: 3:4 K 3 0x03000010",
+                     "tri 2: 3:22 K 5 0x05400000; 3:4 K 5 0x05000010"]),
+    ("none", 1, [])])
+def test_kc_prints_h_kc_s_word_of_each_entry(draws, base, want):
+    """H-KC (E768): K = base + the commands before the entry + 1; a fill's 3:4 gives K << 24 |
+    0x10, a triangle's 3:22 K << 24 | 0x400000 (its 3:4 K << 24 | 0x10). Printed, never scored."""
+    import kitscore
+    assert kitscore.hkc_words(draws, base) == want
+
+
+def test_the_hacking_describes_k9():
+    t = (HERE.parent.parent / "HACKING.md").read_text()
+    assert "Round 45 (K9)" in t and "kitscore.kc" in t and "DK" in t

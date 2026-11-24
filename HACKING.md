@@ -501,6 +501,16 @@ and `tri`, run in order (`"fill,fill"`, `"tri,fill"`, `"fill,tri,fill"`), or `"n
 health mark names the list (`health NAME try N fill,fill`). Lint and `run_stage.sh` refuse an empty
 item, a word other than `fill` and `tri`, more than 3 items and `none` inside a list (exit 7).
 
+Round 45 (K9): `kitscore.kc(d, begin, end)` reads the command count from a stage's `kernel.log`,
+the kernel's `ccb_sent N` at each firmware load: begin from the load before the begin health mark
+to the arm's load, end from the disarm's load to the exit's. Each side gives `n0`, `n1`, `delta`,
+the draws, the `expected` 2 + 2 per fill + 6 per triangle (`kc_expected`; E768, E747) and a
+`state`: ok, failed (the delta differs, a begin health ran at try 2 or more, or the marks name
+another list than the declared one) or None (cannot tell: a load or mark missing). A scorer's DK
+control is `kc_state(kc)`; `kc_text` prints the KC lines and `hkc_words(draws, base)` H-KC's word
+of each entry of a list (K is base + the commands before the entry + 1; base 1 at the begin draws,
+2 at the end draws), printed and never scored. No change to the runner or the laptop's tools.
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset

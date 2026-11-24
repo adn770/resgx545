@@ -33,6 +33,14 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           served (the kernel's "GETMISCINFO answered after N us" and "all
                           values match" lines, no MISMATCH line: the kick was served) and us
                           (N, or None)
+  kc(d, begin, end)       the command count of a stage (K9, round 45): the kernel's `ccb_sent` at
+                          each firmware load of the stage's kernel.log, begin (the first load
+                          after `row begin` to the first after `owntask-arm`) and end (the first
+                          after `owntask-disarm` to the last): {begin, end} each {n0, n1, delta,
+                          draws, expected, state, why}; state "ok", "failed" or None (cannot
+                          tell: a load or mark missing). kc_expected(draws) = 2 + 2 x fills + 6 x
+                          tris; kc_state(kc, side) is DK; kc_text(name, kc) the KC lines;
+                          hkc_words(draws, base) H-KC's word of each entry (printed, never scored)
   completed(row)          a kept row whose job ran to its end: class ok, with rc 0, rc 1 of an
                           `expectdiff` row (the runner took it as a reading only with `job: ok`
                           and a diff line) or the rc of an expected outcome its knobs declare
@@ -265,3 +273,141 @@ def completed(row):
         return True
     return any(w.startswith("expect:") and OUTCOMES.get(w[len("expect:"):], (None,))[0] == row["rc"]
                for w in words)
+
+
+# ---- K9: the command count (round 45, the n3j design section 2) ----------------------
+# E768: an event's pa1 bits 31:24 count the CCB commands since the last firmware load; the kernel
+# prints `ccb_sent N` at each load. From the begin load to the arm's load N rises by 2 (the
+# debugfs reset's boot and the arm's power-off) + 2 per fill + 6 per triangle (E747's kicks); from
+# the disarm's load to the exit's by 2 + the end draws' kicks.
+CCB_LINE = re.compile(r"\[drm\] loaded \d+ live \d+ sw_events \d+ bif_faults \d+ "
+                      r"ccb_sent ([0-9]+)")
+KC_MARK = re.compile(r"resgx545 \S+ (row begin|owntask-arm|owntask-disarm|"
+                     r"health (begin|end) try ([0-9]+) (\S+))")
+KICKS = {"fill": 2, "tri": 6}
+
+
+def kc_items(draws):
+    items = [] if draws in ("none", "") else draws.split(",")
+    for w in items:
+        if w not in KICKS:
+            raise ValueError(f"draw {w!r} of {draws!r} is not fill or tri")
+    return items
+
+
+def kc_expected(draws):
+    """The commands a draw list sends: 2 + 2 per fill + 6 per triangle (none: 2)."""
+    return 2 + sum(KICKS[w] for w in kc_items(draws))
+
+
+def _events(d):
+    """The kernel log's (kind, value) in order: `load` (ccb_sent), `row begin`, `owntask-arm`,
+    `owntask-disarm`, `health` ((phase, try, list))."""
+    out = []
+    for ln in text(d, "kernel.log").splitlines():
+        m = CCB_LINE.search(ln)
+        if m:
+            out.append(("load", int(m.group(1))))
+            continue
+        m = KC_MARK.search(ln)
+        if m:
+            out.append(("health", (m.group(2), int(m.group(3)), m.group(4))) if m.group(2)
+                       else (m.group(1), None))
+    return out
+
+
+def _seg(declared, n0, n1, marks, what, retry_ok):
+    seg = dict(n0=n0, n1=n1, delta=None, draws=declared or (marks[0][2] if marks else None),
+               expected=None, state=None, why="")
+    if seg["draws"] is not None:
+        try:
+            seg["expected"] = kc_expected(seg["draws"])
+        except ValueError as e:
+            seg["state"], seg["why"] = "failed", f"{what}: {e}"
+            return seg
+    if n0 is None or n1 is None:
+        seg["why"] = f"{what}: a `loaded ... ccb_sent` line is missing"
+        return seg
+    seg["delta"] = n1 - n0
+    if not marks:
+        seg["why"] = f"{what}: no health mark names the draws"
+        return seg
+    if len(marks) != 1 or (not retry_ok and marks[0][1] != 1):
+        seg["state"] = "failed"
+        seg["why"] = (f"{what}: {len(marks)} health marks, the first at try {marks[0][1]} "
+                      "(a retry adds a reset and draws)")
+        return seg
+    if declared and marks[0][2] != declared:
+        seg["state"] = "failed"
+        seg["why"] = f"{what}: the draws were {marks[0][2]}, declared {declared}"
+        return seg
+    seg["state"] = "ok" if seg["delta"] == seg["expected"] else "failed"
+    if seg["state"] == "failed":
+        seg["why"] = f"{what}: delta {seg['delta']}, expected {seg['expected']}"
+    return seg
+
+
+def kc(d, begin=None, end=None):
+    """{begin, end}: the command count of a stage's kernel.log (K9); each a dict n0, n1, delta,
+    draws (the declared list, else the mark's), expected, state (ok, failed, None), why. A
+    begin health at try 2 or more (a retry) is failed; the end path's own `try 2` is not."""
+    ev = _events(d)
+    kinds = [k for k, _ in ev]
+
+    def at(kind):
+        return kinds.index(kind) if kind in kinds else None
+    i, j, k = at("row begin"), at("owntask-arm"), at("owntask-disarm")
+    nxt = lambda a: None if a is None else next(  # noqa: E731
+        (v for kk, v in ev[a + 1:] if kk == "load"), None)
+    bm = [v for kk, v in ev[i:j] if kk == "health" and v[0] == "begin"] \
+        if i is not None and j is not None else []
+    # the begin load is the one between `row begin` and the begin health mark (the arm's load
+    # comes after the arm): a missing one must not read the arm's
+    h = next((x for x in range(i + 1, len(ev)) if ev[x][0] == "health"), None) \
+        if i is not None else None
+    b0 = next((v for kk, v in ev[i + 1:h] if kk == "load"), None) if h is not None else None
+    after = [v for kk, v in ev[k + 1:] if kk == "load"] if k is not None else []
+    em = [v for kk, v in ev[k:] if kk == "health" and v[0] == "end"] if k is not None else []
+    return dict(begin=_seg(begin, b0, nxt(j), bm, "begin", False),
+                end=_seg(end, after[0] if after else None,
+                         after[-1] if len(after) > 1 else None, em, "end", True))
+
+
+def kc_state(got, side=None):
+    """DK: ok when the stage's begin (and end) deltas are the expected ones, failed when one is
+    not, None (cannot tell) when one could not be read and none failed."""
+    ss = [got[side]["state"]] if side else [got["begin"]["state"], got["end"]["state"]]
+    if "failed" in ss:
+        return "failed"
+    return None if None in ss else "ok"
+
+
+def kc_text(name, got):
+    out = []
+    for side, b in (("begin", "arm"), ("end", "exit")):
+        s = got[side]
+        if s["delta"] is None:
+            out.append(f"KC {name}: {side} cannot tell ({s['why']})")
+            continue
+        items = kc_items(s["draws"]) if s["draws"] else []
+        out.append(f"KC {name}: {side} N0 {s['n0']}, {b} N1 {s['n1']}, delta {s['delta']}, "
+                   f"expected 2 + 2 x {items.count('fill')} + 6 x {items.count('tri')} = "
+                   f"{s['expected']} ({s['state'] or 'cannot tell'}"
+                   + (f": {s['why']}" if s["why"] else "") + ")")
+    return out
+
+
+def hkc_words(draws, base):
+    """H-KC's word of each entry of the list (printed, never scored): K = base + the commands
+    before the entry + 1; a fill's 3:4 gives K << 24 | 0x10, a triangle's 3:22 K << 24 | 0x400000
+    and its 3:4 K << 24 | 0x10. base is 1 at the begin draws, 2 at the end draws."""
+    out, cmds = [], 0
+    for i, w in enumerate(kc_items(draws), 1):
+        k = base + cmds + 1
+        if w == "fill":
+            out.append(f"fill {i}: 3:4 K {k} 0x{k << 24 | 0x10:08x}")
+        else:
+            out.append(f"tri {i}: 3:22 K {k} 0x{k << 24 | 0x400000:08x}; "
+                       f"3:4 K {k} 0x{k << 24 | 0x10:08x}")
+        cmds += KICKS[w]
+    return out
