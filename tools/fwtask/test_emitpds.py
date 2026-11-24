@@ -266,7 +266,7 @@ def test_the_crumb3_image_is_crumb_with_a_zero_third_row(tmp_path):
 
 def test_each_image_has_its_own_rows_and_control_word():
     assert gen_verify.PDS_IMAGE_ROWS == {"v1": 2, "crumb": 2, "halt": 2, "crumb3": 3, "land": 3,
-                                         "mark": 3, "landv": 3}
+                                         "mark": 3, "landv": 3, "crumbz": 3, "landq": 3}
     for k, rows in gen_verify.PDS_IMAGE_ROWS.items():
         assert sum(1 for _, t in gen_verify.pds_listing(k) if t == "data") == 4 * rows, k
     assert [gen_verify.pds_ctl(k) for k in ("v1", "crumb", "halt")] == [0x01000100] * 3
@@ -278,7 +278,8 @@ def test_the_kernel_header_carries_every_image_with_its_rows_and_control():
     assert "#define SGX_OWN_PDS_ROWS\t2" in h and "#define SGX_OWN_PDS_CTL\t0x01000100" in h
     for k, n, rows, ctl in (("crumb", 15, 2, 0x01000100), ("halt", 9, 2, 0x01000100),
                             ("crumb3", 19, 3, 0x01800100), ("land", 16, 3, 0x01800100),
-                            ("mark", 21, 3, 0x01800100), ("landv", 18, 3, 0x01800100)):
+                            ("mark", 21, 3, 0x01800100), ("landv", 18, 3, 0x01800100),
+                            ("crumbz", 17, 3, 0x01800100), ("landq", 18, 3, 0x01800100)):
         u = k.upper()
         assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h, k
         assert f"#define SGX_OWN_PDS_{u}_ROWS\t{rows}" in h, k
@@ -910,7 +911,7 @@ def test_the_kernel_fills_u0_alone_in_land():
     """The kernel fills U0, V0 and V2 in every image but land, where dwords 4 and 5 are the markers:
     the header says so per image (SGX_OWN_PDS_<K>_FILLV)."""
     assert gen_verify.PDS_FILLV == {"v1": 1, "crumb": 1, "halt": 1, "crumb3": 1, "land": 0,
-                                    "mark": 1, "landv": 1}
+                                    "mark": 1, "landv": 1, "crumbz": 1, "landq": 0}
     h = gen_verify.render_pds()
     for k in ("crumb", "halt", "crumb3"):
         assert f"#define SGX_OWN_PDS_{k.upper()}_FILLV\t1" in h, k
@@ -1101,3 +1102,58 @@ def test_the_kernel_header_carries_mark_and_landv():
         u = k.upper()
         assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h and f"#define SGX_OWN_PDS_{u}_FILLV\t1" in h
         assert f"asm/fwtask/pds/{k}.s" in h
+
+
+# ---- round 45 (N3j §9.0, decision E (c)): the images crumbz and landq --------------------------
+LANDQ_DATA = [0, 0, 0, 0x1800, 0x5A5A3A18, 0x5A5A3A1A, 0x1A00, 0, 0x005D2000, 0x005D1000, 0, 0x100]
+
+
+def test_the_crumbz_image_is_crumb3_without_its_two_douta(tmp_path):
+    """N3j §9.0: crumb3's 12 data dwords word for word (the kernel fills U0, V0 and V2, so the data
+    rows match crumb3's on the page) and crumb3's program without the douta of V0 and V2: T1, T2,
+    the doutu, T3 and halt, every operand unchanged; it writes no attribute. 17 dwords."""
+    img = gen_verify.pds_image("crumbz")
+    c3 = gen_verify.pds_image("crumb3")
+    assert len(img) == 17 and img[:12] == c3[:12]
+    assert img[12:] == c3[12:13] + c3[15:]
+    d3 = dis_n(tmp_path, c3, 12)
+    assert dis_n(tmp_path, img, 12) == ["data"] * 12 + d3[12:13] + d3[15:]
+    assert not [t for t in dis_n(tmp_path, img, 12) if "douta" in t]
+    assert [t.split(",")[0] for t in dis_n(tmp_path, img, 12)[12:]] == [
+        "movs tim", "movs tim", "movs doutu", "movs tim", "halt"]
+    assert gen_verify.PDS_IMAGE_ROWS["crumbz"] == 3 and gen_verify.pds_ctl("crumbz") == 0x01800100
+    assert gen_verify.PDS_FILLV["crumbz"] == 1
+
+
+def test_the_landq_image_is_land_with_q0_and_m1_to_attributes_0_and_1(tmp_path):
+    """N3j §9.0: land's 12 data dwords with its third row Q0 0x005d2000 (ds0[4]), M1 0x005d1000
+    (ds0[5]) and the douta controls of attributes 0 (ds1[4]) and 1 (ds1[5]); land's two marker
+    douta, then Q0 to attribute 0 and M1 to attribute 1, then land's doutu and halt; no tim. The
+    kernel fills U0 only (dwords 4 and 5 are Ma and Mb). 18 dwords; sa0's word above sa1's."""
+    img = gen_verify.pds_image("landq")
+    land, mark = gen_verify.pds_image("land"), gen_verify.pds_image("mark")
+    assert img[:12] == LANDQ_DATA and img[:8] == land[:8] and len(img) == 18
+    assert [img[3] >> 8 & 0xFFF, img[6] >> 8 & 0xFFF, img[10] >> 8 & 0xFFF,
+            img[11] >> 8 & 0xFFF] == [24, 26, 0, 1]
+    assert img[12:14] == land[12:14] and img[14:16] == mark[15:17] and img[16:] == land[14:]
+    assert dis_n(tmp_path, img, 12) == ["data"] * 12 + [
+        "movs douta, ds0[2], ds1[1], ds0[2], ds0[2]",
+        "movs douta, ds0[3], ds1[2], ds0[3], ds0[3]",
+        "movs douta, ds0[4], ds1[4], ds0[4], ds0[4]",
+        "movs douta, ds0[5], ds1[5], ds0[5], ds0[5]",
+        "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]",
+        "halt"]
+    assert not [w for w in img[12:] if w in (0x07001FE7, 0x07003547, 0x07003FE7)]
+    assert img[9] == mark[9] == 0x005D1000 and img[8] > img[9]
+    assert all(x < 0x10000000 for x in img[8:10])
+    assert gen_verify.PDS_IMAGE_ROWS["landq"] == 3 and gen_verify.pds_ctl("landq") == 0x01800100
+    assert gen_verify.PDS_FILLV["landq"] == 0
+
+
+def test_the_kernel_header_carries_crumbz_and_landq():
+    h = gen_verify.render_pds()
+    for k, n, fillv in (("crumbz", 17, 1), ("landq", 18, 0)):
+        u = k.upper()
+        assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h and f"#define SGX_OWN_PDS_{u}_FILLV\t{fillv}" in h
+        assert f"asm/fwtask/pds/{k}.s" in h
+    assert "crumb3.s, land.s, mark.s, landv.s, crumbz.s and landq.s" in h
