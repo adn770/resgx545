@@ -424,7 +424,8 @@ freeze) refuses a missing blob, a blob that is not the map's, a name the map lac
 that is not `slots=0xMASK entry=E[,E...]` with one entry a slot, an optional `trc=T` below 32 (the
 hazard word is never armed), an optional `pds=crumb`, `pds=halt`, `pds=crumb3`, `pds=land`,
 `pds=mark`, `pds=landv`, `pds=crumbz` or `pds=landq` (the kernel's other PDS images, below; with
-no `pds=` word the kernel arms the v1 image), an optional `pdsat=fw14` (the image in the slack of the firmware's PDS #14 page, round 38; with none, the
+no `pds=` word the kernel arms the v1 image), an optional `pdsat=fw14` (the image in the slack of
+the firmware's PDS #14 page, round 38; with none, the
 kernel's own page), and optional `pds2=req` and `form=NAME` last, in that order (round 39: the
 emit's `s2` the request 0x00020000; round 40: NAME one of the kernel's listed emit words,
 `fwtask.EMIT_SIDEBANDS` but `own`, e.g. `fw14` for #14's sideband; with none, 0 and our word), a
