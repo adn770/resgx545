@@ -141,14 +141,37 @@ pub struct State {
     /// (0xc43, E1180). It stays across a reset (E1181) and our later tasks start with it in
     /// `pa1`; `None`: unknown (E1179 read 0x00043000 there, a word none of our rows wrote).
     attr13: Option<u32>,
-    /// The word in attribute 1 once a measured `douta` wrote it (0xc43, E1184, E1186). The
-    /// issuer's `sa1` reads it after a bit 10 rewrite with 0xc43 (E1180, E1184, E1186); it stays
-    /// across resets, boots, kicks and ticks (E1185) and a client draw rewrites it (one fill left
-    /// 0x01000000, E1187: one value, so `Sgx::host_job` makes it unknown).
+    /// The word in attribute 1 once a measured `douta` wrote it (0xc43, E1184, E1186, E1188,
+    /// E1190, E1192, E1194, E1197, E1199). The issuer's `sa1` reads it after a bit 10 rewrite
+    /// with 0xc43 (E1180, E1184, E1186); it stays across resets, boots, kicks and ticks with no
+    /// client draw (E1185). The client draws since the last reset decide what is there at the
+    /// read (`attr1_now`).
     attr1: Option<u32>,
+    /// The client draws (`Sgx::host_job`) since the last reset or the last write to attribute 1.
+    draws: Vec<HostJob>,
     /// The BIF_FAULT word the EDM stalled with: after a GETMISCINFO kick pass faulted on the
     /// rewritten bank it answered no kick and served no command until a reset (E1187).
     stalled: Option<u32>,
+}
+
+impl State {
+    /// The word in attribute 1 at a read after the client draws since the last reset, where
+    /// every read of that sequence after a planted word gave one word (round 44, one run each):
+    /// none keeps it (E1185); two fills keep it (E1191); a triangle alone, and a triangle then
+    /// a fill, leave 0x02400000 (E1193, E1195). Reads disagree for one fill (0x01000000 in
+    /// E1187, the planted word in round 44's row LF with land, 0x05400000 with no plant in
+    /// E1196) and for a fill then a triangle (0x04400000 in E1189 and six rows with no plant,
+    /// 0x04000010 in X, E1174): unknown. Every other sequence was never read: unknown, so a read
+    /// refuses.
+    fn attr1_now(&self) -> Option<u32> {
+        use HostJob::{Fill, Triangle};
+        let word = self.attr1?;
+        match self.draws[..] {
+            [] | [Fill, Fill] => Some(word),
+            [Triangle] | [Triangle, Fill] => Some(0x0240_0000),
+            _ => None,
+        }
+    }
 }
 
 impl Default for State {
@@ -169,6 +192,7 @@ impl Default for State {
             rebased: false,
             attr13: None,
             attr1: None,
+            draws: Vec::new(),
             stalled: None,
         }
     }
@@ -378,11 +402,11 @@ impl Sgx {
     /// `sa13`'s because something takes it as a page base is inferred. `None`: no such state (the
     /// sim runs no host job, so this says nothing else of how it ends). A rewritten `sa13` the sim
     /// does not know, or one that is not page aligned (0x00043000 and 0x005d3000 were read), is
-    /// refused. A client draw rewrites attribute 1 (E1187, one fill), with a word not modelled:
-    /// attribute 1 is unknown afterwards. On a stalled EDM (`Sgx::kick_miscinfo`) the job meets
-    /// the fault already latched, as the gate fills of rows M and Q did (E1180, E1182).
+    /// refused. The job counts as a client draw for attribute 1 (`State::attr1_now`). On a
+    /// stalled EDM (`Sgx::kick_miscinfo`) the job meets the fault already latched, as the gate
+    /// fills of rows M and Q did (E1180, E1182).
     pub fn host_job(&mut self, job: HostJob) -> Result<Option<u32>, Error> {
-        self.st.attr1 = None;
+        self.st.draws.push(job);
         if let Some(word) = self.st.stalled {
             return Ok(Some(word));
         }
@@ -443,9 +467,13 @@ impl Sgx {
     /// A debugfs reset: the kernel rebuilds the firmware's buffers and boots the stock EDM. Bit
     /// 10's state ends there (the kit's health fill and triangle after every reset, E1174,
     /// E1175, E1177). The boot's secondaries are not modelled: they are unknown afterwards. The
-    /// word in attribute 13 stays (E1181), and so does the word in attribute 1 (E1185); a stall
-    /// ends (E1187).
+    /// word in attribute 13 stays (E1181), and so does the word in attribute 1 with no client
+    /// draw since it was written (E1185); a word draws left was never read across a reset,
+    /// so it is unknown after one. A stall ends (E1187).
     pub fn reset(&mut self) {
+        if !self.st.draws.is_empty() {
+            (self.st.attr1, self.st.draws) = (None, Vec::new());
+        }
         (self.st.rebased, self.st.stalled) = (false, None);
         self.st.sa_written = 0;
     }
@@ -889,7 +917,7 @@ impl Unit<'_> {
             }
             // 0xc43: a marker sent to attribute 1 was the issuer's sa1 after the rewrite (E1180,
             // E1184, E1186) and reached no pa of pa0-pa15; it stays (E1185)
-            Bank::Own(0xc43) if n == 1 => self.st.attr1 = Some(v),
+            Bank::Own(0xc43) if n == 1 => (self.st.attr1, self.st.draws) = (Some(v), Vec::new()),
             Bank::Own(b) => {
                 return Err(why(format!(
                     "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
@@ -1041,9 +1069,9 @@ impl Bus for Unit<'_> {
                         known |= (self.written >> k & 1) << (12 + k);
                     }
                     // sa1 reads attribute 1 when a measured douta put a word there (0xc43:
-                    // E1180, E1184-E1186); else it stays unknown (0x04000010, 0x04400000 and
-                    // 0x01000000 were left by client draws, E1174, E1182, E1187)
-                    if let (Bank::Own(0xc43), Some(v)) = (self.bank, self.st.attr1) {
+                    // E1180, E1184-E1186) and the client draws since leave a known word (E1189,
+                    // E1191, E1193, E1195, E1196); else it stays unknown
+                    if let (Bank::Own(0xc43), Some(v)) = (self.bank, self.st.attr1_now()) {
                         (self.st.sa[1], known) = (v, known | 2);
                     }
                     (self.st.sa_written, self.st.rebased) = (known, true);
@@ -1931,7 +1959,13 @@ mod tests {
 
     /// Our own task emits a program of two douta (`a` with control `ca`, `b` with `cb`) and a
     /// doutu with `sideband`; the started entry stores the pa named in `reads` to registers 66 on.
-    fn own_douta(
+    fn own_douta(sideband: u32, a: (u32, u32), b: (u32, u32), reads: &[usize]) -> (Sgx, Result<(), Error>) {
+        own_douta_on(sgx(), sideband, a, b, reads)
+    }
+
+    /// `own_douta` on a simulator that already ran something (client draws, a reset).
+    fn own_douta_on(
+        mut s: Sgx,
         sideband: u32,
         (a, ca): (u32, u32),
         (b, cb): (u32, u32),
@@ -1949,7 +1983,6 @@ mod tests {
         let prog = "movs douta, ds0[2], ds1[1], ds0[2], ds0[2]\n\
                     movs douta, ds0[3], ds1[2], ds0[3], ds0[3]\n\
                     movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]\nhalt";
-        let mut s = sgx();
         s.st.mem.map(DATA, &[0; 16]);
         s.st.mem.map(CODE, &vec![0; 0x20000]);
         let data = [code_word(OWN_INDEX as u32 + 8), 0, 0, ca, a, b, cb, 0, 0, 0, 0, 0];
@@ -2102,6 +2135,68 @@ mod tests {
         assert_eq!(s.host_job(HostJob::Fill).unwrap(), None);
         assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
         assert_eq!(s.st.sa_written >> 1 & 1, 0);
+    }
+
+    /// Plant M1 (W), the stage boundary's resets, then `draws` and our 0xc43 read: its sa1,
+    /// if known.
+    fn sa1_after(draws: &[HostJob]) -> Option<u32> {
+        let (mut s, r) = own_douta(0xc43, (M1, 0x0100), (M13, 0x0d00), &[]);
+        r.unwrap();
+        for _ in 0..3 {
+            s.reset();
+        }
+        for &job in draws {
+            assert_eq!(s.host_job(job).unwrap(), None);
+        }
+        assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
+        (s.st.sa_written >> 1 & 1 == 1).then_some(s.st.sa[1])
+    }
+
+    #[test]
+    fn the_draws_after_a_plant_leave_attribute_1_by_sequence_where_every_read_agrees() {
+        use HostJob::{Fill, Triangle};
+        // E1191 (FF): two fills after W's plant left M1 in attribute 1
+        assert_eq!(sa1_after(&[Fill, Fill]), Some(M1));
+        // E1193 (T): a triangle alone left 0x02400000; E1195 (TF): a fill after it left the same
+        assert_eq!(sa1_after(&[Triangle]), Some(0x0240_0000));
+        assert_eq!(sa1_after(&[Triangle, Fill]), Some(0x0240_0000));
+        // fill, then triangle: 0x04400000 over the plant (E1189) and in six unplanted rows, but
+        // 0x04000010 in X (E1174): reads disagree, unknown
+        assert_eq!(sa1_after(&[Fill, Triangle]), None);
+        // one fill: 0x01000000 (E1187), M1 kept (row LF, with land), 0x05400000 with no plant
+        // (E1196)
+        assert_eq!(sa1_after(&[Fill]), None);
+        // sequences no row read stay unknown
+        assert_eq!(sa1_after(&[Triangle, Triangle]), None);
+        assert_eq!(sa1_after(&[Fill, Fill, Fill]), None);
+        assert_eq!(sa1_after(&[Fill, Triangle, Fill]), None);
+        // no draws: the plant stays (E1185)
+        assert_eq!(sa1_after(&[]), Some(M1));
+    }
+
+    #[test]
+    fn a_word_a_draw_left_is_not_carried_across_a_reset_and_a_plant_restarts_the_sequence() {
+        use HostJob::{Fill, Triangle};
+        // a triangle's word across a later reset was never read: unknown after the reset
+        let (mut s, r) = own_douta(0xc43, (M1, 0x0100), (M13, 0x0d00), &[]);
+        r.unwrap();
+        s.reset();
+        s.host_job(Triangle).unwrap();
+        s.reset();
+        assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
+        assert_eq!(s.st.sa_written >> 1 & 1, 0);
+        // a draw before the plant does not count: the plant rows ran fill, triangle first
+        // (E1188), then the read stage's draws alone decide (E1191)
+        let mut s = sgx();
+        s.host_job(Fill).unwrap();
+        s.host_job(Triangle).unwrap();
+        let (mut s, r) = own_douta_on(s, 0xc43, (M1, 0x0100), (M13, 0x0d00), &[]);
+        r.unwrap();
+        s.reset();
+        s.host_job(Fill).unwrap();
+        s.host_job(Fill).unwrap();
+        assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
+        assert_eq!((s.st.sa[1], s.st.sa_written >> 1 & 1), (M1, 1));
     }
 
     #[test]
