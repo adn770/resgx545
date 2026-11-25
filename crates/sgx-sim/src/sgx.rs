@@ -144,7 +144,8 @@ pub struct State {
     /// The words in attributes 0, 1 and 2 once a measured `douta` wrote them with 0xc43, each
     /// with the client draws since (`Sgx::host_job`): mark's V0, M1 and V2 in every plant (E1184,
     /// E1186, E1188, E1190, E1192, E1194, E1197, E1199, E1201, E1203, E1205, E1207, E1209,
-    /// E1212, E1214, E1216, E1218, E1220, E1222, E1224, E1226, E1228, E1230, E1232), crumb3's V0
+    /// E1212, E1214, E1216, E1218, E1220, E1222, E1224, E1226, E1228, E1230, E1232, E1236,
+    /// E1238, E1240, E1242, E1244), crumb3's V0
     /// and V2 (E1174, E1189), landq's word to attribute 0 (row Q). The issuer's `sa0`, `sa1` and `sa2` read them after a bit 10 rewrite with
     /// 0xc43 (E1180, E1184, E1186, E1219); they stay across resets, boots, kicks and ticks with
     /// no client draw (E1185, E1219). The draws decide what is there at the read
@@ -170,10 +171,12 @@ impl State {
     /// E1204, E1221, row LT) and after a triangle then a fill (E1195, E1206, E1229), 0x08400000
     /// after two triangles (E1208, E1231); reads disagree for one fill (the planted word in
     /// E1210, E1225 and rows LF and LF2, 0x01000000 in E1187), two fills (the planted word in
-    /// E1191, E1202, E1227, 0x04000010 in row LFF) and a fill then a triangle (0x04400000 in
+    /// E1191, E1202, E1227, E1237 and rows LFF2 and LFF3, 0x04000010 in row LFF) and a fill
+    /// then a triangle (0x04400000 in
     /// E1189, E1223, 0x04000010 in X, E1174). Attribute 0: 0 after a triangle alone (E1221, row
     /// LT) and after a fill then a triangle (E1223, LC of E1176, LC2), 2 after one fill (E1225,
-    /// rows LF and LF2); two fills disagree (2 in E1227, 0 in row LFF), a triangle then a fill
+    /// rows LF and LF2); two fills disagree (2 in E1227 and rows LFF2 and LFF3, 0 in row LFF,
+    /// 0x00040000 in E1237); three fills were read once (row LF3F), a triangle then a fill
     /// and two triangles were read once (E1229, E1231). Attribute 2 after any draw is an
     /// EVENT_TIMER sample that differs between reads (E1221, E1223, E1225, E1227, E1229, E1231):
     /// unknown. That each triple is
@@ -944,6 +947,17 @@ impl Unit<'_> {
             // E1201; landq's word in row Q) and stayed (E1219); with bit 10 the started entry's
             // pa held words of earlier runs (E1174, E1175, E1177), so no pa is written
             Bank::Own(0xc43) if n <= 2 => self.st.attrs[n] = Some(Planted { word: v, draws: Vec::new() }),
+            // 0x043 and 0x803 ran crumb3 to done (B5 E1234, B6 E1235), but where its V0 and V2
+            // land was read once each, printed: in no pa with 0x043, in every fourth pa with
+            // 0x803, and the started entry's pa can hold words of earlier runs
+            Bank::Own(b @ (0x043 | 0x803)) if n == 0 || n == 2 => {
+                return Err(why(format!(
+                    "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
+                     where it lands was read once (0x043 E1234: no pa; 0x803 E1235: every fourth \
+                     pa; unscored, and the started entry's pa can hold words of earlier runs, \
+                     E1174; Q128)"
+                )));
+            }
             Bank::Own(b) => {
                 return Err(why(format!(
                     "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
@@ -1002,8 +1016,9 @@ impl Bus for Unit<'_> {
         // (0x841 E1165, 0x001 E1171). The simulator keeps no EDM tick and no BIF: both refused.
         // 2 or 3: the program ran and its doutu started our entry to done, with s2 0 or
         // 0x00020000, from a kick or a tick pass (0x843 E1156, E1157, E1159, E1160, E1162; 0x003
-        // E1164; 0x842 E1166; 0x002 E1168): bits 6 and 11 are not needed with 2 or 3, so the
-        // combinations of them not run (0x042, 0x043, 0x802, 0x803) run by that rule [infer].
+        // E1164; 0x842 E1166; 0x002 E1168; 0x043 E1234; 0x803 E1235, one run each, the issuer's
+        // secondaries left as they were): bits 6 and 11 are not needed with 2 or 3, so the
+        // combinations of them not run (0x042, 0x802) run by that rule [infer].
         // Bit 10 with bits 1:0 = 3 ran too, with 6 and 11 (0xc43: E1172, E1174, E1177, E1180) and
         // without (0x403: E1175), and with bits 1:0 = 2 (0x402: E1182), and rewrote the issuer's
         // secondaries (Unit::port, Doutu); bit 10 with any other bits is unmeasured. Bits 12-13:
@@ -1950,9 +1965,10 @@ mod tests {
 
     #[test]
     fn an_own_task_emit_runs_when_bits_1_0_of_the_sideband_are_2_or_3() {
-        // E1162 (0x843), E1164 (0x003), E1166 (0x842), E1168 (0x002), r40-n3e: the program and
-        // the entry it started ran to done; bits 6 and 11 are not needed with 2 or with 3, so the
-        // combinations not run (0x042, 0x043, 0x802, 0x803) run by the rule [infer]
+        // E1162 (0x843), E1164 (0x003), E1166 (0x842), E1168 (0x002), r40-n3e, and E1234
+        // (0x043), E1235 (0x803), r46-n3k: the program and the entry it started ran to done;
+        // bits 6 and 11 are not needed with 2 or with 3, so the combinations not run (0x042,
+        // 0x802) run by the rule [infer]
         for sb in [0x843, 0x003, 0x842, 0x002, 0x042, 0x043, 0x802, 0x803] {
             let (s, r) = own_emit(sb, 0);
             r.unwrap_or_else(|e| panic!("{sb:#x}: {e:?}"));
@@ -2074,10 +2090,27 @@ mod tests {
         refused(0x843, 0x1c00); // attribute 28
         refused(0x843, 0x0400); // attribute 4
         refused(0x003, 0x1800); // attribute 24 with 0x003
-        refused(0x043, 0x0000); // a sideband that runs by the rule only
+        refused(0x042, 0x0000); // a sideband that runs by the rule only
         // E1180, E1184, E1186: with 0xc43 only attributes 13 (pa1, sa13) and 1 (sa1) were read
         refused(0xc43, 0x0300); // attribute 3
         refused(0x403, 0x0d00); // attribute 13 with another bit 10 sideband
+    }
+
+    #[test]
+    fn crumb3s_douta_with_0x043_or_0x803_is_refused_as_read_once() {
+        // B5 (0x043, E1234) and B6 (0x803, E1235) ran crumb3 to done, but where its V0 and V2
+        // land was read once each, printed and unscored: in no pa with 0x043, in every fourth pa
+        // with 0x803, and the started entry's pa can hold words of earlier runs (E1174)
+        for (sb, rec) in [(0x043, "E1234"), (0x803, "E1235")] {
+            for (ca, cb) in [(0x0000, 0x0200)] {
+                let (_, r) = own_douta(sb, (V0, ca), (V2, cb), &[]);
+                assert!(
+                    matches!(r, Err(Error::Unsupported { ref why, .. })
+                        if why.contains(rec) && why.contains("read once")),
+                    "{sb:#x}: {r:?}"
+                );
+            }
+        }
     }
 
     /// Row M's (E1180) marker sent to attribute 13.
@@ -2192,8 +2225,9 @@ mod tests {
         assert_eq!(sa1_after(&[Triangle]), Some(0x0240_0000));
         assert_eq!(sa1_after(&[Triangle, Fill]), Some(0x0240_0000));
         assert_eq!(sa1_after(&[Triangle, Triangle]), Some(0x0840_0000));
-        // two fills: M1 with crumb3 and crumbz (FF E1191, FF2 E1202, ZFF E1227) but 0x04000010
-        // with land (row LFF): reads disagree, unknown
+        // two fills: M1 with crumb3 and crumbz (FF E1191, FF2 E1202, ZFF E1227, ZFF2 E1237) and
+        // with land on module 10BBF3BF (rows LFF2, LFF3) but 0x04000010 with land on 079DD0D1
+        // (row LFF): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill, Fill]), None);
         // fill, then triangle: 0x04400000 over the plant (FT E1189, ZFT E1223) and in six
         // unplanted rows, but 0x04000010 in X (E1174): reads disagree, unknown
@@ -2202,6 +2236,7 @@ mod tests {
         // (E1187), and 0x05400000 with no plant (E1196, E1211): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill]), None);
         // sequences no row read stay unknown
+        // three fills: M1 once (row LF3F): one read, unknown
         assert_eq!(sa1_after(&[Fill, Fill, Fill]), None);
         assert_eq!(sa1_after(&[Fill, Triangle, Fill]), None);
         assert_eq!(sa1_after(&[Triangle, Triangle, Triangle]), None);
@@ -2255,12 +2290,13 @@ mod tests {
         assert_eq!(sa0_sa2_after(&[Triangle]), (Some(0), None));
         assert_eq!(sa0_sa2_after(&[Fill, Triangle]), (Some(0), None));
         assert_eq!(sa0_sa2_after(&[Fill]), (Some(2), None));
-        // two fills: 2 with crumbz (ZFF E1227), 0 with land (row LFF): reads disagree
+        // two fills: 2 with crumbz (ZFF E1227) and with land (rows LFF2, LFF3), 0 with land (row
+        // LFF), 0x00040000 with crumbz (ZFF2 E1237): reads disagree
         assert_eq!(sa0_sa2_after(&[Fill, Fill]), (None, None));
         // read once: a triangle then a fill 2 (ZTF E1229), two triangles 0 (ZTT E1231)
         assert_eq!(sa0_sa2_after(&[Triangle, Fill]), (None, None));
         assert_eq!(sa0_sa2_after(&[Triangle, Triangle]), (None, None));
-        // never read
+        // three fills: 2 once (row LF3F)
         assert_eq!(sa0_sa2_after(&[Fill, Fill, Fill]), (None, None));
     }
 
