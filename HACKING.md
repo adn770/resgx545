@@ -742,7 +742,10 @@ lets a reviewer check that they stay clean-room; each check is a test.
      0x005d3000 to attribute 13 and M1 0x005d1000 to attribute 1, by two `douta` after crumb3's
      two (21 dwords); `pds=landv` (`asm/fwtask/pds/landv.s`) is land with crumb3's two `douta` of
      V0 and V2 to attributes 0 and 2 first, its markers from the third row (18 dwords). Both keep
-     0x01800100, and the kernel fills U0, V0 and V2 in both.
+     0x01800100, and the kernel fills U0, V0 and V2 in both. Round 46 (N3k §4.6, the user's
+     decision B (b)) adds `emitsb_sb043s` and `emitsb_sb803s`, the after-reads of sb043 and sb803
+     (`emitsb_sbc43s` but the word, entry 1 at index 30, U0 0x080401ef) for rows B5 and B6; no
+     kernel change, both words are on the module's list since round 40.
   5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
      0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
      (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),

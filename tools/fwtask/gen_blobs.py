@@ -684,8 +684,9 @@ def gen_emitsb_form(name):
 
 
 AFTER_AT, AFTER_MARK, AFTER_CMD = 224, 0x5a5a3306, 6     # N3f's after-read: dwords 224-255, M6
-# the forms N3f's rows arm (§3.1), and sb402 (round 42, N3g §2: row Q)
-AFTER_FORMS = ("fw14", "sbc43", "sb403", "sb402")
+# the forms N3f's rows arm (§3.1), sb402 (round 42, N3g §2: row Q), sb043 and sb803 (round 46, N3k
+# §4.6: rows B5 and B6 rebuilt with an after-read)
+AFTER_FORMS = ("fw14", "sbc43", "sb403", "sb402", "sb043", "sb803")
 
 
 def after_blob(name):

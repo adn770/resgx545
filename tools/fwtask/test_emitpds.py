@@ -928,7 +928,9 @@ def test_the_kernel_fills_u0_alone_in_land():
 # control (emitsb14s), sbc43 (rows X, LC, T) and sb403 (row Y)
 AFTER_FORMS = [("fw14", "emitsb14s", "emitsb14d"), ("sbc43", "emitsb_sbc43s", "emitsb_sbc43"),
                ("sb403", "emitsb_sb403s", "emitsb_sb403"),
-               ("sb402", "emitsb_sb402s", "emitsb_sb402")]       # round 42 (N3g row Q)
+               ("sb402", "emitsb_sb402s", "emitsb_sb402"),       # round 42 (N3g row Q)
+               ("sb043", "emitsb_sb043s", "emitsb_sb043"),       # round 46 (N3k rows B5, B6)
+               ("sb803", "emitsb_sb803s", "emitsb_sb803")]
 AFTER_AT, M6, SLOT6 = 224, 0x5A5A3306, 0x40 + 4 * 6       # page dwords 224-255; slot 6 = 88-91
 
 
@@ -999,9 +1001,9 @@ def test_emitsb_after_keeps_the_base_s_entries_emit_word_and_patches_and_is_acce
     assert blob not in gen_verify.OK_BLOBS
 
 
-def test_emitsb_after_takes_only_the_design_s_four_forms():
+def test_emitsb_after_takes_only_the_design_s_six_forms():
     import gen_blobs
-    assert gen_blobs.AFTER_FORMS == ("fw14", "sbc43", "sb403", "sb402")
+    assert gen_blobs.AFTER_FORMS == ("fw14", "sbc43", "sb403", "sb402", "sb043", "sb803")
     assert gen_blobs.after_blob("fw14") == "emitsb14s"
     assert gen_blobs.after_blob("sbc43") == "emitsb_sbc43s"
     assert gen_blobs.after_blob("sb402") == "emitsb_sb402s"
@@ -1214,3 +1216,31 @@ def test_the_kernel_header_carries_landr_and_landp():
         assert f"#define SGX_OWN_PDS_{u}_WORDS\t{n}" in h and f"#define SGX_OWN_PDS_{u}_FILLV\t{fillv}" in h
         assert f"asm/fwtask/pds/{k}.s" in h
     assert "landv.s, crumbz.s, landq.s, landr.s and landp.s" in h
+
+
+# ---- round 46 (N3k §4.6, decision B (b)): rows B5 and B6 with an after-read -----------------------
+@pytest.mark.parametrize("name,word", [("sb043", 0xFB20B00800C08184), ("sb803", 0xFB20B10000C08184)])
+def test_emitsb_sb043s_and_sb803s_are_emitsb_sbc43s_but_the_word(name, word):
+    """Rows B5 and B6 (N3k §4.6, rebuilt): emitsb_sbc43s (X's, LC's, every n3j row's) with the
+    emit word of sideband 0x043 or 0x803 and nothing else: every other code line, the entries, the
+    patches; entry 1 at index 30, so the kernel's U0 is 0x080401ef and the firmware-page write is
+    crumb3's as in every after-read row; the blob is in the map, not in the fork's KUnit list."""
+    import gen_blobs
+    import json
+    b = _code(gen_blobs.gen_emitsb_after(name))
+    x = _code(gen_blobs.gen_emitsb_after("sbc43"))
+    assert len(b) == len(x)
+    assert [(p, q) for p, q in zip(x, b) if p != q] == [
+        ("emitpds.tasks.taske #0, r2, r3, r4, #0xc43",
+         f"emitpds.tasks.taske #0, r2, r3, r4, #0x{dict(fwtask.EMIT_SIDEBANDS)[name]:x}")]
+    bb = fwtask.parse_blob(fwtask.blob_of(f"emitsb_{name}s"))
+    bx = fwtask.parse_blob(fwtask.blob_of("emitsb_sbc43s"))
+    assert bb.entries == bx.entries and bb.patches == bx.patches
+    assert [w for w in bb.words if fwtask.classify(w)[0] == "EMITPDS"] == [word]
+    assert [w for w in bb.words if fwtask.classify(w)[0] != "EMITPDS"] == \
+        [w for w in bx.words if fwtask.classify(w)[0] != "EMITPDS"]
+    e1 = bb.entries[1]
+    assert e1 == 30 and (8 << 24 | (0x4000 + e1) << 4 | 0xF) == 0x080401EF
+    m = json.loads((fwtask.ASM / "fwtask.map").read_text())
+    assert m[f"emitsb_{name}s"]["source"] == f"emitsb_{name}s.s"
+    assert f"emitsb_{name}s" not in gen_verify.OK_BLOBS
