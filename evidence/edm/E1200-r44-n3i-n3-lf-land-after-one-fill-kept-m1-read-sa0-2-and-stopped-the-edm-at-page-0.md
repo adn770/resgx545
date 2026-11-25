@@ -67,3 +67,12 @@ named.
 
 **What it does not show.** Why F's fill wrote attribute 1 and this one did not (the image read after
 it differs: crumb3 in F, land here); where sa0's 2 comes from; which access read page 0; one run.
+
+**Correction 2026-11-25:** Round 45 answered two of this record's open points. Where sa0's 2 comes
+from: crumbz, which stops the tick and writes no attribute, read sa0 2 and an EVENT_TIMER-shaped sa2
+after one fill and M1 kept (ZF, E1225), so the fill's events, not land's running tick, wrote them
+(R-DRAW held) **[HW]**; LF2 (E1213) read this record's triple shape and page-0 stop again **[HW]**.
+And "that the tick pass reads through sa0, then sa1 (H-SA0)": row Q (E1233) faulted at sa1's page
+with both sa0 and sa1 holding words our rows never saw mapped, sa0 the higher, so H-SA0 is falsified
+unless sa0's word is mapped; the lowest faulting page fits every stop read so far as well
+**[infer]**. This record's frozen verdict and readings stand.

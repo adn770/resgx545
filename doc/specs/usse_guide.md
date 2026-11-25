@@ -3605,18 +3605,24 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   earlier rows was a stale word there **[HW]**. The first non-tick pass on the rewritten bank
   faults: a bare GETMISCINFO kick pass with our task idle faults at `sa13`'s page by the time its
   reply returns, and the EDM then answers no kick and serves no command until a reset (E1187);
-  with no pass after the emit nothing faults (E1184, E1186) **[HW]**. `sa1` reads attribute 1: a
-  word sent there with 0xc43 is `sa1` in the same row (E1180, E1184, E1186) and stays across
-  resets, a boot, kicks and ticks with no client draw (E1185, E1198) **[HW]**. Client draws after
-  a firmware load rewrite it by sequence, one run each: a fill then a triangle 0x04400000 over a
-  planted word, the word of the earlier rows (E1189); a triangle alone, and a triangle then a fill,
-  0x02400000 (E1193, E1195); two fills left the planted word (E1191); one fill has left
-  0x01000000, the planted word and, with no plant, 0x05400000 (E1187, E1200, E1196) **[HW]**; what
-  decides whether a draw writes it is **[open]**. With the tick running (landv, and land on the
-  same bank) the EDM stops after the emit's pass at `sa1`'s page with `sa0` = V0 (E1183, E1185,
-  E1198), and at page 0 with `sa0` 2 after a fill (E1200) **[HW]**; that the pass reads through
-  `sa0`, then `sa1`, which LC's page 0 with `sa0` 0 fits, is **[infer]**. That `sa13` is taken as
-  a page base is **[infer]**; where `sa3`-`sa10` come from is **[open]** (Q128).
+  with no pass after the emit nothing faults (E1184, E1186) **[HW]**. `sa0`, `sa1` and `sa2` read
+  attributes 0, 1 and 2: a word sent there with 0xc43 is the register in the same row (E1180,
+  E1184, E1186, E1233), and it stays across resets, a boot, kicks and ticks with no client draw
+  (E1185, E1198, E1219) **[HW]**. Client draws after a firmware load rewrite them by sequence:
+  a triangle writes all three (`sa0` 0, its word in `sa1`, an EVENT_TIMER-shaped `sa2`); a fill
+  writes `sa0` 2 and a timer-shaped `sa2` and leaves `sa1` (E1221-E1231, E1213, E1215) **[HW]**.
+  Read twice or more and agreeing, `sa1` is 0x02400000 after a triangle alone or a triangle then a
+  fill, and 0x08400000 after two triangles, the last triangle's word (E1193, E1195, E1204, E1206,
+  E1208, E1215, E1221, E1229, E1231) **[HW]**. Reads disagree for one fill (the planted word four
+  times, 0x01000000 once: E1187, E1200, E1210, E1213, E1225), for two fills (the planted word three
+  times, 0x04000010 with land: E1191, E1202, E1217, E1227) and for a fill then a triangle
+  (0x04400000, and 0x04000010 in X: E1174, E1189, E1223) **[HW]**; what decides those is **[open]**.
+  With the tick running (landv, land, landq) the EDM stops after the emit's pass: at page 0 with
+  `sa0` below one page (E1200, E1213, E1215, E1217), at `sa1`'s page with `sa0` = V0 (E1183,
+  E1185, E1198), and at `sa1`'s page with 0x005d2000 in `sa0` and M1 in `sa1` (E1233) **[HW]**;
+  that the lowest faulting page is kept, or that `sa0` is read first and 0x005d2000 is mapped, is
+  **[infer]**. That `sa13` is taken as a page base is **[infer]**; where `sa3`-`sa10` come from is
+  **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

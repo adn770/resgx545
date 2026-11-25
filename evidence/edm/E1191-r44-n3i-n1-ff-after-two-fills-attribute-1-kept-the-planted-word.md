@@ -48,3 +48,9 @@ E1196) **[HW against the frozen predictions]**. What decides whether a fill writ
 
 **What it does not show.** Whether each fill ran its event path (the kernel's "2 events seen" counts
 two); whether the second fill restored the word the first wrote; one run.
+
+**Correction 2026-11-25:** Round 45 read two fills after a plant three more times: M1 kept with
+crumb3 (FF2, E1202) and with crumbz (ZFF, E1227), but sa1 0x04000010 (and sa0 0, not 2) with land
+(LFF, E1217) **[HW]**. So "two fills left attribute 1's planted word" holds for the crumb3 and
+crumbz reads, not for every read of the list: the reads of fill, fill disagree, and what differs in
+LFF is **[open]**. This record's frozen verdict and readings stand.

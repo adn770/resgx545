@@ -59,3 +59,10 @@ across the boundary, as attribute 1 is (E1185), and not words the rewrite leaves
 
 **What it does not show.** Which access of the tick pass read sa1's page; why the stop does not
 fault at sa0's page here (sa0 = V0 is a page the kernel maps, **[infer]**); one run.
+
+**Correction 2026-11-25:** Round 45's row ZN (E1219) read the same bank with crumbz, which writes no
+attribute: sa0 = V0, sa1 = M1, sa2 = V2 after W's plant and no draws **[HW]**. So this record's
+**[infer]** that the post sa0 and sa2 are attributes 0 and 2 kept from W's `douta` across the
+boundary is now measured twice. Row Q (E1233) faulted at sa1's page with sa0 holding 0x005d2000, so
+"why the stop does not fault at sa0's page here" has two readings: sa0's word is mapped, or the
+lowest faulting page is kept **[infer]**. This record's frozen verdict and readings stand.

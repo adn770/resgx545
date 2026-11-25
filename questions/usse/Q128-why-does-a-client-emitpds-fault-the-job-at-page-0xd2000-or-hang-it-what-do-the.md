@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200", "E1201", "E1202", "E1203", "E1204", "E1205", "E1206", "E1207", "E1208", "E1209", "E1210", "E1211", "E1212", "E1213", "E1214", "E1215", "E1216", "E1217", "E1218", "E1219", "E1220", "E1221", "E1222", "E1223", "E1224", "E1225", "E1226", "E1227", "E1228", "E1229", "E1230", "E1231", "E1232", "E1233"]
 terms = []
 +++
 
@@ -273,3 +273,42 @@ writes `sa1` in some draw sequences and not in others (one fill has left three o
 words 0x04400000, 0x02400000 and 0x05400000 mean; where `sa0`'s 2 comes from and whether `sa0` and
 `sa2` read attributes 0 and 2; which access of the tick pass reads the page; where `sa3`-`sa10` come
 from; who wrote 0x00043000; what bits 6, 10 and 11 mean; the parts above. Not retired.
+
+Second reads, the rebuild images crumbz and landq, and which word land's stop faults at, 2026-11-25
+(E1201 to E1233, r45-n3j-n1 to -n6, flagged; N1-N4 on module 079DD0D1 of fork r42-kernel
+ec6511d5de87 with no rebuild, N5 and N6 on module EC553F41 of fork r45-kernel b1089172b2e7, which
+adds our crumbz and landq images; the kit's K9 counts the CCB commands from the kernel's `ccb_sent`,
+the control DK, which passed in every read). Sixteen plants (E1201, E1203, E1205, E1207, E1209,
+E1212, E1214, E1216, E1218, E1220, E1222, E1224, E1226, E1228, E1230, E1232) put M1 in `sa1` with no
+fault, WJ (E1218) the build control on the new module [HW]. Second reads agree: after a plant, fill,
+fill left M1 (FF2, E1202), a triangle alone 0x02400000 (T2, E1204), a triangle then a fill
+0x02400000 (TF2, E1206), and one fill M1 (F3, E1210); an unplanted fill after a fill-then-triangle
+end read 0x05400000 again (F2b, E1211) [HW, every prediction held]. Two triangles left 0x08400000
+(TT, E1208; ZTT, E1231): the second triangle decides the word, so H-FIRST is falsified and H-TRI's
+prediction held [HW against the frozen predictions]. Every non-plant word read fits H-KC, one event
+entry's pa1 with the count byte K the CCB commands since the load, which K9's counts confirm in
+every stage [infer for the entry; HW for the counts]. crumbz, which writes no attribute (ZN, E1219:
+V0, M1, V2 kept with no draws), read attributes 0-2 after each list [HW]: a triangle last leaves
+`sa0` 0 and an EVENT_TIMER-shaped `sa2` with its word in `sa1` (ZT, ZFT, ZTT: E1221, E1223, E1231),
+a fill last leaves `sa0` 2 and a timer-shaped `sa2` and does not touch `sa1` (ZF, ZFF, ZTF: E1225,
+E1227, E1229). So the fills' events write attributes 0 and 2, land's running tick does not (R-DRAW
+held, R-TICK fails), and attribute 1 takes only a triangle's word in every crumb3 and crumbz read
+[HW]. Land read the same: LF2 (E1213) repeated LF's (2, M1, timer) and page-0 stop, LT (E1215) read
+(0, 0x02400000, timer) and stopped at page 0 (LT-ONE failed, so LT did not split H-SA0 from H-HIST)
+[HW]. One read breaks the pattern: LFF (E1217), land after two fills, read `sa0` 0, `sa1` 0x04000010
+and a timer word (LFF-SA1 and LFF-SA0 FAILED against their predictions), where crumb3 and crumbz
+read M1 after two fills three times [HW]; 0x04000010 is H-KC's word for the second fill's own slot-3
+entry at K 4 (and X's, E1174), so H-TRI's "a fill's entries never write" meets one exception
+[infer]. Row Q (E1233), landq writing 0x005d2000 to attribute 0 and M1 to attribute 1 with no draws,
+read both back (Q-WRITE) and stopped at 0x005d1000, `sa1`'s page (Q-SA0 FAILED against its
+prediction; Q-LOW scored cannot tell by its frozen rule) [HW]. So H-SA0 as "the tick pass reads
+`sa0` first and faults at the first unmapped word" is falsified unless 0x005d2000 is mapped; two
+readings survive, not told apart: the lowest faulting page is kept, or `sa0` is read first and
+0x005d2000 is mapped [infer]. Both fit every stop read: page 0 with `sa0` below one page (LC, LC2,
+LF, LF2, LT, LFF) and `sa1`'s page with `sa0` = V0 (LV, V, LM); LC's page 0 (E1176, E1178) is its
+triangle's `sa0` 0 under either [infer]. A laptop event, not a row: after the first one-shot boot
+onto EC553F41 the laptop hung hard with no oops or panic logged; a second boot ran the routine and
+N5 and N6 cleanly; no cause is claimed (render-closing-r45-n3j-n5's fold notes). Still open: why
+LFF's read differs from the other reads of fill, fill; why F's one fill read 0x01000000; whether
+0x005d2000 is mapped; what bit 22 of the triangle's word means; where `sa3`-`sa10` come from; who
+wrote 0x00043000; what bits 6, 10 and 11 mean; the parts above. Not retired.

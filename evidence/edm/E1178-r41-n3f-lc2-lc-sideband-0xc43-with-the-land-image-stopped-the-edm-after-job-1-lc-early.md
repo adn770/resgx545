@@ -87,3 +87,15 @@ LF]**. This record's page 0 with post sa0 0 and sa1 0x04400000 fits that: a stop
 sa1, is **[infer]**, now supported by two rows of round 44; the earlier correction's "land's early
 stop does not follow sa1" is narrowed to: it follows sa1 when sa0 is V0. This record's verdict and
 readings stand.
+
+**Correction 2026-11-25:** Round 45's row Q (E1233) planted two words our rows never saw mapped,
+0x005d2000 in sa0 (landq's `douta` to attribute 0) and M1 0x005d1000 in sa1, and land's early stop
+faulted at 0x005d1000, sa1's page, not sa0's (Q-SA0 FAILED against its prediction) **[HW]**. So the
+reading that the tick pass reads sa0 first and faults at the first unmapped word (H-SA0) is
+falsified unless 0x005d2000 is mapped; two readings survive, not told apart: the lowest faulting
+page is kept, or sa0 is read first and 0x005d2000 is mapped **[infer]**. Both give page 0 whenever
+sa0 holds a word below one page, as here. The 2026-11-24 correction's "it follows sa1 when sa0 is
+V0" stands; its "a stop through sa0, then sa1" is narrowed to one of the two readings above. Round
+45 read this record's triple shape after a fill then a triangle with crumbz (ZFT, E1223: 0,
+0x04400000, a timer word) **[HW]**, so its sa0 and sa2 were the draws' words. This record's verdict
+and readings stand.

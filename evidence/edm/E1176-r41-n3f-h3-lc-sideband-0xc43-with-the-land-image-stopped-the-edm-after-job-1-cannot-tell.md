@@ -79,3 +79,16 @@ page 0 when sa0 holds a word below one page and at sa1's page when sa0 is V0 **[
 LF]**. This record's page 0 with post sa0 0 fits that: a stop through sa0, then sa1, is **[infer]**,
 now supported by two rows of round 44. This record's frozen verdict, CANNOT TELL, and its readings
 stand.
+
+**Correction 2026-11-25:** Round 45's row Q (E1233) planted two words our rows never saw mapped,
+0x005d2000 in sa0 (landq's `douta` to attribute 0) and M1 0x005d1000 in sa1, and land's early stop
+faulted at 0x005d1000, sa1's page, not sa0's (Q-SA0 FAILED against its prediction) **[HW]**. So the
+reading that the tick pass reads sa0 first and faults at the first unmapped word (H-SA0) is
+falsified unless 0x005d2000 is mapped; two readings survive, not told apart: the lowest faulting
+page is kept, or sa0 is read first and 0x005d2000 is mapped **[infer]**. Both give page 0 whenever
+sa0 holds a word below one page, as here. Round 45 also read LC's shape directly: a triangle alone,
+and a fill then a triangle, leave sa0 0, a word in sa1 and an EVENT_TIMER-shaped word in sa2, read
+by crumbz, which writes no attribute (ZT, ZFT: E1221, E1223), and by land with the same page-0 stop
+(LT, E1215) **[HW]**. So this record's post sa0 0 and sa2 were the draws' words, not land's **[HW
+for the shape; infer for this row]**. This record's frozen verdict, CANNOT TELL, and its readings
+stand.

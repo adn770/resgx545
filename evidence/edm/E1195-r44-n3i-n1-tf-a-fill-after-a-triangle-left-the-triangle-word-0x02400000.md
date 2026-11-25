@@ -49,3 +49,9 @@ two fills wrote nothing in FF (E1191), is **[infer]**.
 
 **What it does not show.** Whether the fill ran at all on the EDM's side (the kernel's "3 events
 seen" counts it); one run.
+
+**Correction 2026-11-25:** Round 45 read a triangle then a fill again: 0x02400000 with crumb3 (TF2,
+E1206) and with crumbz (ZTF, E1229) **[HW]**. crumbz, which writes no attribute, read sa0 2 and an
+EVENT_TIMER-shaped sa2 there: the fill after the triangle did write attributes 0 and 2 and left
+attribute 1 **[HW]**. This record's "that the fill wrote nothing here ... is [infer]" is narrowed to
+attribute 1. Its frozen verdict and readings stand.

@@ -80,3 +80,9 @@ attribute 1, and one fill has left three outcomes (0x01000000, the word kept, 0x
 what decides it is **[open]**. A triangle alone left 0x02400000 and a triangle then a fill the same
 (E1193, E1195) **[HW]**. This record's frozen verdict (F-FILL4 FAILED against its prediction) and
 readings stand.
+
+**Correction 2026-11-25:** Round 45 read one fill after the same kind of plant three more times: M1
+kept with crumb3 (F3, E1210), with land (LF2, E1213) and with crumbz (ZF, E1225) **[HW]**. Of the
+five reads of one fill after a plant, four kept the planted word and this record's read 0x01000000
+**[HW]**: the reads disagree, so the one-fill word is not known, and what made this row's differ is
+**[open]**. This record's frozen verdict and readings stand.
