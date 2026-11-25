@@ -141,31 +141,54 @@ pub struct State {
     /// (0xc43, E1180). It stays across a reset (E1181) and our later tasks start with it in
     /// `pa1`; `None`: unknown (E1179 read 0x00043000 there, a word none of our rows wrote).
     attr13: Option<u32>,
-    /// The word in attribute 1 once a measured `douta` wrote it (0xc43, E1184, E1186, E1188,
-    /// E1190, E1192, E1194, E1197, E1199). The issuer's `sa1` reads it after a bit 10 rewrite
-    /// with 0xc43 (E1180, E1184, E1186); it stays across resets, boots, kicks and ticks with no
-    /// client draw (E1185). The client draws since the last reset decide what is there at the
-    /// read (`attr1_now`).
-    attr1: Option<u32>,
-    /// The client draws (`Sgx::host_job`) since the last reset or the last write to attribute 1.
-    draws: Vec<HostJob>,
+    /// The words in attributes 0, 1 and 2 once a measured `douta` wrote them with 0xc43, each
+    /// with the client draws since (`Sgx::host_job`): mark's V0, M1 and V2 in every plant (E1184,
+    /// E1186, E1188, E1190, E1192, E1194, E1197, E1199, E1201, E1203, E1205, E1207, E1209,
+    /// E1212, E1214, E1216, E1218, E1220, E1222, E1224, E1226, E1228, E1230, E1232), crumb3's V0
+    /// and V2 (E1174, E1189), landq's word to attribute 0 (row Q). The issuer's `sa0`, `sa1` and `sa2` read them after a bit 10 rewrite with
+    /// 0xc43 (E1180, E1184, E1186, E1219); they stay across resets, boots, kicks and ticks with
+    /// no client draw (E1185, E1219). The draws decide what is there at the read
+    /// (`State::attr_now`).
+    attrs: [Option<Planted>; 3],
     /// The BIF_FAULT word the EDM stalled with: after a GETMISCINFO kick pass faulted on the
     /// rewritten bank it answered no kick and served no command until a reset (E1187).
     stalled: Option<u32>,
 }
 
+/// A word a measured `douta` put in attribute 0, 1 or 2, and the client draws since.
+#[derive(Clone, Debug)]
+struct Planted {
+    word: u32,
+    draws: Vec<HostJob>,
+}
+
 impl State {
-    /// The word in attribute 1 at a read after the client draws since the last reset, known
-    /// only where more than one read of that sequence after a planted word agreed (round 43's
-    /// rule): no draws keeps it (E1185). Two fills (the planted word, E1191), a triangle
-    /// alone and a triangle then a fill (0x02400000, E1193, E1195) were read once each:
-    /// unknown until a second read agrees. Reads disagree for one fill (0x01000000 in E1187,
-    /// the planted word in round 44's row LF with land, 0x05400000 with no plant in E1196) and
-    /// for a fill then a triangle (0x04400000 in E1189 and six rows with no plant, 0x04000010
-    /// in X, E1174): unknown. Every other sequence was never read: unknown, so a read refuses.
-    fn attr1_now(&self) -> Option<u32> {
-        let word = self.attr1?;
-        self.draws.is_empty().then_some(word)
+    /// The word in attribute `n` (0, 1 or 2) at a read after the client draws since it was
+    /// written, known only where more than one read of that draw list agreed and none disagreed
+    /// (the user's rule, rounds 43-45); every other list refuses. No draws keeps the word
+    /// (V, E1185; ZN, E1219; row LM). Attribute 1: 0x02400000 after a triangle alone (E1193,
+    /// E1204, E1221, row LT) and after a triangle then a fill (E1195, E1206, E1229), 0x08400000
+    /// after two triangles (E1208, E1231); reads disagree for one fill (the planted word in
+    /// E1210, E1225 and rows LF and LF2, 0x01000000 in E1187), two fills (the planted word in
+    /// E1191, E1202, E1227, 0x04000010 in row LFF) and a fill then a triangle (0x04400000 in
+    /// E1189, E1223, 0x04000010 in X, E1174). Attribute 0: 0 after a triangle alone (E1221, row
+    /// LT) and after a fill then a triangle (E1223, LC of E1176, LC2), 2 after one fill (E1225,
+    /// rows LF and LF2); two fills disagree (2 in E1227, 0 in row LFF), a triangle then a fill
+    /// and two triangles were read once (E1229, E1231). Attribute 2 after any draw is an
+    /// EVENT_TIMER sample that differs between reads (E1221, E1223, E1225, E1227, E1229, E1231):
+    /// unknown. That each triple is
+    /// one event entry's pa0-pa2 (H-KC, Q128) is not modelled.
+    fn attr_now(&self, n: usize) -> Option<u32> {
+        use HostJob::{Fill, Triangle};
+        let p = self.attrs.get(n)?.as_ref()?;
+        match (n, p.draws.as_slice()) {
+            (_, []) => Some(p.word),
+            (0, [Triangle] | [Fill, Triangle]) => Some(0),
+            (0, [Fill]) => Some(2),
+            (1, [Triangle] | [Triangle, Fill]) => Some(0x0240_0000),
+            (1, [Triangle, Triangle]) => Some(0x0840_0000),
+            _ => None,
+        }
     }
 }
 
@@ -186,8 +209,7 @@ impl Default for State {
             last_refused: None,
             rebased: false,
             attr13: None,
-            attr1: None,
-            draws: Vec::new(),
+            attrs: [None, None, None],
             stalled: None,
         }
     }
@@ -397,11 +419,13 @@ impl Sgx {
     /// `sa13`'s because something takes it as a page base is inferred. `None`: no such state (the
     /// sim runs no host job, so this says nothing else of how it ends). A rewritten `sa13` the sim
     /// does not know, or one that is not page aligned (0x00043000 and 0x005d3000 were read), is
-    /// refused. The job counts as a client draw for attribute 1 (`State::attr1_now`). On a
+    /// refused. The job counts as a client draw for attributes 0-2 (`State::attr_now`). On a
     /// stalled EDM (`Sgx::kick_miscinfo`) the job meets the fault already latched, as the gate
     /// fills of rows M and Q did (E1180, E1182).
     pub fn host_job(&mut self, job: HostJob) -> Result<Option<u32>, Error> {
-        self.st.draws.push(job);
+        for p in self.st.attrs.iter_mut().flatten() {
+            p.draws.push(job);
+        }
         if let Some(word) = self.st.stalled {
             return Ok(Some(word));
         }
@@ -462,12 +486,16 @@ impl Sgx {
     /// A debugfs reset: the kernel rebuilds the firmware's buffers and boots the stock EDM. Bit
     /// 10's state ends there (the kit's health fill and triangle after every reset, E1174,
     /// E1175, E1177). The boot's secondaries are not modelled: they are unknown afterwards. The
-    /// word in attribute 13 stays (E1181), and so does the word in attribute 1 with no client
-    /// draw since it was written (E1185); a word draws left was never read across a reset,
-    /// so it is unknown after one. A stall ends (E1187).
+    /// word in attribute 13 stays (E1181), and so do the words in attributes 0-2 with no client
+    /// draw since they were written (E1185, E1219). A word draws left is unknown after a reset:
+    /// F2 and F2b read 0x05400000 twice across one after a fill and a triangle (E1196, E1211),
+    /// but the draws since their plants differed, and that the triangle left it is H-KC's
+    /// reading only (Q128). A stall ends (E1187).
     pub fn reset(&mut self) {
-        if !self.st.draws.is_empty() {
-            (self.st.attr1, self.st.draws) = (None, Vec::new());
+        for a in &mut self.st.attrs {
+            if a.as_ref().is_some_and(|p| !p.draws.is_empty()) {
+                *a = None;
+            }
         }
         (self.st.rebased, self.st.stalled) = (false, None);
         self.st.sa_written = 0;
@@ -911,13 +939,17 @@ impl Unit<'_> {
                 (self.pa[1], self.written, self.st.attr13) = (v, self.written | 2, Some(v))
             }
             // 0xc43: a marker sent to attribute 1 was the issuer's sa1 after the rewrite (E1180,
-            // E1184, E1186) and reached no pa of pa0-pa15; it stays (E1185)
-            Bank::Own(0xc43) if n == 1 => (self.st.attr1, self.st.draws) = (Some(v), Vec::new()),
+            // E1184, E1186) and reached no pa of pa0-pa15; it stays (E1185). Words sent to
+            // attributes 0 and 2 were sa0 and sa2 (crumb3's and mark's V0 and V2, E1174, E1189,
+            // E1201; landq's word in row Q) and stayed (E1219); with bit 10 the started entry's
+            // pa held words of earlier runs (E1174, E1175, E1177), so no pa is written
+            Bank::Own(0xc43) if n <= 2 => self.st.attrs[n] = Some(Planted { word: v, draws: Vec::new() }),
             Bank::Own(b) => {
                 return Err(why(format!(
                     "douta to attribute {n} from a program our task emitted with sideband {b:#x}: \
                      unmeasured (measured: 0x843 at 0, 2, 24, 26; 0x002, 0x003, 0x842, 0x402 at \
-                     0, 2; 0xc43 at 1 and 13; E1161-E1164, E1166, E1168, E1180, E1182, E1184; \
+                     0, 2; 0xc43 at 0, 1, 2 and 13; E1161-E1164, E1166, E1168, E1180, E1182, \
+                     E1184, E1189; \
                      with bit 10 the \
                      started entry's pa held words of earlier runs, not told apart, E1174, E1175, \
                      E1177; Q128)"
@@ -1054,20 +1086,23 @@ impl Bus for Unit<'_> {
                 // own sa12-sa27 equal to the started entry's pa0-pa15, sa1 and words of sa3-sa10
                 // changed (E1174, E1175, E1180, E1182; the started entry read the same, E1172,
                 // E1177); with 0x843 nothing changed (E1173, E1179, E1181). Only that is
-                // modelled: every other sa is unknown, sa0-sa11 and sa28 on included (sa0 and sa2
-                // stayed with crumb3 but not with land, E1176, CANNOT TELL; sa1 read the word sent
-                // to attribute 1 in E1180 and another in E1182). The rewrite lasts until a reset.
+                // modelled, with sa0-sa2 below: every other sa is unknown, sa3-sa11 and sa28 on
+                // included. The rewrite lasts until a reset.
                 if matches!(self.bank, Bank::Own(b) if b & 0x400 != 0) {
                     let mut known = 0u128;
                     for k in 0..16 {
                         self.st.sa[12 + k] = self.pa[k];
                         known |= (self.written >> k & 1) << (12 + k);
                     }
-                    // sa1 reads attribute 1 when a measured douta put a word there (0xc43:
-                    // E1180, E1184-E1186) and the client draws since leave a known word (E1189,
-                    // E1191, E1193, E1195, E1196); else it stays unknown
-                    if let (Bank::Own(0xc43), Some(v)) = (self.bank, self.st.attr1_now()) {
-                        (self.st.sa[1], known) = (v, known | 2);
+                    // sa0-sa2 read attributes 0-2 when a measured douta put a word there (0xc43:
+                    // E1180, E1184-E1186, E1219) and the client draws since leave a known word
+                    // (`State::attr_now`); else they stay unknown
+                    if self.bank == Bank::Own(0xc43) {
+                        for n in 0..3 {
+                            if let Some(v) = self.st.attr_now(n) {
+                                (self.st.sa[n], known) = (v, known | 1 << n);
+                            }
+                        }
                     }
                     (self.st.sa_written, self.st.rebased) = (known, true);
                 }
@@ -2124,8 +2159,9 @@ mod tests {
         assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
         assert_eq!((s.st.sa[1], s.st.sa_written >> 1 & 1), (M1, 1));
         assert_eq!(s.st.sa[13], M13);
-        // E1187 (F): the same boundary with one stock fill read sa1 0x01000000, not M1; one value
-        // only, so a client draw leaves attribute 1 unknown; sa13 = pa1 = M13 still
+        // E1187 (F): the same boundary with one stock fill read sa1 0x01000000, not M1, where F3
+        // and ZF (E1210, E1225) kept M1: reads disagree, so one fill leaves attribute 1
+        // unknown; sa13 = pa1 = M13 still
         s.reset();
         assert_eq!(s.host_job(HostJob::Fill).unwrap(), None);
         assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
@@ -2148,26 +2184,84 @@ mod tests {
     }
 
     #[test]
-    fn the_draws_after_a_plant_leave_attribute_1_known_only_where_two_reads_agree() {
+    fn the_draws_after_a_plant_leave_attribute_1_known_only_where_every_read_agrees() {
         use HostJob::{Fill, Triangle};
-        // read once each, so unknown until a second read agrees (round 43's rule): two fills
-        // left M1 (E1191), a triangle alone and a triangle then a fill left 0x02400000 (E1193,
-        // E1195)
+        // read more than once, every read agreeing: a triangle alone 0x02400000 (T E1193, T2
+        // E1204, ZT E1221, and row LT with land), a triangle then a fill 0x02400000 (TF E1195, TF2 E1206,
+        // ZTF E1229), two triangles 0x08400000, the second triangle's word (TT E1208, ZTT E1231)
+        assert_eq!(sa1_after(&[Triangle]), Some(0x0240_0000));
+        assert_eq!(sa1_after(&[Triangle, Fill]), Some(0x0240_0000));
+        assert_eq!(sa1_after(&[Triangle, Triangle]), Some(0x0840_0000));
+        // two fills: M1 with crumb3 and crumbz (FF E1191, FF2 E1202, ZFF E1227) but 0x04000010
+        // with land (row LFF): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill, Fill]), None);
-        assert_eq!(sa1_after(&[Triangle]), None);
-        assert_eq!(sa1_after(&[Triangle, Fill]), None);
-        // fill, then triangle: 0x04400000 over the plant (E1189) and in six unplanted rows, but
-        // 0x04000010 in X (E1174): reads disagree, unknown
+        // fill, then triangle: 0x04400000 over the plant (FT E1189, ZFT E1223) and in six
+        // unplanted rows, but 0x04000010 in X (E1174): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill, Triangle]), None);
-        // one fill: 0x01000000 (E1187), M1 kept (row LF, with land), 0x05400000 with no plant
-        // (E1196)
+        // one fill: M1 kept (F3 E1210, ZF E1225, rows LF and LF2 with land) but 0x01000000 in F
+        // (E1187), and 0x05400000 with no plant (E1196, E1211): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill]), None);
         // sequences no row read stay unknown
-        assert_eq!(sa1_after(&[Triangle, Triangle]), None);
         assert_eq!(sa1_after(&[Fill, Fill, Fill]), None);
         assert_eq!(sa1_after(&[Fill, Triangle, Fill]), None);
-        // no draws: the plant stays (E1185)
+        assert_eq!(sa1_after(&[Triangle, Triangle, Triangle]), None);
+        // no draws: the plant stays (E1185, E1219, row LM with land)
         assert_eq!(sa1_after(&[]), Some(M1));
+    }
+
+    /// The plant words of the mark image's attributes 0 and 2 (crumb3's V0 and V2).
+    const V0: u32 = 0x3200_4000;
+    const V2: u32 = 0x3200_2000;
+
+    /// Plant V0 and V2 (W sends crumb3's V0 to attribute 0 and V2 to attribute 2 with 0xc43),
+    /// the stage boundary's resets, then `draws` and a read by an emit that writes no attribute
+    /// (crumbz): its sa0 and sa2, each if known.
+    fn sa0_sa2_after(draws: &[HostJob]) -> (Option<u32>, Option<u32>) {
+        let (mut s, r) = own_douta(0xc43, (V0, 0x0000), (V2, 0x0200), &[]);
+        r.unwrap();
+        for _ in 0..3 {
+            s.reset();
+        }
+        for &job in draws {
+            assert_eq!(s.host_job(job).unwrap(), None);
+        }
+        started_pa1(&mut s, 0xc43);
+        let known = |n: usize| (s.st.sa_written >> n & 1 == 1).then_some(s.st.sa[n]);
+        (known(0), known(2))
+    }
+
+    #[test]
+    fn a_douta_to_attribute_0_or_2_with_0xc43_is_the_issuers_sa0_or_sa2_after_the_rewrite() {
+        // crumb3's V0 and V2 with 0xc43 were sa0 and sa2 in the same row (E1174, E1189, E1202),
+        // and so were mark's in every plant (E1201, E1218, E1232); landq's 0x005d2000 to attribute 0 was
+        // sa0 in row Q (Q-WRITE)
+        let (s, r) = own_douta(0xc43, (V0, 0x0000), (V2, 0x0200), &[]);
+        r.unwrap();
+        assert_eq!((s.st.sa[0], s.st.sa[2], s.st.sa_written & 0b101), (V0, V2, 0b101));
+        let (s, r) = own_douta(0xc43, (0x005d_2000, 0x0000), (M1, 0x0100), &[]);
+        r.unwrap();
+        assert_eq!((s.st.sa[0], s.st.sa[1], s.st.sa_written & 0b11), (0x005d_2000, M1, 0b11));
+    }
+
+    #[test]
+    fn the_draws_after_a_plant_leave_attributes_0_and_2_known_only_where_every_read_agrees() {
+        use HostJob::{Fill, Triangle};
+        // no draws: the plant's V0 and V2 stay, read by crumbz (ZN E1219) and by land (row LM)
+        assert_eq!(sa0_sa2_after(&[]), (Some(V0), Some(V2)));
+        // sa0 read more than once, every read agreeing: 0 after a triangle alone (ZT E1221, row
+        // LT) and after a fill then a triangle (ZFT E1223; LC with no plant, E1176, and LC2), 2
+        // after one fill (ZF E1225, rows LF and LF2); sa2 after any draw is an EVENT_TIMER sample
+        // that differs between reads (E1221, E1225, E1229): unknown
+        assert_eq!(sa0_sa2_after(&[Triangle]), (Some(0), None));
+        assert_eq!(sa0_sa2_after(&[Fill, Triangle]), (Some(0), None));
+        assert_eq!(sa0_sa2_after(&[Fill]), (Some(2), None));
+        // two fills: 2 with crumbz (ZFF E1227), 0 with land (row LFF): reads disagree
+        assert_eq!(sa0_sa2_after(&[Fill, Fill]), (None, None));
+        // read once: a triangle then a fill 2 (ZTF E1229), two triangles 0 (ZTT E1231)
+        assert_eq!(sa0_sa2_after(&[Triangle, Fill]), (None, None));
+        assert_eq!(sa0_sa2_after(&[Triangle, Triangle]), (None, None));
+        // never read
+        assert_eq!(sa0_sa2_after(&[Fill, Fill, Fill]), (None, None));
     }
 
     #[test]
@@ -2181,6 +2275,16 @@ mod tests {
         s.reset();
         assert_eq!(started_pa1(&mut s, 0xc43), Some(M13));
         assert_eq!(s.st.sa_written >> 1 & 1, 0);
+        // the same for attributes 0 and 2: F2 and F2b (E1196, E1211) read 0x05400000 twice
+        // across a reset after a fill and a triangle, but the draws since each plant differed,
+        // and which draw left it is H-KC's reading only, so it is not modelled
+        let (mut s, r) = own_douta(0xc43, (V0, 0x0000), (V2, 0x0200), &[]);
+        r.unwrap();
+        s.reset();
+        s.host_job(Triangle).unwrap();
+        s.reset();
+        started_pa1(&mut s, 0xc43);
+        assert_eq!(s.st.sa_written & 0b101, 0);
         // a draw before the plant does not count: the plant rows ran fill, triangle first
         // (E1188), then with no draws after it the plant stays (E1185)
         let mut s = sgx();
