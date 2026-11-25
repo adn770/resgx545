@@ -2554,7 +2554,11 @@ BAD_ARMS = ["slots=0x1", "slots=0x0 entry=0", "slots=0x1 entry=0 trc_hazard=1",
             # round 45 (N3j): pds=crumbz|landq only, in their places
             "slots=0x1 entry=0 pds=CRUMBZ", "slots=0x1 entry=0 pds=crumbz2", "slots=0x1 entry=0 pds=landq2",
             "slots=0x1 entry=0 pds=land_q", "slots=0x1 entry=0 pdsat=fw14 pds=crumbz",
-            "slots=0x1 entry=0 pds=crumbz pds=landq"]
+            "slots=0x1 entry=0 pds=crumbz pds=landq",
+            # round 46 (N3k): pds=landr|landp only, in their places
+            "slots=0x1 entry=0 pds=LANDR", "slots=0x1 entry=0 pds=landr2", "slots=0x1 entry=0 pds=landpp",
+            "slots=0x1 entry=0 pds=land_p", "slots=0x1 entry=0 pdsat=fw14 pds=landr",
+            "slots=0x1 entry=0 pds=landr pds=landp", "slots=0x1 entry=0 form=sbc43 pds=landp"]
 
 
 @pytest.mark.parametrize("arm", BAD_ARMS)
@@ -2581,6 +2585,8 @@ def test_lint_accepts_the_arm_forms_of_the_runner(repos):
                 "slots=0x1 entry=0 pds=landv pdsat=fw14 form=sbc43",
                 "slots=0x1 entry=0 pds=crumbz pdsat=fw14 form=sbc43",
                 "slots=0x1 entry=0 pds=landq pdsat=fw14 form=sbc43",
+                "slots=0x1 entry=0 pds=landr pdsat=fw14 form=sbc43",
+                "slots=0x1 entry=0 pds=landp pdsat=fw14 form=sbc43",
                 "slots=0x1 entry=0 pds=crumb3 pdsat=fw14 form=sb402", "slots=0x1 entry=0 form=sb400"):
         kp, r = own_session(dict(repos, tmp=repos["tmp"] / arm.replace(" ", "_")),
                             stage=OWN_STAGE.replace("slots=0x1 entry=0", arm))
@@ -2998,7 +3004,7 @@ def test_the_kit_s_form_names_are_fwtask_s_list_but_own():
     assert list(S.OWNTASK_FORMS) == names and len(names) == 19
     rs = (KIT / "run_stage.sh").read_text()
     assert "( form=(" + "|".join(names) + "))?" in rs
-    assert "( pds=(crumb|halt|crumb3|land|mark|landv|crumbz|landq))?" in rs
+    assert "( pds=(crumb|halt|crumb3|land|mark|landv|crumbz|landq|landr|landp))?" in rs
 
 
 @pytest.mark.parametrize("name", [n for n in ("sb001", "sb002", "sb003", "sb040", "sb041", "sb042",
@@ -3095,6 +3101,43 @@ def test_the_mock_arms_rows_z_and_q_s_words(repos, words):
     assert m.returncode == 0, m.stdout + m.stderr
     mm = next(kp.glob("debug/mock.*/model"))
     assert "arm slots=0x1 entry=0 " + words in own_log(mm)
+
+
+# ---- round 46 (N3k §3.1, K10): pds=landr and pds=landp ------------------------------------------
+@pytest.mark.parametrize("words", ["pds=landr pdsat=fw14 form=sbc43", "pds=landp pdsat=fw14 form=sbc43",
+                                   "pds=landr", "pds=landp"])
+def test_the_runner_takes_the_round_46_arm_words(tmp_path, words):
+    """N3k rows R (landr) and P (landp)."""
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pds=landr2", "pds=LANDP", "pds=landpp", "pdsat=fw14 pds=landr",
+                                   "pds=landr pds=landp"])
+def test_the_runner_refuses_other_round_46_arm_words(tmp_path, words):
+    r = own_runner_tree(tmp_path, OWN_ROW, tsv=OWN_TSV.replace(
+        "slots=0x1 entry=0", "slots=0x1 entry=0 " + words))
+    assert r.returncode == 7 and "arm" in r.stdout, (r.returncode, r.stdout)
+
+
+@pytest.mark.parametrize("words", ["pds=landr pdsat=fw14 form=sbc43", "pds=landp pdsat=fw14 form=sbc43"])
+def test_the_mock_arms_rows_r_and_p_s_words(repos, words):
+    kp, r = own_session(dict(repos, tmp=repos["tmp"] / words.split()[0]), stage=OWN_STAGE.replace(
+        "entry=0", "entry=0 " + words))
+    m = kit(kp, r, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    mm = next(kp.glob("debug/mock.*/model"))
+    assert "arm slots=0x1 entry=0 " + words in own_log(mm)
+
+
+def test_the_kit_s_images_are_the_header_s_but_v1():
+    """K10: every image the kit's arm word may name is one gen_verify writes into the fork's
+    sgx_own_pds.h (v1 is the default, never named), landr and landp included."""
+    _fwtask()
+    import gen_verify as gv
+    assert set(S.OWNTASK_IMAGES) == set(gv.PDS_SOURCES) - {"v1"}
+    assert {"landr", "landp"} <= set(S.OWNTASK_IMAGES)
 
 
 # ---- round 41 (N3f §3.1, K1-K4): a row of several jobs, sleep_ms, slots, the gate's order, its
