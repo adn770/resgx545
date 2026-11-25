@@ -3958,3 +3958,64 @@ def test_kc_prints_h_kc_s_word_of_each_entry(draws, base, want):
 def test_the_hacking_describes_k9():
     t = (HERE.parent.parent / "HACKING.md").read_text()
     assert "Round 45 (K9)" in t and "kitscore.kc" in t and "DK" in t
+
+
+# ---- K11: PAD, a control on how many commands ran before a stage (round 46 addendum, n3k
+# design section 11.4: row LFKP reads land after a pad of client fills that lifts K above LFF's
+# 818). kitscore.kc_pad(kc, at_least) is ok when the stage's begin N0 (the kernel's `ccb_sent` at
+# the begin load, the commands since the module load) is at least the value, failed when below,
+# None (cannot tell) when the begin load was not read.
+N1_LFF2 = "r46-n3k-n1/out/20261125-160752/lff2"          # round 46's n1 lff2: begin N0 138
+SCRATCH = pathlib.Path(os.environ.get("RESGX545_SCRATCH",
+                                      str(pathlib.Path.home() / "src/scratch/resgx545")))
+
+
+@pytest.mark.parametrize("n0,at_least,want", [(138, 830, "failed"), (900, 830, "ok"),
+                                              (830, 830, "ok"), (829, 830, "failed")])
+def test_kc_pad_reads_the_begin_n0_against_a_floor(tmp_path, n0, at_least, want):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log("fill", n0, n0 + 4)), begin="fill")
+    assert kitscore.kc_pad(got, at_least) == want
+
+
+def test_kc_pad_cannot_tell_without_the_begin_load(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log(loaded=False)), begin="fill,tri")
+    assert kitscore.kc_pad(got, 830) is None
+    assert kitscore.kc_pad(kitscore.kc(str(tmp_path), begin="fill"), 830) is None
+
+
+def test_kc_pad_text_prints_n0_and_the_floor(tmp_path):
+    import kitscore
+    got = kitscore.kc(kc_dir(tmp_path, kc_log("fill", 138, 142)), begin="fill")
+    assert kitscore.kc_pad_text("lfkp1-a", got, 830) == \
+        "PAD lfkp1-a: begin N0 138, at least 830 (failed)"
+    d = tmp_path / "unread"
+    d.mkdir()
+    (d / "kernel.log").write_text(kc_log("fill", loaded=False))
+    got = kitscore.kc(str(d), begin="fill")
+    assert kitscore.kc_pad_text("lfkp1-a", got, 830) == \
+        "PAD lfkp1-a: begin N0 cannot tell, at least 830 (cannot tell)"
+
+
+@pytest.mark.parametrize("doctor,want", [(None, "failed"), (900, "ok")])
+def test_kc_pad_on_round_46_s_kept_n1_lff2(tmp_path, doctor, want):
+    """Round 46's kept n1 lff2 (KC begin N0 138, scratch until its fold): PAD at 830 fails; a copy
+    with the begin load's ccb_sent doctored to 900 (and the arm's to 906) passes."""
+    import kitscore
+    p = SCRATCH / "closing29" / N1_LFF2 / "kernel.log"
+    if not p.exists():
+        pytest.skip(f"{p} is not here (RESGX545_SCRATCH)")
+    text = p.read_text()
+    assert "ccb_sent 138 " in text and "ccb_sent 144 " in text
+    if doctor:
+        text = text.replace("ccb_sent 138 ", f"ccb_sent {doctor} ").replace(
+            "ccb_sent 144 ", f"ccb_sent {doctor + 6} ")
+    got = kitscore.kc(kc_dir(tmp_path, text), begin="fill,fill")
+    assert got["begin"]["n0"] == (doctor or 138) and got["begin"]["state"] == "ok"
+    assert kitscore.kc_pad(got, 830) == want
+
+
+def test_the_hacking_describes_k11():
+    t = (HERE.parent.parent / "HACKING.md").read_text()
+    assert "Round 46 (K11)" in t and "kitscore.kc_pad" in t and "PAD" in t

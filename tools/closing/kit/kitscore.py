@@ -41,6 +41,9 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           tell: a load or mark missing). kc_expected(draws) = 2 + 2 x fills + 6 x
                           tris; kc_state(kc, side) is DK; kc_text(name, kc) the KC lines;
                           hkc_words(draws, base) H-KC's word of each entry (printed, never scored)
+  kc_pad(kc, at_least)    PAD (K11, round 46): "ok" when the stage's begin N0 (the commands since
+                          the module load) is at least at_least, "failed" below, None (cannot
+                          tell) unread; kc_pad_text(name, kc, at_least) its PAD line
   completed(row)          a kept row whose job ran to its end: class ok, with rc 0, rc 1 of an
                           `expectdiff` row (the runner took it as a reading only with `job: ok`
                           and a diff line) or the rc of an expected outcome its knobs declare
@@ -395,6 +398,20 @@ def kc_text(name, got):
                    f"{s['expected']} ({s['state'] or 'cannot tell'}"
                    + (f": {s['why']}" if s["why"] else "") + ")")
     return out
+
+
+def kc_pad(got, at_least):
+    """PAD (K11): the stage's begin N0 against a floor: ok, failed, or None when unread."""
+    n0 = got["begin"]["n0"]
+    if n0 is None:
+        return None
+    return "ok" if n0 >= at_least else "failed"
+
+
+def kc_pad_text(name, got, at_least):
+    n0 = got["begin"]["n0"]
+    return (f"PAD {name}: begin N0 {'cannot tell' if n0 is None else n0}, at least {at_least} "
+            f"({kc_pad(got, at_least) or 'cannot tell'})")
 
 
 def hkc_words(draws, base):

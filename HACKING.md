@@ -511,6 +511,12 @@ control is `kc_state(kc)`; `kc_text` prints the KC lines and `hkc_words(draws, b
 of each entry of a list (K is base + the commands before the entry + 1; base 1 at the begin draws,
 2 at the end draws), printed and never scored. No change to the runner or the laptop's tools.
 
+Round 46 (K11): `kitscore.kc_pad(kc, at_least)` is the PAD control of a row read after a pad of
+client draws run outside the session: ok when the stage's begin N0 (the kernel's `ccb_sent` at the
+begin load, the commands since the module load) is at least the value, failed below it, None
+(cannot tell) when the begin load was not read; `kc_pad_text` prints its PAD line. No change to the
+runner or the laptop's tools.
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset
