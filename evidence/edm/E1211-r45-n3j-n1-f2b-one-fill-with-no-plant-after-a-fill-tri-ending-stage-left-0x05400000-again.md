@@ -36,8 +36,9 @@ cannot-tell rule for F2b-SAME is not met.
 
 **Results [HW].** Job 1 done (run id 1, state 2, T 0x005a3305, 9 ticks); K5 BIF_FAULT 0 before and
 after, snap9 0. Job 1's post sa1 **0x05400000**; sa0 = V0 0x32004000 and sa2 = V2 0x32002000 (crumb3
-writes both); sa13 = pa1 = M13 0x005d3000; post sa3-sa31 and pa0-pa15 equal its plant stage's word
-for word. The kernel: the arm after the begin draws "1 events seen" (printed, not scored).
+writes both); sa13 = pa1 = M13 0x005d3000; post sa3-sa31 and pa0-pa15 equal the session's plant
+stages' word for word. The kernel: the arm after the begin draws "1 events seen" (printed, not
+scored).
 
 The session's last stage; its end draws and the health draw after the session were exact
 (closing29/r45-n3j-logs/health-r45-n3j-n1.log).
