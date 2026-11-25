@@ -3,8 +3,10 @@
 """The linux fork at the commit the tests are pinned to, read with `git`, so that the check does
 not depend on which branch or commit the fork home (RESGX545_LINUX, default ../linux) has out.
 RESGX545_FORK_PIN overrides PIN while a newer fork commit is under test."""
+import atexit
 import os
 import pathlib
+import shutil
 import subprocess
 import tempfile
 
@@ -31,10 +33,11 @@ def show(path: str) -> str | None:
 
 def sgxfive_dir() -> pathlib.Path | None:
     """A directory with the fork's sgxfive sources at the pinned commit (extracted once per
-    process and pin), or None without the fork or the commit."""
+    process and pin, removed when the process exits), or None without the fork or the commit."""
     key = (str(home()), pin())
     if key not in _cache:
         d = pathlib.Path(tempfile.mkdtemp(prefix="forkpin_"))
+        atexit.register(shutil.rmtree, d, ignore_errors=True)
         arch = subprocess.run(["git", "-C", str(home()), "archive", pin(), f"{SGXFIVE}/"],
                               capture_output=True)
         ok = arch.returncode == 0 and subprocess.run(

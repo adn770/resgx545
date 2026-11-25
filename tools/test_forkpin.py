@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Josep Torra
 """The tests that read the linux fork read the pinned commit, whatever the fork home has checked
 out (KB-T5): a home on another branch, or on a newer commit, changes nothing."""
+import os
 import pathlib
 import subprocess
 import sys
@@ -49,6 +50,23 @@ def test_sgxfive_dir_is_the_pinned_tree(home):
     d = forkpin.sgxfive_dir()
     assert (d / "a.h").read_text() == "pinned\n"
     assert not (d / "b.h").exists()
+
+
+@pytest.mark.parametrize("with_fork", [True, False])
+def test_sgxfive_dir_leaves_no_temp_dir_behind(home, tmp_path, with_fork):
+    """The extracted tree lives as long as the process, then goes: a check imports forkpin in
+    many processes, and each used to leave a forkpin_* directory in TMPDIR."""
+    tmp = tmp_path / "tmpdir"
+    tmp.mkdir()
+    env = {**os.environ, "TMPDIR": str(tmp)}
+    if not with_fork:
+        env["RESGX545_LINUX"] = str(tmp_path / "nothing")
+    code = ("import sys; sys.path.insert(0, sys.argv[1]); import forkpin; "
+            "d = forkpin.sgxfive_dir(); print(d is not None and (d / 'a.h').exists())")
+    r = subprocess.run([sys.executable, "-c", code, str(HERE)], env=env, check=True,
+                       capture_output=True, text=True)
+    assert r.stdout.strip() == str(with_fork)
+    assert list(tmp.iterdir()) == []
 
 
 def test_no_fork_or_no_pin_gives_none(tmp_path, monkeypatch):
