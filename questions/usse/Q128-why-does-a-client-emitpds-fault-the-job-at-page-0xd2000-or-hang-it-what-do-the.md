@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200", "E1201", "E1202", "E1203", "E1204", "E1205", "E1206", "E1207", "E1208", "E1209", "E1210", "E1211", "E1212", "E1213", "E1214", "E1215", "E1216", "E1217", "E1218", "E1219", "E1220", "E1221", "E1222", "E1223", "E1224", "E1225", "E1226", "E1227", "E1228", "E1229", "E1230", "E1231", "E1232", "E1233"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200", "E1201", "E1202", "E1203", "E1204", "E1205", "E1206", "E1207", "E1208", "E1209", "E1210", "E1211", "E1212", "E1213", "E1214", "E1215", "E1216", "E1217", "E1218", "E1219", "E1220", "E1221", "E1222", "E1223", "E1224", "E1225", "E1226", "E1227", "E1228", "E1229", "E1230", "E1231", "E1232", "E1233", "E1234", "E1235", "E1236", "E1237", "E1238", "E1239", "E1240", "E1241", "E1242", "E1243", "E1244", "E1245"]
 terms = []
 +++
 
@@ -312,3 +312,38 @@ N5 and N6 cleanly; no cause is claimed (render-closing-r45-n3j-n5's fold notes).
 LFF's read differs from the other reads of fill, fill; why F's one fill read 0x01000000; whether
 0x005d2000 is mapped; what bit 22 of the triangle's word means; where `sa3`-`sa10` come from; who
 wrote 0x00043000; what bits 6, 10 and 11 mean; the parts above. Not retired.
+
+Sidebands 0x043 and 0x803, two fills again, and where land's stop faults on a new module,
+2026-11-25 (E1234 to E1245, r46-n3k-b5, -b6 and -n1 to -n4, flagged, every session on module
+10BBF3BF of fork r46-kernel c5094783eb88, one build and one one-shot boot, which adds our landr and
+landp images; rows R, P, R2 and P2 of the design, sessions N5-N8, were not run: the user stopped
+the round after N4). B5 (0x043) and B6 (0x803), rebuilt on today's kit with an after-read, ran
+crumb3 and our entry to done, left the issuer's sa0-sa31 as they were (pre = post = the kick's
+after-read) and the next fill and triangle exact, every prediction held (E1234, E1235) [HW, one run
+each]: bits 6 and 11 with bits 1:0 = 3 change neither the start nor the bank, so the start rule's
+0x043 and 0x803 are now read, not inferred; 0x042 and 0x802 stay [infer]. Printed, not scored, one
+read each: with 0x043 no V0 or V2 in pa0-pa15 (as 0x843), with 0x803 V0 and V2 in every fourth pa
+(as 0x003); that bit 6 without bit 10 keeps crumb3's words out of the started entry's pa is [infer],
+since those pa can hold words of earlier runs. Five plants (E1236, E1238, E1240, E1242, E1244) put
+M1 in `sa1` with no fault, WA the build control [HW]. Two fills after a plant kept M1 with crumbz
+(ZFF2, E1237) and with land twice (LFF2, LFF3: E1239, E1241), and three fills kept it with land
+(LF3F, E1243) [HW]: fill, fill has now read M1 six times against LFF's 0x04000010 once (E1217), so
+land's running tick does not make a fill write attribute 1 (H-FL fails; LFF2-FILL2, LF3F-SECOND and
+LF3F-LAST failed as predicted) [HW against the frozen predictions], and what LFF read stays
+[open]. `sa0` after two fills read 2 with land twice but 0x00040000 with crumbz (ZFF2-KEEP FAILED
+against its prediction), against 2 and 0 before (E1227, E1217) [HW]: the list's `sa0` is not known.
+Every land read of this round with `sa0` 2 and M1 in `sa1` stopped at 0x005d1000, `sa1`'s page, not
+at page 0 (LFF2-PAGE0, LFF3-PAGE0 and LF3F-PAGE0 FAILED against their predictions) [HW], where LF
+and LF2 with the same bank after one fill on module 079DD0D1 stopped at page 0 (E1200, E1213). So
+"page 0 whenever `sa0` holds a word below one page" (six of six before) is not a rule, and both
+readings row Q left, the lowest faulting page kept (R-LOW) and `sa0` read first with 0x005d2000
+mapped (R-SA0), predicted page 0 for these stops: neither stands as stated [HW against the frozen
+predictions]. The module and the number of fills before land changed together, and no row splits
+them [infer]. Q2 (E1245) repeated Q's read and stop at `sa1`'s page with 0x005d2000 in `sa0` on the
+new module [HW]: Q's bank now meets the two-read rule. Boot note, not a row: the r46 boot's KUnit
+run logged a lockdep "trying to register non-static key" in sgxfive_debug_test_hold_recovery (also
+in the netconsole logs of rounds 35 and 44), after which lockdep is off for the rest of each boot
+(closing29/r46-n3k-logs/netconsole-r46.log). Still open: what moved the stop's page between the
+(2, M1) reads (the module or the fill count); whether 0x005d2000 is mapped (rows P, P2); why LFF
+read 0x04000010 and F 0x01000000; where ZFF2's `sa0` 0x00040000 comes from; what bits 6, 10 and 11
+mean beyond the start; the parts above. Not retired.

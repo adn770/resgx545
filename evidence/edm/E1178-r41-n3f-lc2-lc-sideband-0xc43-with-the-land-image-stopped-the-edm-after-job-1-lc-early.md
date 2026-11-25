@@ -99,3 +99,17 @@ V0" stands; its "a stop through sa0, then sa1" is narrowed to one of the two rea
 45 read this record's triple shape after a fill then a triangle with crumbz (ZFT, E1223: 0,
 0x04400000, a timer word) **[HW]**, so its sa0 and sa2 were the draws' words. This record's verdict
 and readings stand.
+
+**Correction 2026-11-25 (round 46):** Round 46's land rows on module 10BBF3BF (fork r46-kernel
+c5094783eb88) stopped with sa0 2 and M1 in sa1 at 0x005d1000, sa1's page, not at page 0: after two
+fills twice (LFF2 E1239, LFF3 E1241) and after three (LF3F E1243), the PAGE0 outcome FAILED against
+its prediction (held) each time **[HW]**. So the stop does not fault at page 0 whenever sa0 holds a
+word below one page, and the two readings row Q left (the lowest faulting page kept; sa0 read first
+with 0x005d2000 mapped) both predicted page 0 there **[HW against the frozen predictions]**. The
+earlier page-0 stops ran on modules 83FBFD86 and 079DD0D1, and the two with the bank (2, M1), LF and
+LF2, after one fill: the module and the number of fills changed together, and no row splits them
+**[infer]**. Row Q's stop at sa1's page with 0x005d2000 in sa0 repeated on 10BBF3BF (Q2, E1245)
+**[HW]**. This record's page 0 with post sa0 0 stands as read; the 2026-11-24 correction's rule
+("page 0 when sa0 holds a word below one page", given as [HW]) and the 2026-11-25 correction's "both
+give page 0 whenever sa0 holds a word below one page" are narrowed to the modules and draw lists of
+those reads. This record's frozen verdict and readings stand.

@@ -66,3 +66,16 @@ attribute: sa0 = V0, sa1 = M1, sa2 = V2 after W's plant and no draws **[HW]**. S
 boundary is now measured twice. Row Q (E1233) faulted at sa1's page with sa0 holding 0x005d2000, so
 "why the stop does not fault at sa0's page here" has two readings: sa0's word is mapped, or the
 lowest faulting page is kept **[infer]**. This record's frozen verdict and readings stand.
+
+**Correction 2026-11-25 (round 46):** Round 46's land rows on module 10BBF3BF (fork r46-kernel
+c5094783eb88) stopped with sa0 2 and M1 in sa1 at 0x005d1000, sa1's page, not at page 0: after two
+fills twice (LFF2 E1239, LFF3 E1241) and after three (LF3F E1243), the PAGE0 outcome FAILED against
+its prediction (held) each time **[HW]**. So the stop does not fault at page 0 whenever sa0 holds a
+word below one page, and the two readings row Q left (the lowest faulting page kept; sa0 read first
+with 0x005d2000 mapped) both predicted page 0 there **[HW against the frozen predictions]**. The
+earlier page-0 stops ran on modules 83FBFD86 and 079DD0D1, and the two with the bank (2, M1), LF and
+LF2, after one fill: the module and the number of fills changed together, and no row splits them
+**[infer]**. Row Q's stop at sa1's page with 0x005d2000 in sa0 repeated on 10BBF3BF (Q2, E1245)
+**[HW]**. This record's stop at sa1's page with sa0 = V0 is not contradicted; the two readings the
+2026-11-25 correction gave for why it was not at sa0's page both fail on round 46's (2, M1) bank, so
+neither is carried as the rule **[infer]**. This record's frozen verdict and readings stand.

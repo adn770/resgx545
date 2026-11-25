@@ -102,14 +102,17 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   0x30011010, #14's page + 0x10, our task not storing past the emit (0x001, 0x841); 2 or 3 run it
   and our entry to done (0x002, 0x842, 0x003, 0x843, 0xc43). Bits 6, 10 and 11 are not needed;
   bits 6 and 11 with 2 (0x002, 0x842) and with 3 (0x003, 0x843). Reading bits 1:0 as the data
-  master with 3 the event one fails on 0x002 and 0x842. The combinations not run (0x042, 0x043,
-  0x802, 0x803) are **[infer]** from the rule. Bit 10 (0xc43, #11's value) ran 2 of 2 and both
+  master with 3 the event one fails on 0x002 and 0x842. 0x043 and 0x803 ran it to done too, the
+  issuer's secondaries and the next fill and triangle as they were (E1234, E1235, one run each)
+  **[HW]**; 0x042 and 0x802, not run, are **[infer]** from the rule. Bit 10 (0xc43, #11's value)
+  ran 2 of 2 and both
   times the next fill failed (0xdeadbeef in every pixel) until a reset; that bit 10 leaves that
   state is **[infer]**, and the entry it started read other secondaries than the issuer's
   (E1172). Where crumb3's `douta` show depends on the sideband: with 0x843 no V0 or V2 in
-  `pa0`-`pa15` (E1161, E1162); with 0x002, 0x003, 0x842, 0xc43 and 0x402, V0 in every fourth pa
-  from `pa0` and V2 in every fourth from `pa2` (E1164, E1166, E1168, E1172, E1182) **[HW]**, why
-  is **[open]** (Q128).
+  `pa0`-`pa15` (E1161, E1162), and with 0x043 (E1234, one printed read); with 0x002, 0x003,
+  0x842, 0xc43 and 0x402, V0 in every fourth pa from `pa0` and V2 in every fourth from `pa2`
+  (E1164, E1166, E1168, E1172, E1182), and with 0x803 (E1235, one printed read) **[HW]**, why is
+  **[open]** (Q128).
 - **Bit 10 of the sideband rewrites the issuer's secondaries [HW].** From our task, with
   bits 1:0 = 2 or 3: after an emit with bit 10 (0xc43, 0x403 or 0x402, so bits 6 and 11 are not
   needed) our own entry 0, in a later job, reads `sa12`-`sa27` equal to the started entry's
@@ -127,18 +130,22 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   E1184, E1186, E1233), and it stays across resets, a boot, kicks and ticks with no client draw
   (E1185, E1198, E1219) **[HW]**. Client draws after a firmware load rewrite them by sequence:
   a triangle writes all three (`sa0` 0, its word in `sa1`, an EVENT_TIMER-shaped `sa2`); a fill
-  writes `sa0` 2 and a timer-shaped `sa2` and leaves `sa1` (E1221-E1231, E1213, E1215) **[HW]**.
+  writes `sa0` 2 and a timer-shaped `sa2` and leaves `sa1` (E1221-E1231, E1213, E1215; once
+  `sa0` 0x00040000 after two fills, E1237) **[HW]**.
   Read twice or more and agreeing, `sa1` is 0x02400000 after a triangle alone or a triangle then a
   fill, and 0x08400000 after two triangles, the last triangle's word (E1193, E1195, E1204, E1206,
   E1208, E1215, E1221, E1229, E1231) **[HW]**. Reads disagree for one fill (the planted word four
-  times, 0x01000000 once: E1187, E1200, E1210, E1213, E1225), for two fills (the planted word three
-  times, 0x04000010 with land: E1191, E1202, E1217, E1227) and for a fill then a triangle
+  times, 0x01000000 once: E1187, E1200, E1210, E1213, E1225), for two fills (the planted word six
+  times, with land too, and 0x04000010 once with land: E1191, E1202, E1217, E1227, E1237, E1239,
+  E1241; three fills kept it once, E1243) and for a fill then a triangle
   (0x04400000, and 0x04000010 in X: E1174, E1189, E1223) **[HW]**; what decides those is **[open]**.
   With the tick running (landv, land, landq) the EDM stops after the emit's pass: at page 0 with
-  `sa0` below one page (E1200, E1213, E1215, E1217), at `sa1`'s page with `sa0` = V0 (E1183,
-  E1185, E1198), and at `sa1`'s page with 0x005d2000 in `sa0` and M1 in `sa1` (E1233) **[HW]**;
-  that the lowest faulting page is kept, or that `sa0` is read first and 0x005d2000 is mapped, is
-  **[infer]**. That `sa13` is taken as a page base is **[infer]**; where `sa3`-`sa10` come from is
+  `sa0` below one page on modules 83FBFD86 and 079DD0D1 (E1176, E1178, E1200, E1213, E1215,
+  E1217), but at `sa1`'s page with `sa0` 2 and M1 in `sa1` after two or three fills on module
+  10BBF3BF (E1239, E1241, E1243); at `sa1`'s page with `sa0` = V0 (E1183, E1185, E1198) and with
+  0x005d2000 in `sa0` and M1 in `sa1` (E1233, E1245) **[HW]**. No order of `sa0` and `sa1` read
+  so far fits every stop, and whether the module or the fill count moved the page is **[open]**.
+  That `sa13` is taken as a page base is **[infer]**; where `sa3`-`sa10` come from is
   **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.

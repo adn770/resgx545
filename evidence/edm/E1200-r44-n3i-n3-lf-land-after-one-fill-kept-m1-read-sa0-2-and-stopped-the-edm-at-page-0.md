@@ -76,3 +76,18 @@ And "that the tick pass reads through sa0, then sa1 (H-SA0)": row Q (E1233) faul
 with both sa0 and sa1 holding words our rows never saw mapped, sa0 the higher, so H-SA0 is falsified
 unless sa0's word is mapped; the lowest faulting page fits every stop read so far as well
 **[infer]**. This record's frozen verdict and readings stand.
+
+**Correction 2026-11-25 (round 46):** Round 46's land rows on module 10BBF3BF (fork r46-kernel
+c5094783eb88) stopped with sa0 2 and M1 in sa1 at 0x005d1000, sa1's page, not at page 0: after two
+fills twice (LFF2 E1239, LFF3 E1241) and after three (LF3F E1243), the PAGE0 outcome FAILED against
+its prediction (held) each time **[HW]**. So the stop does not fault at page 0 whenever sa0 holds a
+word below one page, and the two readings row Q left (the lowest faulting page kept; sa0 read first
+with 0x005d2000 mapped) both predicted page 0 there **[HW against the frozen predictions]**. The
+earlier page-0 stops ran on modules 83FBFD86 and 079DD0D1, and the two with the bank (2, M1), LF and
+LF2, after one fill: the module and the number of fills changed together, and no row splits them
+**[infer]**. Row Q's stop at sa1's page with 0x005d2000 in sa0 repeated on 10BBF3BF (Q2, E1245)
+**[HW]**. This record's "the stop faults at page 0 when sa0 holds a word below one page and at sa1's
+page when sa0 is V0 [HW, two rows of this round]" holds for the rows it names, not as a rule: its
+own bank, (2, M1), stopped at sa1's page in LFF2, LFF3 and LF3F. The 2026-11-25 correction's "the
+lowest faulting page fits every stop read so far" no longer fits. This record's frozen verdict and
+readings stand.

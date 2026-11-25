@@ -1048,8 +1048,10 @@ our task emits reaches the primary attributes of the task its `doutu` starts (pa
 both points, inferred). Bits 1:0 of the sideband decide the start (E1158, E1162-E1172): 0 never
 starts it and the tick stops (0x000, 0x040, 0x800, 0x840); 1 faults the job with BIF_FAULT
 0x30011010, #14's page + 0x10 (0x001, 0x841); 2 or 3 run it to done (0x002, 0x842, 0x003, 0x843,
-0xc43), bits 6, 10 and 11 not needed. After 0xc43 the next fill failed in 2 of 2 until a reset
-(E1172). Bit 10 rewrites the issuer's own secondaries (E1173-E1175, E1182, read by our entry 0 in a
+0xc43, and 0x043 and 0x803 with the issuer's secondaries and the next fill and triangle as they
+were, E1234, E1235), bits 6, 10 and 11 not needed. After 0xc43 the next fill failed in 2 of 2
+until a reset (E1172). Bit 10 rewrites the issuer's own secondaries (E1173-E1175, E1182, read by
+our entry 0 in a
 later job): after 0xc43, 0x403 or 0x402 (bits 1:0 = 2 or 3 alike) `sa12`-`sa27` equal the started
 entry's `pa0`-`pa15`, `sa1` and words of `sa3`-`sa10` change and `sa0` and `sa2` stay with crumb3
 and with land and no draws (E1198), but read 2 and 0x01049b60 with land after one fill (E1200);
@@ -1066,18 +1068,21 @@ the emit's pass (E1180, E1182, per-job BIF reads); with no pass after the emit n
 page in `sa13` by the time its reply returns, and after that fault the EDM answers no kick and
 serves no command until a reset (E1187), so the after-read is not needed for the fault. That
 `sa13` is used as a page base is inferred. `sa0`, `sa1` and `sa2` read attributes 0, 1 and 2: a word
-our program sent there with 0xc43 was the register in the same row (E1180, E1184, E1186, E1188-E1199
-and E1201-E1232's plants; 0x005d2000 to attribute 0, E1233), with no fault and no pass after, and in
-the next stage after resets, a boot, kicks and ticks with no client draw (E1185, E1198, E1219).
+our program sent there with 0xc43 was the register in the same row (E1180, E1184, E1186,
+E1188-E1199, E1201-E1232's and E1236-E1244's plants; 0x005d2000 to attribute 0, E1233, E1245),
+with no fault and no pass after, and in the next stage after resets, a boot, kicks and ticks with
+no client draw (E1185, E1198, E1219).
 Client draws after a firmware load rewrite them by sequence. Our crumbz image, which writes no
 attribute, read them after each draw list (E1219-E1231): a triangle writes all three, `sa0` 0, its
 word in `sa1` and an EVENT_TIMER-shaped `sa2`; a fill writes `sa0` 2 and a timer-shaped `sa2` and
-leaves `sa1`, so a triangle then a fill leaves the triangle's `sa1` with `sa0` 2. Read two or more
+leaves `sa1`, so a triangle then a fill leaves the triangle's `sa1` with `sa0` 2 (one read after
+two fills had `sa0` 0x00040000, E1237). Read two or more
 times and agreeing: `sa1` 0x02400000 after a triangle alone (E1193, E1204, E1215, E1221) and after a
 triangle then a fill (E1195, E1206, E1229), 0x08400000 after two triangles (E1208, E1231), the
 second triangle's word. Reads disagree for one fill after a plant (the planted word in E1200, E1210,
-E1213, E1225, 0x01000000 in E1187), for two fills (the planted word in E1191, E1202, E1227,
-0x04000010 with `sa0` 0 in E1217) and for a fill then a triangle (0x04400000 in E1189, E1223 and the
+E1213, E1225, 0x01000000 in E1187), for two fills (the planted word in E1191, E1202, E1227, E1237,
+and with land in E1239, E1241; 0x04000010 with `sa0` 0 in E1217; three fills kept it, E1243) and for
+a fill then a triangle (0x04400000 in E1189, E1223 and the
 earlier rows E1182, E1183; 0x04000010 in E1174); with no plant one fill after a stage that ended in
 a fill then a triangle read 0x05400000 twice (E1196, E1211). That each word is one event entry's
 `pa1` with the count byte the CCB commands since the load (E768) is inferred; what decides the
@@ -1088,10 +1093,13 @@ early stop as predicted); with V0 and V2 added (landv) it stopped the same way, 
 `sa1`, with `sa0` and `sa2` valid (E1183), and at the page of a marker planted in attribute 1
 (E1185); land itself on that bank (`sa0` = V0, `sa1` the marker, no draws) stopped at the marker's
 page too (E1198), and with `sa0` below one page after the draws (2 after one fill, 0 after a
-triangle or two fills) at page 0 (E1200, E1213, E1215, E1217). With 0x005d2000 in `sa0` and the
-marker in `sa1` (landq, E1233) it stopped at `sa1`'s page, the lower one, so the pass does not stop
-at `sa0`'s word first unless that word is mapped; that the lowest faulting page is kept, or that
-`sa0` is read first and 0x005d2000 is mapped, is inferred, and both fit every stop read. A
+triangle or two fills) at page 0 (E1200, E1213, E1215, E1217), on modules 079DD0D1 and, for LC,
+83FBFD86. With 0x005d2000 in `sa0` and the marker in `sa1` (landq, E1233, and again on module
+10BBF3BF, E1245) it stopped at `sa1`'s page, the lower one, so the pass does not stop at `sa0`'s
+word first unless that word is mapped. On module 10BBF3BF land after two or three fills read `sa0`
+2 and the marker in `sa1`, LF's bank, and stopped at the marker's page, not at page 0 (E1239,
+E1241, E1243): neither "the lowest faulting page is kept" nor "`sa0` is read first and 0x005d2000
+is mapped" fits every stop read, and whether the module or the fill count moved the page is open. A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

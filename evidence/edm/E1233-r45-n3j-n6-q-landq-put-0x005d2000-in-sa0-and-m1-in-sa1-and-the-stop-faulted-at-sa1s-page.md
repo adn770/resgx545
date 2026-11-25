@@ -60,3 +60,18 @@ tell them apart: the lowest faulting page is kept, or sa0 is read first and 0x00
 LF2, LT, LFF), sa1's page with sa0 = V0 (LV, V, LM) and here **[HW pages; infer reading]**.
 
 **What it does not show.** Whether 0x005d2000 is mapped; one run of this stage.
+
+**Correction 2026-11-25 (round 46):** Round 46's land rows on module 10BBF3BF (fork r46-kernel
+c5094783eb88) stopped with sa0 2 and M1 in sa1 at 0x005d1000, sa1's page, not at page 0: after two
+fills twice (LFF2 E1239, LFF3 E1241) and after three (LF3F E1243), the PAGE0 outcome FAILED against
+its prediction (held) each time **[HW]**. So the stop does not fault at page 0 whenever sa0 holds a
+word below one page, and the two readings row Q left (the lowest faulting page kept; sa0 read first
+with 0x005d2000 mapped) both predicted page 0 there **[HW against the frozen predictions]**. The
+earlier page-0 stops ran on modules 83FBFD86 and 079DD0D1, and the two with the bank (2, M1), LF and
+LF2, after one fill: the module and the number of fills changed together, and no row splits them
+**[infer]**. Row Q's stop at sa1's page with 0x005d2000 in sa0 repeated on 10BBF3BF (Q2, E1245)
+**[HW]**. This record's "two readings survive" and "every early stop read so far fits both" no
+longer hold: both give page 0 for LFF2, LFF3 and LF3F, which stopped at sa1's page. Its stop at
+0x005d1000 now meets the two-read rule (Q and Q2, on EC553F41 and 10BBF3BF); whether 0x005d2000 is
+mapped stays unread (the design's rows P and P2 were not run). This record's frozen verdict and
+readings stand.
