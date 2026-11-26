@@ -3610,8 +3610,9 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   reply returns, and the EDM then answers no kick and serves no command until a reset (E1187);
   with no pass after the emit nothing faults (E1184, E1186) **[HW]**. `sa0`, `sa1` and `sa2` read
   attributes 0, 1 and 2: a word sent there with 0xc43 is the register in the same row (E1180,
-  E1184, E1186, E1233, E1253, E1255), and it stays across resets, a boot, kicks and ticks with no client draw
-  (E1185, E1198, E1219) **[HW]**. Client draws after a firmware load rewrite them by sequence:
+  E1184, E1186, E1233, E1253, E1255), and it stays across resets, a boot, kicks and ticks with
+  no client draw (E1185, E1198, E1219) **[HW]**. Client draws after a firmware load rewrite them
+  by sequence:
   a triangle wrote all three (`sa0` 0, its word in `sa1`, an EVENT_TIMER-shaped `sa2`) in LT and
   ZT, but `sa0` 2 and 0x01000000 in LTK (E1249); a fill writes `sa0` 2 and a timer-shaped `sa2`
   (E1221-E1231, E1213, E1215, E1247, E1251; once `sa0` 0x00040000 after two fills, E1237)
