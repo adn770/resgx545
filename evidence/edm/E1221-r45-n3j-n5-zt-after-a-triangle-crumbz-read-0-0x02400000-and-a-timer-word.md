@@ -49,3 +49,14 @@ entry's pa0, pa1 and pa2 (H-KC's 3:22 entry at K 2) is **[infer]**.
 
 **What it does not show.** Why sa2's timer sample differs between reads (0x01027817 here, 0x01048c28
 in LT); one run.
+
+**Correction 2026-11-26 (round 46 addendum):** Row LTK (E1249), LT's stage on module 10BBF3BF (fork
+r46-kernel c5094783eb88) after a plant and one stock triangle, read post sa0 2, sa1 0x01000000 and a
+timer word, and stopped at 0x01000000, sa1's page, not at page 0; LTK-SA (sa0 0, sa1 0x02400000)
+FAILED against its prediction (held) **[HW]**, while the kernel's HKC line printed the triangle's
+3:22 entry with 0x02400000 at K 2 as before. So the reads of a triangle alone after a plant
+disagree: 0x02400000 in T, T2, LT and ZT (E1193, E1204, E1215, E1221), 0x01000000 in LTK; sa0 0 in
+LT and ZT, 2 in LTK **[HW]**. One fill on the same boot read the same pair (2, 0x01000000) once and
+(2, M1) once (LFK E1247, LFK2 E1251) **[HW]**; that the word read depends on timing (H-RACE) is
+**[infer]**. This record's "a triangle writes attributes 0, 1 and 2 together [HW]" stands for this
+row's read, not as what every triangle leaves. This record's frozen verdict and readings stand.

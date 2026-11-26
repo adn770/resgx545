@@ -56,3 +56,16 @@ page 0 **[HW]**; LT-PAGE and LT-HIST both named page 0, so this row does not spl
 H-HIST.
 
 **What it does not show.** Which access of the tick pass read page 0; one run of this stage.
+
+**Correction 2026-11-26 (round 46 addendum):** Row LTK (E1249), LT's stage on module 10BBF3BF (fork
+r46-kernel c5094783eb88) after a plant and one stock triangle, read post sa0 2, sa1 0x01000000 and a
+timer word, and stopped at 0x01000000, sa1's page, not at page 0; LTK-SA (sa0 0, sa1 0x02400000)
+FAILED against its prediction (held) **[HW]**, while the kernel's HKC line printed the triangle's
+3:22 entry with 0x02400000 at K 2 as before. So the reads of a triangle alone after a plant
+disagree: 0x02400000 in T, T2, LT and ZT (E1193, E1204, E1215, E1221), 0x01000000 in LTK; sa0 0 in
+LT and ZT, 2 in LTK **[HW]**. One fill on the same boot read the same pair (2, 0x01000000) once and
+(2, M1) once (LFK E1247, LFK2 E1251) **[HW]**; that the word read depends on timing (H-RACE) is
+**[infer]**. This record's "a triangle writes attributes 0-2 together, not attribute 1 alone [HW]"
+stands for this row's read, not as what every triangle leaves; its page-0 stop with sa0 0 stands as
+read (LTK read sa0 2, so it does not test sa0 0 on 10BBF3BF). This record's frozen verdict and
+readings stand.

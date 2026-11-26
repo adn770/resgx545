@@ -10709,6 +10709,145 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *edm; HW, infer; data: `render-closing-r46-n3k-n4:out/20261125-161145/q2/`,
   `render-closing-r46-n3k-n4:fold/`.*
 
+### 2026-11-26
+
+- `E1246` r46-n3k-n9 stage w9 (row W, the plant before LFK, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W9 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 30th run.
+  *edm; HW; data: `render-closing-r46-n3k-n9:out/20261125-231114/w9/`,
+  `render-closing-r46-n3k-n9:fold/`.*
+- `E1247` r46-n3k-n9 stage lfk (row LFK, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image
+  land at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after the plant W9 (E1246)
+  and one stock fill as the begin draws: job 1 done with post sa0 0x00000002, sa1 0x01000000, sa2
+  0x0103cb65, sa12 = V0, sa13 = M13; then, before job 2 was served, BIF_FAULT 0x0100000f (list 15,
+  page 0x01000000; the scorer: job 1's post sa1), the tick stopped and job 2 was never served; the
+  runner stopped (class hang, rc 4) and the kit's reset recovered it; 'Q128-N3K-LFK RULE: LFK-E12';
+  LFK-E12 held, LFK-SA and LFK-M1 FAILED against their predictions (held), LFK-PAGE0 and LFK-SERVE
+  failed as predicted, LFK-OTHER (printed) read held: land after one fill read 0x01000000 in sa1,
+  not M1, and the stop faulted at that page, not at page 0.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n9:out/20261125-231114/lfk/`,
+  `render-closing-r46-n3k-n9:fold/`.*
+- `E1248` r46-n3k-n10 stage w10 (row W, the plant before LTK, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W10 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 31st run.
+  *edm; HW; data: `render-closing-r46-n3k-n10:out/20261125-231217/w10/`,
+  `render-closing-r46-n3k-n10:fold/`.*
+- `E1249` r46-n3k-n10 stage ltk (row LTK, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image
+  land at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after the plant W10
+  (E1248) and one stock triangle as the begin draws: job 1 done with post sa0 0x00000002, sa1
+  0x01000000, sa2 0x01061a74, sa12 = V0, sa13 = M13; then, before job 2 was served, BIF_FAULT
+  0x0100000f (list 15, page 0x01000000; the scorer: job 1's post sa1), the tick stopped and job 2
+  was never served; the runner stopped (class hang, rc 4) and the kit's reset recovered it;
+  'Q128-N3K-LTK RULE: LTK-E12, LTK-PAST'; LTK-E12 held, LTK-SA and LTK-SA1 FAILED against their
+  predictions (held), LTK-PAST read held against its prediction (failed), LTK-PAGE0 and LTK-SERVE
+  failed as predicted: after a triangle land read sa0 2 and 0x01000000, not LT's 0 and 0x02400000,
+  and stopped at 0x01000000.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n10:out/20261125-231217/ltk/`,
+  `render-closing-r46-n3k-n10:fold/`.*
+- `E1250` r46-n3k-n11 stage w11 (row W, the plant before LFK2, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W11 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 32nd run.
+  *edm; HW; data: `render-closing-r46-n3k-n11:out/20261125-231324/w11/`,
+  `render-closing-r46-n3k-n11:fold/`.*
+- `E1251` r46-n3k-n11 stage lfk2 (row LFK2, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image
+  land at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): LFK's stage again, after
+  the plant W11 (E1250) and one stock fill as the begin draws: job 1 done with post sa0 0x00000002,
+  sa1 = M1 0x005d1000, sa2 0x0101bf25, sa12 = V0, sa13 = M13; then, before job 2 was served,
+  BIF_FAULT 0x005d100f (list 15, page 0x005d1000; the scorer: job 1's post sa1), the tick stopped
+  and job 2 was never served; the runner stopped (class hang, rc 4) and the kit's reset recovered
+  it; 'Q128-N3K-LFK2 RULE: LFK2-E12, LFK2-M1, LFK2-SA'; every prediction held (LFK2-PAGE0 and
+  LFK2-SERVE failed as predicted, LFK2-OTHER (printed) read failed): one fill kept M1 and the stop
+  faulted at M1's page, where LFK (E1247) read 0x01000000 and stopped there.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n11:out/20261125-231324/lfk2/`,
+  `render-closing-r46-n3k-n11:fold/`.*
+- `E1252` r46-n3k-n13 stage w13 (row W, the plant before R, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W13 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 33rd run.
+  *edm; HW; data: `render-closing-r46-n3k-n13:out/20261126-080112/w13/`,
+  `render-closing-r46-n3k-n13:fold/`.*
+- `E1253` r46-n3k-n13 stage r (row R, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image landr
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after the plant W13 (E1252) and
+  no draws: landr wrote 0x04400000 to attribute 0 and M1 0x005d1000 to attribute 1; job 1 done with
+  post sa0 0x04400000, sa1 = M1, sa2 = V2 0x32002000, sa12 = V0, sa13 = M13; then, before job 2 was
+  served, BIF_FAULT 0x005d100f (list 15, page 0x005d1000; the scorer: job 1's post sa1), the tick
+  stopped and job 2 was never served; the runner stopped (class hang, rc 4) and the kit's reset
+  recovered it; 'Q128-N3K-R RULE: R-E12, R-LOW, R-WRITE'; every prediction held (R-SA0, R-SUM and
+  R-SERVE failed as predicted, R-OTHER (printed) read failed): with two pages known unmapped in sa0
+  and sa1 the stop faulted at sa1's, the lower.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n13:out/20261126-080112/r/`,
+  `render-closing-r46-n3k-n13:fold/`.*
+- `E1254` r46-n3k-n14 stage w14 (row W, the plant before P, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W14 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 34th run.
+  *edm; HW; data: `render-closing-r46-n3k-n14:out/20261126-080206/w14/`,
+  `render-closing-r46-n3k-n14:fold/`.*
+- `E1255` r46-n3k-n14 stage p (row P, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image landp
+  at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after the plant W14 (E1254) and
+  no draws: landp wrote V0 to attribute 0 and 0x005d2000 to attribute 1; job 1 done with post sa0 =
+  V0 0x32004000, sa1 0x005d2000, sa2 = V2 0x32002000, sa12 = V0, sa13 = M13; then, before job 2 was
+  served, BIF_FAULT 0x005d200f (list 15, page 0x005d2000; the scorer: job 1's post sa1), the tick
+  stopped and job 2 was never served; the runner stopped (class hang, rc 4) and the kit's reset
+  recovered it; 'Q128-N3K-P RULE: P-E12, P-UNMAP, P-WRITE'; every prediction held (P-MAPPED and
+  P-SUM failed as predicted, P-OTHER (printed) read failed): with V0 in sa0 the stop faulted at
+  0x005d2000, so that page is unmapped where the stop reads it.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n14:out/20261126-080206/p/`,
+  `render-closing-r46-n3k-n14:fold/`.*
+- `E1256` r46-n3k-n15 stage w15 (row W, the plant before R2, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W15 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 35th run.
+  *edm; HW; data: `render-closing-r46-n3k-n15:out/20261126-080300/w15/`,
+  `render-closing-r46-n3k-n15:fold/`.*
+- `E1257` r46-n3k-n15 stage r2 (row R2, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image
+  landr at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after the plant W15
+  (E1256) and no draws: landr wrote 0x04400000 to attribute 0 and M1 0x005d1000 to attribute 1; job
+  1 done with post sa0 0x04400000, sa1 = M1, sa2 = V2 0x32002000, sa12 = V0, sa13 = M13; then,
+  before job 2 was served, BIF_FAULT 0x005d100f (list 15, page 0x005d1000; the scorer: job 1's post
+  sa1), the tick stopped and job 2 was never served; the runner stopped (class hang, rc 4) and the
+  kit's reset recovered it; 'Q128-N3K-R2 RULE: R2-E12, R2-LOW, R2-WRITE'; every prediction held
+  (R2-SA0, R2-SUM and R2-SERVE failed as predicted, R2-OTHER (printed) read failed): with two pages
+  known unmapped in sa0 and sa1 the stop faulted at sa1's, the lower, R's read and stop (E1253) a
+  second time.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n15:out/20261126-080300/r2/`,
+  `render-closing-r46-n3k-n15:fold/`.*
+- `E1258` r46-n3k-n16 stage w16 (row W, the plant before P2, module 10BBF3BF, fork c5094783eb88,
+  emitsb_sbc43s, image mark at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): row W
+  (E1184) byte for byte, one job, no gate and no end draws: job 1's post sa1 = M1 0x005d1000, sa13 =
+  pa1 = M13 0x005d3000, sa0 = V0, sa2 = V2; K5 BIF_FAULT 0 before and after and in snap9; every
+  control passed, 'Q128-N3K-W16 RULE: W-QUIET, W-SA1, W-SA13', every prediction held: W reproduced,
+  its 36th run.
+  *edm; HW; data: `render-closing-r46-n3k-n16:out/20261126-080355/w16/`,
+  `render-closing-r46-n3k-n16:fold/`.*
+- `E1259` r46-n3k-n16 stage p2 (row P2, module 10BBF3BF, fork c5094783eb88, emitsb_sbc43s, image
+  landp at fw14, form=sbc43, sideband 0xc43, s2 0, flagged, user present): after the plant W16
+  (E1258) and no draws: landp wrote V0 to attribute 0 and 0x005d2000 to attribute 1; job 1 done with
+  post sa0 = V0 0x32004000, sa1 0x005d2000, sa2 = V2 0x32002000, sa12 = V0, sa13 = M13; then, before
+  job 2 was served, BIF_FAULT 0x005d200f (list 15, page 0x005d2000; the scorer: job 1's post sa1),
+  the tick stopped and job 2 was never served; the runner stopped (class hang, rc 4) and the kit's
+  reset recovered it; 'Q128-N3K-P2 RULE: P2-E12, P2-UNMAP, P2-WRITE'; every prediction held
+  (P2-MAPPED and P2-SUM failed as predicted, P2-OTHER (printed) read failed): with V0 in sa0 the
+  stop faulted at 0x005d2000, so that page is unmapped where the stop reads it, P's read and stop
+  (E1255) a second time.
+  *edm; HW, infer; data: `render-closing-r46-n3k-n16:out/20261126-080355/p2/`,
+  `render-closing-r46-n3k-n16:fold/`.*
+
 ## By unit
 
 ### bif
@@ -10741,7 +10880,8 @@ E1181, E1182, E1183, E1184, E1185, E1186, E1187, E1188, E1189, E1190, E1191, E11
 E1195, E1196, E1197, E1198, E1199, E1200, E1201, E1202, E1203, E1204, E1205, E1206, E1207, E1208,
 E1209, E1210, E1211, E1212, E1213, E1214, E1215, E1216, E1217, E1218, E1219, E1220, E1221, E1222,
 E1223, E1224, E1225, E1226, E1227, E1228, E1229, E1230, E1231, E1232, E1233, E1234, E1235, E1236,
-E1237, E1238, E1239, E1240, E1241, E1242, E1243, E1244, E1245.
+E1237, E1238, E1239, E1240, E1241, E1242, E1243, E1244, E1245, E1246, E1247, E1248, E1249, E1250,
+E1251, E1252, E1253, E1254, E1255, E1256, E1257, E1258, E1259.
 
 ### firmware
 

@@ -7360,24 +7360,31 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   reply returns, and the EDM then answers no kick and serves no command until a reset (E1187);
   with no pass after the emit nothing faults (E1184, E1186) **[HW]**. `sa0`, `sa1` and `sa2` read
   attributes 0, 1 and 2: a word sent there with 0xc43 is the register in the same row (E1180,
-  E1184, E1186, E1233), and it stays across resets, a boot, kicks and ticks with no client draw
+  E1184, E1186, E1233, E1253, E1255), and it stays across resets, a boot, kicks and ticks with no client draw
   (E1185, E1198, E1219) **[HW]**. Client draws after a firmware load rewrite them by sequence:
-  a triangle writes all three (`sa0` 0, its word in `sa1`, an EVENT_TIMER-shaped `sa2`); a fill
-  writes `sa0` 2 and a timer-shaped `sa2` and leaves `sa1` (E1221-E1231, E1213, E1215; once
-  `sa0` 0x00040000 after two fills, E1237) **[HW]**.
-  Read twice or more and agreeing, `sa1` is 0x02400000 after a triangle alone or a triangle then a
-  fill, and 0x08400000 after two triangles, the last triangle's word (E1193, E1195, E1204, E1206,
-  E1208, E1215, E1221, E1229, E1231) **[HW]**. Reads disagree for one fill (the planted word four
-  times, 0x01000000 once: E1187, E1200, E1210, E1213, E1225), for two fills (the planted word six
-  times, with land too, and 0x04000010 once with land: E1191, E1202, E1217, E1227, E1237, E1239,
-  E1241; three fills kept it once, E1243) and for a fill then a triangle
-  (0x04400000, and 0x04000010 in X: E1174, E1189, E1223) **[HW]**; what decides those is **[open]**.
-  With the tick running (landv, land, landq) the EDM stops after the emit's pass: at page 0 with
-  `sa0` below one page on modules 83FBFD86 and 079DD0D1 (E1176, E1178, E1200, E1213, E1215,
-  E1217), but at `sa1`'s page with `sa0` 2 and M1 in `sa1` after two or three fills on module
-  10BBF3BF (E1239, E1241, E1243); at `sa1`'s page with `sa0` = V0 (E1183, E1185, E1198) and with
-  0x005d2000 in `sa0` and M1 in `sa1` (E1233, E1245) **[HW]**. No order of `sa0` and `sa1` read
-  so far fits every stop, and whether the module or the fill count moved the page is **[open]**.
+  a triangle wrote all three (`sa0` 0, its word in `sa1`, an EVENT_TIMER-shaped `sa2`) in LT and
+  ZT, but `sa0` 2 and 0x01000000 in LTK (E1249); a fill writes `sa0` 2 and a timer-shaped `sa2`
+  (E1221-E1231, E1213, E1215, E1247, E1251; once `sa0` 0x00040000 after two fills, E1237)
+  **[HW]**.
+  Read twice or more and agreeing, `sa1` is 0x02400000 after a triangle then a fill, and
+  0x08400000 after two triangles, the last triangle's word (E1195, E1206, E1208, E1229, E1231)
+  **[HW]**. Reads disagree for a triangle alone (0x02400000 four times, 0x01000000 once: E1193,
+  E1204, E1215, E1221, E1249), for one fill (the planted word five times, 0x01000000 twice: E1187,
+  E1200, E1210, E1213, E1225, E1247, E1251; once each two minutes apart on one boot), for two fills
+  (the planted word six times, with land too, and 0x04000010 once with land: E1191, E1202, E1217,
+  E1227, E1237, E1239, E1241; three fills kept it once, E1243) and for a fill then a triangle
+  (0x04400000, and 0x04000010 in X: E1174, E1189, E1223) **[HW]**; what decides those is **[open]**,
+  timing (H-RACE) the reading carried **[infer]**.
+  With the tick running (landv, land, landq, landr, landp) the EDM stops after the emit's pass: at
+  page 0 with `sa0` below one page on modules 83FBFD86 and 079DD0D1 (E1176, E1178, E1200, E1213,
+  E1215, E1217), but at `sa1`'s page with `sa0` 2 after one, two or three draws on module 10BBF3BF
+  with the started entry's `pa0` (`sa12`) V0 (E1239, E1241, E1243, E1247, E1249, E1251); at `sa1`'s
+  page with `sa0` = V0 (E1183, E1185, E1198, E1255, E1259) and at the lower of two pages known
+  unmapped, `sa1`'s, with 0x005d2000 or 0x04400000 in `sa0` and M1 in `sa1` (E1233, E1245, E1253,
+  E1257) **[HW]**. 0x005d2000 and 0x01000000 are pages the stop faults at (E1255, E1259; E1247,
+  E1249) **[HW]**. The lowest faulting page fits every stop with `sa0` above a page **[infer]**;
+  whether page 0 stops it on 10BBF3BF with a low `sa12`, or K, the module or the boot decide, is
+  **[open]**.
   That `sa13` is taken as a page base is **[infer]**; where `sa3`-`sa10` come from is
   **[open]** (Q128).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0

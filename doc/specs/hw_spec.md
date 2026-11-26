@@ -1069,18 +1069,21 @@ page in `sa13` by the time its reply returns, and after that fault the EDM answe
 serves no command until a reset (E1187), so the after-read is not needed for the fault. That
 `sa13` is used as a page base is inferred. `sa0`, `sa1` and `sa2` read attributes 0, 1 and 2: a word
 our program sent there with 0xc43 was the register in the same row (E1180, E1184, E1186,
-E1188-E1199, E1201-E1232's and E1236-E1244's plants; 0x005d2000 to attribute 0, E1233, E1245),
+E1188-E1199, E1201-E1232's, E1236-E1244's and E1246-E1258's plants; 0x005d2000 to attribute 0,
+E1233, E1245; landr's 0x04400000 and M1, E1253, E1257; landp's V0 and 0x005d2000, E1255, E1259),
 with no fault and no pass after, and in the next stage after resets, a boot, kicks and ticks with
 no client draw (E1185, E1198, E1219).
 Client draws after a firmware load rewrite them by sequence. Our crumbz image, which writes no
 attribute, read them after each draw list (E1219-E1231): a triangle writes all three, `sa0` 0, its
 word in `sa1` and an EVENT_TIMER-shaped `sa2`; a fill writes `sa0` 2 and a timer-shaped `sa2` and
 leaves `sa1`, so a triangle then a fill leaves the triangle's `sa1` with `sa0` 2 (one read after
-two fills had `sa0` 0x00040000, E1237). Read two or more
-times and agreeing: `sa1` 0x02400000 after a triangle alone (E1193, E1204, E1215, E1221) and after a
-triangle then a fill (E1195, E1206, E1229), 0x08400000 after two triangles (E1208, E1231), the
-second triangle's word. Reads disagree for one fill after a plant (the planted word in E1200, E1210,
-E1213, E1225, 0x01000000 in E1187), for two fills (the planted word in E1191, E1202, E1227, E1237,
+two fills had `sa0` 0x00040000, E1237; on module 10BBF3BF land read `sa0` 2 and `sa1` 0x01000000
+after one triangle, E1249). Read two or more times and agreeing: `sa1` 0x02400000 after a triangle
+then a fill (E1195, E1206, E1229), 0x08400000 after two triangles (E1208, E1231), the second
+triangle's word. Reads disagree for a triangle alone (0x02400000 in E1193, E1204, E1215, E1221,
+0x01000000 in E1249), for one fill after a plant (the planted word in E1200, E1210, E1213, E1225,
+E1251, 0x01000000 in E1187 and E1247, the last two a pair of the same stage two minutes apart on
+one boot), for two fills (the planted word in E1191, E1202, E1227, E1237,
 and with land in E1239, E1241; 0x04000010 with `sa0` 0 in E1217; three fills kept it, E1243) and for
 a fill then a triangle (0x04400000 in E1189, E1223 and the
 earlier rows E1182, E1183; 0x04000010 in E1174); with no plant one fill after a stage that ended in
@@ -1099,7 +1102,14 @@ triangle or two fills) at page 0 (E1200, E1213, E1215, E1217), on modules 079DD0
 word first unless that word is mapped. On module 10BBF3BF land after two or three fills read `sa0`
 2 and the marker in `sa1`, LF's bank, and stopped at the marker's page, not at page 0 (E1239,
 E1241, E1243): neither "the lowest faulting page is kept" nor "`sa0` is read first and 0x005d2000
-is mapped" fits every stop read, and whether the module or the fill count moved the page is open. A
+is mapped" fits every stop read. On the same boot, with `sa12` = V0 throughout, land after one
+fill stopped at `sa1`'s page twice, 0x01000000 and the marker's (E1247, E1251), and after one
+triangle at 0x01000000 (E1249), so the fill count did not move the page there. landp (V0 to
+attribute 0, 0x005d2000 to attribute 1) stopped at 0x005d2000 twice (E1255, E1259): that page is
+unmapped, so landq's stop kept the lower of two unmapped words, as landr's did (0x04400000 and the
+marker: the marker's page, twice, E1253, E1257); no stop came at `sa0` + `sa12`. That the lowest
+faulting page is kept fits every stop with `sa0` above a page (inferred); whether page 0 does not
+fault on this boot with `sa12` V0, or K, the module or the boot decide, is open. A
 phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
 stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
 stops it with no mark (E814 D1). The signature has two kinds (E849, read offline after the

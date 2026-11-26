@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200", "E1201", "E1202", "E1203", "E1204", "E1205", "E1206", "E1207", "E1208", "E1209", "E1210", "E1211", "E1212", "E1213", "E1214", "E1215", "E1216", "E1217", "E1218", "E1219", "E1220", "E1221", "E1222", "E1223", "E1224", "E1225", "E1226", "E1227", "E1228", "E1229", "E1230", "E1231", "E1232", "E1233", "E1234", "E1235", "E1236", "E1237", "E1238", "E1239", "E1240", "E1241", "E1242", "E1243", "E1244", "E1245"]
+evidence = ["E488", "E513", "E520", "E1148", "E1149", "E1150", "E1151", "E1152", "E1153", "E1154", "E1155", "E1156", "E1157", "E1158", "E1159", "E1160", "E1161", "E1162", "E1163", "E1164", "E1165", "E1166", "E1167", "E1168", "E1169", "E1170", "E1171", "E1172", "E1173", "E1174", "E1175", "E1176", "E1177", "E1178", "E1179", "E1180", "E1181", "E1182", "E1183", "E1184", "E1185", "E1186", "E1187", "E1188", "E1189", "E1190", "E1191", "E1192", "E1193", "E1194", "E1195", "E1196", "E1197", "E1198", "E1199", "E1200", "E1201", "E1202", "E1203", "E1204", "E1205", "E1206", "E1207", "E1208", "E1209", "E1210", "E1211", "E1212", "E1213", "E1214", "E1215", "E1216", "E1217", "E1218", "E1219", "E1220", "E1221", "E1222", "E1223", "E1224", "E1225", "E1226", "E1227", "E1228", "E1229", "E1230", "E1231", "E1232", "E1233", "E1234", "E1235", "E1236", "E1237", "E1238", "E1239", "E1240", "E1241", "E1242", "E1243", "E1244", "E1245", "E1246", "E1247", "E1248", "E1249", "E1250", "E1251", "E1252", "E1253", "E1254", "E1255", "E1256", "E1257", "E1258", "E1259"]
 terms = []
 +++
 
@@ -347,3 +347,37 @@ in the netconsole logs of rounds 35 and 44), after which lockdep is off for the 
 (2, M1) reads (the module or the fill count); whether 0x005d2000 is mapped (rows P, P2); why LFF
 read 0x04000010 and F 0x01000000; where ZFF2's `sa0` 0x00040000 comes from; what bits 6, 10 and 11
 mean beyond the start; the parts above. Not retired.
+
+Round 46's addendum: one fill, one triangle, landr and landp on the same boot, 2026-11-25 and -26
+(E1246 to E1259, r46-n3k-n9, -n10, -n11 and -n13 to -n16, flagged, module 10BBF3BF, the boot of
+B5-N4 with no rebuild, install or boot since, closing29/n3k section 11, decisions G-K all (a)).
+Every row read post sa12 = V0, B6's pa0 (E12 held 7 of 7), and every plant (W9-W16: E1246, E1248,
+E1250, E1252, E1254, E1256, E1258) put M1 in `sa1` with no fault [HW]. Land after one fill (LFK,
+E1247; LFK2, E1251) read `sa0` 2 both times but `sa1` 0x01000000 once and M1 once, and stopped at
+`sa1`'s page each time, 0x01000000 and 0x005d1000; land after one triangle (LTK, E1249) read LFK's
+(2, 0x01000000), not LT's and ZT's (0, 0x02400000) (E1215, E1221), and stopped at 0x01000000 [HW].
+So no land stop of this boot went to page 0 with sa12 = V0 (eleven of eleven, LFF2 to P2, six of
+them with `sa0` 2), and one fill does not bring page 0 back: C-FILL (the number of fills moved the
+page) is out on this boot [HW, LFK and LFK2]. 0x01000000 is a page the stop faults at [HW, two
+reads]. The word `sa1` holds after a single draw is not stable on this boot: after one fill
+0x01000000 once and M1 once, two minutes apart, after one triangle 0x01000000 against 0x02400000 in
+four earlier reads (E1193, E1204, E1215, E1221), while the kernel's HKC line printed the triangle's
+3:22 entry with 0x02400000 at K 2 as before [HW]; the stop's page followed `sa1` every time [HW].
+E1204, E1215 and E1221 get appended corrections. That timing decides which word the emit's pass
+reads (H-RACE) is the reading carried [infer]; the design's stop rule for LFK and LFK2 disagreeing
+held N12-N16 for the user, who then ran N13-N16 and skipped N12 (LFKP, the K pad). landr (R, E1253;
+R2, E1257) wrote 0x04400000 and M1, both pages known unmapped, and the stop faulted at M1's, the
+lower, not at `sa0`'s (R-SA0 failed) nor at `sa0` + sa12 = 0x36404000 (R-SUM failed) [HW, two
+reads]. landp (P, E1255; P2, E1259) wrote V0 and 0x005d2000 and the stop faulted at 0x005d2000: that
+page is unmapped where the stop reads it [HW, two reads], and no stop at V0 + V0 = 0x64008000 (P-SUM
+failed) [HW]. So Q and Q2 (E1233, E1245) had two unmapped words and kept the lower, as R and R2 did:
+"`sa0` read first, 0x005d2000 mapped" is out, and the lowest faulting page (R-LOW) fits every stop
+with both words above a page [HW pages; infer reading]. C-E0+ with `sa0` + sa12 read first and
+unmapped is out for R's and P's banks [infer: the sums may be mapped]. R-LOW with page 0 unmapped
+and attribute 0's 2 read as an address does not fit this boot's (2, ...) stops: either page 0 does
+not fault with sa12 = V0 (C-E0), or on this module (C-MOD) or boot (C-BOOT), or 2 is not read as an
+address [infer]. Still open: C-K, C-E0 and C-MOD against each other (N12 not run; decision K's
+follow-up, a boot on module 079DD0D1 with a high sa12, design section 11.6); what decides the
+single-draw `sa1` (0x01000000, M1, 0x02400000) and LTK's `sa0` 2; why LFF read 0x04000010; where
+ZFF2's `sa0` 0x00040000 comes from; whether 0x01000000, 0x02400000 and the C-E0+ sums are mapped
+elsewhere than where the stop reads; the parts above. Not retired.
