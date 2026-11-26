@@ -141,15 +141,15 @@ pub struct State {
     /// (0xc43, E1180). It stays across a reset (E1181) and our later tasks start with it in
     /// `pa1`; `None`: unknown (E1179 read 0x00043000 there, a word none of our rows wrote).
     attr13: Option<u32>,
-    /// The words in attributes 0, 1 and 2 once a measured `douta` wrote them with 0xc43, each
-    /// with the client draws since (`Sgx::host_job`): mark's V0, M1 and V2 in every plant (E1184,
-    /// E1186, E1188, E1190, E1192, E1194, E1197, E1199, E1201, E1203, E1205, E1207, E1209,
-    /// E1212, E1214, E1216, E1218, E1220, E1222, E1224, E1226, E1228, E1230, E1232, E1236,
-    /// E1238, E1240, E1242, E1244), crumb3's V0
-    /// and V2 (E1174, E1189), landq's word to attribute 0 (row Q). The issuer's `sa0`, `sa1` and `sa2` read them after a bit 10 rewrite with
-    /// 0xc43 (E1180, E1184, E1186, E1219); they stay across resets, boots, kicks and ticks with
-    /// no client draw (E1185, E1219). The draws decide what is there at the read
-    /// (`State::attr_now`).
+    /// The words in attributes 0, 1 and 2 once a measured `douta` wrote them with 0xc43, each with
+    /// the client draws since (`Sgx::host_job`): mark's V0, M1 and V2 in every plant (E1184, E1186,
+    /// E1188, E1190, E1192, E1194, E1197, E1199, E1201, E1203, E1205, E1207, E1209, E1212, E1214,
+    /// E1216, E1218, E1220, E1222, E1224, E1226, E1228, E1230, E1232, E1236, E1238, E1240, E1242,
+    /// E1244, E1246, E1248, E1250, E1252, E1254, E1256, E1258), crumb3's V0 and V2 (E1174, E1189),
+    /// landq's word to attribute 0 (row Q), landr's and landp's words to attributes 0 and 1 (rows
+    /// R, R2, P and P2). The issuer's `sa0`, `sa1` and `sa2` read them after a bit 10 rewrite with
+    /// 0xc43 (E1180, E1184, E1186, E1219); they stay across resets, boots, kicks and ticks with no
+    /// client draw (E1185, E1219). The draws decide what is there at the read (`State::attr_now`).
     attrs: [Option<Planted>; 3],
     /// The BIF_FAULT word the EDM stalled with: after a GETMISCINFO kick pass faulted on the
     /// rewritten bank it answered no kick and served no command until a reset (E1187).
@@ -164,31 +164,30 @@ struct Planted {
 }
 
 impl State {
-    /// The word in attribute `n` (0, 1 or 2) at a read after the client draws since it was
-    /// written, known only where more than one read of that draw list agreed and none disagreed
-    /// (the user's rule, rounds 43-45); every other list refuses. No draws keeps the word
-    /// (V, E1185; ZN, E1219; row LM). Attribute 1: 0x02400000 after a triangle alone (E1193,
-    /// E1204, E1221, row LT) and after a triangle then a fill (E1195, E1206, E1229), 0x08400000
-    /// after two triangles (E1208, E1231); reads disagree for one fill (the planted word in
-    /// E1210, E1225 and rows LF and LF2, 0x01000000 in E1187), two fills (the planted word in
-    /// E1191, E1202, E1227, E1237 and rows LFF2 and LFF3, 0x04000010 in row LFF) and a fill
-    /// then a triangle (0x04400000 in
-    /// E1189, E1223, 0x04000010 in X, E1174). Attribute 0: 0 after a triangle alone (E1221, row
-    /// LT) and after a fill then a triangle (E1223, LC of E1176, LC2), 2 after one fill (E1225,
-    /// rows LF and LF2); two fills disagree (2 in E1227 and rows LFF2 and LFF3, 0 in row LFF,
-    /// 0x00040000 in E1237); three fills were read once (row LF3F), a triangle then a fill
-    /// and two triangles were read once (E1229, E1231). Attribute 2 after any draw is an
-    /// EVENT_TIMER sample that differs between reads (E1221, E1223, E1225, E1227, E1229, E1231):
-    /// unknown. That each triple is
-    /// one event entry's pa0-pa2 (H-KC, Q128) is not modelled.
+    /// The word in attribute `n` (0, 1 or 2) at a read after the client draws since it was written,
+    /// known only where more than one read of that draw list agreed and none disagreed (the user's
+    /// rule, rounds 43-46); every other list refuses. No draws keeps the word (V, E1185; ZN, E1219;
+    /// row LM). Attribute 1: 0x02400000 after a triangle then a fill (E1195, E1206, E1229),
+    /// 0x08400000 after two triangles (E1208, E1231); reads disagree for a triangle alone
+    /// (0x02400000 in E1193, E1204, E1221 and row LT, 0x01000000 in row LTK), one fill (the planted
+    /// word in E1210, E1225 and rows LF, LF2 and LFK2, 0x01000000 in E1187 and row LFK, LFK2's
+    /// stage on the same boot), two fills (the planted word in E1191, E1202, E1227, E1237 and rows
+    /// LFF2 and LFF3, 0x04000010 in row LFF) and a fill then a triangle (0x04400000 in E1189,
+    /// E1223, 0x04000010 in X, E1174). Attribute 0: 0 after a fill then a triangle (E1223, LC of
+    /// E1176, LC2), 2 after one fill (E1225, rows LF, LF2, LFK and LFK2); a triangle alone
+    /// disagrees (0 in E1221 and row LT, 2 in row LTK), two fills disagree (2 in E1227 and rows
+    /// LFF2 and LFF3, 0 in row LFF, 0x00040000 in E1237); three fills were read once (row LF3F), a
+    /// triangle then a fill and two triangles were read once (E1229, E1231). Attribute 2 after any
+    /// draw is an EVENT_TIMER sample that differs between reads (E1221, E1223, E1225, E1227, E1229,
+    /// E1231): unknown. That each triple is one event entry's pa0-pa2 (H-KC, Q128) is not modelled.
     fn attr_now(&self, n: usize) -> Option<u32> {
         use HostJob::{Fill, Triangle};
         let p = self.attrs.get(n)?.as_ref()?;
         match (n, p.draws.as_slice()) {
             (_, []) => Some(p.word),
-            (0, [Triangle] | [Fill, Triangle]) => Some(0),
+            (0, [Fill, Triangle]) => Some(0),
             (0, [Fill]) => Some(2),
-            (1, [Triangle] | [Triangle, Fill]) => Some(0x0240_0000),
+            (1, [Triangle, Fill]) => Some(0x0240_0000),
             (1, [Triangle, Triangle]) => Some(0x0840_0000),
             _ => None,
         }
@@ -2219,12 +2218,14 @@ mod tests {
     #[test]
     fn the_draws_after_a_plant_leave_attribute_1_known_only_where_every_read_agrees() {
         use HostJob::{Fill, Triangle};
-        // read more than once, every read agreeing: a triangle alone 0x02400000 (T E1193, T2
-        // E1204, ZT E1221, and row LT with land), a triangle then a fill 0x02400000 (TF E1195, TF2 E1206,
-        // ZTF E1229), two triangles 0x08400000, the second triangle's word (TT E1208, ZTT E1231)
-        assert_eq!(sa1_after(&[Triangle]), Some(0x0240_0000));
+        // read more than once, every read agreeing: a triangle then a fill 0x02400000 (TF E1195,
+        // TF2 E1206, ZTF E1229), two triangles 0x08400000, the second triangle's word (TT E1208,
+        // ZTT E1231)
         assert_eq!(sa1_after(&[Triangle, Fill]), Some(0x0240_0000));
         assert_eq!(sa1_after(&[Triangle, Triangle]), Some(0x0840_0000));
+        // a triangle alone: 0x02400000 (T E1193, T2 E1204, ZT E1221, and row LT with land) but
+        // 0x01000000 with land on module 10BBF3BF (row LTK): reads disagree, unknown
+        assert_eq!(sa1_after(&[Triangle]), None);
         // two fills: M1 with crumb3 and crumbz (FF E1191, FF2 E1202, ZFF E1227, ZFF2 E1237) and
         // with land on module 10BBF3BF (rows LFF2, LFF3) but 0x04000010 with land on 079DD0D1
         // (row LFF): reads disagree, unknown
@@ -2232,8 +2233,9 @@ mod tests {
         // fill, then triangle: 0x04400000 over the plant (FT E1189, ZFT E1223) and in six
         // unplanted rows, but 0x04000010 in X (E1174): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill, Triangle]), None);
-        // one fill: M1 kept (F3 E1210, ZF E1225, rows LF and LF2 with land) but 0x01000000 in F
-        // (E1187), and 0x05400000 with no plant (E1196, E1211): reads disagree, unknown
+        // one fill: M1 kept (F3 E1210, ZF E1225, rows LF, LF2 and LFK2 with land) but 0x01000000
+        // in F (E1187) and in row LFK, the same stage as LFK2 on one boot, and 0x05400000 with no
+        // plant (E1196, E1211): reads disagree, unknown
         assert_eq!(sa1_after(&[Fill]), None);
         // sequences no row read stay unknown
         // three fills: M1 once (row LF3F): one read, unknown
@@ -2276,6 +2278,14 @@ mod tests {
         let (s, r) = own_douta(0xc43, (0x005d_2000, 0x0000), (M1, 0x0100), &[]);
         r.unwrap();
         assert_eq!((s.st.sa[0], s.st.sa[1], s.st.sa_written & 0b11), (0x005d_2000, M1, 0b11));
+        // landr's 0x04400000 to attribute 0 and M1 to attribute 1 (rows R and R2, R-WRITE) and
+        // landp's V0 to attribute 0 and 0x005d2000 to attribute 1 (rows P and P2, P-WRITE)
+        let (s, r) = own_douta(0xc43, (0x0440_0000, 0x0000), (M1, 0x0100), &[]);
+        r.unwrap();
+        assert_eq!((s.st.sa[0], s.st.sa[1], s.st.sa_written & 0b11), (0x0440_0000, M1, 0b11));
+        let (s, r) = own_douta(0xc43, (V0, 0x0000), (0x005d_2000, 0x0100), &[]);
+        r.unwrap();
+        assert_eq!((s.st.sa[0], s.st.sa[1], s.st.sa_written & 0b11), (V0, 0x005d_2000, 0b11));
     }
 
     #[test]
@@ -2283,13 +2293,15 @@ mod tests {
         use HostJob::{Fill, Triangle};
         // no draws: the plant's V0 and V2 stay, read by crumbz (ZN E1219) and by land (row LM)
         assert_eq!(sa0_sa2_after(&[]), (Some(V0), Some(V2)));
-        // sa0 read more than once, every read agreeing: 0 after a triangle alone (ZT E1221, row
-        // LT) and after a fill then a triangle (ZFT E1223; LC with no plant, E1176, and LC2), 2
-        // after one fill (ZF E1225, rows LF and LF2); sa2 after any draw is an EVENT_TIMER sample
-        // that differs between reads (E1221, E1225, E1229): unknown
-        assert_eq!(sa0_sa2_after(&[Triangle]), (Some(0), None));
+        // sa0 read more than once, every read agreeing: 0 after a fill then a triangle (ZFT E1223;
+        // LC with no plant, E1176, and LC2), 2 after one fill (ZF E1225, rows LF, LF2, LFK and
+        // LFK2); sa2 after any draw is an EVENT_TIMER sample that differs between reads (E1221,
+        // E1225, E1229, rows LFK, LTK and LFK2): unknown
         assert_eq!(sa0_sa2_after(&[Fill, Triangle]), (Some(0), None));
         assert_eq!(sa0_sa2_after(&[Fill]), (Some(2), None));
+        // a triangle alone: 0 with crumbz (ZT E1221) and land (row LT), 2 with land on module
+        // 10BBF3BF (row LTK): reads disagree
+        assert_eq!(sa0_sa2_after(&[Triangle]), (None, None));
         // two fills: 2 with crumbz (ZFF E1227) and with land (rows LFF2, LFF3), 0 with land (row
         // LFF), 0x00040000 with crumbz (ZFF2 E1237): reads disagree
         assert_eq!(sa0_sa2_after(&[Fill, Fill]), (None, None));
